@@ -76,4 +76,4 @@ AppdataSource.initialize()
     console.log(err);
   });
 
-export default AppdataSource;
+export { AppdataSource, client };

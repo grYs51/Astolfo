@@ -5,7 +5,6 @@ import { GuildConfiguration } from '../typeOrm/entities/GuildConfiguration';
 import { GuildStatsLog } from '../typeOrm/entities/GuildsStatsLog';
 import BaseSlash from '../utils/structures/BaseSlash';
 import BaseModal from '../utils/structures/BaseModal';
-import DisTube from 'distube';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
@@ -13,7 +12,6 @@ export default class DiscordClient extends Client {
   private _slashs = new Collection<string, BaseSlash>();
   private _configs = new Collection<string, GuildConfiguration>();
   private _voiceUsers = new Array<GuildStatsLog>();
-  private _distube: DisTube;
 
   constructor(options: ClientOptions) {
     super(options);
@@ -39,19 +37,11 @@ export default class DiscordClient extends Client {
     return this._voiceUsers;
   }
 
-  get distube(): DisTube {
-    return this._distube;
-  }
-
   set configs(guildConfigs: Collection<string, GuildConfiguration>) {
     this._configs = guildConfigs;
   }
 
   set voiceUsers(GuildStatsLogs: Array<GuildStatsLog>) {
     this._voiceUsers = GuildStatsLogs;
-  }
-
-  set distube(distube: DisTube) {
-    this._distube = distube;
   }
 }

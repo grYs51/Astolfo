@@ -4,7 +4,7 @@ import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { GuildConfiguration } from '../../typeOrm/entities/GuildConfiguration';
 import { Repository } from 'typeorm';
-import AppdataSource from '../..';
+import { AppdataSource } from '../..';
 
 export default class GuildCreateEvent extends BaseEvent {
   constructor(

@@ -5,7 +5,7 @@ import DiscordClient from '../../client/client';
 import { GuildStatsLog } from '../../typeOrm/entities/GuildsStatsLog';
 import { Info } from '../../utils/types';
 import { Repository } from 'typeorm';
-import AppdataSource from '../..';
+import { AppdataSource } from '../..';
 
 enum types {
   DEAF = 'selfDeaf',

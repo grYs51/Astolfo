@@ -1,12 +1,9 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
-import { Repository } from 'typeorm';
-import AppdataSource from '../..';
 
 export default class TestCommand extends BaseCommand {
-  constructor(
-  ) {
+  constructor() {
     super('test', 'testing', []);
   }
 

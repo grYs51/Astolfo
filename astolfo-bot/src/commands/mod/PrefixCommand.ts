@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
 import { GuildConfiguration } from '../../typeOrm/entities/GuildConfiguration';
-import AppdataSource from '../..';
+import { AppdataSource } from '../..';
 
 export default class PrefixCommand extends BaseCommand {
   constructor(
