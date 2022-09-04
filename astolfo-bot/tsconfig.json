@@ -1,7 +1,8 @@
 {
+  "extends": "@tsconfig/node16",
+  "files": ["src/api/@types/express.d.ts"],
   "compilerOptions": {
     /* Visit https://aka.ms/tsconfig.json to read more about this file */
-
     /* Projects */
     // "incremental": true,                              /* Enable incremental compilation */
     // "composite": true,                                /* Enable constraints that allow a TypeScript project to be used with project references. */

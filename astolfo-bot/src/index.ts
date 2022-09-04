@@ -13,7 +13,9 @@ import { io } from 'socket.io-client';
 import { entities } from './typeOrm/entities';
 import { DiscordInteractions } from 'slash-commands';
 import discordModals from 'discord-modals';
-import * as DisTube from 'distube';
+import createApp from './api';
+import logger from './api/utils/logger';
+
 const client = new DiscordClient({
   intents: [
     IntentsBitField.Flags.Guilds,
@@ -33,13 +35,11 @@ const interaction = new DiscordInteractions({
 
 discordModals(client);
 
-const socket = io('http://localhost:3001');
+// create a new express app instance
+const app = createApp(client);
 
-const distube = new DisTube.default(client);
-client.distube = distube;
-
-socket.on('guildConfigUpdate', (config: GuildConfiguration) => {
-  client.configs.set(config.guildId, config);
+const server = app.listen(process.env.PORT || 3000, () => {
+  logger.info(`Server started on port ${process.env.PORT || 3000}`);
 });
 
 const AppdataSource = new DataSource({
