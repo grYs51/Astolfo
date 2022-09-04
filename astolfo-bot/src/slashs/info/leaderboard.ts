@@ -66,14 +66,19 @@ export default class LeaderboardEvent extends BaseSlash {
       if (a) {
         a.count += stat.endedOn!.getTime() - stat.issuedOn.getTime();
       } else {
-        acc.push({
-          id: stat.memberId,
-          count: stat.endedOn!.getTime() - stat.issuedOn.getTime(),
-          name: client.guilds.cache
-            .get(guild.id)!
-            .members.cache.get(stat.memberId)!.user.username,
-          // stat.member.guildName,
-        });
+        if (
+          client.guilds.cache.get(guild.id)!.members.cache.get(stat.memberId)
+        ) {
+          acc.push({
+            id: stat.memberId,
+            count: stat.endedOn!.getTime() - stat.issuedOn.getTime(),
+            name:
+              client.guilds.cache
+                .get(guild.id)!
+                .members.cache.get(stat.memberId)?.user.username || 'Unknown',
+            // stat.member.guildName,
+          });
+        }
       }
       return acc;
     }, [] as Leaderboard[]);
