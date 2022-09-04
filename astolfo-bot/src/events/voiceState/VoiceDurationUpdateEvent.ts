@@ -1,11 +1,15 @@
 // https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-voiceStateUpdate
-import {  TextChannel, VoiceBasedChannel, VoiceChannel, VoiceState } from 'discord.js';
+import {
+  TextChannel,
+  VoiceBasedChannel,
+  VoiceChannel,
+  VoiceState,
+} from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { GuildStatsLog } from '../../typeOrm/entities/GuildsStatsLog';
 import { VoiceStateHandler } from '../../utils/handlers/voiceStateHandler/services/voiceStateHandler.service';
 import { Info, VoiceType } from '../../utils/types';
-
 
 enum types {
   DEAF = 'selfDeaf',
@@ -107,19 +111,19 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
         this.voicestate,
       );
     }
+
     let guildStat: GuildStatsLog = {
-      // ...userInfo,
       type,
       id: userInfo.member.id + userInfo.guild.id,
-      issuedOn: new Date(),
+      issuedOn: date,
       memberId: userInfo.member.id,
       guildId: userInfo.guild.id,
-      channelId:  userInfo.channel.id,
+      channelId: userInfo.channel.id,
     };
     if (audit) {
       guildStat = {
         issuedById: audit.issuedBy || undefined,
-        issuedOn: new Date(),
+        issuedOn: date,
         memberId: userInfo.member.id,
         guildId: userInfo.guild.id,
         channelId: userInfo.channel.id,
@@ -157,7 +161,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     for (let i = voiceUsers.length - 1; i >= 0; i--) {
       const voiceUser = voiceUsers[i];
       if (
-        voiceUser.memberId === userInfo.member.id  &&
+        voiceUser.memberId === userInfo.member.id &&
         voiceUser.type === type
       ) {
         voiceUser.endedOn = endDate;

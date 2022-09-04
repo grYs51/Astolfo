@@ -1,7 +1,7 @@
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import BaseSlash from '../../utils/structures/BaseSlash';
 import client from '../../client/client';
-import { CommandInteraction, CacheType, MessageEmbed } from 'discord.js';
+import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 import * as mc from 'minecraft-server-util';
 
 const options = {
@@ -37,19 +37,18 @@ export default class McStatusEvent extends BaseSlash {
   ): Promise<void> {
     await interaction.deferReply().catch((err) => console.log(err.message));
 
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setColor('#FF69B4')
       .setAuthor({
         name: interaction.user.username,
         iconURL: interaction.user.displayAvatarURL({
           size: 64,
-          dynamic: true,
         }),
       })
       .setTitle('Status');
 
     mc.status('40.68.145.3', 25565, options)
-      .then((result) => {        
+      .then((result) => {
         embed.addFields(
           {
             name: 'Server Status',
@@ -61,12 +60,12 @@ export default class McStatusEvent extends BaseSlash {
           },
         );
         if (result.players.online > 0)
-          embed.addField(
-            'Who',
-            result.players
+          embed.addFields({
+            name: 'Who',
+            value: result.players
               .sample!.map((player) => player.name)
               .reduce((agg, curr) => `${agg}${curr}\n `, ''),
-          );
+          });
         interaction.editReply({ embeds: [embed] });
       })
       .catch((error) => {

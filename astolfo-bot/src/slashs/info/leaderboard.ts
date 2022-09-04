@@ -1,5 +1,5 @@
 import humanizeDuration from 'humanize-duration';
-import { CommandInteraction, CacheType, MessageEmbed } from 'discord.js';
+import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import { Repository } from 'typeorm';
 import AppdataSource from '../..';
@@ -36,12 +36,13 @@ export default class LeaderboardEvent extends BaseSlash {
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {
-
     const guild = interaction.guild;
     if (!guild) {
-      await interaction.reply({
-        content: 'This command can only be used in a server.',
-      });
+      await interaction
+        .reply({
+          content: 'This command can only be used in a server.',
+        })
+        .catch(console.error);
       return;
     }
 
@@ -110,7 +111,7 @@ export default class LeaderboardEvent extends BaseSlash {
         };
       });
 
-    const embed = new MessageEmbed()
+    const embed = new EmbedBuilder()
       .setColor('#000000')
       .setTitle('Leaderboard')
       .setDescription('Time spend in voice channels')
@@ -123,7 +124,7 @@ export default class LeaderboardEvent extends BaseSlash {
         }),
       );
 
-    await interaction.editReply({ embeds: [embed] });
+    await interaction.editReply({ embeds: [embed] }).catch(console.error);
   }
 }
 

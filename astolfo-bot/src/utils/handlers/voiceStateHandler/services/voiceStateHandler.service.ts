@@ -32,11 +32,11 @@ export class VoiceStateHandler implements IVoiceStateHandler {
     try {
       const fetchedLogs = await newState.guild.fetchAuditLogs({
         limit: 1,
-        type: type as GuildAuditLogsResolvable,
+        type: type as unknown as GuildAuditLogsResolvable,
       });
 
       const disconnectLog = fetchedLogs.entries.first();
-      
+
       if (disconnectLog?.changes[0]) {
         type += `_${disconnectLog.changes[0].key.toString().toUpperCase()}`;
       }
@@ -105,6 +105,7 @@ export class VoiceStateHandler implements IVoiceStateHandler {
       console.log(e);
     }
   }
+
   async saveRepository(
     guild: Guild,
     member: GuildMember,
@@ -128,7 +129,7 @@ export class VoiceStateHandler implements IVoiceStateHandler {
     try {
       const fetchedLogs = await voiceState.guild.fetchAuditLogs({
         limit: 1,
-        type: type as GuildAuditLogsResolvable,
+        type: type as unknown as GuildAuditLogsResolvable,
       });
       type = type.slice(0, -5) as VoiceType;
 

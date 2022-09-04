@@ -6,20 +6,22 @@ import {
   registerSlash,
 } from './utils/registry';
 import DiscordClient from './client/client';
-import { Collection, Intents } from 'discord.js';
+import { Collection, IntentsBitField } from 'discord.js';
 import { DataSource } from 'typeorm';
 import { GuildConfiguration } from './typeOrm/entities/GuildConfiguration';
 import { io } from 'socket.io-client';
 import { entities } from './typeOrm/entities';
 import { DiscordInteractions } from 'slash-commands';
 import discordModals from 'discord-modals';
+import * as DisTube from 'distube';
 const client = new DiscordClient({
   intents: [
-    Intents.FLAGS.GUILDS,
-    Intents.FLAGS.GUILD_MESSAGES,
-    Intents.FLAGS.GUILD_MEMBERS,
-    Intents.FLAGS.GUILD_VOICE_STATES,
-    Intents.FLAGS.GUILD_PRESENCES,
+    IntentsBitField.Flags.Guilds,
+    IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMembers,
+    IntentsBitField.Flags.GuildVoiceStates,
+    IntentsBitField.Flags.GuildPresences,
+    IntentsBitField.Flags.MessageContent,
   ],
 });
 
@@ -32,6 +34,9 @@ const interaction = new DiscordInteractions({
 discordModals(client);
 
 const socket = io('http://localhost:3001');
+
+const distube = new DisTube.default(client);
+client.distube = distube;
 
 socket.on('guildConfigUpdate', (config: GuildConfiguration) => {
   client.configs.set(config.guildId, config);
