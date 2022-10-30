@@ -3,8 +3,8 @@ import BaseEvent from '../utils/structures/BaseEvent';
 import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
 import { GuildConfiguration, GuildStats } from '../db/models';
-import { DataSource } from 'typeorm';
 import { Db } from '../db';
+
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();

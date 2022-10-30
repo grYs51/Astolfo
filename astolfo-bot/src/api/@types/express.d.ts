@@ -1,5 +1,6 @@
 import { ValidateFunction } from 'ajv';
 import pino from 'pino';
+import DiscordClient from '../../client/client';
 import { Db } from '../../db';
 
 declare global {
@@ -17,6 +18,11 @@ declare global {
       db: Db;
 
       /**
+       * Discord Client.
+       */
+      discordClient: DiscordClient;
+
+      /**
        * The logger bound to the request.
        */
       log: pino.Logger;
@@ -24,7 +30,10 @@ declare global {
       /**
        * Validate and return a request part.
        */
-      validate<T>(validate: ValidateFunction<T>, part?: 'body' | 'query' | 'params'): T;
+      validate<T>(
+        validate: ValidateFunction<T>,
+        part?: 'body' | 'query' | 'params',
+      ): T;
     }
   }
 }

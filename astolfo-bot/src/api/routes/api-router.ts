@@ -4,6 +4,7 @@ import logging from '../middleware/logging';
 import datasource from '../middleware/datasource-db';
 import requestId from '../middleware/request-id';
 import validate from '../middleware/validate';
+import discordClient from '../middleware/discord-client';
 import { NotFound } from '../utils/http-error';
 import registerGuildStatsRoutes from './guildstats';
 
@@ -15,6 +16,7 @@ apiRouter.use(requestId);
 apiRouter.use(logging);
 apiRouter.use(validate);
 apiRouter.use(datasource);
+apiRouter.use(discordClient);
 
 // Register all plugins (aka routes)
 registerGuildStatsRoutes(apiRouter);

@@ -8,7 +8,19 @@ export const getAll: RequestHandler<unknown, GuildStats[]> = asyncHandler(async 
 
   const id = guildId as string;
 
-  const stats = await req.db.guildStats.find({ where: { guildId: id } }) || [];
+  const stats = await req.db.guildStats.findOne({ where: { guildId: id }, });
 
-  res.status(200).send(stats);
+  if (!stats) {
+    res.status(404);
+    throw new Error('Guild stats not found');
+  }
+
+  
+  const test : GuildStats[] = [{
+    ...stats,
+    guildId: req.discordClient.guilds.cache.get(stats.guildId)?.name || id,
+  }];
+
+
+  res.status(200).send(test);
 });

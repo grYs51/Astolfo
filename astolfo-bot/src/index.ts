@@ -13,7 +13,7 @@ import logger from './api/utils/logger';
 import { createClient, getDb } from './db';
 import { GuildConfiguration } from './db/models';
 
-const client = new DiscordClient({
+export const client = new DiscordClient({
   intents: [
     IntentsBitField.Flags.Guilds,
     IntentsBitField.Flags.GuildMessages,
@@ -32,8 +32,7 @@ const interaction = new DiscordInteractions({
 
 async function main() {
   // create a new express app instance
-  const app = createApp();
-
+  
   
   await createClient()
   .then(async (connection) => {
@@ -53,17 +52,18 @@ async function main() {
     await registerSlash(client, '../slashs');
     
     client.slashs.forEach((slash) => {
-        slash.createInteraction(client, interaction);
-      });
-      
-      await client.login(process.env.BOT_TOKEN);
-    })
-    .catch((error) => {
-      logger.error('Failed to connect to pg');
-      logger.error(error);
-      process.exit(1);
+      slash.createInteraction(client, interaction);
     });
-
+    
+    await client.login(process.env.BOT_TOKEN);
+  })
+  .catch((error) => {
+    logger.error('Failed to connect to pg');
+    logger.error(error);
+    process.exit(1);
+  });
+  
+    const app = createApp();
     app.listen(process.env.PORT || 3000, () => {
       logger.info(`Server started on port ${process.env.PORT || 3000}`);
     });
@@ -73,4 +73,3 @@ async function main() {
     logger.error('Failed to start bot', error);
     process.exit(1);
 });
-
