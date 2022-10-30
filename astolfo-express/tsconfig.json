@@ -1,0 +1,14 @@
+{
+  "extends": "@tsconfig/node16",
+  "ts-node": {
+    "transpileOnly": true /* Use TypeScript's faster transpileModule */,
+    "files": true /* Load files, include and exclude from tsconfig.json on startup */
+  },
+  "compilerOptions": {
+    "allowJs": true,
+    "outDir": "./dist" /* Redirect output structure to the directory. */,
+    "noUncheckedIndexedAccess": true /* Include 'undefined' in index signature results */,
+    "resolveJsonModule": true /* Allow json imports */
+  },
+  "include": ["src", "test", "migrations", "jest.config.ts", "jest.setup.ts", "migrate-mongo-config.js"]
+}
