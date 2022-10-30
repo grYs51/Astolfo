@@ -1,9 +1,7 @@
 import express, { Express } from 'express';
 import path from 'node:path';
 import cors from 'cors';
-import proxy from 'express-http-proxy';
 import apiRouter from './routes/api-router';
-import logger from './utils/logger';
 
 export default function createApp(): Express {
   const app = express();

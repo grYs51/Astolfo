@@ -1,10 +1,10 @@
 
 import { Channel, Guild, GuildMember } from 'discord.js';
-import { GuildStatsLog } from '../../typeOrm/entities/GuildsStatsLog';
+import { GuildStats } from '../../db/models';
 import { VoiceType } from '../types';
 
 
-export default class GuildStatDto implements GuildStatsLog {
+export default class GuildStatDto implements GuildStats {
   constructor(
     guild: Guild,
     member: GuildMember,

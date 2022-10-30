@@ -2,10 +2,9 @@
 import { VoiceState } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
-import { GuildStatsLog } from '../../typeOrm/entities/GuildsStatsLog';
 import { Info } from '../../utils/types';
 import { Repository } from 'typeorm';
-import { AppdataSource } from '../..';
+import { GuildStats } from '../../db/models';
 
 enum types {
   DEAF = 'selfDeaf',
@@ -18,9 +17,6 @@ enum types {
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   voicestate: VoiceState;
   constructor(
-    private readonly guildStatRepository: Repository<GuildStatsLog> = AppdataSource.getRepository(
-      GuildStatsLog,
-    ),
   ) {
     super('voiceStateUpdate');
   }
@@ -37,7 +33,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
 
     // User joined a voice channel
     if (oldState.channel === null && newState.channel !== null) {
-      const GuildStatsLog: GuildStatsLog = {
+      const GuildStatsLog: GuildStats = {
         guildId: newState.guild.id,
         memberId: newState.member!.id,
         channelId: newState.channel!.id,
@@ -55,7 +51,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
         const voiceUser = voiceUsers[i];
         if (voiceUser.memberId === userInfo.member.id) {
           voiceUser.endedOn = date;
-          await this.guildStatRepository.save(voiceUser);
+          await client.dataSource.guildStats.save(voiceUser);
           voiceUsers.splice(i, 1);
         }
       }
@@ -69,12 +65,12 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
           const voiceUser = voiceUsers[i];
           if (voiceUser.memberId === userInfo.member.id) {
             voiceUser.endedOn = date;
-            await this.guildStatRepository.save(voiceUser);
+            await client.dataSource.guildStats.save(voiceUser);
             voiceUsers.splice(i, 1);
           }
         }
 
-        const GuildStatsLog: GuildStatsLog = {
+        const GuildStatsLog: GuildStats = {
           guildId: newState.guild.id,
           memberId: newState.member!.id,
           channelId: newState.channel!.id,

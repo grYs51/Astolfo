@@ -1,15 +1,9 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
-import { GuildConfiguration } from '../../typeOrm/entities/GuildConfiguration';
-import { AppdataSource } from '../..';
 
 export default class WelcomechannelCommand extends BaseCommand {
-  constructor(
-    private readonly guildConfigRepository = AppdataSource.getRepository(
-      GuildConfiguration,
-    ),
-  ) {
+  constructor() {
     super('welcomechannel', 'mod', []);
   }
 
@@ -22,7 +16,7 @@ export default class WelcomechannelCommand extends BaseCommand {
     const [newChannelId] = args;
     try {
       const config = client.configs.get(message.guildId!);
-      const updatedConfig = await this.guildConfigRepository.save({
+      const updatedConfig = await client.dataSource.guildConfigurations.save({
         ...config,
         welcomeChannelId: newChannelId,
       });

@@ -2,21 +2,15 @@
 import { Guild } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
-import { GuildConfiguration } from '../../typeOrm/entities/GuildConfiguration';
 import { Repository } from 'typeorm';
-import { AppdataSource } from '../..';
 
 export default class GuildCreateEvent extends BaseEvent {
-  constructor(
-    private readonly guildConfigRepository: Repository<GuildConfiguration> = AppdataSource.getRepository(
-      GuildConfiguration,
-    ),
-  ) {
+  constructor() {
     super('guildCreate');
   }
 
   async run(client: DiscordClient, guild: Guild) {
-    const config = await this.guildConfigRepository.findOneBy({
+    const config = await client.dataSource.guildConfigurations.findOneBy({
       guildId: guild.id,
     });
 
@@ -25,11 +19,13 @@ export default class GuildCreateEvent extends BaseEvent {
       client.configs.set(guild.id, config);
     } else {
       console.log('A configuration was not found. Creating one!');
-      const newConfig = this.guildConfigRepository.create({
+      const newConfig = client.dataSource.guildConfigurations.create({
         guildId: guild.id,
       });
 
-      const savedConfig = await this.guildConfigRepository.save(newConfig);
+      const savedConfig = await client.dataSource.guildConfigurations.save(
+        newConfig,
+      );
       client.configs.set(guild.id, savedConfig);
     }
   }

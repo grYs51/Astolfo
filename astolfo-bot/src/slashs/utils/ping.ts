@@ -1,7 +1,6 @@
 import {
   CacheType,
   CommandInteraction,
-  ModalSubmitInteraction,
 } from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import client from '../../client/client';

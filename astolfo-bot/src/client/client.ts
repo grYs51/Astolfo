@@ -1,17 +1,18 @@
 import { Client, ClientOptions, Collection } from 'discord.js';
 import BaseEvent from '../utils/structures/BaseEvent';
 import BaseCommand from '../utils/structures/BaseCommand';
-import { GuildConfiguration } from '../typeOrm/entities/GuildConfiguration';
-import { GuildStatsLog } from '../typeOrm/entities/GuildsStatsLog';
 import BaseSlash from '../utils/structures/BaseSlash';
-import BaseModal from '../utils/structures/BaseModal';
+import { GuildConfiguration, GuildStats } from '../db/models';
+import { DataSource } from 'typeorm';
+import { Db } from '../db';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
   private _events = new Collection<string, BaseEvent>();
   private _slashs = new Collection<string, BaseSlash>();
   private _configs = new Collection<string, GuildConfiguration>();
-  private _voiceUsers = new Array<GuildStatsLog>();
+  private _voiceUsers = new Array<GuildStats>();
+  private _dataSource: Db;
 
   constructor(options: ClientOptions) {
     super(options);
@@ -25,7 +26,7 @@ export default class DiscordClient extends Client {
     return this._events;
   }
 
-  get slashs(): Collection<string, BaseSlash | BaseModal> {
+  get slashs(): Collection<string, BaseSlash> {
     return this._slashs;
   }
 
@@ -33,15 +34,23 @@ export default class DiscordClient extends Client {
     return this._configs;
   }
 
-  get voiceUsers(): Array<GuildStatsLog> {
+  get voiceUsers(): Array<GuildStats> {
     return this._voiceUsers;
+  }
+
+  get dataSource(): Db {
+    return this._dataSource;
   }
 
   set configs(guildConfigs: Collection<string, GuildConfiguration>) {
     this._configs = guildConfigs;
   }
 
-  set voiceUsers(GuildStatsLogs: Array<GuildStatsLog>) {
+  set voiceUsers(GuildStatsLogs: Array<GuildStats>) {
     this._voiceUsers = GuildStatsLogs;
+  }
+
+  set dataSource(dataSource: Db) {
+    this._dataSource = dataSource;
   }
 }

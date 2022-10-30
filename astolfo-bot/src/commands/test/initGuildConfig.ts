@@ -2,16 +2,9 @@ import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
 import process from 'process';
-import { Repository } from 'typeorm';
-import { GuildConfiguration } from '../../typeOrm/entities/GuildConfiguration';
-import { AppdataSource } from '../..';
 
 export default class InitConfigs extends BaseCommand {
-  constructor(
-    private readonly guildConfigRepository: Repository<GuildConfiguration> = AppdataSource.getRepository(
-      GuildConfiguration,
-    ),
-  ) {
+  constructor() {
     super('configs', 'testing', []);
   }
 
@@ -25,11 +18,13 @@ export default class InitConfigs extends BaseCommand {
       console.log('A configuration was not found. Creating one!');
       client.guilds.cache.forEach(async (guild) => {
         console.log('A configuration was not found. Creating one!');
-        const newConfig = this.guildConfigRepository.create({
+        const newConfig = client.dataSource.guildConfigurations.create({
           guildId: guild.id,
         });
 
-        const savedConfig = await this.guildConfigRepository.save(newConfig);
+        const savedConfig = await client.dataSource.guildConfigurations.save(
+          newConfig,
+        );
         client.configs.set(guild.id!, savedConfig);
       });
     } catch (e) {

@@ -1,18 +1,11 @@
 import humanizeDuration from 'humanize-duration';
 import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
-import { Repository } from 'typeorm';
-import { AppdataSource } from '../..';
 import client from '../../client/client';
-import { GuildStatsLog } from '../../typeOrm/entities/GuildsStatsLog';
 import BaseSlash from '../../utils/structures/BaseSlash';
 
 export default class LeaderboardEvent extends BaseSlash {
-  constructor(
-    private readonly guildStatsRepository: Repository<GuildStatsLog> = AppdataSource.getRepository(
-      GuildStatsLog,
-    ),
-  ) {
+  constructor() {
     super('leaderboard');
   }
 
@@ -48,7 +41,7 @@ export default class LeaderboardEvent extends BaseSlash {
 
     await interaction.deferReply().catch((err) => console.log(err.message));
 
-    const stats = await this.guildStatsRepository.find({
+    const stats = await client.dataSource.guildStats.find({
       where: {
         guildId: guild.id,
         type: 'VOICE',

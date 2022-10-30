@@ -1,4 +1,4 @@
-import { VoiceType } from '../../db/models';
+import { VoiceType } from '../../../db/models';
 
 export interface GuildStatsDTO {
   id: string;

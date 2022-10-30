@@ -4,14 +4,11 @@ import { GuildConfiguration, GuildStats } from './models';
 
 let currentClient: DataSource | undefined;
 
-export async function createClient(): Promise<DataSource | null> {
-  try {
-    const val = await dataSource.initialize();
-    currentClient = val;
-    return val;
-  } catch (err) {
-    return null;
-  }
+export async function createClient(): Promise<DataSource> {
+    return dataSource.initialize().then((client) => {
+        currentClient = client;
+        return client;
+    });
 }
 
 export function getCurrentClient(): DataSource | null {

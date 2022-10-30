@@ -1,6 +1,6 @@
 import { ValidateFunction } from 'ajv';
 import pino from 'pino';
-import { Db } from '../db';
+import { Db } from '../../db';
 
 declare global {
   namespace Express {
