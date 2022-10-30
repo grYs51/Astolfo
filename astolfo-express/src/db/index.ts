@@ -1,45 +1,42 @@
-import { Collection, MongoClient, OptionalId } from 'mongodb';
-import { DbGenre, DbGuildConfiguration, DbGuildStats } from './models';
+import { DataSource, Repository } from 'typeorm';
+import dataSource from './app-data-source';
+import { GuildConfiguration, GuildStats } from './models';
 
-let currentClient: MongoClient | undefined;
+let currentClient: DataSource | undefined;
 
-export function createClient(uri?: string): MongoClient {
-  if (!uri) throw new Error('No Mongo URI configured (MONGO_URI)');
-
-  currentClient = new MongoClient(uri);
-
-  return currentClient;
+export async function createClient(): Promise<DataSource | null> {
+  try {
+    const val = await dataSource.initialize();
+    currentClient = val;
+    return val;
+  } catch (err) {
+    return null;
+  }
 }
 
-export function getCurrentClient(): MongoClient | null {
+export function getCurrentClient(): DataSource | null {
   return currentClient || null;
 }
 
-export async function connect(client: MongoClient): Promise<void> {
-  await client.connect();
-}
-
 export interface Db {
-  genres: Collection<OptionalId<DbGenre>>;
-  guildConfigurations: Collection<OptionalId<DbGuildConfiguration>>;
-  guildStats: Collection<OptionalId<DbGuildStats>>;
+  guildConfigurations: Repository<GuildConfiguration>;
+  guildStats: Repository<GuildStats>;
 }
 
 export function getDb(): Readonly<Db> {
   const client = currentClient;
   if (!client) throw new Error('No Db connected');
 
-  const db = client.db();
+  const db = dataSource;
 
   return {
-    genres: db.collection('genres'),
-    guildConfigurations: db.collection('guild_configurations'),
-    guildStats: db.collection('guild_stats'),
+    guildConfigurations: db.getRepository('guild_configurations'),
+    guildStats: db.getRepository('guild_stats'),
   };
 }
 
 export async function disconnect(): Promise<void> {
   if (!currentClient) return;
 
-  await currentClient.close();
+  await currentClient.destroy();
 }

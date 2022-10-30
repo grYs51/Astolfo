@@ -1,8 +1,7 @@
 import { json, Router } from 'express';
-
 import errorHandler from '../middleware/error-handler';
 import logging from '../middleware/logging';
-import mongoDb from '../middleware/mongo-db';
+import datasource from '../middleware/datasource-db';
 import requestId from '../middleware/request-id';
 import validate from '../middleware/validate';
 import { NotFound } from '../utils/http-error';
@@ -15,7 +14,7 @@ apiRouter.use(json());
 apiRouter.use(requestId);
 apiRouter.use(logging);
 apiRouter.use(validate);
-apiRouter.use(mongoDb);
+apiRouter.use(datasource);
 
 // Register all plugins (aka routes)
 registerGuildStatsRoutes(apiRouter);

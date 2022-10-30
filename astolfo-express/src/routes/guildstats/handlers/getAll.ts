@@ -1,12 +1,16 @@
 import asyncHandler from 'express-async-handler';
 import { RequestHandler } from 'express';
-import { GuildStatsDTO } from '../resources';
-import { mapDbGuildStatsToGuildStatsDTO } from '../mappers';
+import { GuildStats } from '../../../db/models';
 
-export const getAll: RequestHandler<unknown, GuildStatsDTO[]> = asyncHandler(async (req, res) => {
-  const stats = await req.db.guildStats.find({}).toArray();
 
-  const reply = stats.map(mapDbGuildStatsToGuildStatsDTO);
+export const getAll: RequestHandler<unknown, GuildStats[]> = asyncHandler(async (req, res) => {
+  // search params
+  const { guildid: guildId } = req.query;
 
-  res.status(200).send(reply);
+  const id = guildId as string;
+
+  // get the guild stats from the db
+  const stats = await req.db.guildStats.find({ where: { guildId: id } }) || [];
+
+  res.status(200).send(stats);
 });

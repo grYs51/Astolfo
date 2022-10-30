@@ -15,8 +15,6 @@
     "postbuild": "copy-files-from-to",
     "cleanup": "rimraf coverage dist",
     "lint": "concurrently -n tsc,lint, -c \"cyan.bold,green.bold\" \"tsc --noEmit --pretty\" \"eslint --ext .js,.ts ./\"",
-    "migrate": "NODE_OPTIONS='-r dotenv/config' migrate-mongo",
-    "migrate:test": "MONGO_URI='mongodb://localhost/t-profile-gen-test' migrate-mongo",
     "serve": "nodemon -w ./src -r dotenv/config | pino-pretty",
     "test": "jest",
     "test:run": "jest",
@@ -64,9 +62,10 @@
     "express-jwt": "^7.7.5",
     "http-terminator": "^3.2.0",
     "jwks-rsa": "^2.1.4",
-    "migrate-mongo": "^9.0.0",
     "mockdate": "^3.0.5",
-    "mongodb": "^4.9.0",
-    "pino": "^8.4.2"
+    "pg": "^8.8.0",
+    "pino": "^8.4.2",
+    "reflect-metadata": "^0.1.13",
+    "typeorm": "^0.3.10"
   }
 }

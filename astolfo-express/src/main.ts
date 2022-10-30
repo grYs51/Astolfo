@@ -1,21 +1,27 @@
 import { createHttpTerminator } from 'http-terminator';
 import createApp from './app';
-import { connect, createClient, disconnect } from './db';
+import { createClient, disconnect } from './db';
+import dataSource from './db/app-data-source';
 import logger from './utils/logger';
 
 const PORT = process.env.PORT || 3000;
 
 // Good practice to stop processing when an unhandledRejection occurs
 process.on('unhandledRejection', (err) => {
-  // eslint-disable-next-line no-console
-  console.error(err);
+  logger.error(err);
   process.exit(1);
 });
 
 async function main() {
-  // create mongo db client
-  const client = createClient(process.env.MONGO_URI);
-  await connect(client);
+  try {
+    await createClient().then((val) => {
+      logger.info('Data Source has been initialized!');
+    });
+  } catch (err) {
+    logger.error('Failed to connect to pg', err);
+    process.exit(1);
+  }
+
 
   // create express app
   const app = createApp();

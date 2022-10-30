@@ -1,3 +1,2 @@
-export * from './db-genre';
-export * from './db-guild-configuration';
-export * from './db-guild-stats';
+export * from './guild-configuration.entity';
+export * from './guild-stats.entity';
