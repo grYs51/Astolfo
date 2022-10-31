@@ -9,7 +9,7 @@ const myDataSource = new DataSource({
   database: process.env.DB_NAME,
   entities: ['src/db/models/*.entity.ts'],
   logging: false,
-  synchronize: false,
+  synchronize: true,
 });
 
 export default myDataSource;

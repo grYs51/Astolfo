@@ -8,7 +8,7 @@ interface IdParam {
 const idParam: JSONSchemaType<IdParam> = {
   type: 'object',
   properties: {
-    id: { type: 'string', format: 'object-id' },
+    id: { type: 'string' },
   },
   required: ['id'],
 };
