@@ -26,16 +26,16 @@ export default class McStatusEvent extends BaseSlash {
     await interaction
       .createApplicationCommand(command)
       .then(() => {
-        console.log('mcstatus command created!');
+        client.logger.info('mcstatus command created!');
       })
-      .catch(console.error);
+      .catch(client.logger.error);
   }
 
   async run(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {
-    await interaction.deferReply().catch((err) => console.log(err.message));
+    await interaction.deferReply().catch(client.logger.error);
 
     const embed = new EmbedBuilder()
       .setColor('#FF69B4')
@@ -69,7 +69,7 @@ export default class McStatusEvent extends BaseSlash {
         interaction.editReply({ embeds: [embed] });
       })
       .catch((error) => {
-        console.error('test', error.message);
+        client.logger.error('test', error.message);
         return interaction.editReply(
           'It seems like the server is down, kinda sad...',
         );

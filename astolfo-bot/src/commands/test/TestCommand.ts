@@ -15,6 +15,6 @@ export default class TestCommand extends BaseCommand {
       },
     });
 
-    message.react('💩').catch(console.error);
+    message.react('💩').catch(client.logger.error);
   }
 }

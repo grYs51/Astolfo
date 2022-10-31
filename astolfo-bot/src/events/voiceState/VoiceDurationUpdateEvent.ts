@@ -16,12 +16,11 @@ enum types {
 }
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   voicestate: VoiceState;
-  constructor(
-  ) {
+  constructor() {
     super('voiceStateUpdate');
   }
 
-  async run(client: DiscordClient, oldState: VoiceState, newState: VoiceState) {    
+  async run(client: DiscordClient, oldState: VoiceState, newState: VoiceState) {
     const voiceUsers = client.voiceUsers;
     const date = new Date();
     this.voicestate = newState;
@@ -33,8 +32,6 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
 
     // User joined a voice channel
     if (oldState.channel === null && newState.channel !== null) {
-      console.log('User joined a voice channel');
-      
       const GuildStatsLog: GuildStats = {
         guildId: newState.guild.id,
         memberId: newState.member!.id,
@@ -49,7 +46,6 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
 
     // User left a voice channel
     if (oldState.channel !== null && newState.channel === null) {
-      console.log('User left a voice channel');
       for (let i = voiceUsers.length - 1; i >= 0; i--) {
         const voiceUser = voiceUsers[i];
         if (voiceUser.memberId === userInfo.member.id) {

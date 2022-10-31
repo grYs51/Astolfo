@@ -23,7 +23,7 @@ export default class PrefixCommand extends BaseCommand {
       client.configs.set(message.guildId!, updatedConfig);
       message.channel.send('Update prefix succesfully');
     } catch (e) {
-      console.log(e);
+      client.logger.error(e);
       message.channel.send('Something went wrong!');
     }
   }

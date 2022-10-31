@@ -43,7 +43,6 @@ export default function createApp(): Express {
         pool: pgPool, // Connection pool
         tableName: 'user_sessions', // Use another table-name than the default "session" one
         createTableIfMissing: true,
-        // Insert connect-pg-simple options here
       }),
     }),
   );

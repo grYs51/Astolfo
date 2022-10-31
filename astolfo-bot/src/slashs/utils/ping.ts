@@ -1,7 +1,4 @@
-import {
-  CacheType,
-  CommandInteraction,
-} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import client from '../../client/client';
 import BaseSlash from '../../utils/structures/BaseSlash';
@@ -11,7 +8,10 @@ export default class PingEvent extends BaseSlash {
     super('ping');
   }
 
-  async run(client: client, interaction: CommandInteraction<CacheType>): Promise<void> {
+  async run(
+    client: client,
+    interaction: CommandInteraction<CacheType>,
+  ): Promise<void> {
     interaction.reply('Pong!');
   }
 
@@ -24,8 +24,8 @@ export default class PingEvent extends BaseSlash {
     await interaction
       .createApplicationCommand(command)
       .then(() => {
-        console.log('Ping command created!');
+        client.logger.info('Ping command created!');
       })
-      .catch(console.error);
+      .catch(client.logger.error);
   }
 }

@@ -21,9 +21,9 @@ export default class LeaderboardEvent extends BaseSlash {
     await interaction
       .createApplicationCommand(command)
       .then(() => {
-        console.log('Leaderboard command created!');
+        client.logger.info('Leaderboard command created!');
       })
-      .catch(console.error);
+      .catch(client.logger.error);
   }
   async run(
     client: client,
@@ -35,11 +35,11 @@ export default class LeaderboardEvent extends BaseSlash {
         .reply({
           content: 'This command can only be used in a server.',
         })
-        .catch(console.error);
+        .catch(client.logger.error);
       return;
     }
 
-    await interaction.deferReply().catch((err) => console.log(err.message));
+    await interaction.deferReply().catch(client.logger.error);
 
     const stats = await client.dataSource.guildStats.find({
       where: {
@@ -122,7 +122,7 @@ export default class LeaderboardEvent extends BaseSlash {
         }),
       );
 
-    await interaction.editReply({ embeds: [embed] }).catch(console.error);
+    await interaction.editReply({ embeds: [embed] }).catch(client.logger.error);
   }
 }
 

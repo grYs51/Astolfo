@@ -4,7 +4,7 @@ import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
 import { GuildConfiguration, GuildStats } from '../db/models';
 import { Db } from '../db';
-
+import { Logger } from 'pino';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
@@ -13,6 +13,7 @@ export default class DiscordClient extends Client {
   private _configs = new Collection<string, GuildConfiguration>();
   private _voiceUsers = new Array<GuildStats>();
   private _dataSource: Db;
+  private _logger: Logger;
 
   constructor(options: ClientOptions) {
     super(options);
@@ -42,6 +43,10 @@ export default class DiscordClient extends Client {
     return this._dataSource;
   }
 
+  get logger(): Logger {
+    return this._logger;
+  }
+
   set configs(guildConfigs: Collection<string, GuildConfiguration>) {
     this._configs = guildConfigs;
   }
@@ -52,5 +57,9 @@ export default class DiscordClient extends Client {
 
   set dataSource(dataSource: Db) {
     this._dataSource = dataSource;
+  }
+
+  set logger(logger: Logger) {
+    this._logger = logger;
   }
 }

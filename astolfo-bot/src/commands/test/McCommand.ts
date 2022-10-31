@@ -46,7 +46,7 @@ export default class McCommand extends BaseCommand {
         message.channel.send({ embeds: [embed] });
       })
       .catch((error) => {
-        console.error('test', error.message);
+        client.logger.error('test', error.message);
         message.channel.send('It seems like the server is down, kinda sad...');
       });
   }

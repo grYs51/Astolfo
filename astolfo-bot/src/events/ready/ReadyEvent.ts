@@ -6,6 +6,6 @@ export default class ReadyEvent extends BaseEvent {
     super('ready');
   }
   async run(client: DiscordClient) {
-    console.log('Astolfo is ready!!');
+    client.logger.info('Astolfo is ready!!');
   }
 }

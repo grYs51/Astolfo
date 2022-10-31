@@ -15,10 +15,10 @@ export default class GuildCreateEvent extends BaseEvent {
     });
 
     if (config) {
-      console.log('A configuration was found!');
+      client.logger.info('A configuration was found!');
       client.configs.set(guild.id, config);
     } else {
-      console.log('A configuration was not found. Creating one!');
+      client.logger.info('A configuration was not found. Creating one!');
       const newConfig = client.dataSource.guildConfigurations.create({
         guildId: guild.id,
       });

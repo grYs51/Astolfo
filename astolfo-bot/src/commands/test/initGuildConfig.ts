@@ -15,9 +15,9 @@ export default class InitConfigs extends BaseCommand {
     }
 
     try {
-      console.log('A configuration was not found. Creating one!');
+      client.logger.info('A configuration was not found. Creating one!');
       client.guilds.cache.forEach(async (guild) => {
-        console.log('A configuration was not found. Creating one!');
+        client.logger.info('A configuration was not found. Creating one!');
         const newConfig = client.dataSource.guildConfigurations.create({
           guildId: guild.id,
         });
@@ -28,6 +28,7 @@ export default class InitConfigs extends BaseCommand {
         client.configs.set(guild.id!, savedConfig);
       });
     } catch (e) {
+      client.logger.error(e);
       message.react('❌');
       return;
     }

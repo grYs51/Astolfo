@@ -10,7 +10,7 @@ export default class RemoveSlashCommand extends BaseCommand {
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
     const interaction = new DiscordInteractions({
-      applicationId: process.env.DISCORD_CLIENT_ID!,
+      applicationId: process.env.APPLICATION_ID!,
       authToken: process.env.BOT_TOKEN!,
       publicKey: process.env.PUBLIC_KEY!,
     });
@@ -19,10 +19,8 @@ export default class RemoveSlashCommand extends BaseCommand {
       commands.forEach((command) => {
         interaction
           .deleteApplicationCommand(command.id)
-          .then((res) => {
-            console.log(res);
-          })
-          .catch(console.error);
+          .then(client.logger.info)
+          .catch(client.logger.error);
       });
     });
     message.react('✅');
