@@ -4,8 +4,20 @@ import cors from 'cors';
 import apiRouter from './routes/api-router';
 import session from 'express-session';
 import passport from 'passport';
-
+import pg from 'pg';
+import expressSession from 'express-session';
+const pgSession = require('connect-pg-simple')(expressSession);
 require('./strategies/discord')
+
+
+const pgPool = new pg.Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASS,
+    port: process.env.DB_PORT,
+    
+});
 
 export default function createApp(): Express {
   const app = express();
@@ -18,6 +30,7 @@ export default function createApp(): Express {
     }),
   );
 
+  // enable session
   app.use(
     session({
       secret: process.env.SESSION_SECRET,
@@ -26,6 +39,12 @@ export default function createApp(): Express {
       cookie: {
         maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
       },
+      store: new pgSession({
+        pool: pgPool, // Connection pool
+        tableName: 'user_sessions', // Use another table-name than the default "session" one
+        createTableIfMissing: true,
+        // Insert connect-pg-simple options here
+      }),
     }),
   );
 
