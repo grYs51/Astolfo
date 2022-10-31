@@ -7,6 +7,7 @@ import validate from '../middleware/validate';
 import discordClient from '../middleware/discord-client';
 import { NotFound } from '../utils/http-error';
 import registerGuildStatsRoutes from './guildstats';
+import registerDiscordRoutes from './discord';
 import registerAuthRoutes from './auth';
 const apiRouter = Router();
 
@@ -21,6 +22,7 @@ apiRouter.use(discordClient);
 
 // Register all plugins (aka routes)
 registerAuthRoutes(apiRouter);
+registerDiscordRoutes(apiRouter);
 registerGuildStatsRoutes(apiRouter);
 
 // Catch all
