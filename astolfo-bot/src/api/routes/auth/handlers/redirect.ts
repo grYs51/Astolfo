@@ -3,9 +3,6 @@ import asyncHandler from 'express-async-handler';
 
 export const redirect: RequestHandler<unknown, any> = asyncHandler(
   async (req, res) => {
-
-    res.send(200);
-
-    // res.redirect('/');
+    res.redirect('http://localhost:4200');
   },
 );

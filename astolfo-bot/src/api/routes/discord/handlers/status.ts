@@ -8,8 +8,14 @@ export const status: RequestHandler<unknown, any> = asyncHandler(
   async (req, res) => {
     if (req.isAuthenticated()) {
       const user = req.user as LoggedUser;
-
-      res.send({ user });
+      const data = await axios
+        .get(`https://discord.com/api/users/@me`, {
+          headers: {
+            Authorization: `Bearer ${user.accessToken}`,
+          },
+        })
+        .then((response) => response.data);
+      res.send(data);
     } else {
       throw new Unauthorized();
     }

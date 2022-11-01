@@ -25,7 +25,7 @@ export default function createApp(): Express {
   // enable cors
   app.use(
     cors({
-      origin: '*',
+      origin: 'http://localhost:4200',
       credentials: true,
     }),
   );
