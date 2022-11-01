@@ -33,7 +33,7 @@ export default function createApp(): Express {
   // enable session
   app.use(
     session({
-      secret: process.env.SESSION_SECRET,
+      secret: process.env.DISCORD_CLIENT_SECRET,
       resave: false,
       saveUninitialized: false,
       cookie: {

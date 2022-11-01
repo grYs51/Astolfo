@@ -26,8 +26,8 @@ export const client = new DiscordClient({
 
 const interaction = new DiscordInteractions({
   applicationId: process.env.DISCORD_CLIENT_ID!,
-  authToken: process.env.BOT_TOKEN!,
-  publicKey: process.env.PUBLIC_KEY!,
+  authToken: process.env.DISCORD_BOT_TOKEN!,
+  publicKey: process.env.DISCORD_PUBLIC_KEY!,
 });
 
 async function main() {
@@ -55,7 +55,7 @@ async function main() {
         slash.createInteraction(client, interaction);
       });
 
-      await client.login(process.env.BOT_TOKEN);
+      await client.login(process.env.DISCORD_BOT_TOKEN);
     })
     .catch((error) => {
       logger.error('Failed to connect to pg');

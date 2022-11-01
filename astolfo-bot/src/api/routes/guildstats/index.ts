@@ -1,13 +1,9 @@
 import { Router } from 'express';
-import { getAll } from './handlers/getAll';
-import { getAllByGuildId } from './handlers/getAllByGuildId';
+import { isAuthenticated } from '../../middleware/isAuthenticated';
+import { getAll, getAllByGuildId } from './handlers';
 
 export default (router: Router) => {
-  router
-    .route('/v1/guild-stats')
-    .get(getAll);
+  router.route('/v1/guild-stats').get(isAuthenticated, getAll);
 
-  router
-    .route('/v1/guild-stats/:id')
-    .get(getAllByGuildId);
+  router.route('/v1/guild-stats/:id').get(isAuthenticated, getAllByGuildId);
 };

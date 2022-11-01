@@ -1,7 +1,6 @@
 import { Router } from 'express';
 import passport from 'passport';
-import { discordAuth } from './handlers/discord';
-import { redirect } from './handlers/redirect';
+import { discordAuth, redirect } from './handlers';
 
 export default (router: Router) => {
   router

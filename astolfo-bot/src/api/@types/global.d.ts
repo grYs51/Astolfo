@@ -11,13 +11,13 @@ declare global {
       DB_USER?: string;
       DB_PASS?: string;
       DB_NAME?: string;
-      PUBLIC_KEY?: string;
+      DISCORD_PUBLIC_KEY?: string;
       OWNER: string;
       SESSION_SECRET: string;
       DISCORD_CLIENT_ID: string;
       DISCORD_CLIENT_SECRET: string;
-      DISCORD_REDIRECT_URl: string;
-      BOT_TOKEN?: string;
+      DISCORD_REDIRECT_URL: string;
+      DISCORD_BOT_TOKEN?: string;
     }
   }
 }

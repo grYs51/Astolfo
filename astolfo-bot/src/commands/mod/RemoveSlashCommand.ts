@@ -11,8 +11,8 @@ export default class RemoveSlashCommand extends BaseCommand {
   async run(client: DiscordClient, message: Message, args: Array<string>) {
     const interaction = new DiscordInteractions({
       applicationId: process.env.APPLICATION_ID!,
-      authToken: process.env.BOT_TOKEN!,
-      publicKey: process.env.PUBLIC_KEY!,
+      authToken: process.env.DISCORD_BOT_TOKEN!,
+      publicKey: process.env.DISCORD_PUBLIC_KEY!,
     });
 
     interaction.getApplicationCommands().then((commands) => {
