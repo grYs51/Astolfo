@@ -13,7 +13,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/opus": "^0.8.0",
+    "@discordjs/opus": "^0.9.0",
     "@discordjs/voice": "0.13.0",
     "@sideway/address": "^5.0.0",
     "@sideway/formula": "^3.0.0",
