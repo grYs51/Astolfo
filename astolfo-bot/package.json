@@ -32,7 +32,7 @@
     "express-jwt": "^7.7.5",
     "express-session": "^1.17.3",
     "humanize-duration": "3.27.3",
-    "joi": "^17.6.0",
+    "joi": "^17.7.0",
     "minecraft-server-util": "5.3.1",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
