@@ -1,3 +1,4 @@
+import path from 'path';
 import { DataSource } from 'typeorm';
 
 const myDataSource = new DataSource({
@@ -7,7 +8,7 @@ const myDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  entities: ['src/db/models/*.entity.ts'],
+  entities: [path.join(__dirname, '../**/*.entity{.ts,.js}')],
   logging: false,
   synchronize: true,
 });

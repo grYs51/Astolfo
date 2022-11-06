@@ -1,4 +1,4 @@
-import { json, Router, urlencoded } from 'express';
+import { json, Router } from 'express';
 import errorHandler from '../middleware/error-handler';
 import logging from '../middleware/logging';
 import datasource from '../middleware/datasource-db';
