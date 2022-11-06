@@ -8,7 +8,7 @@ export const getAllByGuildId: RequestHandler<unknown, GuildStats[]> =
   asyncHandler(async (req, res) => {
     const { id } = req.validate(validateIdParam, 'params');
     
-    const stats = await req.db.guildStats.find({ where: { guildId: id } });
+    const stats = await req.db.guildStats.findBy({ guildId: id });
 
     if (!stats.length) throw new NotFound('Guild stats not found');
 
