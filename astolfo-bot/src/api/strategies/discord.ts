@@ -20,9 +20,10 @@ passport.use(
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
       callbackURL: process.env.DISCORD_REDIRECT_URL,
-      scope: ['identify', 'guilds', 'email'],
+      scope: ['identify', 'guilds', 'email', 'guilds.members.read',],
     },
     async (accessToken, refreshToken, profile, done) => {
+      
       const { id } = profile;
       try {
         const user = await client.dataSource.loggedUsers.findOneBy({

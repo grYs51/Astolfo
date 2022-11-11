@@ -1,2 +1,3 @@
+export * from './me';
 export * from './guilds';
-export * from './status';
+export * from './guild-member';
