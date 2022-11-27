@@ -7,6 +7,7 @@ import {
   getLeaderboard,
   getLeaderboardActive,
 } from '../../utils/functions/leaderboard';
+import { createBar } from '../../utils/functions/CreateBar';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -22,13 +23,13 @@ export default class LeaderboardEvent extends BaseSlash {
       description: 'Leaderboard!',
       options: [
         {
-          name: 'all',
+          name: 'all-time',
           description: 'Show all time stats',
           type: 1,
         },
         {
-          name: 'active',
-          description: 'Show active users',
+          name: 'current',
+          description: 'Show current users in voice channels',
           type: 1,
         },
       ],
@@ -55,27 +56,37 @@ export default class LeaderboardEvent extends BaseSlash {
       return;
     }
 
+    const type = interaction.options.data.find((o) => o.name === 'all-time');
+
     await interaction.deferReply().catch(client.logger.error);
 
-    const stats = await client.dataSource.guildStats.find({
-      where: {
-        guildId: guild.id,
-        type: 'VOICE',
-      },
-    });
+    const stats = type
+      ? await client.dataSource.guildStats.find({
+          where: {
+            guildId: guild.id,
+            type: 'VOICE',
+          },
+        })
+      : [];
 
-    if (!stats.length) {
-      await interaction.editReply({ content: 'No stats found!' });
+    const inChannel = client.voiceUsers.filter((x) => x.guildId === guild.id);
+
+    if (!stats.length && !inChannel.length) {
+      await interaction.editReply({
+        content: type ? 'No stats found!' : 'No one is in a voice channel!',
+      });
       return;
     }
 
     const leaderboard = getLeaderboard(client, stats, guild.id);
 
-    const inChannel = client.voiceUsers.filter((x) => x.guildId === guild.id);
-
     if (inChannel) {
       getLeaderboardActive(client, guild.id, inChannel, leaderboard);
     }
+
+    const longestInVc = leaderboard
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 1)[0].count;
 
     const sorted = leaderboard
       .sort((a, b) => {
@@ -85,6 +96,7 @@ export default class LeaderboardEvent extends BaseSlash {
         return {
           ...x,
           time: humanizeDuration(x.count, { round: true }),
+          bar: createBar(x.count, longestInVc, 20),
         };
       });
 
@@ -96,7 +108,7 @@ export default class LeaderboardEvent extends BaseSlash {
         sorted.map((x, i) => {
           return {
             name: `${i + 1}. ${x.name}`,
-            value: `${x.time}`,
+            value: `${x.time}\n${x.bar}`,
           };
         }),
       );
