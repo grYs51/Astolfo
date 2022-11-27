@@ -69,7 +69,7 @@ export default class McStatusEvent extends BaseSlash {
         interaction.editReply({ embeds: [embed] });
       })
       .catch((error) => {
-        client.logger.error('test', error.message);
+        client.logger.error(error);
         return interaction.editReply(
           'It seems like the server is down, kinda sad...',
         );

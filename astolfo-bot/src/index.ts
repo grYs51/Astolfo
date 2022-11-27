@@ -24,7 +24,7 @@ export const client = new DiscordClient({
   ],
 });
 
-const interaction = new DiscordInteractions({
+export const interaction = new DiscordInteractions({
   applicationId: process.env.DISCORD_CLIENT_ID!,
   authToken: process.env.DISCORD_BOT_TOKEN!,
   publicKey: process.env.DISCORD_PUBLIC_KEY!,
@@ -33,6 +33,12 @@ const interaction = new DiscordInteractions({
 async function main() {
   // create a new express app instance
   client.logger = logger;
+
+  interaction.getApplicationCommands().then((commands) => {
+    commands.forEach((command) => {
+      client.interactions.set(command.id, command);
+    });
+  });
 
   await createClient()
     .then(async (connection) => {

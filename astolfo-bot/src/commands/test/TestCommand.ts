@@ -8,6 +8,10 @@ export default class TestCommand extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
+    client.interactions.forEach(async (interaction) => {
+      console.log(interaction.id, interaction.name);
+    });
+
     message.reply({
       content: 'Test command works!',
       allowedMentions: {
@@ -15,6 +19,6 @@ export default class TestCommand extends BaseCommand {
       },
     });
 
-    message.react('💩').catch(client.logger.error);
+    // message.react('💩').catch(client.logger.error);
   }
 }

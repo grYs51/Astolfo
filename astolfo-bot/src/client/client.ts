@@ -5,10 +5,12 @@ import BaseSlash from '../utils/structures/BaseSlash';
 import { GuildConfiguration, GuildStats } from '../db/models';
 import { Db } from '../db';
 import { Logger } from 'pino';
+import { ApplicationCommand } from 'slash-commands';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
   private _events = new Collection<string, BaseEvent>();
+  private _interactions = new Collection<string, ApplicationCommand>();
   private _slashs = new Collection<string, BaseSlash>();
   private _configs = new Collection<string, GuildConfiguration>();
   private _voiceUsers = new Array<GuildStats>();
@@ -19,12 +21,20 @@ export default class DiscordClient extends Client {
     super(options);
   }
 
+  get ownerId(): string {
+    return process.env.OWNER!;
+  }
+
   get commands(): Collection<string, BaseCommand> {
     return this._commands;
   }
 
   get events(): Collection<string, BaseEvent> {
     return this._events;
+  }
+
+  get interactions(): Collection<string, ApplicationCommand> {
+    return this._interactions;
   }
 
   get slashs(): Collection<string, BaseSlash> {

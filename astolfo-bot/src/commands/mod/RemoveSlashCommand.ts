@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
 import DiscordInteractions from 'slash-commands';
+import { interaction } from '../..';
 
 export default class RemoveSlashCommand extends BaseCommand {
   constructor() {
@@ -9,20 +10,29 @@ export default class RemoveSlashCommand extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
-    const interaction = new DiscordInteractions({
-      applicationId: process.env.APPLICATION_ID!,
-      authToken: process.env.DISCORD_BOT_TOKEN!,
-      publicKey: process.env.DISCORD_PUBLIC_KEY!,
-    });
+    if (message.author.id != client.ownerId) {
+      message.react('⛔');
+      return;
+    }
 
-    interaction.getApplicationCommands().then((commands) => {
-      commands.forEach((command) => {
-        interaction
-          .deleteApplicationCommand(command.id)
-          .then(client.logger.info)
-          .catch(client.logger.error);
-      });
-    });
+    client.logger.info('Removing slash commands');
+    interaction
+      .getApplicationCommands()
+      .then((commands) => {
+        commands.forEach((command) => {
+          interaction
+            .deleteApplicationCommand(command.id)
+            .catch(client.logger.error);
+        });
+      })
+      .catch(client.logger.error);
+
+    for (const slash of client.slashs.values()) {
+      await slash.createInteraction(client, interaction);
+    }
+
+    client.logger.info('Slash commands removed && re-created');
+
     message.react('✅');
   }
 }

@@ -7,16 +7,14 @@ import passport from 'passport';
 import pg from 'pg';
 import expressSession from 'express-session';
 const pgSession = require('connect-pg-simple')(expressSession);
-require('./strategies/discord')
-
+require('./strategies/discord');
 
 const pgPool = new pg.Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASS,
-    port: process.env.DB_PORT,
-    
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASS,
+  port: process.env.DB_PORT,
 });
 
 export default function createApp(): Express {

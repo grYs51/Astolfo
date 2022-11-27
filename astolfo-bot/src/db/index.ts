@@ -5,10 +5,10 @@ import { GuildConfiguration, GuildStats, LoggedUser } from './models';
 let currentClient: DataSource | undefined;
 
 export async function createClient(): Promise<DataSource> {
-    return dataSource.initialize().then((client) => {
-        currentClient = client;
-        return client;
-    });
+  return dataSource.initialize().then((client) => {
+    currentClient = client;
+    return client;
+  });
 }
 
 export function getCurrentClient(): DataSource | null {

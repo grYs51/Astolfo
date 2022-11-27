@@ -1,6 +1,10 @@
 import { ErrorRequestHandler } from 'express';
 import { UnauthorizedError } from 'express-jwt';
-import { HttpError, InternalServerError, Unauthorized } from '../utils/http-error';
+import {
+  HttpError,
+  InternalServerError,
+  Unauthorized,
+} from '../utils/http-error';
 import logger from '../utils/logger';
 
 const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
@@ -23,14 +27,17 @@ const errorHandler: ErrorRequestHandler = (err, req, res, next) => {
       break;
   }
 
-  if (httpError.statusCode >= 500) logger.error({ req, err }, 'Server error occurred');
+  if (httpError.statusCode >= 500)
+    logger.error({ req, err }, 'Server error occurred');
 
   res.status(httpError.statusCode);
   res.send({
     statusCode: httpError.statusCode,
     error: httpError.statusText,
     // Only send message for statusCode 4xx
-    ...(httpError.statusCode >= 400 && httpError.statusCode < 500 && httpError.message
+    ...(httpError.statusCode >= 400 &&
+    httpError.statusCode < 500 &&
+    httpError.message
       ? { message: httpError.message }
       : {}),
   });

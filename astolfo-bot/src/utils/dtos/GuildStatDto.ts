@@ -1,8 +1,6 @@
-
 import { Channel, Guild, GuildMember } from 'discord.js';
 import { GuildStats } from '../../db/models';
 import { VoiceType } from '../types';
-
 
 export default class GuildStatDto implements GuildStats {
   constructor(

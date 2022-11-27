@@ -1,4 +1,4 @@
-import { Channel, Guild, GuildMember } from "discord.js";
+import { Channel, Guild, GuildMember } from 'discord.js';
 
 export type ModerationActionType = 'ban' | 'kick' | 'timeout';
 

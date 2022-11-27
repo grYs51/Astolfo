@@ -1,7 +1,6 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import DiscordClient from '../client/client';
-import DiscordInteractions from 'slash-commands';
 
 export async function registerCommands(
   client: DiscordClient,

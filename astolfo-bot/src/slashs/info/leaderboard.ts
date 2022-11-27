@@ -3,6 +3,10 @@ import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import client from '../../client/client';
 import BaseSlash from '../../utils/structures/BaseSlash';
+import {
+  getLeaderboard,
+  getLeaderboardActive,
+} from '../../utils/functions/leaderboard';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -14,8 +18,20 @@ export default class LeaderboardEvent extends BaseSlash {
     interaction: DiscordInteractions,
   ): Promise<void> {
     const command: PartialApplicationCommand = {
-      name: 'leaderboard',
+      name: this.getName(),
       description: 'Leaderboard!',
+      options: [
+        {
+          name: 'all',
+          description: 'Show all time stats',
+          type: 1,
+        },
+        {
+          name: 'active',
+          description: 'Show active users',
+          type: 1,
+        },
+      ],
     };
 
     await interaction
@@ -53,49 +69,12 @@ export default class LeaderboardEvent extends BaseSlash {
       return;
     }
 
-    const leaderboard = stats.reduce((acc, stat) => {
-      const a = acc.find((x) => x.id === stat.memberId);
-
-      if (a) {
-        a.count += stat.endedOn!.getTime() - stat.issuedOn.getTime();
-      } else {
-        if (
-          client.guilds.cache.get(guild.id)!.members.cache.get(stat.memberId)
-        ) {
-          acc.push({
-            id: stat.memberId,
-            count: stat.endedOn!.getTime() - stat.issuedOn.getTime(),
-            name:
-              client.guilds.cache
-                .get(guild.id)!
-                .members.cache.get(stat.memberId)?.user.username || 'Unknown',
-            // stat.member.guildName,
-          });
-        }
-      }
-      return acc;
-    }, [] as Leaderboard[]);
+    const leaderboard = getLeaderboard(client, stats, guild.id);
 
     const inChannel = client.voiceUsers.filter((x) => x.guildId === guild.id);
 
     if (inChannel) {
-      inChannel.reduce((acc, stat) => {
-        const a = acc.find((x) => x.id === stat.memberId);
-
-        if (a) {
-          a.count += new Date().getTime() - stat.issuedOn.getTime();
-        } else {
-          acc.push({
-            id: stat.memberId,
-            count: new Date().getTime() - stat.issuedOn.getTime(),
-            name: client.guilds.cache
-              .get(guild.id)!
-              .members.cache.get(stat.memberId)!.user.username,
-            // stat.member.guildName,
-          });
-        }
-        return acc;
-      }, leaderboard);
+      getLeaderboardActive(client, guild.id, inChannel, leaderboard);
     }
 
     const sorted = leaderboard
@@ -124,10 +103,4 @@ export default class LeaderboardEvent extends BaseSlash {
 
     await interaction.editReply({ embeds: [embed] }).catch(client.logger.error);
   }
-}
-
-interface Leaderboard {
-  id: string;
-  name: string;
-  count: number;
 }

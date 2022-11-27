@@ -6,7 +6,7 @@ export default class WarnEvent extends BaseEvent {
   constructor() {
     super('warn');
   }
-  
+
   async run(client: DiscordClient, error: Error) {
     client.logger.child({ event: 'warn' }).error(error);
   }

@@ -1,7 +1,6 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
-import process from 'process';
 
 export default class InitConfigs extends BaseCommand {
   constructor() {
@@ -9,7 +8,7 @@ export default class InitConfigs extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
-    if (message.author.id != process.env.OWNER) {
+    if (message.author.id != client.ownerId) {
       message.react('⛔');
       return;
     }

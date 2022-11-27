@@ -1,7 +1,4 @@
-import {
-  CacheType,
-  CommandInteraction,
-} from 'discord.js';
+import { CacheType, CommandInteraction } from 'discord.js';
 import DiscordInteractions from 'slash-commands';
 import DiscordClient from '../../client/client';
 
