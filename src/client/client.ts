@@ -60,7 +60,7 @@ export default class DiscordClient extends Client {
     this._configs = guildConfigs;
   }
 
-  set voiceUsers(GuildStatsLogs: Array<guild_stats>) {
+  set voiceUsers(GuildStatsLogs: Array<Partial<guild_stats>>) {
     this._voiceUsers = GuildStatsLogs;
   }
 

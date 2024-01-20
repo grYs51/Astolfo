@@ -8,6 +8,7 @@ import {
   getLeaderboardActive,
 } from '../../utils/functions/leaderboard';
 import { createBar } from '../../utils/functions/CreateBar';
+import { guild_stats } from '@prisma/client';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -80,7 +81,7 @@ export default class LeaderboardEvent extends BaseSlash {
     const leaderboard = getLeaderboard(client, stats, guild.id);
 
     if (inChannel) {
-      getLeaderboardActive(client, guild.id, inChannel, leaderboard);
+      getLeaderboardActive(client, guild.id, inChannel as guild_stats[], leaderboard);
     }
 
     const longestInVc = leaderboard
