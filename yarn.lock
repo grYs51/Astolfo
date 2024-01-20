@@ -849,7 +849,6 @@ __metadata:
     eslint-config-prettier: "npm:^9.1.0"
     eslint-plugin-import: "npm:^2.29.1"
     humanize-duration: "npm:^3.31.0"
-    minecraft-server-util: "npm:^5.4.4"
     nodemon: "npm:^3.0.3"
     pino: "npm:^8.17.2"
     pino-pretty: "npm:^10.3.1"
@@ -2636,22 +2635,6 @@ __metadata:
     braces: "npm:^3.0.2"
     picomatch: "npm:^2.3.1"
   checksum: 3d6505b20f9fa804af5d8c596cb1c5e475b9b0cd05f652c5b56141cf941bd72adaeb7a436fda344235cef93a7f29b7472efc779fcdb83b478eab0867b95cdeff
-  languageName: node
-  linkType: hard
-
-"minecraft-motd-util@npm:^1.1.9":
-  version: 1.1.12
-  resolution: "minecraft-motd-util@npm:1.1.12"
-  checksum: a939a34a36c90c2cdd990a4045f8caeb5547a5d5fd2e7ffcc4ecae34a4c62daf3d7889a78b3d52438eb49cf5e5a7441271327702bacf285bf41a211e0e284ff2
-  languageName: node
-  linkType: hard
-
-"minecraft-server-util@npm:^5.4.4":
-  version: 5.4.4
-  resolution: "minecraft-server-util@npm:5.4.4"
-  dependencies:
-    minecraft-motd-util: "npm:^1.1.9"
-  checksum: 12fbaa18da2f3cddfc32507f470742a9b0d235819601cc920a69eb0f1ffa0666343542fe590981638f5e52eddcfcc71c6489ff8f58d55c8d74247a86f018d5bc
   languageName: node
   linkType: hard
 
