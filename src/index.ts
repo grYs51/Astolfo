@@ -7,11 +7,10 @@ import {
 } from './utils/registry';
 import DiscordClient from './client/client';
 import { Collection, IntentsBitField } from 'discord.js';
-import { DiscordInteractions } from 'slash-commands';
-import createApp from './api';
-import logger from './api/utils/logger';
 import { createClient, getDb } from './db';
 import { GuildConfiguration } from './db/models';
+import { DiscordInteractions } from "slash-commands";
+import logger from './utils/logger';
 
 export const client = new DiscordClient({
   intents: [
@@ -24,21 +23,21 @@ export const client = new DiscordClient({
   ],
 });
 
-export const interaction = new DiscordInteractions({
-  applicationId: process.env.DISCORD_CLIENT_ID!,
-  authToken: process.env.DISCORD_BOT_TOKEN!,
-  publicKey: process.env.DISCORD_PUBLIC_KEY!,
-});
+// export const interaction = new DiscordInteractions({
+//   applicationId: process.env.DISCORD_CLIENT_ID!,
+//   authToken: process.env.DISCORD_BOT_TOKEN!,
+//   publicKey: process.env.DISCORD_PUBLIC_KEY!,
+// });
 
 async function main() {
   // create a new express app instance
   client.logger = logger;
 
-  interaction.getApplicationCommands().then((commands) => {
-    commands.forEach((command) => {
-      client.interactions.set(command.id, command);
-    });
-  });
+  // interaction.getApplicationCommands().then((commands) => {
+  //   commands.forEach((command) => {
+  //     client.interactions.set(command.id, command);
+  //   });
+  // });
 
   await createClient()
     .then(async (connection) => {
@@ -58,7 +57,9 @@ async function main() {
       await registerSlash(client, '../slashs');
 
       client.slashs.forEach((slash) => {
-        slash.createInteraction(client, interaction);
+        logger.info(slash)
+        logger.info(`Registering slash`);
+        // slash.createInteraction(client, interaction);
       });
 
       await client.login(process.env.DISCORD_BOT_TOKEN);
@@ -68,11 +69,6 @@ async function main() {
       logger.error(error);
       process.exit(1);
     });
-
-  const app = createApp();
-  app.listen(process.env.PORT || 3000, () => {
-    logger.info(`Server started on port ${process.env.PORT || 3000}`);
-  });
 }
 
 main().catch((error) => {

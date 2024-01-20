@@ -5,12 +5,11 @@ import BaseSlash from '../utils/structures/BaseSlash';
 import { GuildConfiguration, GuildStats } from '../db/models';
 import { Db } from '../db';
 import { Logger } from 'pino';
-import { ApplicationCommand } from 'slash-commands';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
   private _events = new Collection<string, BaseEvent>();
-  private _interactions = new Collection<string, ApplicationCommand>();
+  private _interactions = new Collection<string, any>();
   private _slashs = new Collection<string, BaseSlash>();
   private _configs = new Collection<string, GuildConfiguration>();
   private _voiceUsers = new Array<GuildStats>();
@@ -33,7 +32,7 @@ export default class DiscordClient extends Client {
     return this._events;
   }
 
-  get interactions(): Collection<string, ApplicationCommand> {
+  get interactions(): Collection<string, any> {
     return this._interactions;
   }
 
