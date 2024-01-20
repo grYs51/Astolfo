@@ -1,25 +1,21 @@
 FROM node:latest
 
 # Create the bot's directory
-RUN mkdir -p /usr/src/astolfo
-WORKDIR /usr/src/astolfo
+WORKDIR /app
 
-COPY package.json /usr/src/astolfo
-
-# Install dependencies
-RUN npm install
-
-# Copy the bot's source code
-COPY . /usr/src/astolfo
+COPY package.json /app
+COPY yarn.lock /app
+COPY src /app/src
+COPY prisma /app/prisma
+COPY .env /app
+COPY tsconfig.json /app
 
 # Build the bot's source code
+RUN yarn install --pure-lockfile
+
 RUN npm run build
 
-RUN cp -r /usr/src/astolfo/dist /usr/src/astolfo/dist
-
-RUN cp -r /usr/src/astolfo/node_modules /usr/src/astolfo/node_modules
-
-RUN rm -rf /usr/src/astolfo/src
+RUN rm -rf /app/src
 
 # Run the bot
 CMD ["npm", "run", "start"]
