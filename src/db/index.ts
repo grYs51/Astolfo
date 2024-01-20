@@ -1,6 +1,6 @@
 import { DataSource, Repository } from 'typeorm';
 import dataSource from './app-data-source';
-import { GuildConfiguration, GuildStats, LoggedUser } from './models';
+import { GuildConfiguration, GuildStats } from './models';
 
 let currentClient: DataSource | undefined;
 
@@ -18,7 +18,6 @@ export function getCurrentClient(): DataSource | null {
 export interface Db {
   guildConfigurations: Repository<GuildConfiguration>;
   guildStats: Repository<GuildStats>;
-  loggedUsers: Repository<LoggedUser>;
 }
 
 export function getDb(): Readonly<Db> {
@@ -30,7 +29,6 @@ export function getDb(): Readonly<Db> {
   return {
     guildConfigurations: db.getRepository('guild_configurations'),
     guildStats: db.getRepository('guild_stats'),
-    loggedUsers: db.getRepository('logged_users'),
   };
 }
 

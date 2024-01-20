@@ -23,21 +23,21 @@ export const client = new DiscordClient({
   ],
 });
 
-// export const interaction = new DiscordInteractions({
-//   applicationId: process.env.DISCORD_CLIENT_ID!,
-//   authToken: process.env.DISCORD_BOT_TOKEN!,
-//   publicKey: process.env.DISCORD_PUBLIC_KEY!,
-// });
+export const interaction = new DiscordInteractions({
+  applicationId: process.env.DISCORD_CLIENT_ID!,
+  authToken: process.env.DISCORD_BOT_TOKEN!,
+  publicKey: process.env.DISCORD_PUBLIC_KEY!,
+});
 
 async function main() {
   // create a new express app instance
   client.logger = logger;
 
-  // interaction.getApplicationCommands().then((commands) => {
-  //   commands.forEach((command) => {
-  //     client.interactions.set(command.id, command);
-  //   });
-  // });
+  interaction.getApplicationCommands().then((commands) => {
+    commands.forEach((command) => {
+      client.interactions.set(command.id, command);
+    });
+  });
 
   await createClient()
     .then(async (connection) => {
@@ -56,11 +56,20 @@ async function main() {
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
 
-      client.slashs.forEach((slash) => {
-        logger.info(slash)
-        logger.info(`Registering slash`);
-        // slash.createInteraction(client, interaction);
-      });
+      await interaction
+      .getApplicationCommands()
+      .then((commands) => {
+        commands.forEach(async (command) => {
+          await interaction.deleteApplicationCommand(command.id);
+        });
+      })
+
+      .catch(console.error);
+        
+
+      // client.slashs.forEach((slash) => {
+      //   slash.createInteraction(client, interaction);
+      // });
 
       await client.login(process.env.DISCORD_BOT_TOKEN);
     })

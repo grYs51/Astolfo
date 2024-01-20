@@ -10,7 +10,7 @@ const myDataSource = new DataSource({
   database: process.env.DB_NAME,
   entities: [path.join(__dirname, '../**/*.entity{.ts,.js}')],
   logging: false,
-  synchronize: false,
+  synchronize: true,
 });
 
 export default myDataSource;

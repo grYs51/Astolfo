@@ -1,6 +1,0 @@
-{
-  "name": "AstolfoBot",
-  "language": "typescript",
-  "manager": "yarn",
-  "prefix": "!"
-}
