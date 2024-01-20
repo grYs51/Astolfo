@@ -4,11 +4,22 @@ FROM node:latest
 RUN mkdir -p /usr/src/astolfo
 WORKDIR /usr/src/astolfo
 
-RUN npm i ffmpeg-static
+COPY package.json /usr/src/astolfo
 
+# Install dependencies
+RUN npm install
 
-# COPY package.json /usr/src/api
-# RUN npm install
+# Copy the bot's source code
+COPY . /usr/src/astolfo
 
-# Start the bot.
-CMD ["node", "/dist/index.js"]
+# Build the bot's source code
+RUN npm run build
+
+RUN cp -r /usr/src/astolfo/dist /usr/src/astolfo/dist
+
+RUN cp -r /usr/src/astolfo/node_modules /usr/src/astolfo/node_modules
+
+RUN rm -rf /usr/src/astolfo/src
+
+# Run the bot
+CMD ["npm", "run", "start"]
