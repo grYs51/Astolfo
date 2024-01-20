@@ -1,7 +1,7 @@
 import { Message, EmbedBuilder } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
-import * as mc from 'minecraft-server-util';
+// import * as mc from 'minecraft-server-util';
 
 const options = {
   timeout: 1000 * 5, // timeout in milliseconds
@@ -26,30 +26,30 @@ export default class McCommand extends BaseCommand {
       })
       .setTitle('Status');
 
-    mc.status('40.68.145.3', 25565, options)
-      .then((result) => {
-        embed.addFields(
-          {
-            name: 'Maxime Server Status',
-            value: 'Server is **Online!**',
-          },
-          {
-            name: 'Players',
-            value: `${result.players.online} / ${result.players.max}`,
-          },
-        );
-        if (result.players.online > 0)
-          embed.addFields({
-            name: 'Who',
-            value: result.players
-              .sample!.map((player) => player.name)
-              .reduce((agg, curr) => `${agg}${curr}\n `, ''),
-          });
-        message.channel.send({ embeds: [embed] });
-      })
-      .catch((error) => {
-        client.logger.error('test', error.message);
-        message.channel.send('It seems like the server is down, kinda sad...');
-      });
+    // mc.status('40.68.145.3', 25565, options)
+    //   .then((result) => {
+    //     embed.addFields(
+    //       {
+    //         name: 'Maxime Server Status',
+    //         value: 'Server is **Online!**',
+    //       },
+    //       {
+    //         name: 'Players',
+    //         value: `${result.players.online} / ${result.players.max}`,
+    //       },
+    //     );
+    //     if (result.players.online > 0)
+    //       embed.addFields({
+    //         name: 'Who',
+    //         value: result.players
+    //           .sample!.map((player) => player.name)
+    //           .reduce((agg, curr) => `${agg}${curr}\n `, ''),
+    //       });
+    //     message.channel.send({ embeds: [embed] });
+    //   })
+    //   .catch((error) => {
+    //     client.logger.error('test', error.message);
+    //     message.channel.send('It seems like the server is down, kinda sad...');
+    //   });
   }
 }

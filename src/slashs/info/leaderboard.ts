@@ -12,7 +12,7 @@ import { guild_stats } from '@prisma/client';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
-    super('leaderboard');
+    super('leaderboard', 'Shows a leaderboard of the most active users');
   }
 
   async createInteraction(
@@ -21,7 +21,7 @@ export default class LeaderboardEvent extends BaseSlash {
   ): Promise<void> {
     const command: PartialApplicationCommand = {
       name: this.getName(),
-      description: 'Leaderboard!',
+      description: this.getDescription(),
       options: [
         {
           name: 'all-time',
@@ -37,7 +37,7 @@ export default class LeaderboardEvent extends BaseSlash {
     };
 
     await interaction
-      .createApplicationCommand(command)
+      .createApplicationCommand(command, "1145313388923211886")
       .then(() => {
         client.logger.info('Leaderboard command created!');
       })

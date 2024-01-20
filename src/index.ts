@@ -56,9 +56,9 @@ async function main() {
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
 
-      // client.slashs.forEach((slash) => {
-      //   slash.createInteraction(client, interaction);
-      // });
+      client.slashs.forEach((slash) => {
+        slash.createInteraction(client, interaction);
+      });
 
       await client.login(process.env.DISCORD_BOT_TOKEN);
     })

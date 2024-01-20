@@ -12,17 +12,17 @@ import { ModalBuilder } from '@discordjs/builders';
 
 export default class Modal extends BaseSlash {
   constructor() {
-    super('modal');
+    super('modal', 'Shows a modal');
   }
 
   async createInteraction(client: client, interaction: DiscordInteractions) {
     const command: PartialApplicationCommand = {
-      name: 'modal',
-      description: 'Awesome feature!',
+      name: this.getName(),
+      description: this.getDescription(),
     };
 
     await interaction
-      .createApplicationCommand(command)
+      .createApplicationCommand(command, "1145313388923211886")
       .then(() => {
         client.logger.info('Modal command created!');
       })

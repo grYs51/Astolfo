@@ -11,7 +11,7 @@ const options = {
 
 export default class McStatusEvent extends BaseSlash {
   constructor() {
-    super('mcstatus');
+    super('mcstatus', 'Shows the status of the minecraft server');
   }
 
   async createInteraction(
@@ -19,12 +19,12 @@ export default class McStatusEvent extends BaseSlash {
     interaction: DiscordInteractions,
   ): Promise<void> {
     const command: PartialApplicationCommand = {
-      name: 'mcstatus',
-      description: 'mcstatus!',
+      name: this.getName(),
+      description: this.getDescription(),
     };
 
     await interaction
-      .createApplicationCommand(command)
+      .createApplicationCommand(command, "1145313388923211886")
       .then(() => {
         client.logger.info('mcstatus command created!');
       })
