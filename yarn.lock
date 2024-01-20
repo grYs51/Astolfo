@@ -407,13 +407,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@tsconfig/node21@npm:^21.0.1":
-  version: 21.0.1
-  resolution: "@tsconfig/node21@npm:21.0.1"
-  checksum: 435335bea2e7c5ecf48e4a3c3f297632f4f21a22c4630b16b02a6869a03e60e952451bee9b82b5e6a3de44c5199fdb4cb1a6e437693074edd862deaa79d5e27d
-  languageName: node
-  linkType: hard
-
 "@types/humanize-duration@npm:^3.27.4":
   version: 3.27.4
   resolution: "@types/humanize-duration@npm:3.27.4"
@@ -843,7 +836,6 @@ __metadata:
   dependencies:
     "@discordjs/voice": "npm:^0.16.1"
     "@prisma/client": "npm:^5.8.1"
-    "@tsconfig/node21": "npm:^21.0.1"
     "@types/humanize-duration": "npm:^3.27.4"
     "@types/node": "npm:^20.11.5"
     "@typescript-eslint/eslint-plugin": "npm:^6.19.0"
