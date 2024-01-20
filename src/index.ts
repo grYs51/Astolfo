@@ -8,9 +8,9 @@ import {
 import DiscordClient from './client/client';
 import { Collection, IntentsBitField } from 'discord.js';
 import { createClient, getDb } from './db';
-import { GuildConfiguration } from './db/models';
-import { DiscordInteractions } from "slash-commands";
+import { DiscordInteractions } from 'slash-commands';
 import logger from './utils/logger';
+import { guild_configurations } from '@prisma/client';
 
 export const client = new DiscordClient({
   intents: [
@@ -44,10 +44,10 @@ async function main() {
       logger.info('Connected to database');
 
       // register all commands
-      const configRepo = connection.getRepository(GuildConfiguration);
-      const guildConfigs = await configRepo.find();
-      const configs = new Collection<string, GuildConfiguration>();
-      guildConfigs.forEach((config) => configs.set(config.guildId, config));
+      const configRepo = connection.guild_configurations;
+      const guildConfigs = await configRepo.findMany();
+      const configs = new Collection<string, guild_configurations>();
+      guildConfigs.forEach((config) => configs.set(config.guild_id, config));
 
       client.configs = configs;
       client.dataSource = getDb();
@@ -55,17 +55,6 @@ async function main() {
       await registerCommands(client, '../commands');
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
-
-      await interaction
-      .getApplicationCommands()
-      .then((commands) => {
-        commands.forEach(async (command) => {
-          await interaction.deleteApplicationCommand(command.id);
-        });
-      })
-
-      .catch(console.error);
-        
 
       // client.slashs.forEach((slash) => {
       //   slash.createInteraction(client, interaction);

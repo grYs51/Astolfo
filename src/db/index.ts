@@ -1,39 +1,35 @@
-import { DataSource, Repository } from 'typeorm';
-import dataSource from './app-data-source';
-import { GuildConfiguration, GuildStats } from './models';
+import { PrismaClient } from '@prisma/client';
 
-let currentClient: DataSource | undefined;
+let currentClient: PrismaClient | undefined;
 
-export async function createClient(): Promise<DataSource> {
-  return dataSource.initialize().then((client) => {
-    currentClient = client;
-    return client;
-  });
+export async function createClient() {
+  currentClient = new PrismaClient();
+  return currentClient;
 }
 
-export function getCurrentClient(): DataSource | null {
+export function getCurrentClient() {
   return currentClient || null;
 }
 
 export interface Db {
-  guildConfigurations: Repository<GuildConfiguration>;
-  guildStats: Repository<GuildStats>;
+  guildConfigurations: PrismaClient['guild_configurations'];
+  guildStats: PrismaClient['guild_stats'];
 }
 
-export function getDb(): Readonly<Db> {
-  const client = currentClient;
-  if (!client) throw new Error('No Db connected');
+export function getDb(): Db {
+  const db = currentClient;
 
-  const db = dataSource;
+  if (!db) {
+    throw new Error('Database client is not initialized');
+  }
 
   return {
-    guildConfigurations: db.getRepository('guild_configurations'),
-    guildStats: db.getRepository('guild_stats'),
+    guildConfigurations: db!.guild_configurations,
+    guildStats: db!.guild_stats,
   };
 }
 
 export async function disconnect(): Promise<void> {
   if (!currentClient) return;
-
-  await currentClient.destroy();
+  await currentClient.$disconnect();
 }

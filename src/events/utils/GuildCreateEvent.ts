@@ -2,7 +2,6 @@
 import { Guild } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
-import { Repository } from 'typeorm';
 
 export default class GuildCreateEvent extends BaseEvent {
   constructor() {
@@ -10,8 +9,10 @@ export default class GuildCreateEvent extends BaseEvent {
   }
 
   async run(client: DiscordClient, guild: Guild) {
-    const config = await client.dataSource.guildConfigurations.findOneBy({
-      guildId: guild.id,
+    const config = await client.dataSource.guildConfigurations.findUnique({
+      where: {
+        guild_id: guild.id,
+      },
     });
 
     if (config) {
@@ -19,14 +20,18 @@ export default class GuildCreateEvent extends BaseEvent {
       client.configs.set(guild.id, config);
     } else {
       client.logger.info('A configuration was not found. Creating one!');
-      const newConfig = client.dataSource.guildConfigurations.create({
-        guildId: guild.id,
+      const config = await client.dataSource.guildConfigurations.upsert({
+        where: {
+          guild_id: guild.id,
+        },
+        update: {},
+        create: {
+          guild_id: guild.id,
+          prefix: '!',
+        },
       });
 
-      const savedConfig = await client.dataSource.guildConfigurations.save(
-        newConfig,
-      );
-      client.configs.set(guild.id, savedConfig);
+      client.configs.set(guild.id, config);
     }
   }
 }

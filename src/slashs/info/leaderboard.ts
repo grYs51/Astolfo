@@ -61,15 +61,14 @@ export default class LeaderboardEvent extends BaseSlash {
     await interaction.deferReply().catch(client.logger.error);
 
     const stats = type
-      ? await client.dataSource.guildStats.find({
+      ? await client.dataSource.guildStats.findMany({
           where: {
-            guildId: guild.id,
-            type: 'VOICE',
+            guild_id: guild.id,
           },
         })
       : [];
 
-    const inChannel = client.voiceUsers.filter((x) => x.guildId === guild.id);
+    const inChannel = client.voiceUsers.filter((x) => x.guild_id === guild.id);
 
     if (!stats.length && !inChannel.length) {
       await interaction.editReply({

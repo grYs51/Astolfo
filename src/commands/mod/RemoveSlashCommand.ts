@@ -27,11 +27,7 @@ export default class RemoveSlashCommand extends BaseCommand {
       })
       .catch(client.logger.error);
 
-    for (const slash of client.slashs.values()) {
-      await slash.createInteraction(client, interaction);
-    }
-
-    client.logger.info('Slash commands removed && re-created');
+    client.logger.info('Slash commands removed');
 
     message.react('✅');
   }

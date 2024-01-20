@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
+import logger from '../../utils/logger';
 
 export default class InitConfigs extends BaseCommand {
   constructor() {
@@ -14,17 +15,24 @@ export default class InitConfigs extends BaseCommand {
     }
 
     try {
-      client.logger.info('A configuration was not found. Creating one!');
       client.guilds.cache.forEach(async (guild) => {
-        client.logger.info('A configuration was not found. Creating one!');
-        const newConfig = client.dataSource.guildConfigurations.create({
-          guildId: guild.id,
-        });
+        if (client.configs.has(guild.id)) return;
 
-        const savedConfig = await client.dataSource.guildConfigurations.save(
-          newConfig,
-        );
-        client.configs.set(guild.id!, savedConfig);
+        logger.info(`Initializing guild ${guild.name} (${guild.id})`);
+        client.dataSource.guildConfigurations
+          .upsert({
+            where: {
+              guild_id: guild.id,
+            },
+            update: {},
+            create: {
+              guild_id: guild.id,
+              prefix: '!',
+            },
+          })
+          .then((config) => {
+            client.configs.set(config.guild_id, config);
+          });
       });
     } catch (e) {
       client.logger.error(e);

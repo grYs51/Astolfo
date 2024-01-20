@@ -14,6 +14,7 @@
   "license": "ISC",
   "dependencies": {
     "@discordjs/voice": "0.13.0",
+    "@prisma/client": "^5.8.1",
     "@sideway/address": "^5.0.0",
     "@sideway/formula": "^3.0.0",
     "@sideway/pinpoint": "^2.0.0",
@@ -30,12 +31,10 @@
     "minecraft-server-util": "5.3.1",
     "passport": "^0.6.0",
     "passport-discord": "^0.1.4",
-    "pg": "^8.7.3",
     "pino": "^8.7.0",
     "reflect-metadata": "^0.1.13",
     "slash-commands": "^1.5.0",
-    "ts-node": "^10.9.1",
-    "typeorm": "^0.3.7"
+    "ts-node": "^10.9.1"
   },
   "devDependencies": {
     "@types/connect-pg-simple": "^7.0.0",
@@ -55,6 +54,7 @@
     "nodemon": "^2.0.20",
     "pino-pretty": "^9.1.1",
     "prettier": "^2.7.1",
+    "prisma": "^5.8.1",
     "rimraf": "^3.0.2",
     "typescript": "4.8.2"
   },

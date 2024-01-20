@@ -1,0 +1,28 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model guild_configurations {
+  guild_id           String  @id() @db.VarChar
+  prefix             String  @default("!") @db.VarChar
+  welcome_channel_id String? @db.VarChar
+  welcome_message    String  @default("Welcome @member") @db.VarChar(200)
+  goodbye_message    String  @default("Goodbye @member") @db.VarChar(200)
+}
+
+model guild_stats {
+  id             String    @id() @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  guild_id       String    @db.VarChar
+  member_id      String    @db.VarChar
+  issued_by_id   String?   @db.VarChar
+  channel_id     String    @db.VarChar
+  new_channel_id String?   @db.VarChar
+  type           String    @db.VarChar
+  issued_on      DateTime  @db.Timestamp(6)
+  ended_on       DateTime? @db.Timestamp(6)
+}

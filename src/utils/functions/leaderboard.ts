@@ -1,23 +1,23 @@
+import { guild_stats } from '@prisma/client';
 import DiscordClient from '../../client/client';
-import { GuildStats } from '../../db/models';
 
 export const getLeaderboard = (
   client: DiscordClient,
-  stats: GuildStats[],
+  stats: guild_stats[],
   guildId: string,
 ) =>
   stats.reduce((acc, stat) => {
-    const a = acc.find((x) => x.id === stat.memberId);
+    const a = acc.find((x) => x.id === stat.member_id);
 
     if (a) {
-      a.count += stat.endedOn!.getTime() - stat.issuedOn.getTime();
+      a.count += stat.ended_on!.getTime() - stat.issued_on.getTime();
     } else {
-      if (client.guilds.cache.get(guildId)!.members.cache.get(stat.memberId)) {
+      if (client.guilds.cache.get(guildId)!.members.cache.get(stat.member_id)) {
         acc.push({
-          id: stat.memberId,
-          count: stat.endedOn!.getTime() - stat.issuedOn.getTime(),
+          id: stat.member_id,
+          count: stat.ended_on!.getTime() - stat.issued_on.getTime(),
           name:
-            client.guilds.cache.get(guildId)!.members.cache.get(stat.memberId)
+            client.guilds.cache.get(guildId)!.members.cache.get(stat.member_id)
               ?.user.username || 'Unknown',
           // stat.member.guildName,
         });
@@ -29,21 +29,21 @@ export const getLeaderboard = (
 export const getLeaderboardActive = (
   client: DiscordClient,
   guildId: string,
-  inChannel: GuildStats[],
+  inChannel: guild_stats[],
   leaderboard: Leaderboard[],
 ) =>
   inChannel.reduce((acc, stat) => {
-    const a = acc.find((x) => x.id === stat.memberId);
+    const a = acc.find((x) => x.id === stat.member_id);
 
     if (a) {
-      a.count += new Date().getTime() - stat.issuedOn.getTime();
+      a.count += new Date().getTime() - stat.issued_on.getTime();
     } else {
       acc.push({
-        id: stat.memberId,
-        count: new Date().getTime() - stat.issuedOn.getTime(),
+        id: stat.member_id,
+        count: new Date().getTime() - stat.issued_on.getTime(),
         name: client.guilds.cache
           .get(guildId)!
-          .members.cache.get(stat.memberId)!.user.username,
+          .members.cache.get(stat.member_id)!.user.username,
         // stat.member.guildName,
       });
     }

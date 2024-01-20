@@ -8,23 +8,32 @@ export default class PrefixCommand extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
+    const config = client.configs.get(message.guildId!);
+
     if (!args.length) {
-      message.channel.send('Please provide an argument!');
+      message.channel.send(
+        `Please provide an prefix\nUsage: \`${
+          config?.prefix || '!'
+        }prefix <new prefix>\``,
+      );
       return;
     }
 
     const [newPrefix] = args;
     try {
-      const config = client.configs.get(message.guildId!);
-      const updatedConfig = await client.dataSource.guildConfigurations.save({
-        ...config,
-        prefix: newPrefix,
+      const updatedConfig = await client.dataSource.guildConfigurations.update({
+        data: {
+          prefix: newPrefix,
+        },
+        where: {
+          guild_id: message.guildId!,
+        },
       });
       client.configs.set(message.guildId!, updatedConfig);
-      message.channel.send('Update prefix succesfully');
+      message.react('✅');
     } catch (e) {
       client.logger.error(e);
-      message.channel.send('Something went wrong!');
+      message.react('❌');
     }
   }
 }

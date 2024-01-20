@@ -3,8 +3,7 @@ import { VoiceState } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { Info } from '../../utils/types';
-import { Repository } from 'typeorm';
-import { GuildStats } from '../../db/models';
+import { guild_stats } from '@prisma/client';
 
 enum types {
   DEAF = 'selfDeaf',
@@ -32,12 +31,12 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
 
     // User joined a voice channel
     if (oldState.channel === null && newState.channel !== null) {
-      const GuildStatsLog: GuildStats = {
-        guildId: newState.guild.id,
-        memberId: newState.member!.id,
-        channelId: newState.channel!.id,
+      const GuildStatsLog: Partial<guild_stats> = {
+        guild_id: newState.guild.id,
+        member_id: newState.member!.id,
+        channel_id: newState.channel!.id,
         type: 'VOICE',
-        issuedOn: date,
+        issued_on: date,
       };
 
       voiceUsers.push(GuildStatsLog);
@@ -48,9 +47,11 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     if (oldState.channel !== null && newState.channel === null) {
       for (let i = voiceUsers.length - 1; i >= 0; i--) {
         const voiceUser = voiceUsers[i];
-        if (voiceUser.memberId === userInfo.member.id) {
-          voiceUser.endedOn = date;
-          await client.dataSource.guildStats.save(voiceUser);
+        if (voiceUser.member_id === userInfo.member.id) {
+          voiceUser.ended_on = date;
+          await client.dataSource.guildStats.create({
+            data: voiceUser as guild_stats,
+          });
           voiceUsers.splice(i, 1);
         }
       }
@@ -62,19 +63,21 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
       if (oldState.channel.id !== newState.channel.id) {
         for (let i = voiceUsers.length - 1; i >= 0; i--) {
           const voiceUser = voiceUsers[i];
-          if (voiceUser.memberId === userInfo.member.id) {
-            voiceUser.endedOn = date;
-            await client.dataSource.guildStats.save(voiceUser);
+          if (voiceUser.member_id === userInfo.member.id) {
+            voiceUser.ended_on = date;
+            await client.dataSource.guildStats.create({
+              data: voiceUser as guild_stats,
+            });
             voiceUsers.splice(i, 1);
           }
         }
 
-        const GuildStatsLog: GuildStats = {
-          guildId: newState.guild.id,
-          memberId: newState.member!.id,
-          channelId: newState.channel!.id,
+        const GuildStatsLog: Partial<guild_stats> = {
+          guild_id: newState.guild.id,
+          member_id: newState.member!.id,
+          channel_id: newState.channel!.id,
           type: 'VOICE',
-          issuedOn: date,
+          issued_on: date,
         };
 
         voiceUsers.push(GuildStatsLog);

@@ -2,17 +2,17 @@ import { Client, ClientOptions, Collection } from 'discord.js';
 import BaseEvent from '../utils/structures/BaseEvent';
 import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
-import { GuildConfiguration, GuildStats } from '../db/models';
-import { Db } from '../db';
 import { Logger } from 'pino';
+import { guild_configurations, guild_stats } from '@prisma/client';
+import { Db } from '../db';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
   private _events = new Collection<string, BaseEvent>();
   private _interactions = new Collection<string, any>();
   private _slashs = new Collection<string, BaseSlash>();
-  private _configs = new Collection<string, GuildConfiguration>();
-  private _voiceUsers = new Array<GuildStats>();
+  private _configs = new Collection<string, guild_configurations>();
+  private _voiceUsers = new Array<Partial<guild_stats>>();
   private _dataSource: Db;
   private _logger: Logger;
 
@@ -40,11 +40,11 @@ export default class DiscordClient extends Client {
     return this._slashs;
   }
 
-  get configs(): Collection<string, GuildConfiguration> {
+  get configs(): Collection<string, guild_configurations> {
     return this._configs;
   }
 
-  get voiceUsers(): Array<GuildStats> {
+  get voiceUsers(): Array<Partial<guild_stats>> {
     return this._voiceUsers;
   }
 
@@ -56,11 +56,11 @@ export default class DiscordClient extends Client {
     return this._logger;
   }
 
-  set configs(guildConfigs: Collection<string, GuildConfiguration>) {
+  set configs(guildConfigs: Collection<string, guild_configurations>) {
     this._configs = guildConfigs;
   }
 
-  set voiceUsers(GuildStatsLogs: Array<GuildStats>) {
+  set voiceUsers(GuildStatsLogs: Array<guild_stats>) {
     this._voiceUsers = GuildStatsLogs;
   }
 

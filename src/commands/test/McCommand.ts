@@ -14,6 +14,8 @@ export default class McCommand extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
+    message.channel.sendTyping();
+
     const embed = new EmbedBuilder()
       .setColor('#FF69B4')
       .setAuthor({
