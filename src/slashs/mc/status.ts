@@ -1,4 +1,3 @@
-import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import BaseSlash from '../../utils/structures/BaseSlash';
 import client from '../../client/client';
 import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
@@ -12,23 +11,6 @@ const options = {
 export default class McStatusEvent extends BaseSlash {
   constructor() {
     super('mcstatus', 'Shows the status of the minecraft server');
-  }
-
-  async createInteraction(
-    client: client,
-    interaction: DiscordInteractions,
-  ): Promise<void> {
-    const command: PartialApplicationCommand = {
-      name: this.getName(),
-      description: this.getDescription(),
-    };
-
-    await interaction
-      .createApplicationCommand(command, "1145313388923211886")
-      .then(() => {
-        client.logger.info('mcstatus command created!');
-      })
-      .catch(client.logger.error);
   }
 
   async run(

@@ -29,7 +29,7 @@ export default class WelcomechannelCommand extends BaseCommand {
           guild_id: message.guildId!,
         },
       });
-      client.configs.set(message.guildId!, updatedConfig);
+      client.guildConfigs.set(message.guildId!, updatedConfig);
       message.react('✅');
     } catch (e) {
       client.logger.error(e);

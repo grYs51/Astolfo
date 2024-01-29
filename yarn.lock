@@ -840,6 +840,7 @@ __metadata:
     "@types/node": "npm:^20.11.5"
     "@typescript-eslint/eslint-plugin": "npm:^6.19.0"
     "@typescript-eslint/parser": "npm:^6.19.0"
+    call-of-duty-api: "npm:^4.0.0"
     concurrently: "npm:^8.2.2"
     discord.js: "npm:^14.14.1"
     dotenv: "npm:^16.3.2"
@@ -973,6 +974,16 @@ __metadata:
     get-intrinsic: "npm:^1.2.1"
     set-function-length: "npm:^1.1.1"
   checksum: a6172c168fd6dacf744fcde745099218056bd755c50415b592655dcd6562157ed29f130f56c3f6db2250f67e4bd62e5c218cdc56d7bfd76e0bda50770fce2d10
+  languageName: node
+  linkType: hard
+
+"call-of-duty-api@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "call-of-duty-api@npm:4.0.0"
+  dependencies:
+    tslib: "npm:^2.4.0"
+    undici: "npm:^5.12.0"
+  checksum: a1ce383f330f5aaf6e227b79f9da8d300ccf2c48edfe5f6d738b63d05676edc98f735ffa5a8cb90236826bce80905178a7dd2dc21be96b0e5619bce6cf282314
   languageName: node
   linkType: hard
 
@@ -3902,7 +3913,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:2.6.2, tslib@npm:^2.6.2":
+"tslib@npm:2.6.2, tslib@npm:^2.4.0, tslib@npm:^2.6.2":
   version: 2.6.2
   resolution: "tslib@npm:2.6.2"
   checksum: e03a8a4271152c8b26604ed45535954c0a45296e32445b4b87f8a5abdb2421f40b59b4ca437c4346af0f28179780d604094eb64546bee2019d903d01c6c19bdb
@@ -4038,6 +4049,15 @@ __metadata:
   dependencies:
     "@fastify/busboy": "npm:^2.0.0"
   checksum: 0cb62c57edc938f242c116e41fb2a74f81ed20e7e2e554cf1ceae548520df0592385b53d444f8cf59e1e10e6b27acd153198d8a2353b3040d0a778a099aac92c
+  languageName: node
+  linkType: hard
+
+"undici@npm:^5.12.0":
+  version: 5.28.2
+  resolution: "undici@npm:5.28.2"
+  dependencies:
+    "@fastify/busboy": "npm:^2.0.0"
+  checksum: 34385ad9b3ba85309972ee3c1b426dcd19b94a5a6aa9c54499b5f48436c0ecc13a9b1e756a7c6a953eaefa9f4263890625ece5f2719fd774b0852204f5e4d5f9
   languageName: node
   linkType: hard
 

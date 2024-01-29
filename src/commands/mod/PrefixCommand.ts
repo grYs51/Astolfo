@@ -8,7 +8,7 @@ export default class PrefixCommand extends BaseCommand {
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
-    const config = client.configs.get(message.guildId!);
+    const config = client.guildConfigs.get(message.guildId!);
 
     if (!args.length) {
       message.channel.send(
@@ -29,7 +29,7 @@ export default class PrefixCommand extends BaseCommand {
           guild_id: message.guildId!,
         },
       });
-      client.configs.set(message.guildId!, updatedConfig);
+      client.guildConfigs.set(message.guildId!, updatedConfig);
       message.react('✅');
     } catch (e) {
       client.logger.error(e);

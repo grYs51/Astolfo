@@ -10,7 +10,7 @@ export default class MessageEvent extends BaseEvent {
   async run(client: DiscordClient, message: Message) {
     if (message.author.bot || !message) return;
 
-    const config = client.configs.get(message.guildId!);
+    const config = client.guildConfigs.get(message.guildId!);
     if (!config) return;
 
     if (message.content.startsWith(config.prefix)) {
