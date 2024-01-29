@@ -11,7 +11,7 @@ CREATE TABLE "guild_configurations" (
 
 -- CreateTable
 CREATE TABLE "guild_stats" (
-    "id" UUID NOT NULL DEFAULT uuid_generate_v4(),
+    "id" VARCHAR NOT NULL,
     "guild_id" VARCHAR NOT NULL,
     "member_id" VARCHAR NOT NULL,
     "issued_by_id" VARCHAR,
@@ -23,4 +23,3 @@ CREATE TABLE "guild_stats" (
 
     CONSTRAINT "guild_stats_pkey" PRIMARY KEY ("id")
 );
-
