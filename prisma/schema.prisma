@@ -34,3 +34,8 @@ model message_stats {
   channel_id String   @db.VarChar
   issued_on  DateTime @db.Timestamp(6)
 }
+
+model user_config {
+  user_id String  @id @db.VarChar
+  mw_id   String? @unique @db.VarChar
+}
