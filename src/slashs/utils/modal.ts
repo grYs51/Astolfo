@@ -5,7 +5,6 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import BaseSlash from '../../utils/structures/BaseSlash';
 import client from '../../client/client';
 import { ModalBuilder } from '@discordjs/builders';
@@ -13,20 +12,6 @@ import { ModalBuilder } from '@discordjs/builders';
 export default class Modal extends BaseSlash {
   constructor() {
     super('modal', 'Shows a modal');
-  }
-
-  async createInteraction(client: client, interaction: DiscordInteractions) {
-    const command: PartialApplicationCommand = {
-      name: this.getName(),
-      description: this.getDescription(),
-    };
-
-    await interaction
-      .createApplicationCommand(command, "1145313388923211886")
-      .then(() => {
-        client.logger.info('Modal command created!');
-      })
-      .catch(client.logger.error);
   }
 
   async run(

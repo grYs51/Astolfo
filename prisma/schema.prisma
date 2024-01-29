@@ -35,7 +35,7 @@ model message_stats {
   issued_on  DateTime @db.Timestamp(6)
 }
 
-model user_config {
+model user_configs {
   user_id String  @id @db.VarChar
   mw_id   String? @unique @db.VarChar
 }

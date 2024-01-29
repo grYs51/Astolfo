@@ -17,7 +17,7 @@ export default class GuildCreateEvent extends BaseEvent {
 
     if (config) {
       client.logger.info('A configuration was found!');
-      client.configs.set(guild.id, config);
+      client.guildConfigs.set(guild.id, config);
     } else {
       client.logger.info('A configuration was not found. Creating one!');
       const config = await client.dataSource.guildConfigurations.upsert({
@@ -31,7 +31,7 @@ export default class GuildCreateEvent extends BaseEvent {
         },
       });
 
-      client.configs.set(guild.id, config);
+      client.guildConfigs.set(guild.id, config);
     }
   }
 }

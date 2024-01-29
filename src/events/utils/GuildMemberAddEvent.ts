@@ -8,7 +8,7 @@ export default class GuildMemberAddEvent extends BaseEvent {
   }
 
   async run(client: DiscordClient, member: GuildMember) {
-    const config = client.configs.get(member.guild.id);
+    const config = client.guildConfigs.get(member.guild.id);
     if (config) {
       if (config.welcome_channel_id) {
         const channel = member.guild.channels.cache.get(

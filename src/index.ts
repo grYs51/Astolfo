@@ -6,9 +6,8 @@ import {
   registerSlash,
 } from './utils/registry';
 import DiscordClient from './client/client';
-import { Collection, IntentsBitField } from 'discord.js';
+import { Collection, IntentsBitField, REST, Routes } from 'discord.js';
 import { createClient, getDb } from './db';
-import { DiscordInteractions } from 'slash-commands';
 import logger from './utils/logger';
 import { guild_configurations } from '@prisma/client';
 
@@ -23,21 +22,26 @@ export const client = new DiscordClient({
   ],
 });
 
-export const interaction = new DiscordInteractions({
-  applicationId: process.env.DISCORD_CLIENT_ID!,
-  authToken: process.env.DISCORD_BOT_TOKEN!,
-  publicKey: process.env.DISCORD_PUBLIC_KEY!,
-});
+const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN!);
+
+// export const interaction = new DiscordInteractions({
+//   applicationId: process.env.DISCORD_CLIENT_ID!,
+//   authToken: process.env.DISCORD_BOT_TOKEN!,
+//   publicKey: process.env.DISCORD_PUBLIC_KEY!,
+// });
 
 async function main() {
   // create a new express app instance
-  client.logger = logger;
+  // client.logger = logger;
 
-  interaction.getApplicationCommands().then((commands) => {
-    commands.forEach((command) => {
-      client.interactions.set(command.id, command);
-    });
-  });
+  // await interaction.getApplicationCommands().then((commands) => {
+  //   if (commands?.length === 0) return
+  //   console.log(commands);
+
+  //   commands?.forEach((command) => {
+  //     client.interactions.set(command.id, command);
+  //   });
+  // });
 
   await createClient()
     .then(async (connection) => {
@@ -49,16 +53,32 @@ async function main() {
       const configs = new Collection<string, guild_configurations>();
       guildConfigs.forEach((config) => configs.set(config.guild_id, config));
 
-      client.configs = configs;
+      client.guildConfigs = configs;
       client.dataSource = getDb();
 
       await registerCommands(client, '../commands');
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
 
-      client.slashs.forEach((slash) => {
-        slash.createInteraction(client, interaction);
-      });
+      await rest
+        .put(
+          Routes.applicationGuildCommands(
+            process.env.DISCORD_CLIENT_ID!,
+            '1145313388923211886',
+          ),
+          {
+            body: client.slashs.map((slash) =>
+              slash.createInteraction(client).toJSON(),
+            ),
+          },
+        )
+        .then(() => {
+          logger.info('Successfully registered application commands.');
+        })
+        .catch((error) => {
+          logger.error('Failed to register application commands');
+          logger.error(error);
+        });
 
       await client.login(process.env.DISCORD_BOT_TOKEN);
     })

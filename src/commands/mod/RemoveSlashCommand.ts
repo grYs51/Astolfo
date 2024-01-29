@@ -20,6 +20,8 @@ export default class RemoveSlashCommand extends BaseCommand {
       .getApplicationCommands()
       .then((commands) => {
         commands.forEach((command) => {
+          console.log(command);
+
           interaction
             .deleteApplicationCommand(command.id)
             .catch(client.logger.error);

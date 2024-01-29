@@ -1,9 +1,9 @@
-import { guild_stats } from '@prisma/client';
+import { voice_stats } from '@prisma/client';
 import DiscordClient from '../../client/client';
 
 export const getLeaderboard = (
   client: DiscordClient,
-  stats: guild_stats[],
+  stats: voice_stats[],
   guildId: string,
 ) =>
   stats.reduce((acc, stat) => {
@@ -29,7 +29,7 @@ export const getLeaderboard = (
 export const getLeaderboardActive = (
   client: DiscordClient,
   guildId: string,
-  inChannel: guild_stats[],
+  inChannel: voice_stats[],
   leaderboard: Leaderboard[],
 ) =>
   inChannel.reduce((acc, stat) => {

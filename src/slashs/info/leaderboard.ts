@@ -1,5 +1,10 @@
 import humanizeDuration from 'humanize-duration';
-import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
+import {
+  CommandInteraction,
+  CacheType,
+  EmbedBuilder,
+  SlashCommandBuilder,
+} from 'discord.js';
 import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import client from '../../client/client';
 import BaseSlash from '../../utils/structures/BaseSlash';
@@ -8,40 +13,29 @@ import {
   getLeaderboardActive,
 } from '../../utils/functions/leaderboard';
 import { createBar } from '../../utils/functions/CreateBar';
-import { guild_stats } from '@prisma/client';
+import { voice_stats } from '@prisma/client';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
     super('leaderboard', 'Shows a leaderboard of the most active users');
   }
 
-  async createInteraction(
-    client: client,
-    interaction: DiscordInteractions,
-  ): Promise<void> {
-    const command: PartialApplicationCommand = {
-      name: this.getName(),
-      description: this.getDescription(),
-      options: [
-        {
-          name: 'all-time',
-          description: 'Show all time stats',
-          type: 1,
-        },
-        {
-          name: 'current',
-          description: 'Show current users in voice channels',
-          type: 1,
-        },
-      ],
-    };
-
-    await interaction
-      .createApplicationCommand(command, "1145313388923211886")
-      .then(() => {
-        client.logger.info('Leaderboard command created!');
-      })
-      .catch(client.logger.error);
+  override createInteraction(client: client): any {
+    return new SlashCommandBuilder()
+      .setName(this.getName())
+      .setDescription(this.getDescription())
+      .addBooleanOption((option) =>
+        option
+          .setName('all-time')
+          .setDescription('Show all time stats')
+          .setRequired(false),
+      )
+      .addBooleanOption((option) =>
+        option
+          .setName('current')
+          .setDescription('Show current users in voice channels')
+          .setRequired(false),
+      );
   }
   async run(
     client: client,
@@ -62,7 +56,7 @@ export default class LeaderboardEvent extends BaseSlash {
     await interaction.deferReply().catch(client.logger.error);
 
     const stats = type
-      ? await client.dataSource.guildStats.findMany({
+      ? await client.dataSource.voiceStats.findMany({
           where: {
             guild_id: guild.id,
           },
@@ -81,7 +75,12 @@ export default class LeaderboardEvent extends BaseSlash {
     const leaderboard = getLeaderboard(client, stats, guild.id);
 
     if (inChannel) {
-      getLeaderboardActive(client, guild.id, inChannel as guild_stats[], leaderboard);
+      getLeaderboardActive(
+        client,
+        guild.id,
+        inChannel as voice_stats[],
+        leaderboard,
+      );
     }
 
     const longestInVc = leaderboard

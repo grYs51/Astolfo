@@ -3,18 +3,24 @@ import BaseEvent from '../utils/structures/BaseEvent';
 import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
 import { Logger } from 'pino';
-import { guild_configurations, guild_stats } from '@prisma/client';
+import {
+  guild_configurations,
+  user_configs,
+  voice_stats,
+} from '@prisma/client';
 import { Db } from '../db';
+import logger from '../utils/logger';
 
 export default class DiscordClient extends Client {
   private _commands = new Collection<string, BaseCommand>();
   private _events = new Collection<string, BaseEvent>();
   private _interactions = new Collection<string, any>();
   private _slashs = new Collection<string, BaseSlash>();
-  private _configs = new Collection<string, guild_configurations>();
-  private _voiceUsers = new Array<Partial<guild_stats>>();
+  private _guildConfigs = new Collection<string, guild_configurations>();
+  private _userConfigs = new Collection<string, user_configs>();
+  private _voiceUsers = new Array<Partial<voice_stats>>();
   private _dataSource: Db;
-  private _logger: Logger;
+  private _logger: Logger = logger;
 
   constructor(options: ClientOptions) {
     super(options);
@@ -40,11 +46,15 @@ export default class DiscordClient extends Client {
     return this._slashs;
   }
 
-  get configs(): Collection<string, guild_configurations> {
-    return this._configs;
+  get guildConfigs(): Collection<string, guild_configurations> {
+    return this._guildConfigs;
   }
 
-  get voiceUsers(): Array<Partial<guild_stats>> {
+  get userConfigs(): Collection<string, user_configs> {
+    return this._userConfigs;
+  }
+
+  get voiceUsers(): Array<Partial<voice_stats>> {
     return this._voiceUsers;
   }
 
@@ -56,11 +66,15 @@ export default class DiscordClient extends Client {
     return this._logger;
   }
 
-  set configs(guildConfigs: Collection<string, guild_configurations>) {
-    this._configs = guildConfigs;
+  set guildConfigs(guildConfigs: Collection<string, guild_configurations>) {
+    this._guildConfigs = guildConfigs;
   }
 
-  set voiceUsers(GuildStatsLogs: Array<Partial<guild_stats>>) {
+  set userConfigs(userConfigs: Collection<string, user_configs>) {
+    this._userConfigs = userConfigs;
+  }
+
+  set voiceUsers(GuildStatsLogs: Array<Partial<voice_stats>>) {
     this._voiceUsers = GuildStatsLogs;
   }
 

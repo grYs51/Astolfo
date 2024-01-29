@@ -3,7 +3,7 @@ import { VoiceState } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { Info } from '../../utils/types';
-import { guild_stats } from '@prisma/client';
+import { voice_stats } from '@prisma/client';
 
 enum types {
   DEAF = 'selfDeaf',
@@ -31,7 +31,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
 
     // User joined a voice channel
     if (oldState.channel === null && newState.channel !== null) {
-      const GuildStatsLog: Partial<guild_stats> = {
+      const GuildStatsLog: Partial<voice_stats> = {
         guild_id: newState.guild.id,
         member_id: newState.member!.id,
         channel_id: newState.channel!.id,
@@ -49,8 +49,8 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
         const voiceUser = voiceUsers[i];
         if (voiceUser.member_id === userInfo.member.id) {
           voiceUser.ended_on = date;
-          await client.dataSource.guildStats.create({
-            data: voiceUser as guild_stats,
+          await client.dataSource.voiceStats.create({
+            data: voiceUser as voice_stats,
           });
           voiceUsers.splice(i, 1);
         }
@@ -65,14 +65,14 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
           const voiceUser = voiceUsers[i];
           if (voiceUser.member_id === userInfo.member.id) {
             voiceUser.ended_on = date;
-            await client.dataSource.guildStats.create({
-              data: voiceUser as guild_stats,
+            await client.dataSource.voiceStats.create({
+              data: voiceUser as voice_stats,
             });
             voiceUsers.splice(i, 1);
           }
         }
 
-        const GuildStatsLog: Partial<guild_stats> = {
+        const GuildStatsLog: Partial<voice_stats> = {
           guild_id: newState.guild.id,
           member_id: newState.member!.id,
           channel_id: newState.channel!.id,

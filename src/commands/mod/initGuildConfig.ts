@@ -16,7 +16,7 @@ export default class InitConfigs extends BaseCommand {
 
     try {
       client.guilds.cache.forEach(async (guild) => {
-        if (client.configs.has(guild.id)) return;
+        if (client.guildConfigs.has(guild.id)) return;
 
         logger.info(`Initializing guild ${guild.name} (${guild.id})`);
         client.dataSource.guildConfigurations
@@ -31,7 +31,7 @@ export default class InitConfigs extends BaseCommand {
             },
           })
           .then((config) => {
-            client.configs.set(config.guild_id, config);
+            client.guildConfigs.set(config.guild_id, config);
           });
       });
     } catch (e) {
