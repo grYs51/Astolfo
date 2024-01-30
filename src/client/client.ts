@@ -4,7 +4,7 @@ import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
 import { Logger } from 'pino';
 import {
-  guild_configurations,
+  guild_configs,
   user_configs,
   voice_stats,
 } from '@prisma/client';
@@ -16,7 +16,7 @@ export default class DiscordClient extends Client {
   private _events = new Collection<string, BaseEvent>();
   private _interactions = new Collection<string, any>();
   private _slashs = new Collection<string, BaseSlash>();
-  private _guildConfigs = new Collection<string, guild_configurations>();
+  private _guildConfigs = new Collection<string, guild_configs>();
   private _userConfigs = new Collection<string, user_configs>();
   private _voiceUsers = new Array<Partial<voice_stats>>();
   private _dataSource: Db;
@@ -46,7 +46,7 @@ export default class DiscordClient extends Client {
     return this._slashs;
   }
 
-  get guildConfigs(): Collection<string, guild_configurations> {
+  get guildConfigs(): Collection<string, guild_configs> {
     return this._guildConfigs;
   }
 
@@ -66,7 +66,7 @@ export default class DiscordClient extends Client {
     return this._logger;
   }
 
-  set guildConfigs(guildConfigs: Collection<string, guild_configurations>) {
+  set guildConfigs(guildConfigs: Collection<string, guild_configs>) {
     this._guildConfigs = guildConfigs;
   }
 

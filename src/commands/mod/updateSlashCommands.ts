@@ -6,7 +6,7 @@ import rest from '../../utils/functions/rest';
 
 export default class UpdateSlashCommands extends BaseCommand {
   constructor() {
-    super('updateslashcommands', 'mod', []);
+    super('updateslash', 'mod', []);
   }
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {

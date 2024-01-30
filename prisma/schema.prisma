@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model guild_configurations {
+model guild_configs {
   guild_id           String  @id @db.VarChar
   prefix             String  @default("!") @db.VarChar
   welcome_channel_id String? @db.VarChar
