@@ -10,8 +10,7 @@ export default class InitConfigs extends BaseCommand {
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id != client.ownerId) {
-      message.react('⛔');
-      return;
+      return message.react('⛔');
     }
 
     try {
@@ -36,11 +35,9 @@ export default class InitConfigs extends BaseCommand {
       });
     } catch (e) {
       client.logger.error(e);
-      message.react('❌');
-      return;
+      return message.react('❌');
     }
 
-    message.react('✅');
-    return;
+    return message.react('✅');
   }
 }

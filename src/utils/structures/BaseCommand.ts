@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, MessageReaction } from 'discord.js';
 import DiscordClient from '../../client/client';
 
 export default abstract class BaseCommand {
@@ -22,5 +22,5 @@ export default abstract class BaseCommand {
     client: DiscordClient,
     message: Message,
     args: Array<string> | null,
-  ): Promise<void>;
+  ): Promise<Message | MessageReaction>;
 }

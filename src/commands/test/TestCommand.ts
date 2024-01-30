@@ -12,7 +12,7 @@ export default class TestCommand extends BaseCommand {
       console.log(interaction.id, interaction.name);
     });
 
-    message.reply({
+    return message.reply({
       content: 'Test command works!',
       allowedMentions: {
         repliedUser: false,

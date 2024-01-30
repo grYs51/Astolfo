@@ -1,7 +1,3 @@
-import DiscordInteractions, {
-  ApplicationCommand,
-  PartialApplicationCommand,
-} from 'slash-commands';
 import DiscordClient from '../../client/client';
 import { CommandInteraction, CacheType, SlashCommandBuilder } from 'discord.js';
 
