@@ -11,29 +11,30 @@ export default class PrefixCommand extends BaseCommand {
     const config = client.guildConfigs.get(message.guildId!);
 
     if (!args.length) {
-      message.channel.send(
+      return message.reply(
         `Please provide an prefix\nUsage: \`${
           config?.prefix || '!'
         }prefix <new prefix>\``,
       );
-      return;
     }
 
     const [newPrefix] = args;
-    try {
-      const updatedConfig = await client.dataSource.guildConfigurations.update({
+    return client.dataSource.guildConfigurations
+      .update({
         data: {
           prefix: newPrefix,
         },
         where: {
           guild_id: message.guildId!,
         },
+      })
+      .then((updatedConfig) => {
+        client.guildConfigs.set(message.guildId!, updatedConfig);
+        return message.react('✅');
+      })
+      .catch((e) => {
+        client.logger.error(e);
+        return message.react('❌');
       });
-      client.guildConfigs.set(message.guildId!, updatedConfig);
-      message.react('✅');
-    } catch (e) {
-      client.logger.error(e);
-      message.react('❌');
-    }
   }
 }

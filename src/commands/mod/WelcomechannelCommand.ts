@@ -9,31 +9,31 @@ export default class WelcomechannelCommand extends BaseCommand {
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
     if (!args.length) {
-      message.channel.send('Please provide an channel id');
-      return;
+      return message.reply('Please provide an channel id');
     }
 
     const channel = message.guild?.channels.cache.get(args[0]);
     if (!channel || channel.guildId != message.guildId) {
-      message.channel.send('Please provide an valid channel id');
-      return;
+      return message.reply('Please provide an valid channel id');
     }
 
     const [newChannelId] = args;
-    try {
-      const updatedConfig = await client.dataSource.guildConfigurations.update({
+    return client.dataSource.guildConfigurations
+      .update({
         data: {
           welcome_channel_id: newChannelId,
         },
         where: {
           guild_id: message.guildId!,
         },
+      })
+      .then((updatedConfig) => {
+        client.guildConfigs.set(message.guildId!, updatedConfig);
+        return message.react('✅');
+      })
+      .catch((e) => {
+        client.logger.error(e);
+        return message.react('❌');
       });
-      client.guildConfigs.set(message.guildId!, updatedConfig);
-      message.react('✅');
-    } catch (e) {
-      client.logger.error(e);
-      message.react('❌');
-    }
   }
 }

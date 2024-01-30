@@ -9,8 +9,7 @@ export default class GenerateUserconfCommand extends BaseCommand {
 
   async run(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id != client.ownerId) {
-      message.react('⛔');
-      return;
+      return message.react('⛔');
     }
 
     try {
@@ -33,12 +32,10 @@ export default class GenerateUserconfCommand extends BaseCommand {
         });
       });
 
-      message.react('✅');
-      return;
+      return message.react('✅');
     } catch (e) {
       client.logger.error(e);
-      message.react('❌');
-      return;
+      return message.react('❌');
     }
   }
 }

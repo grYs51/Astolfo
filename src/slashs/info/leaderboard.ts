@@ -5,7 +5,6 @@ import {
   EmbedBuilder,
   SlashCommandBuilder,
 } from 'discord.js';
-import DiscordInteractions, { PartialApplicationCommand } from 'slash-commands';
 import client from '../../client/client';
 import BaseSlash from '../../utils/structures/BaseSlash';
 import {

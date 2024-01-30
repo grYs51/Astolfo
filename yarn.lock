@@ -857,7 +857,6 @@ __metadata:
     prisma: "npm:^5.8.1"
     reflect-metadata: "npm:^0.2.1"
     rimraf: "npm:^5.0.5"
-    slash-commands: "npm:^1.5.0"
     ts-node: "npm:^10.9.2"
     typescript: "npm:^5.3.3"
   languageName: unknown
@@ -991,13 +990,6 @@ __metadata:
   version: 3.1.0
   resolution: "callsites@npm:3.1.0"
   checksum: fff92277400eb06c3079f9e74f3af120db9f8ea03bad0e84d9aede54bbe2d44a56cccb5f6cf12211f93f52306df87077ecec5b712794c5a9b5dac6d615a3f301
-  languageName: node
-  linkType: hard
-
-"centra@npm:^2.4.2":
-  version: 2.5.0
-  resolution: "centra@npm:2.5.0"
-  checksum: cc88bc08f57ece63885a4f55ac8a83fc299aaa5aef562c717cef8826f7facbecc6f14a430087b517794486ce48f2909b8e4097fd6715f4dac028d9cc4fa03240
   languageName: node
   linkType: hard
 
@@ -3545,16 +3537,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"slash-commands@npm:^1.5.0":
-  version: 1.5.0
-  resolution: "slash-commands@npm:1.5.0"
-  dependencies:
-    centra: "npm:^2.4.2"
-    tweetnacl: "npm:^1.0.3"
-  checksum: 1362205de86a5b7449acd6384589a1b92d2c676d7fb2f29c320908364c0db87d60753b2b78e023c9197af6e696c9af5dc98aea7e355466f99885f8fca518b99a
-  languageName: node
-  linkType: hard
-
 "slash@npm:^3.0.0":
   version: 3.0.0
   resolution: "slash@npm:3.0.0"
@@ -3924,13 +3906,6 @@ __metadata:
   version: 2.4.1
   resolution: "tslib@npm:2.4.1"
   checksum: 9ac0e4fd1033861f0b4f0d848dc3009ebcc3aa4757a06e8602a2d8a7aed252810e3540e54e70709f06c0f95311faa8584f769bcbede48aff785eb7e4d399b9ec
-  languageName: node
-  linkType: hard
-
-"tweetnacl@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "tweetnacl@npm:1.0.3"
-  checksum: 069d9df51e8ad4a89fbe6f9806c68e06c65be3c7d42f0701cc43dba5f0d6064686b238bbff206c5addef8854e3ce00c643bff59432ea2f2c639feab0ee1a93f9
   languageName: node
   linkType: hard
 

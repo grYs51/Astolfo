@@ -22,7 +22,6 @@ export const client = new DiscordClient({
   ],
 });
 
-const rest = new REST().setToken(process.env.DISCORD_BOT_TOKEN!);
 
 // export const interaction = new DiscordInteractions({
 //   applicationId: process.env.DISCORD_CLIENT_ID!,
@@ -60,32 +59,12 @@ async function main() {
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
 
-      await rest
-        .put(
-          Routes.applicationGuildCommands(
-            process.env.DISCORD_CLIENT_ID!,
-            '1145313388923211886',
-          ),
-          {
-            body: client.slashs.map((slash) =>
-              slash.createInteraction(client).toJSON(),
-            ),
-          },
-        )
-        .then(() => {
-          logger.info('Successfully registered application commands.');
-        })
-        .catch((error) => {
-          logger.error('Failed to register application commands');
-          logger.error(error);
-        });
+      
 
       await client.login(process.env.DISCORD_BOT_TOKEN);
     })
     .catch((error) => {
-      logger.error('Failed to connect to pg');
       logger.error(error);
-      process.exit(1);
     });
 }
 

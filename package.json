@@ -21,7 +21,6 @@
     "humanize-duration": "^3.31.0",
     "pino": "^8.17.2",
     "reflect-metadata": "^0.2.1",
-    "slash-commands": "^1.5.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {

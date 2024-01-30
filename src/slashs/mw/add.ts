@@ -18,7 +18,7 @@ export default class MWAdd extends BaseSlash {
         option
           .setName('platform')
           .setDescription('The platform of the user')
-          .setRequired(true)
+          .setRequired(false)
           .addChoices(
             { name: 'Battle.net', value: platforms.Battlenet },
             { name: 'Activision', value: platforms.Activision },
@@ -35,10 +35,11 @@ export default class MWAdd extends BaseSlash {
 
     const mwUser = await Misc.search(
       username,
-      platforms[platform as keyof typeof platforms] || platforms.Battlenet,
+      platforms.All,
     );
 
-    logger.info(mwUser);
+    console.log(mwUser);
+    
   }
   constructor() {
     super('mwadd', 'Add a user to the database');
