@@ -3,16 +3,16 @@ import { CommandInteraction, CacheType, SlashCommandBuilder } from 'discord.js';
 
 export default abstract class BaseSlash {
   constructor(
-    private name: string,
-    private description: string,
+    private _name: string,
+    private _description: string,
   ) {}
 
-  getName(): string {
-    return this.name.toLocaleLowerCase();
+  get name(): string {
+    return this._name.toLocaleLowerCase();
   }
 
-  getDescription() {
-    return this.description;
+  get description() {
+    return this._description;
   }
 
   createInteraction(client: DiscordClient): SlashCommandBuilder {

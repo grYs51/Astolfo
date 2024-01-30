@@ -3,11 +3,7 @@ import BaseEvent from '../utils/structures/BaseEvent';
 import BaseCommand from '../utils/structures/BaseCommand';
 import BaseSlash from '../utils/structures/BaseSlash';
 import { Logger } from 'pino';
-import {
-  guild_configs,
-  user_configs,
-  voice_stats,
-} from '@prisma/client';
+import { guild_configs, user_configs, voice_stats } from '@prisma/client';
 import { Db } from '../db';
 import logger from '../utils/logger';
 

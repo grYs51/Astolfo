@@ -14,8 +14,8 @@ export default class HelpEvent extends BaseSlash {
   ): Promise<void> {
     const fields: APIEmbedField[] = client.slashs.map((slash) => {
       return {
-        name: slash.getName(),
-        value: slash.getDescription(),
+        name: slash.name,
+        value: slash.description,
       };
     });
 

@@ -21,8 +21,8 @@ export default class LeaderboardEvent extends BaseSlash {
 
   override createInteraction(client: client): any {
     return new SlashCommandBuilder()
-      .setName(this.getName())
-      .setDescription(this.getDescription())
+      .setName(this.name)
+      .setDescription(this.description)
       .addBooleanOption((option) =>
         option
           .setName('all-time')

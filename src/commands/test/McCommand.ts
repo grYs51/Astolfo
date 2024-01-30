@@ -26,7 +26,7 @@ export default class McCommand extends BaseCommand {
       })
       .setTitle('Status');
 
-      return message.react('✅');
+    return message.react('✅');
 
     // mc.status('40.68.145.3', 25565, options)
     //   .then((result) => {

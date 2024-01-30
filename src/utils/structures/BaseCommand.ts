@@ -3,19 +3,21 @@ import DiscordClient from '../../client/client';
 
 export default abstract class BaseCommand {
   constructor(
-    private name: string,
-    private category: string,
-    private aliases: Array<string>,
+    private _name: string,
+    private _category: string,
+    private _aliases: Array<string>,
   ) {}
 
-  getName(): string {
-    return this.name;
+  get name(): string {
+    return this._name;
   }
-  getCategory(): string {
-    return this.category;
+  
+  get category(): string {
+    return this._category;
   }
-  getAliases(): Array<string> {
-    return this.aliases;
+
+  get aliases(): Array<string> {
+    return this._aliases;
   }
 
   abstract run(
