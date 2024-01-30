@@ -12,7 +12,7 @@ export function getCurrentClient() {
 }
 
 export interface Db {
-  guildConfigurations: PrismaClient['guild_configurations'];
+  guildConfigurations: PrismaClient['guild_configs'];
   voiceStats: PrismaClient['voice_stats'];
   messageStats: PrismaClient['message_stats'];
   userConfigs: PrismaClient['user_configs'];
@@ -26,7 +26,7 @@ export function getDb(): Db {
   }
 
   return {
-    guildConfigurations: db!.guild_configurations,
+    guildConfigurations: db!.guild_configs,
     voiceStats: db!.voice_stats,
     messageStats: db!.message_stats,
     userConfigs: db!.user_configs,

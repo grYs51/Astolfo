@@ -9,7 +9,7 @@ import DiscordClient from './client/client';
 import { Collection, IntentsBitField } from 'discord.js';
 import { createClient, getDb } from './db';
 import logger from './utils/logger';
-import { guild_configurations } from '@prisma/client';
+import { guild_configs } from '@prisma/client';
 
 export const client = new DiscordClient({
   intents: [
@@ -28,9 +28,9 @@ async function main() {
       logger.info('Connected to database');
 
       // register all commands
-      const configRepo = connection.guild_configurations;
+      const configRepo = connection.guild_configs;
       const guildConfigs = await configRepo.findMany();
-      const configs = new Collection<string, guild_configurations>();
+      const configs = new Collection<string, guild_configs>();
       guildConfigs.forEach((config) => configs.set(config.guild_id, config));
 
       client.guildConfigs = configs;
