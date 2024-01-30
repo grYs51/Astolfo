@@ -1,7 +1,7 @@
 import { Message, Routes } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
-import { rest } from '../../utils/functions/rest';
+import rest from '../../utils/functions/rest';
 
 export default class RemoveSlashCommand extends BaseCommand {
   constructor() {
@@ -13,13 +13,10 @@ export default class RemoveSlashCommand extends BaseCommand {
       return message.react('⛔');
     }
 
-    return rest
-      .delete(
-        Routes.applicationGuildCommands(
-          process.env.DISCORD_CLIENT_ID!,
-          '1145313388923211886',
-        ),
-      )
+    return Promise.all([
+      this.removeSlashCommands(),
+      this.removeGuildSlashCommands(args[0]),
+    ])
       .then(() => {
         client.logger.info('Slash commands removed');
         return message.react('✅');
@@ -29,5 +26,21 @@ export default class RemoveSlashCommand extends BaseCommand {
         client.logger.error(error);
         return message.react('⛔');
       });
+  }
+
+  private async removeSlashCommands() {
+    return rest.put(
+      Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
+      { body: [] },
+    );
+  }
+
+  private async removeGuildSlashCommands(guildId: string) {
+    if (!guildId) return Promise.resolve();
+
+    return rest.put(
+      Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID!, guildId),
+      { body: [] },
+    );
   }
 }

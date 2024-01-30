@@ -1,8 +1,8 @@
-import { Message, REST, Routes } from 'discord.js';
+import { Message, Routes } from 'discord.js';
 import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
 import logger from '../../utils/logger';
-import { rest } from '../../utils/functions/rest';
+import rest from '../../utils/functions/rest';
 
 export default class UpdateSlashCommands extends BaseCommand {
   constructor() {
