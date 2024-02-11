@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client';
+import logger from '../utils/logger';
 
 let currentClient: PrismaClient | undefined;
 
 export async function createClient() {
   currentClient = new PrismaClient();
+  logger.info('Database client initialized');
   return currentClient;
 }
 
