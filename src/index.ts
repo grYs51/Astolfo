@@ -39,12 +39,10 @@ async function main() {
       await registerCommands(client, '../commands');
       await registerEvents(client, '../events');
       await registerSlash(client, '../slashs');
-
+      
       await client.login(process.env.DISCORD_BOT_TOKEN);
     })
-    .catch((error) => {
-      logger.error(error);
-    });
+    .catch(logger.error);
 }
 
 main().catch((error) => {

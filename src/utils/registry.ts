@@ -5,52 +5,59 @@ import BaseCommand from '../utils/structures/BaseCommand';
 import BaseEvent from './structures/BaseEvent';
 import BaseSlash from './structures/BaseSlash';
 
-export async function registerCommands(
+enum FileType {
+  COMMANDS = 'commands',
+  EVENTS = 'events',
+  SLASHS = 'slashs',
+}
+
+type HandlerFunction = (instance: any, client: DiscordClient) => void;
+
+const handleCommand: HandlerFunction = (instance: BaseCommand, client) => {
+  client.commands.set(instance.name, instance);
+  instance.aliases.forEach((alias: string) => {
+    client.commands.set(alias, instance);
+  });
+};
+
+const handleEvent: HandlerFunction = (instance: BaseEvent, client) => {
+  client.events.set(instance.name, instance);
+  client.on(instance.name, instance.run.bind(instance, client));
+};
+
+const handleSlash: HandlerFunction = (instance: BaseSlash, client) => {
+  client.slashs.set(instance.name, instance);
+  client.on(instance.name, instance.run.bind(instance, client));
+};
+
+const fileTypeHandlers: Record<FileType, HandlerFunction> = {
+  [FileType.COMMANDS]: handleCommand,
+  [FileType.EVENTS]: handleEvent,
+  [FileType.SLASHS]: handleSlash,
+};
+
+async function registerFiles(
   client: DiscordClient,
-  dir: string = '',
+  dir: string,
+  fileType: FileType,
 ) {
   const filePath = path.join(__dirname, dir);
   const files = await fs.readdir(filePath);
   for (const file of files) {
     const stat = await fs.lstat(path.join(filePath, file));
-    if (stat.isDirectory()) registerCommands(client, path.join(dir, file));
+    if (stat.isDirectory())
+      await registerFiles(client, path.join(dir, file), fileType);
     if (file.endsWith('.js') || file.endsWith('.ts')) {
-      const { default: Command } = await import(path.join(dir, file));      
-      const command = new Command() as BaseCommand;
-      client.commands.set(command.name, command);
-      command.aliases.forEach((alias: string) => {
-        client.commands.set(alias, command);
-      });
+      const { default: instance } = await import(path.join(dir, file));      
+      fileTypeHandlers[fileType](new instance(), client);
     }
   }
 }
+export const registerCommands = (client: DiscordClient, dir: string = '') =>
+  registerFiles(client, dir, FileType.COMMANDS);
 
-export async function registerEvents(client: DiscordClient, dir: string = '') {
-  const filePath = path.join(__dirname, dir);
-  const files = await fs.readdir(filePath);
-  for (const file of files) {
-    const stat = await fs.lstat(path.join(filePath, file));
-    if (stat.isDirectory()) registerEvents(client, path.join(dir, file));
-    if (file.endsWith('.js') || file.endsWith('.ts')) {
-      const { default: Event } = await import(path.join(dir, file));
-      const event = new Event() as BaseEvent;
-      client.events.set(event.name, event);
-      client.on(event.name, event.run.bind(event, client));
-    }
-  }
-}
+export const registerEvents = (client: DiscordClient, dir: string = '') =>
+  registerFiles(client, dir, FileType.EVENTS);
 
-export async function registerSlash(client: DiscordClient, dir: string = '') {
-  const filePath = path.join(__dirname, dir);
-  const files = await fs.readdir(filePath);
-  for (const file of files) {
-    const stat = await fs.lstat(path.join(filePath, file));
-    if (stat.isDirectory()) await registerSlash(client, path.join(dir, file));
-    if (file.endsWith('.js') || file.endsWith('.ts')) {
-      const { default: Slash } = await import(path.join(dir, file));
-      const slash = new Slash() as BaseSlash;
-      client.slashs.set(slash.name, slash);
-      client.on(slash.name, slash.run.bind(slash, client));
-    }
-  }
-}
+export const registerSlash = (client: DiscordClient, dir: string = '') =>
+  registerFiles(client, dir, FileType.SLASHS);
