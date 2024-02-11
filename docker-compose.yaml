@@ -4,5 +4,3 @@ services:
     build: .
     container_name: Astolfo-bot
     restart: always
-    volumes:
-      - .:/app

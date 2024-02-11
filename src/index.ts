@@ -30,7 +30,8 @@ function main() {
     .then(() => registerSlash())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .catch((error) => {
-      logger.error('Failed to start bot', error);
+      logger.error('Failed to start bot');
+      logger.error(error);
       process.exit(1);
     });
 }

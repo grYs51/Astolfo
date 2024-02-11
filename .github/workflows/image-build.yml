@@ -14,6 +14,7 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
+    environment: .env    
 
     steps:
       - name: Checkout
@@ -28,14 +29,20 @@ jobs:
           echo "DISCORD_CLIENT_SECRET=${{ secrets.DISCORD_CLIENT_SECRET }}" >> .env
           echo "OWNER=${{ secrets.OWNER }}" >> .env
 
-      - name: check location
-        run: pwd
+      - name: stop old express container
+        run: docker stop astolfo-bot || true
+  
+      - name: Remove old express container
+        run: docker rm -f astolfo-bot
+  
+      - name: Remove old docker image
+        run: docker rmi -f astolfo-bot
 
-      - name: docker-compose build
-        run: docker-compose build
+      - name: Build docker image
+        run: docker build -t astolfo-bot .
 
-      - name: up docker-compose
-        run: docker-compose up -d
+      - name: Run docker container
+        run: docker run -d --name astolfo-bot astolfo-bot
 
       - name: clean up docker images
         run: docker image prune -f
