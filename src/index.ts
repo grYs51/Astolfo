@@ -9,7 +9,7 @@ import DiscordClient from './client/client';
 import { IntentsBitField } from 'discord.js';
 import { createClient } from './db';
 import logger from './utils/logger';
-import { setGuildConfigs } from './utils/functions/setConfig';
+import { setConfigs } from './utils/functions/setConfig';
 
 export const client = new DiscordClient({
   intents: [
@@ -24,7 +24,7 @@ export const client = new DiscordClient({
 
 function main() {
   createClient()
-    .then(setGuildConfigs)
+    .then(setConfigs)
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
