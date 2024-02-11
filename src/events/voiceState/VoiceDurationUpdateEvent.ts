@@ -1,5 +1,5 @@
 // https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-voiceStateUpdate
-import { VoiceState } from 'discord.js';
+import { Events, VoiceState } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { Info } from '../../utils/types';
@@ -7,7 +7,7 @@ import { voice_stats } from '@prisma/client';
 
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   constructor() {
-    super('voiceStateUpdate');
+    super(Events.VoiceStateUpdate);
   }
 
   async run(client: DiscordClient, oldState: VoiceState, newState: VoiceState) {

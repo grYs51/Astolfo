@@ -1,11 +1,11 @@
 // https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-interactionCreate
-import { Interaction } from 'discord.js';
+import { Events, Interaction } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 
 export default class InteractionCreateEvent extends BaseEvent {
   constructor() {
-    super('interactionCreate');
+    super(Events.InteractionCreate);
   }
 
   async run(client: DiscordClient, interaction: Interaction) {

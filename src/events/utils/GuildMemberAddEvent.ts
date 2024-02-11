@@ -1,10 +1,10 @@
-import { GuildMember, TextChannel } from 'discord.js';
+import { Events, GuildMember, TextChannel } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 
 export default class GuildMemberAddEvent extends BaseEvent {
   constructor() {
-    super('guildMemberAdd');
+    super(Events.GuildMemberAdd);
   }
 
   async run(client: DiscordClient, member: GuildMember) {

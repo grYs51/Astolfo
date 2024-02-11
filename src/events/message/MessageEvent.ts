@@ -1,10 +1,10 @@
 import BaseEvent from '../../utils/structures/BaseEvent';
-import { Message } from 'discord.js';
+import { Events, Message } from 'discord.js';
 import DiscordClient from '../../client/client';
 
 export default class MessageEvent extends BaseEvent {
   constructor() {
-    super('messageCreate');
+    super(Events.MessageCreate);
   }
 
   async run(client: DiscordClient, message: Message) {
