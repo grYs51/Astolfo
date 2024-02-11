@@ -1,4 +1,4 @@
-version: "3.8"
+version: '3.8'
 services:
   astolfo:
     image: astolfo-bot:latest
@@ -7,12 +7,14 @@ services:
 
     # Environment variables
     environment:
-      - DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
-      - DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
-      - DISCORD_PUBLIC_KEY: ${DISCORD_PUBLIC_KEY}
-      - DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
-      - DATABASE_URL: ${DATABASE_URL}
-    
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
+      DISCORD_PUBLIC_KEY: ${DISCORD_PUBLIC_KEY}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DATABASE_URL: ${DATABASE_URL}
+      OWNER: ${OWNER}
+
     # Volumes
     volumes:
       - ./app:/app
+      - ./.env:/app/.env
