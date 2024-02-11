@@ -1,18 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import logger from '../utils/logger';
 
-let currentClient: PrismaClient | undefined;
-
-export async function createClient() {
-  currentClient = new PrismaClient();
-  logger.info('Database client initialized');
-  return currentClient;
-}
-
-export function getCurrentClient() {
-  return currentClient || null;
-}
-
 export interface Db {
   guildConfigurations: PrismaClient['guild_configs'];
   voiceStats: PrismaClient['voice_stats'];
@@ -20,18 +8,24 @@ export interface Db {
   userConfigs: PrismaClient['user_configs'];
 }
 
-export function getDb(): Db {
-  const db = currentClient;
+let currentClient: PrismaClient;
 
-  if (!db) {
+export async function createClient() {
+  currentClient = new PrismaClient();
+  logger.info('Database client initialized');
+  return currentClient;
+}
+
+export function getDb(): Db {
+  if (!currentClient) {
     throw new Error('Database client is not initialized');
   }
 
   return {
-    guildConfigurations: db!.guild_configs,
-    voiceStats: db!.voice_stats,
-    messageStats: db!.message_stats,
-    userConfigs: db!.user_configs,
+    guildConfigurations: currentClient.guild_configs,
+    voiceStats: currentClient.voice_stats,
+    messageStats: currentClient.message_stats,
+    userConfigs: currentClient.user_configs,
   };
 }
 

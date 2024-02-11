@@ -1,9 +1,10 @@
+import { Events, Interaction } from 'discord.js';
 import DiscordClient from '../../client/client';
 
 export default abstract class BaseEvent {
-  constructor(private _name: string) {}
+  constructor(private _name: Events) {}
 
-  get name(): string {
+  get name(): Events {
     return this._name;
   }
   abstract run(client: DiscordClient, ...args: any): void;
