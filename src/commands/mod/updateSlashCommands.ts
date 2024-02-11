@@ -15,17 +15,11 @@ export default class UpdateSlashCommands extends BaseCommand {
     }
 
     return rest
-      .put(
-        Routes.applicationGuildCommands(
-          process.env.DISCORD_CLIENT_ID!,
-          '1145313388923211886',
+      .put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!), {
+        body: client.slashs.map((slash) =>
+          slash.createInteraction(client).toJSON(),
         ),
-        {
-          body: client.slashs.map((slash) =>
-            slash.createInteraction(client).toJSON(),
-          ),
-        },
-      )
+      })
       .then(() => {
         logger.info('Successfully registered application commands.');
         return message.react('✅');
