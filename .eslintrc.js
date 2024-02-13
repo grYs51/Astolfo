@@ -4,16 +4,18 @@ module.exports = {
     project: 'tsconfig.json',
     sourceType: 'module',
   },
-  plugins: ['prettier'],
+  plugins: ['prettier', 'jest'],
   extends: [
     'airbnb-base',
     'airbnb-typescript/base',
     'prettier',
+    'plugin:jest/recommended'
   ],
   root: true,
   env: {
     node: true,
     jest: true,
+    "jest/globals": true
   },
   ignorePatterns: ['.eslintrc.js'],
   rules: {

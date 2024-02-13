@@ -3,7 +3,7 @@ import BaseCommand from '../../utils/structures/BaseCommand';
 import DiscordClient from '../../client/client';
 import logger from '../../utils/logger';
 
-export default class InitConfigs extends BaseCommand {
+export default class InitGuildConfigs extends BaseCommand {
   constructor() {
     super('configs', 'testing', []);
   }
