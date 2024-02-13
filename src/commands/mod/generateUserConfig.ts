@@ -2,7 +2,7 @@ import { Message } from 'discord.js';
 import DiscordClient from '../../client/client';
 import BaseCommand from '../../utils/structures/BaseCommand';
 
-export default class GenerateUserconfCommand extends BaseCommand {
+export default class GenerateUserConfigCommand extends BaseCommand {
   constructor() {
     super('generate_userconf', 'mod', []);
   }
@@ -26,7 +26,7 @@ export default class GenerateUserconfCommand extends BaseCommand {
                 user_id: member.id,
               },
             })
-            .then((config) => {
+            .then((config) => {              
               client.userConfigs.set(config.user_id, config);
             });
         });
