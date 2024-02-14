@@ -1,4 +1,3 @@
-// https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-interactionCreate
 import { Events, Interaction } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';

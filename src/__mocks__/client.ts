@@ -7,7 +7,10 @@ export const mockClient  = {
   },
   events: undefined,
   interactions: undefined,
-  slashs: undefined,
+  slashs: {
+    get: jest.fn(),
+    set: jest.fn(),
+  },
   guildConfigs: {
     get: jest.fn(),
     set: jest.fn(),
@@ -21,7 +24,11 @@ export const mockClient  = {
     info: jest.fn(),
     warn: jest.fn(),
   },
-  voiceUsers: [],
+  voiceUsers: {
+    push: jest.fn(),
+    filter: jest.fn(),
+    find: jest.fn(),
+  },
   dataSource: {
     userConfigs: {
       upsert: jest.fn().mockResolvedValue({ user_id: "test-user-id" }),
@@ -29,6 +36,9 @@ export const mockClient  = {
     guildConfigurations: {
       upsert: jest.fn().mockResolvedValue({ guild_id: "test-guild-id" }),
       update: jest.fn().mockResolvedValue({ guild_id: "test-guild-id" }),
+    },
+    voiceStats: {
+      create: jest.fn(),
     },
   },
   guilds: mockGuilds,
