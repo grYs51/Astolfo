@@ -13,7 +13,7 @@ describe('GenerateUserconfigCommand', () => {
 
   beforeEach(() => {
     client = mockClient
-    message = mockMessage;
+    message = mockMessage as unknown as Message;
     command = new GenerateUserConfigCommand();
 
     // Mock the client's guilds and members
