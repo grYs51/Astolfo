@@ -8,7 +8,7 @@ export default class MessageEvent extends BaseEvent {
   }
 
   async run(client: DiscordClient, message: Message) {
-    if (message.author.bot || !message) return;
+    if (!message || message.author.bot ) return;
 
     const config = client.guildConfigs.get(message.guildId!);
     if (!config) return;
@@ -20,7 +20,7 @@ export default class MessageEvent extends BaseEvent {
         .split(/\s+/);
       const command = client.commands.get(cmdName);
       if (command) {
-        command.run(client, message, cmdArgs);
+        return command.run(client, message, cmdArgs);
       }
     }
   }
