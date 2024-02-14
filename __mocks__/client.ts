@@ -42,5 +42,5 @@ export const mockClient  = {
     },
   },
   guilds: mockGuilds,
-  ownerId: "test-owner-id",
-}
+  ownerId: 'test-owner-id',
+};

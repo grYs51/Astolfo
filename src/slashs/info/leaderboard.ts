@@ -23,17 +23,21 @@ export default class LeaderboardEvent extends BaseSlash {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
-      .addBooleanOption((option) =>
-        option
-          .setName('all-time')
-          .setDescription('Show all time stats')
-          .setRequired(false),
-      )
-      .addBooleanOption((option) =>
-        option
-          .setName('current')
-          .setDescription('Show current users in voice channels')
-          .setRequired(false),
+      .addSubcommandGroup((group) =>
+        group
+          .setName('type')
+          .setDescription('Type of leaderboard')
+          .addSubcommand((sub) =>
+            sub
+              .setName('all-time')
+              .setDescription('All time leaderboard')
+              .addBooleanOption((option) =>
+                option
+                  .setName('active')
+                  .setDescription('Include active users')
+                  .setRequired(false),
+              ),
+          ),
       );
   }
   async run(

@@ -1,7 +1,7 @@
 
 import GenerateUserConfigCommand from './generateUserConfig';
-import { mockClient } from '../../__mocks__/client';
-import { mockMessage } from '../../__mocks__/message';
+import { mockClient } from '../../../__mocks__/client';
+import { mockMessage } from '../../../__mocks__/message';
 import { Message } from 'discord.js';
 
 jest.mock('discord.js');

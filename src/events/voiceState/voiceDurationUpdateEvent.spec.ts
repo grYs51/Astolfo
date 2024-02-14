@@ -1,4 +1,4 @@
-import { mockClient } from '../../__mocks__/client';
+import { mockClient } from '../../../__mocks__/client';
 import VoiceDurationUpdateEvent from './voiceDurationUpdateEvent';
 
 describe('VoiceDurationUpdateEvent', () => {

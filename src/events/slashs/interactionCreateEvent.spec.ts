@@ -1,7 +1,7 @@
 import { Interaction } from "discord.js";
-import { mockClient } from "../../__mocks__/client";
+import { mockClient } from "../../../__mocks__/client";
 import InteractionCreateEvent from "./interactionCreateEvent";
-import { mockInteraction } from "../../__mocks__/interaction";
+import { mockInteraction } from "../../../__mocks__/interaction";
 
 describe('InteractionCreateEvent', () => {
   let client: typeof mockClient;

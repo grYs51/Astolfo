@@ -3,5 +3,6 @@
   "watch": [
     "src"
   ],
-  "ext": "ts"
+  "ext": "ts",
+  "ignore": ["*.spec.ts", "__mock__"]
 }

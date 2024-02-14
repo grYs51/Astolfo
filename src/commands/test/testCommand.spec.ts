@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import { mockMessage } from "../../__mocks__/message";
+import { mockMessage } from "../../../__mocks__/message";
 import TestCommand from "./testCommand";
 
 describe('testCommand', () => {

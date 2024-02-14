@@ -1,6 +1,6 @@
 import { Message } from 'discord.js';
-import { mockClient } from '../../__mocks__/client';
-import { mockMessage } from '../../__mocks__/message';
+import { mockClient } from '../../../__mocks__/client';
+import { mockMessage } from '../../../__mocks__/message';
 import MessageEvent from './messageEvent';
 
 describe('MessageEvent', () => {
