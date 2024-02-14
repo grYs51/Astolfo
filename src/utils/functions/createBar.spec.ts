@@ -1,4 +1,4 @@
-import { createBar } from './CreateBar';
+import { createBar } from './createBar';
 
 describe('createBar', () => {
   test('should return a bar with 50% completion', () => {
