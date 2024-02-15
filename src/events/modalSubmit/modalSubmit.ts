@@ -1,4 +1,4 @@
-import { Events, Interaction, InteractionResponse } from 'discord.js';
+import { Events, Interaction } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 
 export default class ModalSubmitEvent extends BaseEvent {
