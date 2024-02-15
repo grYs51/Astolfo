@@ -19,7 +19,7 @@
     "discord.js": "^14.14.1",
     "eslint-config-airbnb-typescript": "^17.1.0",
     "humanize-duration": "^3.31.0",
-    "pino": "^8.17.2",
+    "pino": "^8.18.0",
     "reflect-metadata": "^0.2.1",
     "ts-node": "^10.9.2"
   },
