@@ -9,7 +9,8 @@ updates:
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
     ignore:
       - dependency-name: "typescript"
       - dependency-name: "eslint"
+        update-types: ["version-update"]
