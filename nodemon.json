@@ -1,8 +1,9 @@
 {
+  "verbose": true,
   "exec": "ts-node src/index.ts",
   "watch": [
     "src"
   ],
   "ext": "ts",
-  "ignore": ["*.spec.ts", "__mock__"]
+  "ignore": ["*.spec.ts", "**/__mock__/**"]
 }
