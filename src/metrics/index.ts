@@ -3,11 +3,19 @@ import { collectDefaultMetrics, register } from 'prom-client';
 import { HTTPServerMetricRecord } from './types';
 import './utils.ts/save-on-exit';
 import logger from '../utils/logger';
+import cors from 'cors';
 const app = express();
 const PORT = 3000;
 
 // Initialize default Prometheus metrics
 collectDefaultMetrics();
+
+var corsOptions = {
+  origin: '*',
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 
 // Expose Prometheus metrics endpoint
 app.get('/metrics', async (req: Request, res: Response) => {
