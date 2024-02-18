@@ -49,7 +49,7 @@ export default class LeaderboardEvent extends BaseSlash {
       return;
     }
 
-    const type = interaction.options.data.find((o) => o.name === 'all-time');
+    const type = interaction.options.data[0].options?.[0].name === 'all-time';
 
     await interaction.deferReply().catch(client.logger.error);
 
