@@ -6,6 +6,7 @@ export interface Db {
   voiceStats: PrismaClient['voice_stats'];
   messageStats: PrismaClient['message_stats'];
   userConfigs: PrismaClient['user_configs'];
+  metrics: PrismaClient['metrics'];
 }
 
 let currentClient: PrismaClient;
@@ -26,6 +27,7 @@ export function getDb(): Db {
     voiceStats: currentClient.voice_stats,
     messageStats: currentClient.message_stats,
     userConfigs: currentClient.user_configs,
+    metrics: currentClient.metrics,
   };
 }
 

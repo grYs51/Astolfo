@@ -1,19 +1,25 @@
 import { register } from 'prom-client';
-import { promises as fsPromises } from 'fs';
 import logger from '../../utils/logger';
+import { getDb } from '../../db';
 
-async function saveToFile(metrics: string) {
-  try {
-    logger.info('Saving metrics to file');
-    await fsPromises.writeFile('metrics.txt', metrics);
-  } catch (err) {
-    logger.error('Error saving metrics to file', err);
-  }
+async function saveToDb(metrics: string) {
+  const prisma = getDb();
+  console.log(metrics);
+
+  return prisma.metrics
+    .upsert({
+      where: { id: 1 },
+      update: { jsonb: metrics, updated_at: new Date() },
+      create: { jsonb: metrics },
+    })
+    .catch((e) => {
+      logger.error('Error saving metrics to database', e);
+    });
 }
 // Define shutdown function
 async function shutdown() {
   const metrics = await register.metrics();
-  await saveToFile(metrics);
+  await saveToDb(metrics);
   process.exit(0);
 }
 

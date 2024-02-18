@@ -31,4 +31,23 @@ const slashCount = (slashName: string) => {
   slashCounter.inc({ slashName });
 };
 
-export { commandsCount, eventsCount, slashCount };
+const commandsCountSet = (commandName: string, count: number) => {
+  commandsCounter.inc({ commandName }, count);
+};
+
+const eventsCountSet = (eventName: string, count: number) => {
+  eventsCounter.inc({ eventName }, count);
+};
+
+const slashsCountSet = (slashName: string, count: number) => {
+  slashCounter.inc({ slashName }, count);
+};
+
+export {
+  commandsCount,
+  eventsCount,
+  slashCount,
+  commandsCountSet,
+  eventsCountSet,
+  slashsCountSet,
+};
