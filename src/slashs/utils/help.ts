@@ -8,7 +8,7 @@ import BaseSlash from '../../utils/structures/BaseSlash';
 import client from '../../client/client';
 
 export default class HelpEvent extends BaseSlash {
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

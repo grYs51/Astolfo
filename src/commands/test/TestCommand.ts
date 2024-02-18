@@ -7,7 +7,7 @@ export default class TestCommand extends BaseCommand {
     super('test', 'testing', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     return message.reply({
       content: 'Test command works!',
       allowedMentions: {

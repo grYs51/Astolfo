@@ -7,7 +7,7 @@ export default class PingEvent extends BaseSlash {
     super('ping', 'Shows the ping of the bot');
   }
 
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

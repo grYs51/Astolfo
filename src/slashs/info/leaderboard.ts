@@ -35,7 +35,7 @@ export default class LeaderboardEvent extends BaseSlash {
           ),
       );
   }
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

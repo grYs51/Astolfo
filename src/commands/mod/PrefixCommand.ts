@@ -7,7 +7,7 @@ export default class PrefixCommand extends BaseCommand {
     super('prefix', 'mod', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     const config = client.guildConfigs.get(message.guildId!);
 
     if (!args.length) {

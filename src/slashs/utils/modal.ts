@@ -14,7 +14,7 @@ export default class Modal extends BaseSlash {
     super('modal', 'Shows a modal');
   }
 
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

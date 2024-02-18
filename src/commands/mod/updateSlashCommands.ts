@@ -9,7 +9,7 @@ export default class UpdateSlashCommands extends BaseCommand {
     super('updateslash', 'mod', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id !== client.ownerId) {
       return message.react('⛔');
     }

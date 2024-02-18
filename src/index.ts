@@ -10,6 +10,7 @@ import { IntentsBitField } from 'discord.js';
 import { createClient } from './db';
 import logger from './utils/logger';
 import { setConfigs } from './utils/functions/setConfig';
+import app from './metrics';
 
 export const client = new DiscordClient({
   intents: [
@@ -29,6 +30,7 @@ function main() {
     .then(() => registerEvents())
     .then(() => registerSlash())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
+    .then(() => app)
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);

@@ -7,7 +7,7 @@ export default class WelcomechannelCommand extends BaseCommand {
     super('welcomechannel', 'mod', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (!args.length) {
       return message.reply('Please provide an channel id');
     }

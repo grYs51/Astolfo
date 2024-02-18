@@ -13,7 +13,7 @@ export default class McStatusEvent extends BaseSlash {
     super('mcstatus', 'Shows the status of the minecraft server');
   }
 
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

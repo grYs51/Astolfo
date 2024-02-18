@@ -8,7 +8,7 @@ export default class InitGuildConfigs extends BaseCommand {
     super('configs', 'testing', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id != client.ownerId) {
       return message.react('⛔');
     }

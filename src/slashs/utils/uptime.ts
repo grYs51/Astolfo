@@ -6,7 +6,7 @@ export default class UpTimeEvent extends BaseSlash {
     super('uptime', 'Shows the uptime of the bot');
   }
 
-  async run(
+  async slash(
     client: client,
     interaction: CommandInteraction<CacheType>,
   ): Promise<void> {

@@ -7,7 +7,7 @@ export default class MessageEvent extends BaseEvent {
     super(Events.MessageCreate);
   }
 
-  async run(client: DiscordClient, message: Message) {
+  async event(client: DiscordClient, message: Message) {
     if (!message || message.author.bot ) return;
 
     const config = client.guildConfigs.get(message.guildId!);
