@@ -12,7 +12,7 @@ import {
   getLeaderboardActive,
 } from '../../utils/functions/leaderboard';
 import { voice_stats } from '@prisma/client';
-import { createBar } from '../../utils/functions/createBar';
+import { createBar } from '../../utils/functions/create-bar';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
