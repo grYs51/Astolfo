@@ -2,6 +2,7 @@ import express, { Request, Response } from 'express';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { HTTPServerMetricRecord } from './types';
 import './utils.ts/save-on-exit';
+import logger from '../utils/logger';
 const app = express();
 const PORT = 3000;
 
@@ -25,7 +26,7 @@ app.get('*', (req: Request, res: Response) => {
 
 // Start the HTTP server
 const server = app.listen(PORT, () => {
-  console.log(`Prometheus metrics endpoint listening on port ${PORT}`);
+  logger.info(`Prometheus metrics endpoint listening on port ${PORT}`);
 });
 
 // Export HTTP server for testing or additional manipulation
