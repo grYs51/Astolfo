@@ -6,7 +6,7 @@ export default class ModalSubmitEvent extends BaseEvent {
     super(Events.InteractionCreate);
   }
 
-  async run(client, interaction: Interaction) {
+  async event(client, interaction: Interaction) {
     if (!interaction.isModalSubmit()) return;
     interaction.reply({ content: 'Lol, gay', ephemeral: true });
   }

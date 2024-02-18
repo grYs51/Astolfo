@@ -9,7 +9,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     super(Events.VoiceStateUpdate);
   }
 
-  async run(client: DiscordClient, oldState: VoiceState, newState: VoiceState) {
+  async event(client: DiscordClient, oldState: VoiceState, newState: VoiceState) {
     const date = new Date();
     return handleVoiceChannelStateChanges(oldState, newState, date);
   }

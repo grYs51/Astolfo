@@ -8,7 +8,7 @@ export default class WarnEvent extends BaseEvent {
     super(Events.Warn);
   }
 
-  async run(client: DiscordClient, error: Error) {
+  async event(client: DiscordClient, error: Error) {
     client.logger.child({ event: 'warn' }).error(error);
   }
 }

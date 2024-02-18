@@ -13,7 +13,7 @@ export default class McCommand extends BaseCommand {
     super('mc', 'test', []);
   }
 
-  async run(client: DiscordClient, message: Message, args: Array<string>) {
+  async command(client: DiscordClient, message: Message, args: Array<string>) {
     message.channel.sendTyping();
 
     const embed = new EmbedBuilder()

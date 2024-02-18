@@ -8,7 +8,7 @@ export default class GuildCreateEvent extends BaseEvent {
     super(Events.GuildCreate);
   }
 
-  async run(client: DiscordClient, guild: Guild) {
+  async event(client: DiscordClient, guild: Guild) {
     const config = await client.dataSource.guildConfigurations.upsert({
       where: {
         guild_id: guild.id,

@@ -7,7 +7,7 @@ export default class GuildMemberAddEvent extends BaseEvent {
     super(Events.GuildMemberAdd);
   }
 
-  async run(client: DiscordClient, member: GuildMember) {
+  async event(client: DiscordClient, member: GuildMember) {
     const config = client.guildConfigs.get(member.guild.id);
     const channelId = config?.welcome_channel_id;
     
