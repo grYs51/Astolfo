@@ -39,3 +39,10 @@ model user_configs {
   user_id String  @id @db.VarChar
   mw_id   String? @unique @db.VarChar
 }
+
+model metrics {
+  id               String @id @default(dbgenerated()) @db.VarChar
+  type             String @db.VarChar
+  name             String @db.VarChar
+  value            Int    @default(0)
+}
