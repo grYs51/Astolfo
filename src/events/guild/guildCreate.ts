@@ -9,29 +9,23 @@ export default class GuildCreateEvent extends BaseEvent {
   }
 
   async run(client: DiscordClient, guild: Guild) {
-    const config = await client.dataSource.guildConfigurations.findUnique({
+    const config = await client.dataSource.guildConfigurations.upsert({
       where: {
         guild_id: guild.id,
       },
+      update: {},
+      create: {
+        guild_id: guild.id,
+        prefix: '!',
+      },
     });
-
+  
+    client.guildConfigs.set(guild.id, config);
+  
     if (config) {
-      client.logger.info('A configuration was found!');
-      client.guildConfigs.set(guild.id, config);
+      client.logger.info('A configuration was found or created!');
     } else {
-      client.logger.info('A configuration was not found. Creating one!');
-      const config = await client.dataSource.guildConfigurations.upsert({
-        where: {
-          guild_id: guild.id,
-        },
-        update: {},
-        create: {
-          guild_id: guild.id,
-          prefix: '!',
-        },
-      });
-
-      client.guildConfigs.set(guild.id, config);
+      client.logger.info('A configuration could not be found or created.');
     }
   }
 }
