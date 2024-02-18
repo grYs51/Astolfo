@@ -11,6 +11,8 @@ import { createClient } from './db';
 import logger from './utils/logger';
 import { setConfigs } from './utils/functions/setConfig';
 import app from './metrics';
+import { initPrometheusData } from './metrics/utils.ts/load-on-start';
+import path from 'path';
 
 export const client = new DiscordClient({
   intents: [
@@ -29,8 +31,9 @@ function main() {
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
-    .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .then(() => app)
+    .then(() => initPrometheusData('metrics.txt'))
+    .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);

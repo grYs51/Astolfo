@@ -1,7 +1,7 @@
 import express, { Request, Response } from 'express';
 import { collectDefaultMetrics, register } from 'prom-client';
 import { HTTPServerMetricRecord } from './types';
-
+import './utils.ts/save-on-exit';
 const app = express();
 const PORT = 3000;
 
