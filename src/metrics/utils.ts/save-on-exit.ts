@@ -4,8 +4,6 @@ import { getDb } from '../../db';
 
 async function saveToDb(metrics: string) {
   const prisma = getDb();
-  console.log(metrics);
-
   return prisma.metrics
     .upsert({
       where: { id: 1 },
