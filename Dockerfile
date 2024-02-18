@@ -17,5 +17,8 @@ RUN npm run build
 
 RUN rm -rf /app/src
 
+# Expose the bot's port
+EXPOSE 3000
+
 # Run the bot
 CMD ["npm", "run", "start"]

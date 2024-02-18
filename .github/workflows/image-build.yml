@@ -42,7 +42,7 @@ jobs:
         run: docker build -t astolfo-bot .
 
       - name: Run docker container
-        run: docker run -d --name astolfo-bot astolfo-bot
+        run: docker run -d -p 3003:3000 --name astolfo-bot astolfo-bot
 
       - name: clean up docker images
         run: docker image prune -f
