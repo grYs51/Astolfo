@@ -11,8 +11,8 @@ import {
   getLeaderboard,
   getLeaderboardActive,
 } from '../../utils/functions/leaderboard';
-import { createBar } from '../../utils/functions/createBar';
 import { voice_stats } from '@prisma/client';
+import { createBar } from '../../utils/functions/createBar';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -28,15 +28,10 @@ export default class LeaderboardEvent extends BaseSlash {
           .setName('type')
           .setDescription('Type of leaderboard')
           .addSubcommand((sub) =>
-            sub
-              .setName('all-time')
-              .setDescription('All time leaderboard')
-              .addBooleanOption((option) =>
-                option
-                  .setName('active')
-                  .setDescription('Include active users')
-                  .setRequired(false),
-              ),
+            sub.setName('all-time').setDescription('All time leaderboard'),
+          )
+          .addSubcommand((sub) =>
+            sub.setName('current').setDescription('Current leaderboard'),
           ),
       );
   }
