@@ -2,7 +2,7 @@ import { register } from 'prom-client';
 import logger from '../../utils/logger';
 import { getDb } from '../../db';
 
-async function saveToDb(metrics: string) {
+export async function saveToDb(metrics: string) {
   const prisma = getDb();
   return prisma.metrics
     .upsert({

@@ -44,6 +44,7 @@ function parsePrometheusTextFormat(metricsData: any) {
 }
 
 function initializePrometheusMetrics(metrics: Metrics[]): void {
+  logger.info('Initializing Prometheus metrics');
   metrics.forEach(({ name, labels, values, type }) => {
     if (type === 'counter') {
       switch (name) {

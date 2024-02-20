@@ -12,7 +12,6 @@ import logger from './utils/logger';
 import { setConfigs } from './utils/functions/setConfig';
 import app from './metrics';
 import { initPrometheusData } from './metrics/utils.ts/load-on-start';
-import path from 'path';
 
 export const client = new DiscordClient({
   intents: [
