@@ -5,7 +5,4 @@ export const handleUserPresenceChange = async (oldStatus: Presence|null, newStat
   if( oldStatus?.status !== newStatus.status) {
     await handleStatusUpdate(oldStatus, newStatus, date);
   }
-
-  
-
 }
