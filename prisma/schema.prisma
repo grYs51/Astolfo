@@ -28,11 +28,19 @@ model voice_stats {
 }
 
 model user_statuses {
-  id         String   @id @default(uuid()) @db.VarChar
-  user_id    String   @db.VarChar
-  status     String   @db.VarChar
-  created_at DateTime @default(now()) @db.Timestamp(6)
+  id         String    @id @default(uuid()) @db.VarChar
+  user_id    String    @db.VarChar
+  status     String    @db.VarChar
+  created_at DateTime  @default(now()) @db.Timestamp(6)
   ended_at   DateTime? @db.Timestamp(6)
+}
+
+model user_activities {
+  id          String   @id @default(uuid()) @db.VarChar
+  user_id     String   @db.VarChar
+  activity_id String   @db.VarChar
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  ended_at    DateTime @db.Timestamp(6)
 }
 
 model message_stats {
@@ -40,7 +48,7 @@ model message_stats {
   guild_id   String   @db.VarChar
   member_id  String   @db.VarChar
   channel_id String   @db.VarChar
-  issued_on  DateTime @db.Timestamp(6)
+  created_at DateTime @db.Timestamp(6)
 }
 
 model user_configs {
@@ -49,8 +57,8 @@ model user_configs {
 }
 
 model metrics {
-  id         Int      @id @default(autoincrement())
-  jsonb      Json
   created_at DateTime @default(now()) @db.Timestamp(6)
+  jsonb      Json
   updated_at DateTime @default(now()) @db.Timestamp(6)
+  id         Int      @id @default(autoincrement())
 }
