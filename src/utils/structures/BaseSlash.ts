@@ -1,6 +1,6 @@
 import DiscordClient from '../../client/client';
 import { CommandInteraction, CacheType, SlashCommandBuilder } from 'discord.js';
-import { slashCount } from '../../metrics/utils.ts/counter';
+import { slashCount } from '../../api/utils.ts/counter';
 
 export default abstract class BaseSlash {
   constructor(
