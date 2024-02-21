@@ -10,8 +10,8 @@ import { IntentsBitField } from 'discord.js';
 import { createClient } from './db';
 import logger from './utils/logger';
 import { setConfigs } from './utils/functions/setConfig';
-import app from './metrics';
-import { initPrometheusData } from './metrics/utils.ts/load-on-start';
+import app from './api';
+import { initPrometheusData } from './api/utils.ts/load-on-start';
 
 export const client = new DiscordClient({
   intents: [

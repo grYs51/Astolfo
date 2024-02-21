@@ -1,7 +1,7 @@
 import { Events, Interaction } from 'discord.js';
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
-import { slashCount } from '../../metrics/utils.ts/counter';
+import { slashCount } from '../../api/utils.ts/counter';
 
 export default class InteractionCreateEvent extends BaseEvent {
   constructor() {

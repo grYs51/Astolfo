@@ -1,6 +1,6 @@
 import { Message, MessageReaction } from 'discord.js';
 import DiscordClient from '../../client/client';
-import { commandsCount } from '../../metrics/utils.ts/counter';
+import { commandsCount } from '../../api/utils.ts/counter';
 
 export default abstract class BaseCommand {
   constructor(
