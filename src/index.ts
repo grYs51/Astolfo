@@ -30,8 +30,8 @@ function main() {
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
-    .then(() => app)
-    .then(() => initPrometheusData('metrics.txt'))
+    .then(() => initPrometheusData())
+    .then(() => app())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .catch((error) => {
       logger.error('Failed to start bot');
