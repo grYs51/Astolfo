@@ -1,19 +1,19 @@
 import { Counter } from 'prom-client';
 
 // Define a Prometheus counter metric
-const commandsCounter = new Counter({
+export const commandsCounter = new Counter({
   name: 'discord_bot_commands_total',
   help: 'Total number of commands executed',
   labelNames: ['commandName'],
 });
 
-const eventsCounter = new Counter({
+export const eventsCounter = new Counter({
   name: 'discord_bot_events_total',
   help: 'Total number of events received',
   labelNames: ['eventName'],
 });
 
-const slashCounter = new Counter({
+export const slashCounter = new Counter({
   name: 'discord_bot_slash_total',
   help: 'Total number of slash commands executed',
   labelNames: ['slashName'],
@@ -32,14 +32,19 @@ const slashCount = (slashName: string) => {
 };
 
 const commandsCountSet = (commandName: string, count: number) => {
+  console.log('commandsCountSet', commandName, count);
+  
   commandsCounter.inc({ commandName }, count);
 };
 
 const eventsCountSet = (eventName: string, count: number) => {
+  console.log('eventsCountSet', eventName, count);
+  
   eventsCounter.inc({ eventName }, count);
 };
 
 const slashsCountSet = (slashName: string, count: number) => {
+  console.log('slashsCountSet', slashName, count);
   slashCounter.inc({ slashName }, count);
 };
 

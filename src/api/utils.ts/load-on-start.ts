@@ -1,70 +1,73 @@
 import logger from '../../utils/logger';
 import { getDb } from '../../db';
 import { commandsCountSet, eventsCountSet, slashsCountSet } from './counter';
-interface Metrics {
-  name: string;
-  labels: { [key: string]: string };
-  values: { [key: string]: string };
-  type: string;
+import { metrics } from '@prisma/client';
+
+interface ParsedMetric {
+  key: string;
+  attributes: { [key: string]: string };
+  value: number;
 }
+
 
 async function readMetricsFromDb() {
   const prisma = getDb();
   return prisma.metrics.findUnique({ where: { id: 1 } });
 }
 
-function parsePrometheusTextFormat(metricsData: any) {
-  const metrics: string = metricsData.jsonb;
-  const parsed = metrics
+function parsePrometheusTextFormat(metricsData: metrics): { [key: string]: ParsedMetric[] } {
+  const metrics = metricsData.jsonb as string;
+  const parsedData: { [key: string]: ParsedMetric[] } = {};
+
+  metrics
     .split('\n')
-    .filter((line: string) => !line.startsWith('#'))
-    .filter((line: string) => line !== '')
-    .filter((line: string) => line.startsWith('discord_'));
-  const parsedMetrics = parsed.map((line: string) => {
-    const startOfLabels = line.indexOf('{');
-    const endOfLabels = line.indexOf('}');
-    const name = line.substring(0, startOfLabels);
-    const labels = line.substring(startOfLabels + 1, endOfLabels);
-    const value = line.substring(endOfLabels + 2);
-    const parsedLabels = labels
-      .split(',')
-      .map((label) => label.split('='))
-      .reduce((acc, [key, value]) => {
-        acc[key] = value.replace(/"/g, '');
-        return acc;
-      }, {});
-    return {
-      name,
-      labels: parsedLabels,
-      values: { value },
-      type: 'counter',
-    };
-  });
-  return parsedMetrics;
+    .filter(line => line.startsWith("discord_"))
+    .forEach(line => {
+      if (line.startsWith("# TYPE")) {
+        const metricType = line.split(" ")[3];
+        parsedData[metricType] = [];
+      } else {
+        const [keyValue, value] = line.split(" ");
+        const [key, attributes] = keyValue.split("{");
+        const parsedAttributes = attributes
+          ? attributes.slice(0, -1).split(", ").reduce((acc, attribute) => {
+              const [attrKey, attrValue] = attribute.split("=");
+              acc[attrKey] = attrValue.slice(1, -1);
+              return acc;
+            }, {} as { [key: string]: string })
+          : {};
+        const metricType = Object.keys(parsedData)[Object.keys(parsedData).length - 1];
+        parsedData[metricType].push({ key, attributes: parsedAttributes, value: parseInt(value) });
+      }
+    });
+
+  return parsedData;
 }
 
-function initializePrometheusMetrics(metrics: Metrics[]): void {
+function initializePrometheusMetrics(metrics: { [metricType: string]: ParsedMetric[] }): void {
   logger.info('Initializing Prometheus metrics');
-  metrics.forEach(({ name, labels, values, type }) => {
-    if (type === 'counter') {
-      switch (name) {
-        case 'discord_bot_commands_total':
-          commandsCountSet(labels.commandName, parseInt(values.value));
-          break;
-        case 'discord_bot_events_total':
-          eventsCountSet(labels.eventName, parseInt(values.value));
-          break;
-        case 'discord_bot_slash_total':
-          slashsCountSet(labels.slashName, parseInt(values.value));
-          break;
-        default:
-          logger.error(`Unknown metric name ${name}`);
-      }
+  Object.entries(metrics).forEach(([metricType, metricList]) => {
+    if (metricType === 'counter') {
+      metricList.forEach(({ key, attributes, value }) => {
+        switch (key) {
+          case 'discord_bot_commands_total':
+            commandsCountSet(attributes.commandName, value);
+            break;
+          case 'discord_bot_events_total':
+            eventsCountSet(attributes.eventName, value);
+            break;
+          case 'discord_bot_slash_total':
+            slashsCountSet(attributes.slashName, value);
+            break;
+          default:
+            logger.error(`Unknown metric name ${key}`);
+        }
+      });
     }
   });
 }
 
-async function initPrometheusData(filePath: string) {
+async function initPrometheusData() {
   const metricsData = await readMetricsFromDb();
   if (!metricsData) {
     logger.error('No metrics data found');
