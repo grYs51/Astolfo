@@ -11,3 +11,5 @@ services:
       - DISCORD_PUBLIC_KEY
       - DISCORD_CLIENT_SECRET
       - OWNER
+    ports:
+      - "3003:3000"
