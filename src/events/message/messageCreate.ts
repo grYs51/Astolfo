@@ -1,6 +1,8 @@
 import BaseEvent from '../../utils/structures/BaseEvent';
 import { Events, Message } from 'discord.js';
 import DiscordClient from '../../client/client';
+import { saveMessage } from '../../utils/handlers/message/save-message';
+import { runCommand } from '../../utils/handlers/message/run-command';
 
 export default class MessageEvent extends BaseEvent {
   constructor() {
@@ -8,20 +10,10 @@ export default class MessageEvent extends BaseEvent {
   }
 
   async event(client: DiscordClient, message: Message) {
-    if (!message || message.author.bot ) return;
+    if (!message || message.author.bot) return;
 
-    const config = client.guildConfigs.get(message.guildId!);
-    if (!config) return;
+    saveMessage(message);
 
-    if (message.content.startsWith(config.prefix)) {
-      const [cmdName, ...cmdArgs] = message.content
-        .slice(config.prefix.length)
-        .trim()
-        .split(/\s+/);
-      const command = client.commands.get(cmdName);
-      if (command) {
-        return command.run(client, message, cmdArgs);
-      }
-    }
+    runCommand(client, message);
   }
 }
