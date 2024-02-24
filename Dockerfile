@@ -7,7 +7,7 @@ COPY package.json /app
 COPY yarn.lock /app
 COPY src /app/src
 COPY prisma /app/prisma
-COPY .env /app
+# COPY .env /app
 COPY tsconfig.json /app
 
 # Build the bot's source code
