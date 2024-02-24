@@ -1,6 +1,7 @@
 import BaseEvent from '../../utils/structures/BaseEvent';
 import DiscordClient from '../../client/client';
 import { Events } from 'discord.js';
+import { setStatusCache } from '../../utils/functions/set-status';
 
 export default class ReadyEvent extends BaseEvent {
   constructor() {
@@ -8,5 +9,7 @@ export default class ReadyEvent extends BaseEvent {
   }
   async event(client: DiscordClient) {
     client.logger.info('Astolfo is ready!!');
+
+    setStatusCache();
   }
 }

@@ -9,7 +9,7 @@ export const setConfigs = async (prismaClient: PrismaClient) => {
   );
 
   // users
-  const userConfigs = await prismaClient.user_configs.findMany()
+  const userConfigs = await prismaClient.user_configs.findMany();
   userConfigs.forEach((config) =>
     client.userConfigs.set(config.user_id, config),
   );
