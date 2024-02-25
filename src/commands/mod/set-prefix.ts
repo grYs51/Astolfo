@@ -14,7 +14,7 @@ export default class SetPrefixCommand extends BaseCommand {
       return message.reply(
         `Please provide an prefix\nUsage: \`${
           config?.prefix || '!'
-        }prefix <new prefix>\``,
+        }prefix <new prefix>\``
       );
     }
 

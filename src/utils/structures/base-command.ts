@@ -6,7 +6,7 @@ export default abstract class BaseCommand {
   constructor(
     private _name: string,
     private _category: string,
-    private _aliases: Array<string>,
+    private _aliases: Array<string>
   ) {}
 
   get name(): string {
@@ -29,6 +29,6 @@ export default abstract class BaseCommand {
   protected abstract command(
     client: DiscordClient,
     message: Message,
-    args: Array<string> | null,
+    args: Array<string> | null
   ): Promise<Message | MessageReaction>;
 }

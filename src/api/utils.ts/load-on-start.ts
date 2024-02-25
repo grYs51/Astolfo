@@ -22,33 +22,42 @@ function parsePrometheusTextFormat(metricsData: any) {
     .filter((line: string) => !line.startsWith('# HELP'))
     .filter((line: string) => line.includes('discord_'));
 
-    const parsedData: { [key: string]: ParsedMetric[] } = {};
+  const parsedData: { [key: string]: ParsedMetric[] } = {};
 
-    let metricType: string | null = null;
-    
-    for (const line of parsed) {
-      if (line.startsWith("# TYPE")) {
-        metricType = line.split(" ")[3];
-        parsedData[metricType!] = parsedData[metricType!] || [];
-      } else {
-        const [keyValue, value] = line.split(" ");
-        const [key, attributes] = keyValue.split("{");
-        const parsedAttributes = attributes
-          ? attributes.slice(0, -1).split(", ").reduce((acc, attribute) => {
-              const [attrKey, attrValue] = attribute.split("=");
+  let metricType: string | null = null;
+
+  for (const line of parsed) {
+    if (line.startsWith('# TYPE')) {
+      metricType = line.split(' ')[3];
+      parsedData[metricType!] = parsedData[metricType!] || [];
+    } else {
+      const [keyValue, value] = line.split(' ');
+      const [key, attributes] = keyValue.split('{');
+      const parsedAttributes = attributes
+        ? attributes
+            .slice(0, -1)
+            .split(', ')
+            .reduce((acc, attribute) => {
+              const [attrKey, attrValue] = attribute.split('=');
               acc[attrKey] = attrValue.slice(1, -1);
               return acc;
             }, {})
-          : {};
-        parsedData[metricType!].push({key, attributes: parsedAttributes, value: parseInt(value) });
-      }
+        : {};
+      parsedData[metricType!].push({
+        key,
+        attributes: parsedAttributes,
+        value: parseInt(value),
+      });
     }
+  }
   return parsedData;
 }
 
-function initializePrometheusMetrics(metrics: { [metricType: string]: ParsedMetric[] }): void {
+function initializePrometheusMetrics(metrics: {
+  [metricType: string]: ParsedMetric[];
+}): void {
   logger.info('Initializing Prometheus metrics');
-  Object.keys(metrics).forEach(metricKey => {
+  Object.keys(metrics).forEach((metricKey) => {
     metrics[metricKey].forEach(({ key, attributes, value }) => {
       if (metricKey === 'counter') {
         switch (key) {

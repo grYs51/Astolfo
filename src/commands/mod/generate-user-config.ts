@@ -4,7 +4,7 @@ import BaseCommand from '../../utils/structures/base-command';
 
 export default class GenerateUserConfig extends BaseCommand {
   constructor() {
-    super('generate_userconfigs', 'mod', ["guc"]);
+    super('generate_userconfigs', 'mod', ['guc']);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
@@ -26,7 +26,7 @@ export default class GenerateUserConfig extends BaseCommand {
                 user_id: member.id,
               },
             })
-            .then((config) => {              
+            .then((config) => {
               client.userConfigs.set(config.user_id, config);
             });
         });

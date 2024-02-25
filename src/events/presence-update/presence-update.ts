@@ -8,7 +8,11 @@ export default class PresenceUpdateEvent extends BaseEvent {
     super(Events.PresenceUpdate);
   }
 
-  async event(client: DiscordClient, oldPresence: Presence | null, newPresence: Presence) {
+  async event(
+    client: DiscordClient,
+    oldPresence: Presence | null,
+    newPresence: Presence
+  ) {
     const date = new Date();
 
     return handleUserPresenceChange(oldPresence, newPresence, date);

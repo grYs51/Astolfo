@@ -15,7 +15,7 @@ export default class McStatusEvent extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     await interaction.deferReply().catch(client.logger.error);
 

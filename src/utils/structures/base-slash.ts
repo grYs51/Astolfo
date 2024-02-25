@@ -5,7 +5,7 @@ import { slashCount } from '../../api/utils.ts/counter';
 export default abstract class BaseSlash {
   constructor(
     private _name: string,
-    private _description: string,
+    private _description: string
   ) {}
 
   get name(): string {
@@ -24,7 +24,7 @@ export default abstract class BaseSlash {
 
   run(
     client: DiscordClient,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     slashCount(this.name);
     return this.slash(client, interaction);
@@ -32,6 +32,6 @@ export default abstract class BaseSlash {
 
   protected abstract slash(
     client: DiscordClient,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void>;
 }

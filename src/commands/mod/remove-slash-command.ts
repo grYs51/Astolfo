@@ -5,7 +5,7 @@ import rest from '../../utils/functions/rest';
 
 export default class RemoveSlashCommand extends BaseCommand {
   constructor() {
-    super('removeslash', 'mod', ["rs"]);
+    super('removeslash', 'mod', ['rs']);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
@@ -31,7 +31,7 @@ export default class RemoveSlashCommand extends BaseCommand {
   private async removeSlashCommands() {
     return rest.put(
       Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!),
-      { body: [] },
+      { body: [] }
     );
   }
 
@@ -40,7 +40,7 @@ export default class RemoveSlashCommand extends BaseCommand {
 
     return rest.put(
       Routes.applicationGuildCommands(process.env.DISCORD_CLIENT_ID!, guildId),
-      { body: [] },
+      { body: [] }
     );
   }
 }

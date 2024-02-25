@@ -9,7 +9,7 @@ export default class PingEvent extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     const ping = Date.now() - interaction.createdTimestamp;
     await interaction.reply(`Pong! \`${ping}ms\``);

@@ -1,22 +1,33 @@
 import { VoiceState } from 'discord.js';
-import { handleUserChangeVoiceChannel, handleUserJoinedVoiceChannel, handleUserLeftVoiceChannel } from '.';
+import {
+  handleUserChangeVoiceChannel,
+  handleUserJoinedVoiceChannel,
+  handleUserLeftVoiceChannel,
+} from '.';
 
 const userJoinedVoiceChannel = (oldState: VoiceState, newState: VoiceState) => {
   return !oldState.channel && newState.channel;
-}
+};
 
 const userLeftVoiceChannel = (oldState: VoiceState, newState: VoiceState) => {
   return oldState.channel && !newState.channel;
-}
+};
 
-const userChangedVoiceChannel = (oldState: VoiceState, newState: VoiceState) => {
-  return oldState.channel && newState.channel && oldState.channel.id !== newState.channel.id;
-}
+const userChangedVoiceChannel = (
+  oldState: VoiceState,
+  newState: VoiceState
+) => {
+  return (
+    oldState.channel &&
+    newState.channel &&
+    oldState.channel.id !== newState.channel.id
+  );
+};
 
 export const handleVoiceChannelStateChanges = (
   oldState: VoiceState,
   newState: VoiceState,
-  date: Date,
+  date: Date
 ) => {
   if (userJoinedVoiceChannel(oldState, newState)) {
     return handleUserJoinedVoiceChannel(newState, date);
@@ -30,4 +41,3 @@ export const handleVoiceChannelStateChanges = (
     return handleUserChangeVoiceChannel(oldState, newState, date);
   }
 };
-

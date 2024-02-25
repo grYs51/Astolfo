@@ -10,7 +10,7 @@ import client from '../../client/client';
 export default class HelpEvent extends BaseSlash {
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     const fields: APIEmbedField[] = client.slashs.map((slash) => {
       return {

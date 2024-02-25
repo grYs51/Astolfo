@@ -19,9 +19,9 @@ export default class GuildCreateEvent extends BaseEvent {
         prefix: '!',
       },
     });
-  
+
     client.guildConfigs.set(guild.id, config);
-  
+
     if (config) {
       client.logger.info('A configuration was found or created!');
     } else {
