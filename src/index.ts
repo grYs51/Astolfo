@@ -7,10 +7,10 @@ import {
 } from './utils/registry';
 import DiscordClient from './client/client';
 import { IntentsBitField } from 'discord.js';
-import { createClient } from './db';
+import { createPrismaClient } from './db';
 import logger from './utils/logger';
-import { setConfigs } from './utils/functions/setConfig';
-import app from './api';
+import { setConfigs } from './utils/functions/set-config';
+import server from './api';
 import { initPrometheusData } from './api/utils.ts/load-on-start';
 
 export const client = new DiscordClient({
@@ -24,20 +24,19 @@ export const client = new DiscordClient({
   ],
 });
 
-function main() {
-  createClient()
+const main = () =>
+  createPrismaClient()
     .then(setConfigs)
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
     .then(() => initPrometheusData())
-    .then(() => app())
+    .then(() => server())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);
       process.exit(1);
     });
-}
 
 main();
