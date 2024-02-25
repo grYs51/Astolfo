@@ -12,7 +12,7 @@ export interface Db {
 
 let currentClient: PrismaClient;
 
-export async function createClient() {
+export async function createPrismaClient() {
   currentClient = new PrismaClient();
   logger.info('Database client initialized');
   return currentClient;
