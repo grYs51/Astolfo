@@ -1,10 +1,10 @@
 import { Message } from 'discord.js';
 import DiscordClient from '../../client/client';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 
-export default class GenerateUserConfigCommand extends BaseCommand {
+export default class GenerateUserConfig extends BaseCommand {
   constructor() {
-    super('generate_userconf', 'mod', []);
+    super('generate_userconfigs', 'mod', ["guc"]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

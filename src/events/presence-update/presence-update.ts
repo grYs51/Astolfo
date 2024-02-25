@@ -1,5 +1,5 @@
 import { Events, Presence } from 'discord.js';
-import BaseEvent from '../../utils/structures/BaseEvent';
+import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { handleUserPresenceChange } from '../../utils/handlers/presence';
 

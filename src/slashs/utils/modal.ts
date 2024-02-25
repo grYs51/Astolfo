@@ -5,7 +5,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
 } from 'discord.js';
-import BaseSlash from '../../utils/structures/BaseSlash';
+import BaseSlash from '../../utils/structures/base-slash';
 import client from '../../client/client';
 import { ModalBuilder } from '@discordjs/builders';
 

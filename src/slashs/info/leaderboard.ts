@@ -6,7 +6,7 @@ import {
   SlashCommandBuilder,
 } from 'discord.js';
 import client from '../../client/client';
-import BaseSlash from '../../utils/structures/BaseSlash';
+import BaseSlash from '../../utils/structures/base-slash';
 import {
   getLeaderboard,
   getLeaderboardActive,

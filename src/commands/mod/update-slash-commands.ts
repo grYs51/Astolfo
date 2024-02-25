@@ -1,12 +1,12 @@
 import { Message, Routes } from 'discord.js';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import logger from '../../utils/logger';
 import rest from '../../utils/functions/rest';
 
 export default class UpdateSlashCommands extends BaseCommand {
   constructor() {
-    super('updateslash', 'mod', []);
+    super('updateslash', 'mod', ["us"]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

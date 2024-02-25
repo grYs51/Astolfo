@@ -1,11 +1,11 @@
 import { Message, Routes } from 'discord.js';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import rest from '../../utils/functions/rest';
 
 export default class RemoveSlashCommand extends BaseCommand {
   constructor() {
-    super('removeslash', 'mod', []);
+    super('removeslash', 'mod', ["rs"]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

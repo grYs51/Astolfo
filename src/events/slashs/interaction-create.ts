@@ -1,5 +1,5 @@
 import { Events, Interaction } from 'discord.js';
-import BaseEvent from '../../utils/structures/BaseEvent';
+import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 
 export default class InteractionCreateEvent extends BaseEvent {

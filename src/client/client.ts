@@ -1,7 +1,7 @@
 import { Client, ClientOptions, Collection } from 'discord.js';
-import BaseEvent from '../utils/structures/BaseEvent';
-import BaseCommand from '../utils/structures/BaseCommand';
-import BaseSlash from '../utils/structures/BaseSlash';
+import BaseEvent from '../utils/structures/base-event';
+import BaseCommand from '../utils/structures/base-command';
+import BaseSlash from '../utils/structures/base-slash';
 import { Logger } from 'pino';
 import { guild_configs, user_configs, user_statuses, voice_stats } from '@prisma/client';
 import { Db } from '../db';

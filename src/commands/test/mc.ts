@@ -1,5 +1,5 @@
 import { Message, EmbedBuilder } from 'discord.js';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 // import * as mc from 'minecraft-server-util';
 

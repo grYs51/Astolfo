@@ -46,10 +46,10 @@ model user_activities {
 model message_stats {
   id         String   @id @default(uuid()) @db.VarChar
   guild_id   String   @db.VarChar
-  user_id  String   @db.VarChar
   channel_id String   @db.VarChar
-  message_id String   @db.VarChar
   created_at DateTime @default(now()) @db.Timestamp(6)
+  message_id String   @db.VarChar
+  user_id    String   @db.VarChar
 }
 
 model user_configs {
