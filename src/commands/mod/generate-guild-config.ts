@@ -1,11 +1,11 @@
 import { Message } from 'discord.js';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import logger from '../../utils/logger';
 
-export default class InitGuildConfigs extends BaseCommand {
+export default class GenerateGuildConfigs extends BaseCommand {
   constructor() {
-    super('configs', 'testing', []);
+    super('generate_guildconfigs', 'testing', ["ggc"]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

@@ -1,28 +1,27 @@
 import { Message } from 'discord.js';
-import BaseCommand from '../../utils/structures/BaseCommand';
+import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 
-export default class PrefixCommand extends BaseCommand {
+export default class SetWelcomeChannelCommand extends BaseCommand {
   constructor() {
-    super('prefix', 'mod', []);
+    super('setwelcomechannel', 'mod', ['swc']);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
-    const config = client.guildConfigs.get(message.guildId!);
-
     if (!args.length) {
-      return message.reply(
-        `Please provide an prefix\nUsage: \`${
-          config?.prefix || '!'
-        }prefix <new prefix>\``,
-      );
+      return message.reply('Please provide an channel id');
     }
 
-    const [newPrefix] = args;
+    const channel = message.guild?.channels.cache.get(args[0]);
+    if (!channel || channel.guildId != message.guildId) {
+      return message.reply('Please provide an valid channel id');
+    }
+
+    const [newChannelId] = args;
     return client.dataSource.guildConfigurations
       .update({
         data: {
-          prefix: newPrefix,
+          welcome_channel_id: newChannelId,
         },
         where: {
           guild_id: message.guildId!,

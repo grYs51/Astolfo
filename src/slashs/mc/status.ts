@@ -1,4 +1,4 @@
-import BaseSlash from '../../utils/structures/BaseSlash';
+import BaseSlash from '../../utils/structures/base-slash';
 import client from '../../client/client';
 import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 // import * as mc from 'minecraft-server-util';

@@ -1,6 +1,6 @@
 // https://discord.js.org/#/docs/main/stable/class/Client?scrollTo=e-guildCreate
 import { Events, Guild } from 'discord.js';
-import BaseEvent from '../../utils/structures/BaseEvent';
+import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 
 export default class GuildCreateEvent extends BaseEvent {

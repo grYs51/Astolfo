@@ -1,5 +1,5 @@
 import { Events, GuildMember, TextChannel } from 'discord.js';
-import BaseEvent from '../../utils/structures/BaseEvent';
+import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 
 export default class GuildMemberAddEvent extends BaseEvent {

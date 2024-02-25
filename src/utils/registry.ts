@@ -1,9 +1,9 @@
 import path from 'path';
 import { promises as fs } from 'fs';
 import DiscordClient from '../client/client';
-import BaseCommand from '../utils/structures/BaseCommand';
-import BaseEvent from './structures/BaseEvent';
-import BaseSlash from './structures/BaseSlash';
+import BaseCommand from './structures/base-command';
+import BaseEvent from './structures/base-event';
+import BaseSlash from './structures/base-slash';
 import { client } from '..';
 
 enum FileType {
