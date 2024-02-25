@@ -4,7 +4,7 @@
     "project": "tsconfig.json",
     "sourceType": "module"
   },
-  "plugins": ["prettier", "jest"],
+  "plugins": ["@typescript-eslint", "prettier", "jest"],
   "extends": [
     "airbnb-base",
     "airbnb-typescript/base",

@@ -22,5 +22,3 @@ export const saveStatus = async (oldStatus: Presence, date: Date) => {
 
   return;
 };
-
-

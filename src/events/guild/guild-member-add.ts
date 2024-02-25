@@ -10,17 +10,17 @@ export default class GuildMemberAddEvent extends BaseEvent {
   async event(client: DiscordClient, member: GuildMember) {
     const config = client.guildConfigs.get(member.guild.id);
     const channelId = config?.welcome_channel_id;
-    
+
     if (!channelId) {
-      return 
+      return;
     }
-  
+
     const channel = member.guild.channels.cache.get(channelId) as TextChannel;
-    
+
     if (!channel) {
       return client.logger.info('No welcome channel found');
     }
-  
+
     channel.send(`Welcome ${member}`);
   }
 }

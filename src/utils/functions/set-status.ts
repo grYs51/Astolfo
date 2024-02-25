@@ -1,5 +1,5 @@
-import { user_statuses } from "@prisma/client";
-import { client } from "../..";
+import { user_statuses } from '@prisma/client';
+import { client } from '../..';
 
 export const setStatusCache = async () => {
   const date = new Date();
@@ -18,4 +18,4 @@ export const setStatusCache = async () => {
   });
 
   return;
-}
+};

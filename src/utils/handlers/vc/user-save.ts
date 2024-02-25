@@ -4,7 +4,7 @@ import { voice_stats } from '@prisma/client';
 
 export const handleVoiceUserLog = async (oldState: VoiceState, date: Date) => {
   const voiceUser = client.voiceUsers.find(
-    (voiceUser) => voiceUser.member_id === oldState.member!.id,
+    (voiceUser) => voiceUser.member_id === oldState.member!.id
   );
 
   if (voiceUser) {
@@ -13,7 +13,7 @@ export const handleVoiceUserLog = async (oldState: VoiceState, date: Date) => {
       data: voiceUser as voice_stats,
     });
     client.voiceUsers = client.voiceUsers.filter(
-      (voiceUser) => voiceUser.member_id !== oldState.member!.id,
+      (voiceUser) => voiceUser.member_id !== oldState.member!.id
     );
   }
 };

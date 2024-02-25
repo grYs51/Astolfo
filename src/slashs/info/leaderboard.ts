@@ -28,16 +28,16 @@ export default class LeaderboardEvent extends BaseSlash {
           .setName('type')
           .setDescription('Type of leaderboard')
           .addSubcommand((sub) =>
-            sub.setName('all-time').setDescription('All time leaderboard'),
+            sub.setName('all-time').setDescription('All time leaderboard')
           )
           .addSubcommand((sub) =>
-            sub.setName('current').setDescription('Current leaderboard'),
-          ),
+            sub.setName('current').setDescription('Current leaderboard')
+          )
       );
   }
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     const guild = interaction.guild;
     if (!guild) {
@@ -77,7 +77,7 @@ export default class LeaderboardEvent extends BaseSlash {
         client,
         guild.id,
         inChannel as voice_stats[],
-        leaderboard,
+        leaderboard
       );
     }
 
@@ -107,7 +107,7 @@ export default class LeaderboardEvent extends BaseSlash {
             name: `${i + 1}. ${x.name}`,
             value: `${x.time}\n${x.bar}`,
           };
-        }),
+        })
       );
 
     await interaction.editReply({ embeds: [embed] }).catch(client.logger.error);

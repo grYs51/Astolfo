@@ -5,7 +5,7 @@ import logger from '../../utils/logger';
 
 export default class GenerateGuildConfigs extends BaseCommand {
   constructor() {
-    super('generate_guildconfigs', 'testing', ["ggc"]);
+    super('generate_guildconfigs', 'testing', ['ggc']);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

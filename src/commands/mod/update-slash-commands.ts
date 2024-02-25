@@ -6,7 +6,7 @@ import rest from '../../utils/functions/rest';
 
 export default class UpdateSlashCommands extends BaseCommand {
   constructor() {
-    super('updateslash', 'mod', ["us"]);
+    super('updateslash', 'mod', ['us']);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
@@ -17,7 +17,7 @@ export default class UpdateSlashCommands extends BaseCommand {
     return rest
       .put(Routes.applicationCommands(process.env.DISCORD_CLIENT_ID!), {
         body: client.slashs.map((slash) =>
-          slash.createInteraction(client).toJSON(),
+          slash.createInteraction(client).toJSON()
         ),
       })
       .then(() => {

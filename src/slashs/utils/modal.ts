@@ -16,7 +16,7 @@ export default class Modal extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>,
+    interaction: CommandInteraction<CacheType>
   ): Promise<void> {
     const modal = new ModalBuilder()
       .setCustomId('myModal')
@@ -41,7 +41,7 @@ export default class Modal extends BaseSlash {
     // An action row only holds one text input,
     // so you need one action row per text input.
     const firstActionRow = new ActionRowBuilder().addComponents(
-      favoriteColorInput,
+      favoriteColorInput
     );
     const secondActionRow = new ActionRowBuilder().addComponents(hobbiesInput);
 

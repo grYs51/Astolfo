@@ -4,7 +4,7 @@ import DiscordClient from '../../client/client';
 export const getLeaderboard = (
   client: DiscordClient,
   stats: voice_stats[],
-  guildId: string,
+  guildId: string
 ) =>
   stats.reduce((acc, stat) => {
     const a = acc.find((x) => x.id === stat.member_id);
@@ -30,7 +30,7 @@ export const getLeaderboardActive = (
   client: DiscordClient,
   guildId: string,
   inChannel: voice_stats[],
-  leaderboard: Leaderboard[],
+  leaderboard: Leaderboard[]
 ) =>
   inChannel.reduce((acc, stat) => {
     const a = acc.find((x) => x.id === stat.member_id);

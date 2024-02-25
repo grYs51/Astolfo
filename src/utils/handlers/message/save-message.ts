@@ -3,7 +3,7 @@ import { client } from '../../..';
 
 export const saveMessage = async (message: Message) => {
   if (message.channel.isDMBased()) return;
-  
+
   return client.dataSource.messageStats.create({
     data: {
       guild_id: message.guildId!,

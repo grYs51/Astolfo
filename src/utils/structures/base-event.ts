@@ -14,5 +14,5 @@ export default abstract class BaseEvent {
     this.event(client, ...args);
   }
 
-  protected abstract event (client: DiscordClient, ...args: any): void;
+  protected abstract event(client: DiscordClient, ...args: any): void;
 }

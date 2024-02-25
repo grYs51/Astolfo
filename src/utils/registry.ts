@@ -40,7 +40,7 @@ const fileTypeHandlers: Record<FileType, HandlerFunction> = {
 async function registerFiles(
   client: DiscordClient,
   dir: string,
-  fileType: FileType,
+  fileType: FileType
 ) {
   const files = await fs.readdir(dir);
   for (const file of files) {
@@ -55,13 +55,13 @@ async function registerFiles(
 }
 
 export const registerCommands = (
-  dir: string = path.join(__dirname, '../commands'),
+  dir: string = path.join(__dirname, '../commands')
 ) => registerFiles(client, dir, FileType.COMMANDS);
 
 export const registerEvents = (
-  dir: string = path.join(__dirname, '../events'),
+  dir: string = path.join(__dirname, '../events')
 ) => registerFiles(client, dir, FileType.EVENTS);
 
 export const registerSlash = (
-  dir: string = path.join(__dirname, '../slashs'),
+  dir: string = path.join(__dirname, '../slashs')
 ) => registerFiles(client, dir, FileType.SLASHS);

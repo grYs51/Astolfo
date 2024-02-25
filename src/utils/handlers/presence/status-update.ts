@@ -5,7 +5,7 @@ import { handleStatusMetrics } from './status-metrics';
 export const handleStatusUpdate = async (
   oldPresence: Presence | null,
   newPresence: Presence,
-  date: Date,
+  date: Date
 ) => {
   if (oldPresence?.status) {
     await saveStatus(oldPresence, date);

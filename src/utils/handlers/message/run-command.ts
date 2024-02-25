@@ -1,5 +1,5 @@
-import { Message } from "discord.js";
-import DiscordClient from "../../../client/client";
+import { Message } from 'discord.js';
+import DiscordClient from '../../../client/client';
 
 export const runCommand = async (client: DiscordClient, message: Message) => {
   const config = client.guildConfigs.get(message.guildId!);
@@ -15,4 +15,4 @@ export const runCommand = async (client: DiscordClient, message: Message) => {
       return command.run(client, message, cmdArgs);
     }
   }
-}
+};

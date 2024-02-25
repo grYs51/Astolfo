@@ -3,7 +3,7 @@ import { client } from '../../..';
 
 export const handleUserJoinedVoiceChannel = (
   newState: VoiceState,
-  date: Date,
+  date: Date
 ) =>
   client.voiceUsers.push({
     guild_id: newState.guild.id,
