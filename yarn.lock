@@ -1054,7 +1054,7 @@ __metadata:
     concurrently: "npm:^8.2.2"
     cors: "npm:^2.8.5"
     discord.js: "npm:^14.14.1"
-    dotenv: "npm:^16.3.2"
+    dotenv: "npm:^16.4.5"
     dotenv-cli: "npm:^7.3.0"
     eslint: "npm:^8.56.0"
     eslint-config-airbnb-typescript: "npm:^17.1.0"
@@ -1584,10 +1584,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dotenv@npm:^16.3.0, dotenv@npm:^16.3.2":
+"dotenv@npm:^16.3.0":
   version: 16.3.2
   resolution: "dotenv@npm:16.3.2"
   checksum: a87d62cef0810b670cb477db1a24a42a093b6b428c9e65c185ce1d6368ad7175234b13547718ba08da18df43faae4f814180cc0366e11be1ded2277abc4dd22e
+  languageName: node
+  linkType: hard
+
+"dotenv@npm:^16.4.5":
+  version: 16.4.5
+  resolution: "dotenv@npm:16.4.5"
+  checksum: 48d92870076832af0418b13acd6e5a5a3e83bb00df690d9812e94b24aff62b88ade955ac99a05501305b8dc8f1b0ee7638b18493deb6fe93d680e5220936292f
   languageName: node
   linkType: hard
 
