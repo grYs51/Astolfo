@@ -1,4 +1,4 @@
-import { Counter, Gauge } from 'prom-client';
+import { Gauge } from 'prom-client';
 import { client } from '../../..';
 
 const gauge = new Gauge({
@@ -25,5 +25,4 @@ export const handleStatusMetrics = () => {
   gauge.set({ status: 'idle' }, idle);
   gauge.set({ status: 'dnd' }, dnd);
   gauge.set({ status: 'offline' }, offline);
-  return;
 };

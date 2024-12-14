@@ -16,7 +16,7 @@ export default class GuildCreateEvent extends BaseEvent {
       update: {},
       create: {
         guild_id: guild.id,
-        prefix: '!',
+        prefix: process.env.DEFAULT_PREFIX!,
       },
     });
 

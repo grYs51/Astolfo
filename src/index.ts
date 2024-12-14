@@ -26,13 +26,13 @@ export const client = new DiscordClient({
 
 const main = () =>
   createPrismaClient()
-    .then(setConfigs)
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
     .then(() => initPrometheusData())
     .then(() => server())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
+    .then(setConfigs)
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);

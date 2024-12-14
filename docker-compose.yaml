@@ -1,15 +1,88 @@
-version: '3.8'
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-file: '5'
+    max-size: '10m'
+
 services:
-  astolfo:
-    build: .
-    container_name: Astolfo-bot
-    restart: always
+  postgres:
+    logging:
+      driver: 'json-file'
+      options:
+        max-file: '5'
+        max-size: '10m'
+    restart: unless-stopped
+    image: postgres:17-alpine
+    container_name: Astolfo-postgres
     environment:
-      - DATABASE_URL
-      - DISCORD_CLIENT_ID
-      - DISCORD_BOT_TOKEN
-      - DISCORD_PUBLIC_KEY
-      - DISCORD_CLIENT_SECRET
-      - OWNER
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - astolfo-network
+  astolfo:
+    logging: *default-logging
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+    container_name: Astolfo-bot
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
+      - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
+      - DISCORD_PUBLIC_KEY=${DISCORD_PUBLIC_KEY}
+      - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
+      - OWNER=${OWNER}
+    depends_on:
+      postgres:
+        condition: service_healthy
     ports:
-      - "3003:3000"
+      - '3003:3000'
+    networks:
+      - astolfo-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: Astolfo-prometheus
+    volumes:
+      - prometheus-data:/prometheus
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - '9090:9090'
+    networks:
+      - astolfo-network
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: Astolfo-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=grafana
+    volumes:
+      - grafana-data:/var/lib/grafana
+    ports:
+      - '3030:3000'
+    depends_on:
+      - prometheus
+    networks:
+      - astolfo-network
+
+networks:
+  astolfo-network:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:
+  postgres-data:
