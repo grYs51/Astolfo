@@ -5,7 +5,7 @@ import logger from '../logger';
 export const setConfigs = async () => {
   const prismaClient = getDb();
   logger.info('Setting configurations...');
-  
+
   // guilds
   const guildConfigs = await prismaClient.guildConfigurations.findMany();
   guildConfigs.forEach((config) =>
@@ -22,7 +22,7 @@ export const setConfigs = async () => {
       logger.info(`Guild ${guild.id} not found in database, adding...`);
       client.guildConfigs.set(guild.id, {
         guild_id: guild.id,
-        prefix: process.env.DEFAULT_PREFIX!,
+        prefix: process.env.DEFAULT_PREFIX ?? ',',
         welcome_channel_id: null,
         welcome_message: '',
         goodbye_message: '',

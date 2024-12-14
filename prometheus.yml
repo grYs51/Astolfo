@@ -18,12 +18,6 @@ scrape_configs:
       insecure_skip_verify: true
 
     static_configs:
-      - targets: ['prometheus:9090']
-        labels:
-          group: 'prometheus'
-      - targets: ['astolfo:3000']
+      - targets: ['astolfo:3003']
         labels:
           group: 'astolfo'
-      - targets: ['grafana:3000']
-        labels:
-          group: 'grafana'
