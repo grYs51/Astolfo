@@ -2,6 +2,7 @@ import { voice_stats } from '@prisma/client';
 import { client } from '../..';
 import { GuildMember, VoiceBasedChannel } from 'discord.js';
 import logger from '../logger';
+import { schedule5hrVoiceChannelJob } from '../schedulers/voice-channel.scheduler';
 
 const createVoiceStat = (
   channel: VoiceBasedChannel,
@@ -17,28 +18,45 @@ const createVoiceStat = (
   };
 };
 
-export const setVc = async () => {
-  const date = new Date();
-  let amount = 0;
-  client.channels.cache.forEach(async (channel) => {
-    if (channel.isVoiceBased()) {
-      const members = channel.members;
-      if (!members) return;
-      members.forEach(async (member) => {
-        const voiceStat = createVoiceStat(channel, member, date);
-        client.voiceUsers.push(voiceStat);
-        amount++;
-      });
-    }
-  });
-
-  if (amount === 0) {
-    logger.info('No cutie patooties to add to the voice stats');
-    return;
-  }
-  logger.info(`Added ${amount} cutie patooties to the voice stats`);
+const processMember = async (
+  channel: VoiceBasedChannel,
+  member: GuildMember,
+  date: Date
+) => {
+  const voiceStat = createVoiceStat(channel, member, date);
+  client.voiceUsers.push(voiceStat);
+  schedule5hrVoiceChannelJob(member, channel.id, date);
 };
 
+const processChannel = async (channel: VoiceBasedChannel, date: Date) => {
+  const members = channel.members;
+  if (!members) return 0;
+
+  let count = 0;
+  for (const member of members.values()) {
+    await processMember(channel, member, date);
+    count++;
+  }
+  return count;
+};
+
+export const setVc = async () => {
+  const date = new Date();
+  let totalMembers = 0;
+
+  for (const channel of client.channels.cache.values()) {
+    if (channel.isVoiceBased()) {
+      const count = await processChannel(channel, date);
+      totalMembers += count;
+    }
+  }
+
+  if (totalMembers === 0) {
+    logger.info('No cutie patooties to add to the voice stats');
+  } else {
+    logger.info(`Added ${totalMembers} cutie patooties to the voice stats`);
+  }
+};
 
 export const saveVc = async () => {
   const date = new Date();
