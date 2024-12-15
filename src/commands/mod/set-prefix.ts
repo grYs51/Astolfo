@@ -13,7 +13,7 @@ export default class SetPrefixCommand extends BaseCommand {
     if (!args.length) {
       return message.reply(
         `Please provide an prefix\nUsage: \`${
-          config?.prefix || '!'
+          config?.prefix ?? ','
         }prefix <new prefix>\``
       );
     }

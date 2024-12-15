@@ -32,7 +32,7 @@ const main = () =>
     .then(() => initPrometheusData())
     .then(() => server())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
-    .then(setConfigs)
+    .then(() => setConfigs())
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);

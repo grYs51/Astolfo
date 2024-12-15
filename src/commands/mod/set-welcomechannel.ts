@@ -24,7 +24,7 @@ export default class SetWelcomeChannelCommand extends BaseCommand {
           welcome_channel_id: newChannelId,
         },
         where: {
-          guild_id: message.guildId!,
+          guild_id: message.guildId,
         },
       })
       .then((updatedConfig) => {
