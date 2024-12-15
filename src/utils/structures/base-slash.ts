@@ -4,8 +4,8 @@ import { slashCount } from '../../api/utils.ts/counter';
 
 export default abstract class BaseSlash {
   constructor(
-    private _name: string,
-    private _description: string
+    private readonly _name: string,
+    private readonly _description: string
   ) {}
 
   get name(): string {

@@ -4,9 +4,9 @@ import { commandsCount } from '../../api/utils.ts/counter';
 
 export default abstract class BaseCommand {
   constructor(
-    private _name: string,
-    private _category: string,
-    private _aliases: Array<string>
+    private readonly _name: string,
+    private readonly _category: string,
+    private readonly _aliases: Array<string>
   ) {}
 
   get name(): string {

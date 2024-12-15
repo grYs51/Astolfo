@@ -26,7 +26,7 @@ export default class GenerateGuildConfigs extends BaseCommand {
             update: {},
             create: {
               guild_id: guild.id,
-              prefix: '!',
+              prefix: process.env.PREFIX ?? ',',
             },
           })
           .then((config) => {

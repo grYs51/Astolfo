@@ -3,7 +3,7 @@ import DiscordClient from '../../client/client';
 import { eventsCount } from '../../api/utils.ts/counter';
 
 export default abstract class BaseEvent {
-  constructor(private _name: Events) {}
+  constructor(private readonly _name: Events) {}
 
   get name(): Events | string {
     return this._name;
