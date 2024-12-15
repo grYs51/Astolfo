@@ -11,6 +11,4 @@ export const cacheStatus = (newPresence: Presence, date: Date) => {
   };
 
   client.userStatus.set(newPresence.userId, status);
-
-  return;
 };
