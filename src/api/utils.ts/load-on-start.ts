@@ -1,7 +1,6 @@
 import logger from '../../utils/logger';
 import { getDb } from '../../db';
 import { commandsCountSet, eventsCountSet, slashsCountSet } from './counter';
-import { metrics } from '@prisma/client';
 
 interface ParsedMetric {
   key: string;
@@ -29,7 +28,7 @@ function parsePrometheusTextFormat(metricsData: any) {
   for (const line of parsed) {
     if (line.startsWith('# TYPE')) {
       metricType = line.split(' ')[3];
-      parsedData[metricType!] = parsedData[metricType!] || [];
+      parsedData[metricType] = parsedData[metricType] || [];
     } else {
       const [keyValue, value] = line.split(' ');
       const [key, attributes] = keyValue.split('{');
@@ -37,11 +36,11 @@ function parsePrometheusTextFormat(metricsData: any) {
         ? attributes
             .slice(0, -1)
             .split(', ')
-            .reduce((acc, attribute) => {
+            .reduce((acc: { [key: string]: string }, attribute) => {
               const [attrKey, attrValue] = attribute.split('=');
               acc[attrKey] = attrValue.slice(1, -1);
               return acc;
-            }, {})
+            }, {} as { [key: string]: string })
         : {};
       parsedData[metricType!].push({
         key,
