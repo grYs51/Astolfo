@@ -18,6 +18,6 @@ scrape_configs:
       insecure_skip_verify: true
 
     static_configs:
-      - targets: ['astolfo:3003']
+      - targets: ['astolfo:3000']
         labels:
           group: 'astolfo'
