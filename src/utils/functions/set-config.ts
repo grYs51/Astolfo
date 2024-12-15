@@ -14,9 +14,6 @@ export const setConfigs = async () => {
 
   // check for missing guilds
   const guilds = client.guilds.cache;
-
-  logger.info(guilds.size);
-
   guilds.forEach((guild) => {
     if (!client.guildConfigs.has(guild.id)) {
       logger.info(`Guild ${guild.id} not found in database, adding...`);
@@ -36,5 +33,5 @@ export const setConfigs = async () => {
     client.userConfigs.set(config.user_id, config)
   );
 
-  client.dataSource = getDb();
+  client.dataSource = prismaClient;
 };
