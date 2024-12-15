@@ -17,6 +17,4 @@ export const handleStatusUpdate = async (
   }
 
   handleStatusMetrics();
-
-  return;
 };

@@ -12,6 +12,7 @@ import logger from './utils/logger';
 import { setConfigs } from './utils/functions/set-config';
 import server from './api';
 import { initPrometheusData } from './api/utils.ts/load-on-start';
+import { setupShutdownHandler } from './utils/handlers/shutdown-handler'; // Import the new shutdown handler
 
 export const client = new DiscordClient({
   intents: [
@@ -26,13 +27,14 @@ export const client = new DiscordClient({
 
 const main = () =>
   createPrismaClient()
+    .then(() => setConfigs())
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
     .then(() => initPrometheusData())
     .then(() => server())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
-    .then(() => setConfigs())
+    .then(() => setupShutdownHandler())
     .catch((error) => {
       logger.error('Failed to start bot');
       logger.error(error);

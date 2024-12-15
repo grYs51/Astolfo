@@ -19,6 +19,4 @@ export const saveStatus = async (oldStatus: Presence, date: Date) => {
     data: status as user_statuses,
   });
   client.userStatus.delete(oldStatus.userId);
-
-  return;
 };
