@@ -32,19 +32,14 @@ const slashCount = (slashName: string) => {
 };
 
 const commandsCountSet = (commandName: string, count: number) => {
-  console.log('commandsCountSet', commandName, count);
-
   commandsCounter.inc({ commandName }, count);
 };
 
 const eventsCountSet = (eventName: string, count: number) => {
-  console.log('eventsCountSet', eventName, count);
-
   eventsCounter.inc({ eventName }, count);
 };
 
 const slashsCountSet = (slashName: string, count: number) => {
-  console.log('slashsCountSet', slashName, count);
   slashCounter.inc({ slashName }, count);
 };
 
