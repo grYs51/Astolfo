@@ -30,7 +30,6 @@ model voice_stats {
 model user_statuses {
   id         String    @id @default(uuid()) @db.VarChar
   user_id    String    @db.VarChar
-  user_name  String?   @db.VarChar
   status     String    @db.VarChar
   created_at DateTime  @default(now()) @db.Timestamp(6)
   ended_at   DateTime? @db.Timestamp(6)
