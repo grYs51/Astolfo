@@ -14,7 +14,11 @@ let currentClient: PrismaClient;
 
 export async function createPrismaClient() {
   currentClient = new PrismaClient();
+  
+  logger.info('Initializing database');
+  await currentClient.$connect();
   logger.info('Database client initialized');
+
   return currentClient;
 }
 
