@@ -17,4 +17,10 @@ export default class PresenceUpdateEvent extends BaseEvent {
 
     return handleUserPresenceChange(oldPresence, newPresence, date);
   }
+  getGuildId(client, oldPresence: Presence | null, newPresence: Presence) {
+    return newPresence.guild?.id;
+  }
+  getUserId(client, oldPresence: Presence | null, newPresence: Presence) {
+    return newPresence.user?.id;
+  }
 }

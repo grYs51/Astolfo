@@ -28,4 +28,7 @@ export default class GuildCreateEvent extends BaseEvent {
       client.logger.info('A configuration could not be found or created.');
     }
   }
+  getGuildId(client, guild: Guild) {
+    return guild.id;
+  }
 }

@@ -1,6 +1,15 @@
 import logger from '../../utils/logger';
 import { getDb } from '../../db';
-import { commandsCountSet, eventsCountSet, slashsCountSet } from './counter';
+import {
+  CommandCounterArgs,
+  EventCounterArgs,
+  SlashCounterArgs,
+  commandsCountSet,
+  eventsCountSet,
+  slashsCountSet,
+} from './counter';
+const metricKeyRegex = /^(.+){(.+)}$/;
+const attributeRegex = /^(.+)="(.+)"$/;
 
 interface ParsedMetric {
   key: string;
@@ -31,20 +40,23 @@ function parsePrometheusTextFormat(metricsData: any) {
       parsedData[metricType] = parsedData[metricType] || [];
     } else {
       const [keyValue, value] = line.split(' ');
-      const [key, attributes] = keyValue.split('{');
-      const parsedAttributes = attributes
-        ? attributes
-            .slice(0, -1)
-            .split(', ')
-            .reduce((acc: { [key: string]: string }, attribute) => {
-              const [attrKey, attrValue] = attribute.split('=');
-              acc[attrKey] = attrValue.slice(1, -1);
-              return acc;
-            }, {} as { [key: string]: string })
-        : {};
+      const [, eventKey, attributesString] =
+        keyValue.match(metricKeyRegex) || [];
+
+      const attributes =
+        attributesString?.split(',').reduce(
+          (atts, attStr) => {
+            const [, attKey, attValue] = attStr.match(attributeRegex) || [];
+            if (!attValue || !attKey) return atts;
+            atts[attKey] = attValue;
+            return atts;
+          },
+          {} as Record<string, string>
+        ) || {};
+
       parsedData[metricType!].push({
-        key,
-        attributes: parsedAttributes,
+        key: eventKey,
+        attributes,
         value: parseInt(value),
       });
     }
@@ -61,13 +73,13 @@ function initializePrometheusMetrics(metrics: {
       if (metricKey === 'counter') {
         switch (key) {
           case 'discord_bot_commands_total':
-            commandsCountSet(attributes.commandName, value);
+            commandsCountSet(attributes as CommandCounterArgs, value);
             break;
           case 'discord_bot_events_total':
-            eventsCountSet(attributes.eventName, value);
+            eventsCountSet(attributes as EventCounterArgs, value);
             break;
           case 'discord_bot_slash_total':
-            slashsCountSet(attributes.slashName, value);
+            slashsCountSet(attributes as SlashCounterArgs, value);
             break;
           default:
             logger.error(`Unknown metric name ${key}`);

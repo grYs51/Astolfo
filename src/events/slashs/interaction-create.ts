@@ -13,4 +13,10 @@ export default class InteractionCreateEvent extends BaseEvent {
     if (!slash) return;
     slash.run(client, interaction);
   }
+  getGuildId(client, interaction: Interaction) {
+    return interaction.guild?.id || 'DM';
+  }
+  getUserId(clientient, interaction: Interaction) {
+    return interaction.user.id;
+  }
 }

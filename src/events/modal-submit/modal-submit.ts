@@ -11,4 +11,10 @@ export default class ModalSubmitEvent extends BaseEvent {
     if (!interaction.isModalSubmit()) return;
     interaction.reply({ content: 'Lol, gay', ephemeral: true });
   }
+  getGuildId(client, interaction: Interaction) {
+    return interaction.guild?.id || 'DM';
+  }
+  getUserId(clientient, interaction: Interaction) {
+    return interaction.user.id;
+  }
 }

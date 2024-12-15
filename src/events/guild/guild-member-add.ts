@@ -23,4 +23,10 @@ export default class GuildMemberAddEvent extends BaseEvent {
 
     channel.send(`Welcome ${member}`);
   }
+  getGuildId(client, member: GuildMember) {
+    return member.guild.id;
+  }
+  getUserId(client, member: GuildMember) {
+    return member.user.id;
+  }
 }

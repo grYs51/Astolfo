@@ -1,51 +1,78 @@
 import { Counter } from 'prom-client';
+import {
+  deleteUndefined,
+  stringifyArgs,
+} from '../../utils/object/ObjectHelpers';
+import logger from '../../utils/logger';
 
 // Define a Prometheus counter metric
+
 export const commandsCounter = new Counter({
   name: 'discord_bot_commands_total',
   help: 'Total number of commands executed',
-  labelNames: ['commandName'],
+  labelNames: ['commandName', 'guildId', 'userId'],
 });
 
 export const eventsCounter = new Counter({
   name: 'discord_bot_events_total',
   help: 'Total number of events received',
-  labelNames: ['eventName'],
+  labelNames: ['eventName', 'guildId', 'userId'],
 });
 
 export const slashCounter = new Counter({
   name: 'discord_bot_slash_total',
   help: 'Total number of slash commands executed',
-  labelNames: ['slashName'],
+  labelNames: ['slashName', 'guildId', 'userId'],
 });
 
-const commandsCount = (commandName: string) => {
-  commandsCounter.inc({ commandName });
+const commandsCount = (
+  commandName: string,
+  guildId?: string,
+  userId?: string
+) => {
+  commandsCounter.inc(deleteUndefined({ commandName, guildId, userId }));
 };
 
-const eventsCount = (eventName: string) => {
-  eventsCounter.inc({ eventName });
+const eventsCount = (eventName: string, guildId?: string, userId?: string) => {
+  eventsCounter.inc(deleteUndefined({ eventName, guildId, userId }));
 };
 
-const slashCount = (slashName: string) => {
-  slashCounter.inc({ slashName });
+const slashCount = (slashName: string, guildId?: string, userId?: string) => {
+  slashCounter.inc(deleteUndefined({ slashName, guildId, userId }));
 };
 
-const commandsCountSet = (commandName: string, count: number) => {
-  console.log('commandsCountSet', commandName, count);
-
-  commandsCounter.inc({ commandName }, count);
+export type CommandCounterArgs = {
+  commandName: string;
+  guildId?: string;
+  userId?: string;
+};
+export type EventCounterArgs = {
+  eventName: string;
+  guildId?: string;
+  userId?: string;
+};
+export type SlashCounterArgs = {
+  slashName: string;
+  guildId?: string;
+  userId?: string;
 };
 
-const eventsCountSet = (eventName: string, count: number) => {
-  console.log('eventsCountSet', eventName, count);
+const commandsCountSet = (args: CommandCounterArgs, count: number) => {
+  logger.info('commandsCountSet', stringifyArgs(args), count);
 
-  eventsCounter.inc({ eventName }, count);
+  commandsCounter.inc(deleteUndefined(args), count);
 };
 
-const slashsCountSet = (slashName: string, count: number) => {
-  console.log('slashsCountSet', slashName, count);
-  slashCounter.inc({ slashName }, count);
+const eventsCountSet = (args: EventCounterArgs, count: number) => {
+  logger.info('eventsCountSet', stringifyArgs(args), count);
+
+  eventsCounter.inc(deleteUndefined(args), count);
+};
+
+const slashsCountSet = (args: SlashCounterArgs, count: number) => {
+  logger.info('slashsCountSet', stringifyArgs(args), count);
+
+  slashCounter.inc(deleteUndefined(args), count);
 };
 
 export {

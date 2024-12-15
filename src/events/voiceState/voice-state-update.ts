@@ -15,4 +15,10 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     const date = new Date();
     return handleVoiceChannelStateChanges(oldState, newState, date);
   }
+  getGuildId(client, oldState: VoiceState, newState: VoiceState) {
+    return oldState.guild.id || newState.guild.id;
+  }
+  getUserId(clientient, oldState: VoiceState, newState: VoiceState) {
+    return oldState.member?.user.id || newState.member?.user.id;
+  }
 }

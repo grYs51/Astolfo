@@ -27,21 +27,17 @@ export const checkForNewGuilds = async () => {
   guilds.forEach(async (guild) => {
     if (!client.guildConfigs.has(guild.id)) {
       logger.info(`I found a new guild! ${guild.id}, adding...`);
-      client.guildConfigs.set(guild.id, {
+      const newGuildConfig = {
         guild_id: guild.id,
         prefix: process.env.DEFAULT_PREFIX ?? ',',
         welcome_channel_id: null,
         welcome_message: '',
         goodbye_message: '',
-      });
+      };
+
+      client.guildConfigs.set(guild.id, newGuildConfig);
       await prismaClient.guildConfigurations.create({
-        data: {
-          guild_id: guild.id,
-          prefix: process.env.DEFAULT_PREFIX ?? ',',
-          welcome_channel_id: null,
-          welcome_message: '',
-          goodbye_message: '',
-        },
+        data: newGuildConfig,
       });
     }
   });
