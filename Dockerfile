@@ -8,16 +8,15 @@ RUN apk add --no-cache openssl
 ARG DATABASE_URL
 ENV DATABASE_URL=${DATABASE_URL}
 
-#show yarn version
-COPY package.json /app
-COPY yarn.lock /app
+# Copy necessary files
+COPY package.json yarn.lock /app/
 COPY src /app/src
 COPY prisma /app/prisma
-COPY tsconfig.json /app
-COPY .yarnrc.yml /app
+COPY tsconfig.json /app/
+COPY .yarnrc.yml /app/
 COPY .yarn /app/.yarn
 
-# Build the bot's source code
+# Install dependencies and build the bot's source code
 RUN yarn install && yarn build && rm -rf /app/src
 
 # Expose the bot's port
