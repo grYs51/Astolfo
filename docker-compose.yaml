@@ -27,6 +27,7 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - astolfo-network
+  
   astolfo:
     logging: *default-logging
     build:

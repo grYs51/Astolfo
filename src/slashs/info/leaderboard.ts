@@ -4,6 +4,7 @@ import {
   CacheType,
   EmbedBuilder,
   SlashCommandBuilder,
+  InteractionContextType,
 } from 'discord.js';
 import client from '../../client/client';
 import BaseSlash from '../../utils/structures/base-slash';
@@ -19,7 +20,7 @@ export default class LeaderboardEvent extends BaseSlash {
     super('leaderboard', 'Shows a leaderboard of the most active users');
   }
 
-  override createInteraction(client: client): any {
+  override createInteraction(client: client) {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
@@ -33,7 +34,8 @@ export default class LeaderboardEvent extends BaseSlash {
           .addSubcommand((sub) =>
             sub.setName('current').setDescription('Current leaderboard')
           )
-      );
+      )
+      .setContexts(InteractionContextType.Guild);
   }
   async slash(
     client: client,
