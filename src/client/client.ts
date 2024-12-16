@@ -11,11 +11,12 @@ import {
 } from '@prisma/client';
 import { Db } from '../db';
 import logger from '../utils/logger';
+import BaseInteraction from '../utils/structures/base-interaction';
 
 export default class DiscordClient extends Client {
   public readonly commands = new Collection<string, BaseCommand>();
   public readonly events = new Collection<string, BaseEvent>();
-  public readonly interactions = new Collection<string, any>();
+  public readonly interactions = new Collection<string, BaseInteraction>();
   public readonly slashs = new Collection<string, BaseSlash>();
   public readonly guildConfigs = new Collection<string, guild_configs>();
   public readonly userConfigs = new Collection<string, user_configs>();

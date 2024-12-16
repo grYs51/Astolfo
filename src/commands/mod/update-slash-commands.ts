@@ -23,11 +23,6 @@ export default class UpdateSlashCommands extends BaseCommand {
       .then(() => {
         logger.info('Successfully registered application commands.');
         return message.react('✅');
-      })
-      .catch((error) => {
-        logger.error('Failed to register application commands');
-        logger.error(error);
-        return message.react('⛔');
       });
   }
 }

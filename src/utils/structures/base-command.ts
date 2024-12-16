@@ -23,7 +23,10 @@ export default abstract class BaseCommand {
 
   run(client: DiscordClient, message: Message, args: Array<string> | null) {
     commandsCount(this.name);
-    return this.command(client, message, args);
+    return this.command(client, message, args).catch((error) => {
+      client.logger.error(error);
+      return message.react('⛔');
+    });
   }
 
   protected abstract command(

@@ -5,11 +5,13 @@ import BaseCommand from './structures/base-command';
 import BaseEvent from './structures/base-event';
 import BaseSlash from './structures/base-slash';
 import { client } from '..';
+import BaseInteraction from './structures/base-interaction';
 
 enum FileType {
   COMMANDS = 'commands',
   EVENTS = 'events',
   SLASHS = 'slashs',
+  INTERACTIONS = 'interactions',
 }
 
 type HandlerFunction = (instance: any, client: DiscordClient) => void;
@@ -31,10 +33,16 @@ const handleSlash: HandlerFunction = (instance: BaseSlash, client) => {
   client.on(instance.name, instance.run.bind(instance, client));
 };
 
+const handleInteraction: HandlerFunction = (instance: BaseInteraction, client) => {
+  client.interactions.set(instance.name, instance);
+  client.on(instance.name, instance.run.bind(instance, client));
+};
+
 const fileTypeHandlers: Record<FileType, HandlerFunction> = {
   [FileType.COMMANDS]: handleCommand,
   [FileType.EVENTS]: handleEvent,
   [FileType.SLASHS]: handleSlash,
+  [FileType.INTERACTIONS]: handleInteraction,
 };
 
 async function registerFiles(
@@ -65,3 +73,7 @@ export const registerEvents = (
 export const registerSlash = (
   dir: string = path.join(__dirname, '../slashs')
 ) => registerFiles(client, dir, FileType.SLASHS);
+
+export const registerInteractions = (
+  dir: string = path.join(__dirname, '../interactions')
+) => registerFiles(client, dir, FileType.INTERACTIONS);

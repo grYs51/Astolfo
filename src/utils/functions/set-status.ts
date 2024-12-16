@@ -3,7 +3,6 @@ import { client } from '../..';
 
 export const setStatusCache = async () => {
   const date = new Date();
-  // Status
   client.guilds.cache.forEach((guild) => {
     guild.members.cache.forEach((member) => {
       if (member.user.bot) return;

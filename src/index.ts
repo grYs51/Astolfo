@@ -3,6 +3,7 @@ import 'reflect-metadata';
 import {
   registerCommands,
   registerEvents,
+  registerInteractions,
   registerSlash,
 } from './utils/registry';
 import DiscordClient from './client/client';
@@ -31,6 +32,7 @@ const main = () =>
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
+    .then(() => registerInteractions())
     .then(() => initPrometheusData())
     .then(() => server())
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
