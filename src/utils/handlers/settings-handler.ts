@@ -1,12 +1,12 @@
 export const SETTING_FLAGS = {
-  WELCOME_MESSAGE: 1 << 0, // 0001 = 1
-  LEAVE_MESSAGE: 1 << 1, // 0010 = 2
-  VOICE_CHANNEL_REMINDER: 1 << 2, // 0100 = 4
+  VOICE_CHANNEL_REMINDER: 1 << 0, // 0001 = 1
+  // WELCOME_MESSAGE: 1 << 1, // 0010 = 2
+  // LEAVE_MESSAGE: 1 << 2, // 0100 = 4
 } as const;
 
 export const SETTINGS_LABELS: Record<Settings, string> = {
-  WELCOME_MESSAGE: 'Send Welcome Message',
-  LEAVE_MESSAGE: 'Send Leave Message',
+  // WELCOME_MESSAGE: 'Send Welcome Message',
+  // LEAVE_MESSAGE: 'Send Leave Message',
   VOICE_CHANNEL_REMINDER: 'Voice Channel Reminder',
 } as const;
 
