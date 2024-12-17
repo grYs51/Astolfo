@@ -33,7 +33,10 @@ const handleSlash: HandlerFunction = (instance: BaseSlash, client) => {
   client.on(instance.name, instance.run.bind(instance, client));
 };
 
-const handleInteraction: HandlerFunction = (instance: BaseInteraction, client) => {
+const handleInteraction: HandlerFunction = (
+  instance: BaseInteraction,
+  client
+) => {
   client.interactions.set(instance.name, instance);
   client.on(instance.name, instance.run.bind(instance, client));
 };

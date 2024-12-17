@@ -36,11 +36,14 @@ function parsePrometheusTextFormat(metricsData: any) {
         ? attributes
             .slice(0, -1)
             .split(', ')
-            .reduce((acc: { [key: string]: string }, attribute) => {
-              const [attrKey, attrValue] = attribute.split('=');
-              acc[attrKey] = attrValue.slice(1, -1);
-              return acc;
-            }, {} as { [key: string]: string })
+            .reduce(
+              (acc: { [key: string]: string }, attribute) => {
+                const [attrKey, attrValue] = attribute.split('=');
+                acc[attrKey] = attrValue.slice(1, -1);
+                return acc;
+              },
+              {} as { [key: string]: string }
+            )
         : {};
       parsedData[metricType!].push({
         key,

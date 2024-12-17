@@ -13,7 +13,7 @@ export const schedule5hrVoiceChannelJob = (
   scheduleJob(member.id, new Date(date.getTime() + 5 * 60 * 60 * 1000), () => {
     const guildConfig = client.guildConfigs.get(member.guild.id);
     if (
-      !guildConfig?.toggles ||
+      guildConfig?.toggles === undefined ||
       !isEnabled(guildConfig.toggles, SETTING_FLAGS.VOICE_CHANNEL_REMINDER)
     ) {
       return;

@@ -74,7 +74,6 @@ export const getLonerBoard = (
 
     // Add any remaining alone time after the last overlap
     if (currentStart < ended_on!.getTime()) {
-
       aloneTime += ended_on!.getTime() - currentStart;
     }
 

@@ -6,9 +6,10 @@
   },
   "plugins": ["@typescript-eslint", "prettier", "jest"],
   "extends": [
-    "airbnb-base",
-    "airbnb-typescript/base",
-    "prettier",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "plugin:@typescript-eslint/recommended-requiring-type-checking",
+    "plugin:node/recommended",
     "plugin:jest/recommended"
   ],
   "root": true,
@@ -17,12 +18,11 @@
     "jest": true,
     "jest/globals": true
   },
-  "ignorePatterns": [".eslintrc.js"],
+  "ignorePatterns": ["dist/", ".eslintrc.js"],
   "rules": {
     "@typescript-eslint/interface-name-prefix": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
-    "@typescript-eslint/no-explicit-any": "off",
-    "prettier/prettier": ["error"]
+    "@typescript-eslint/no-explicit-any": "off"
   }
 }

@@ -7,12 +7,10 @@ export default class ModalSubmitEvent extends BaseInteraction {
     super('myModal');
   }
 
-  async run(client: DiscordClient, interaction:  ModalSubmitInteraction<CacheType>) {
-    console.log(interaction);
-
-    console.log(interaction.fields.fields.map((field) => field.value));
-    
-
+  async run(
+    client: DiscordClient,
+    interaction: ModalSubmitInteraction<CacheType>
+  ) {
     return interaction.reply({
       content: "i'm a modal submit",
       ephemeral: true,

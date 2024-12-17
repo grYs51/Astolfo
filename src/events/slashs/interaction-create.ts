@@ -18,7 +18,7 @@ export default class InteractionCreateEvent extends BaseEvent {
       case InteractionType.ModalSubmit:
       case InteractionType.MessageComponent: {
         // we no do that here
-        if (interaction.isButton()) return;       
+        if (interaction.isButton()) return;
         const messageComponent = client.interactions.get(interaction.customId);
         if (!messageComponent) return;
         messageComponent.run(client, interaction);

@@ -8,7 +8,7 @@ export default class GenerateUserConfig extends BaseCommand {
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
-    if (message.author.id != client.ownerId) {
+    if (message.author.id !== client.ownerId) {
       return message.react('⛔');
     }
 
