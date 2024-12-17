@@ -20,8 +20,9 @@ export const schedule5hrVoiceChannelJob = (
     }
     const channel = client.channels.cache.get(channel_id);
     if (channel?.isSendable()) {
+      //member.toString() makes it a mention (pinging the user)
       channel.send(
-        `${member.displayName} has been in the voice channel for 5 hours straight!`
+        `${member} has been in the voice channel for 5 hours straight!`
       );
     }
   });
