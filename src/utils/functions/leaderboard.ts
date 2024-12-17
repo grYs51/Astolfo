@@ -1,5 +1,4 @@
 import { voice_stats } from '@prisma/client';
-import DiscordClient from '../../client/client';
 
 type SimpleGuildMember = { id: string; user: { username: string } };
 

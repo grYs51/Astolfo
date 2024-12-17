@@ -33,5 +33,5 @@ export default abstract class BaseCommand {
     client: DiscordClient,
     message: Message,
     args: Array<string> | null
-  ): Promise<Message | MessageReaction> | Message | MessageReaction;
+  ): Promise<Message | MessageReaction>;
 }
