@@ -10,7 +10,7 @@ import client from '../../client/client';
 import BaseSlash from '../../utils/structures/base-slash';
 import {
   getLeaderboard,
-  getLeaderboardActive,
+  getLonerBoard,
 } from '../../utils/functions/leaderboard';
 import { voice_stats } from '@prisma/client';
 import { createBar } from '../../utils/functions/create-bar';
@@ -34,6 +34,9 @@ export default class LeaderboardEvent extends BaseSlash {
           .addSubcommand((sub) =>
             sub.setName('current').setDescription('Current leaderboard')
           )
+          .addSubcommand((sub) =>
+            sub.setName('loner').setDescription('Loner leaderboard')
+          )
       )
       .setContexts(InteractionContextType.Guild);
   }
@@ -51,11 +54,15 @@ export default class LeaderboardEvent extends BaseSlash {
       return;
     }
 
-    const type = interaction.options.data[0].options?.[0].name === 'all-time';
+    const allTime =
+      interaction.options.data[0].options?.[0].name === 'all-time';
+    const current = interaction.options.data[0].options?.[0].name === 'current';
+    const loner = interaction.options.data[0].options?.[0].name === 'loner';
 
     await interaction.deferReply().catch(client.logger.error);
 
-    const stats = type
+    //set starting voiceStats list
+    const dbVoiceStatsOfGuild = !current
       ? await client.dataSource.voiceStats.findMany({
           where: {
             guild_id: guild.id,
@@ -63,25 +70,28 @@ export default class LeaderboardEvent extends BaseSlash {
         })
       : [];
 
-    const inChannel = client.voiceUsers.filter((x) => x.guild_id === guild.id);
+    const inChannel = client.voiceUsers
+      .filter((x) => x.guild_id === guild.id)
+      .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
 
-    if (!stats.length && !inChannel.length) {
+    const fullStats = inChannel.length
+      ? [...dbVoiceStatsOfGuild, ...inChannel]
+      : dbVoiceStatsOfGuild;
+
+    if (!fullStats.length) {
       await interaction.editReply({
-        content: type ? 'No stats found!' : 'No one is in a voice channel!',
+        content: !current ? 'No stats found!' : 'No one is in a voice channel!',
       });
       return;
     }
 
-    const leaderboard = getLeaderboard(client, stats, guild.id);
+    const members = client.guilds.cache
+      .get(guild.id)!
+      .members.cache.map((x) => x);
 
-    if (inChannel) {
-      getLeaderboardActive(
-        client,
-        guild.id,
-        inChannel as voice_stats[],
-        leaderboard
-      );
-    }
+    const leaderboard = !loner
+      ? getLeaderboard(members, fullStats)
+      : getLonerBoard(members, fullStats);
 
     const longestInVc = leaderboard
       .sort((a, b) => b.count - a.count)
@@ -101,8 +111,8 @@ export default class LeaderboardEvent extends BaseSlash {
 
     const embed = new EmbedBuilder()
       .setColor('#000000')
-      .setTitle('Leaderboard')
-      .setDescription('Time spend in voice channels')
+      .setTitle(!loner ? 'Leaderboard' : 'Lonerboard')
+      .setDescription(`Time spend ${loner ? 'alone' : ''} in voice channels`)
       .addFields(
         sorted.map((x, i) => {
           return {

@@ -52,7 +52,7 @@ export default class SettingsEvent extends BaseSlash {
     const config = client.guildConfigs.get(interaction.guildId!);
     const settings = config?.toggles;
 
-    if (!config || settings === undefined) {
+    if (settings === undefined || !config) {
       return interaction.reply({
         content: 'Settings not found!',
         ephemeral: true,
@@ -74,7 +74,6 @@ export default class SettingsEvent extends BaseSlash {
         toggles: newSettings,
       },
     });
-
     client.guildConfigs.set(interaction.guildId!, dbConfig);
 
     const content = toggleArray
