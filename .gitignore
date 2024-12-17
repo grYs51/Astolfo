@@ -16,3 +16,6 @@ dist
 No newline at end of file
 !.env.example
 No newline at end of file
+
+# vscode
+.vscode/*
