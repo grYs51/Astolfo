@@ -13,9 +13,13 @@ async function shutdown() {
   logger.info('I got a shutdown signal!');
   client.user?.setStatus('invisible');
 
-  logger.info('Saving metrics and voice stats');
+  logger.info('Saving metrics...');
   await SaveMetrics();
+
+  logger.info('Saving voice stats...');
   await saveVc();
+
+  logger.info('saving voice stats...done');
 
   await disconnect();
   logger.info('Database client disconnected');

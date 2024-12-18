@@ -37,6 +37,7 @@ services:
         - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     container_name: Astolfo-bot
     restart: unless-stopped
+    stop_grace_period: 1m
     environment:
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
