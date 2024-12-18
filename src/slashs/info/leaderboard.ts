@@ -7,13 +7,14 @@ import {
   InteractionContextType,
 } from 'discord.js';
 import client from '../../client/client';
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash } from '../../utils/structures/base-slash';
 import {
   getLeaderboard,
   getLonerBoard,
 } from '../../utils/functions/leaderboard';
 import { voice_stats } from '@prisma/client';
 import { createBar } from '../../utils/functions/create-bar';
+import { Logger } from '../../utils/logger';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -50,7 +51,7 @@ export default class LeaderboardEvent extends BaseSlash {
         .reply({
           content: 'This command can only be used in a server.',
         })
-        .catch(client.logger.error);
+        .catch(Logger.error);
       return;
     }
 
@@ -59,7 +60,7 @@ export default class LeaderboardEvent extends BaseSlash {
     const current = interaction.options.data[0].options?.[0].name === 'current';
     const loner = interaction.options.data[0].options?.[0].name === 'loner';
 
-    await interaction.deferReply().catch(client.logger.error);
+    await interaction.deferReply().catch(Logger.error);
 
     //set starting voiceStats list
     const dbVoiceStatsOfGuild = !current
@@ -122,6 +123,6 @@ export default class LeaderboardEvent extends BaseSlash {
         })
       );
 
-    await interaction.editReply({ embeds: [embed] }).catch(client.logger.error);
+    await interaction.editReply({ embeds: [embed] }).catch(Logger.error);
   }
 }

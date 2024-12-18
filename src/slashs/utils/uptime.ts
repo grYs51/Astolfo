@@ -1,5 +1,5 @@
 import { CommandInteraction, CacheType } from 'discord.js';
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
 export default class UpTimeEvent extends BaseSlash {
   constructor() {

@@ -1,4 +1,4 @@
-import logger from '../../utils/logger';
+import { Logger } from '../../utils/logger';
 import { getDb } from '../../db';
 import { commandsCountSet, eventsCountSet, slashsCountSet } from './counter';
 
@@ -58,7 +58,7 @@ function parsePrometheusTextFormat(metricsData: any) {
 function initializePrometheusMetrics(metrics: {
   [metricType: string]: ParsedMetric[];
 }): void {
-  logger.info('Initializing Prometheus metrics');
+  Logger.info('Initializing Prometheus metrics');
   Object.keys(metrics).forEach((metricKey) => {
     metrics[metricKey].forEach(({ key, attributes, value }) => {
       if (metricKey === 'counter') {
@@ -73,7 +73,7 @@ function initializePrometheusMetrics(metrics: {
             slashsCountSet(attributes.slashName, value);
             break;
           default:
-            logger.error(`Unknown metric name ${key}`);
+            Logger.error(`Unknown metric name ${key}`);
         }
       }
     });
@@ -82,7 +82,7 @@ function initializePrometheusMetrics(metrics: {
 async function initPrometheusData() {
   const metricsData = await readMetricsFromDb();
   if (!metricsData) {
-    logger.error('No metrics data found');
+    Logger.error('No metrics data found');
     return;
   }
   const parsedMetrics = parsePrometheusTextFormat(metricsData);

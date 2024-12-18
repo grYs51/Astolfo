@@ -1,17 +1,18 @@
-import { CacheType, CommandInteraction } from 'discord.js';
+import { ChatInputCommandInteraction } from 'discord.js';
 import client from '../../client/client';
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
+import { InterActionUtils } from '../../utils/interaction-utils';
 
 export default class PingEvent extends BaseSlash {
   constructor() {
-    super('ping', 'Shows the ping of the bot');
+    super('ping', 'Shows the ping of the bot', SlashDeferTypes.HIDDEN);
   }
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction
   ): Promise<void> {
     const ping = Date.now() - interaction.createdTimestamp;
-    await interaction.reply(`Pong! \`${ping}ms\``);
+    await InterActionUtils.send(interaction, `Pong! \`${ping}ms\``);
   }
 }

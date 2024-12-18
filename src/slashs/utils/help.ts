@@ -4,7 +4,7 @@ import {
   CommandInteraction,
   EmbedBuilder,
 } from 'discord.js';
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
 
 export default class HelpEvent extends BaseSlash {

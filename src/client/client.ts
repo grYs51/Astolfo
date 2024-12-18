@@ -1,8 +1,7 @@
 import { Client, ClientOptions, Collection } from 'discord.js';
 import BaseEvent from '../utils/structures/base-event';
 import BaseCommand from '../utils/structures/base-command';
-import BaseSlash from '../utils/structures/base-slash';
-import { Logger } from 'pino';
+import { BaseSlash } from '../utils/structures/base-slash';
 import {
   guild_configs,
   user_configs,
@@ -10,7 +9,6 @@ import {
   voice_stats,
 } from '@prisma/client';
 import { Db } from '../db';
-import logger from '../utils/logger';
 import BaseInteraction from '../utils/structures/base-interaction';
 
 export default class DiscordClient extends Client {
@@ -21,7 +19,6 @@ export default class DiscordClient extends Client {
   public readonly guildConfigs = new Collection<string, guild_configs>();
   public readonly userConfigs = new Collection<string, user_configs>();
   public readonly userStatus = new Collection<string, Partial<user_statuses>>();
-  public readonly logger: Logger = logger;
   public voiceUsers: Array<Partial<voice_stats>> = [];
   public dataSource: Db;
 

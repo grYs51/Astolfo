@@ -1,4 +1,4 @@
-import logger from '../logger';
+import { Logger } from '../logger';
 import { saveVc } from '../functions/set-vc';
 import { SaveMetrics } from '../../api/utils.ts/save-on-exit';
 import { client } from '../..';
@@ -10,21 +10,21 @@ async function shutdown() {
   if (isShuttingDown) return;
   isShuttingDown = true;
 
-  logger.info('I got a shutdown signal!');
+  Logger.info('I got a shutdown signal!');
   client.user?.setStatus('invisible');
 
-  logger.info('Saving metrics...');
+  Logger.info('Saving metrics...');
   await SaveMetrics();
 
-  logger.info('Saving voice stats...');
+  Logger.info('Saving voice stats...');
   await saveVc();
 
-  logger.info('saving voice stats...done');
+  Logger.info('saving voice stats...done');
 
   await disconnect();
-  logger.info('Database client disconnected');
+  Logger.info('Database client disconnected');
 
-  logger.info('Change Da World... My Final Message!');
+  Logger.info('Change Da World... My Final Message!');
   process.exit(0);
 }
 

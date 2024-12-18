@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import logger from '../utils/logger';
+import { Logger } from '../utils/logger';
 
 export interface Db {
   guildConfigurations: PrismaClient['guild_configs'];
@@ -15,9 +15,9 @@ let currentClient: PrismaClient;
 export async function createPrismaClient() {
   currentClient = new PrismaClient();
 
-  logger.info('Initializing database');
+  Logger.info('Initializing database');
   await currentClient.$connect();
-  logger.info('Database client initialized');
+  Logger.info('Database client initialized');
 
   return currentClient;
 }

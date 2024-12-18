@@ -1,6 +1,7 @@
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
 import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
+import { Logger } from '../../utils/logger';
 // import * as mc from 'minecraft-server-util';
 
 const options = {
@@ -17,7 +18,7 @@ export default class McStatusEvent extends BaseSlash {
     client: client,
     interaction: CommandInteraction<CacheType>
   ): Promise<void> {
-    await interaction.deferReply().catch(client.logger.error);
+    await interaction.deferReply().catch(Logger.error);
 
     interaction.editReply('This command is currently disabled.');
 
@@ -53,7 +54,7 @@ export default class McStatusEvent extends BaseSlash {
     //     interaction.editReply({ embeds: [embed] });
     //   })
     //   .catch((error) => {
-    //     client.logger.error(error);
+    //     Logger.error(error);
     //     return interaction.editReply(
     //       'It seems like the server is down, kinda sad...',
     //     );

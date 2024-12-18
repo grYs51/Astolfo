@@ -5,7 +5,7 @@ import {
   PermissionFlagsBits,
   InteractionContextType,
 } from 'discord.js';
-import BaseSlash from '../../utils/structures/base-slash';
+import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
 import {
   disableFeature,

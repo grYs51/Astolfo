@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import DiscordClient from '../../client/client';
 import BaseCommand from '../../utils/structures/base-command';
+import { Logger } from '../../utils/logger';
 
 export default class GenerateUserConfig extends BaseCommand {
   constructor() {
@@ -34,7 +35,7 @@ export default class GenerateUserConfig extends BaseCommand {
 
       return message.react('✅');
     } catch (e) {
-      client.logger.error(e);
+      Logger.error('Error initializing users', e);
       return message.react('❌');
     }
   }
