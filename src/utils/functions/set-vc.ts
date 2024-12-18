@@ -60,10 +60,13 @@ export const setVc = async () => {
 
 export const saveVc = async () => {
   const date = new Date();
-  for await (const voiceStat of client.voiceUsers) {
-    voiceStat.ended_on = date;
-    await client.dataSource.voiceStats.create({
-      data: voiceStat as voice_stats,
-    });
-  }
+
+  return Promise.all(
+    client.voiceUsers.map(async (voiceStat) => {
+      voiceStat.ended_on = date;
+      await client.dataSource.voiceStats.create({
+        data: voiceStat as voice_stats,
+      });
+    })
+  );
 };

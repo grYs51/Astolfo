@@ -1,5 +1,8 @@
 FROM node:23-alpine
 
+# Install tini
+RUN apk add --no-cache tini
+
 # Create the bot's directory
 WORKDIR /app
 RUN apk add --no-cache openssl
@@ -22,5 +25,9 @@ RUN yarn install && yarn build && rm -rf /app/src
 # Expose the bot's port
 EXPOSE 3000
 
+# Use tini as the init system
+ENTRYPOINT ["/sbin/tini", "--"]
+
 # Run migrations and start the bot
-CMD ["sh", "-c", "npx prisma migrate deploy && yarn start"]
+# Don't use npm start because node will run a sub-process of npm and won't receive signals
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
