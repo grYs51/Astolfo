@@ -1,10 +1,10 @@
 import { client } from '../..';
 import { getDb } from '../../db';
-import logger from '../logger';
+import { Logger } from '../logger';
 
 export const setConfigs = async () => {
   const prismaClient = getDb();
-  logger.info('Setting configurations...');
+  Logger.info('Setting configurations...');
 
   // guilds
   const guildConfigs = await prismaClient.guildConfigurations.findMany();
@@ -26,7 +26,7 @@ export const checkForNewGuilds = async () => {
   const guilds = client.guilds.cache;
   guilds.forEach(async (guild) => {
     if (!client.guildConfigs.has(guild.id)) {
-      logger.info(`I found a new guild! ${guild.id}, adding...`);
+      Logger.info(`I found a new guild! ${guild.id}, adding...`);
       client.guildConfigs.set(guild.id, {
         guild_id: guild.id,
         prefix: process.env.DEFAULT_PREFIX ?? ',',

@@ -2,6 +2,7 @@
 import { Events, Guild } from 'discord.js';
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
+import { Logger } from '../../utils/logger';
 
 export default class GuildCreateEvent extends BaseEvent {
   constructor() {
@@ -23,9 +24,9 @@ export default class GuildCreateEvent extends BaseEvent {
     client.guildConfigs.set(guild.id, config);
 
     if (config) {
-      client.logger.info('A configuration was found or created!');
+      Logger.info('A configuration was found or created!');
     } else {
-      client.logger.info('A configuration could not be found or created.');
+      Logger.info('A configuration could not be found or created.');
     }
   }
 }

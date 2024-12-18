@@ -9,10 +9,11 @@ import {
 } from 'discord.js';
 import { slashCount } from '../../api/utils.ts/counter';
 
-export default abstract class BaseSlash {
+export abstract class BaseSlash {
   constructor(
     private readonly _name: string,
-    private readonly _description: string
+    private readonly _description: string,
+    private readonly _deferType: SlashDeferTypes = SlashDeferTypes.PUBLIC
   ) {}
 
   get name(): string {
@@ -23,6 +24,10 @@ export default abstract class BaseSlash {
 
   get description() {
     return this._description;
+  }
+
+  get deferType() {
+    return this._deferType;
   }
 
   createInteraction(
@@ -45,4 +50,10 @@ export default abstract class BaseSlash {
     client: DiscordClient,
     interaction: CommandInteraction<CacheType>
   ): Promise<InteractionResponse<boolean>> | Promise<void>;
+}
+
+export enum SlashDeferTypes {
+  PUBLIC,
+  HIDDEN,
+  NONE,
 }

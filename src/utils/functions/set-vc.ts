@@ -1,7 +1,7 @@
 import { voice_stats } from '@prisma/client';
 import { client } from '../..';
 import { GuildMember, VoiceBasedChannel } from 'discord.js';
-import logger from '../logger';
+import { Logger } from '../logger';
 import { schedule5hrVoiceChannelJob } from '../schedulers/voice-channel.scheduler';
 
 const createVoiceStat = (
@@ -52,9 +52,9 @@ export const setVc = async () => {
   }
 
   if (totalMembers === 0) {
-    logger.info('No cutie patooties to add to the voice stats');
+    Logger.info('No cutie patooties to add to the voice stats');
   } else {
-    logger.info(`Added ${totalMembers} cutie patooties to the voice stats`);
+    Logger.info(`Added ${totalMembers} cutie patooties to the voice stats`);
   }
 };
 

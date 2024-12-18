@@ -9,7 +9,7 @@ import {
 import DiscordClient from './client/client';
 import { IntentsBitField } from 'discord.js';
 import { createPrismaClient } from './db';
-import logger from './utils/logger';
+import { Logger } from './utils/logger';
 import { setConfigs } from './utils/functions/set-config';
 import server from './api';
 import { initPrometheusData } from './api/utils.ts/load-on-start';
@@ -19,6 +19,7 @@ export const client = new DiscordClient({
   intents: [
     IntentsBitField.Flags.Guilds,
     IntentsBitField.Flags.GuildMessages,
+    IntentsBitField.Flags.GuildMessageReactions,
     IntentsBitField.Flags.GuildMembers,
     IntentsBitField.Flags.GuildVoiceStates,
     IntentsBitField.Flags.GuildPresences,
@@ -38,8 +39,8 @@ const main = () =>
     .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
     .then(() => setupShutdownHandler())
     .catch((error) => {
-      logger.error('Failed to start bot');
-      logger.error(error);
+      Logger.error('Failed to start bot');
+      Logger.error(error);
       process.exit(1);
     });
 

@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
+import { Logger } from '../../utils/logger';
 
 export default class SetWelcomeChannelCommand extends BaseCommand {
   constructor() {
@@ -32,7 +33,7 @@ export default class SetWelcomeChannelCommand extends BaseCommand {
         return message.react('✅');
       })
       .catch((e) => {
-        client.logger.error(e);
+        Logger.error(e);
         return message.react('❌');
       });
   }

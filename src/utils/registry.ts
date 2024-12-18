@@ -3,7 +3,7 @@ import { promises as fs } from 'fs';
 import DiscordClient from '../client/client';
 import BaseCommand from './structures/base-command';
 import BaseEvent from './structures/base-event';
-import BaseSlash from './structures/base-slash';
+import { BaseSlash } from './structures/base-slash';
 import { client } from '..';
 import BaseInteraction from './structures/base-interaction';
 

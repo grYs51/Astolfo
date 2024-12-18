@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import logger from '../utils/logger';
+import { Logger } from '../utils/logger';
 import apiRouter from './routes/api-router';
 import './utils.ts/save-on-exit';
 import { collectDefaultMetrics } from 'prom-client';
@@ -15,7 +15,7 @@ function createExpress() {
   });
 
   const server = app.listen(PORT, () => {
-    logger.info(`Server is running at ${PORT}`);
+    Logger.info(`Server is running at ${PORT}`);
   });
 
   return server;

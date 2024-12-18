@@ -13,7 +13,7 @@ import {
   Message,
   WebhookMessageEditOptions,
 } from 'discord.js';
-import logger from './logger';
+import { Logger } from './logger';
 
 const IGNORED_ERRORS = [
   DiscordApiErrors.UnknownMessage,
@@ -59,7 +59,7 @@ export class InterActionUtils {
           ephemeral: hidden,
         });
       } else {
-        logger.error('Failed to defer reply', error);
+        Logger.error('Failed to defer reply', error);
         throw error;
       }
     }
@@ -67,7 +67,7 @@ export class InterActionUtils {
 
   public static async deferUpdate(
     intr: MessageComponentInteraction | ModalSubmitInteraction
-  ): Promise<InteractionResponse> {
+  ): Promise<void | InteractionResponse<boolean>> {
     try {
       return await intr.deferUpdate();
     } catch (error) {

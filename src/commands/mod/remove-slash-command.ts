@@ -2,6 +2,7 @@ import { Message, Routes } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import rest from '../../utils/functions/rest';
+import { Logger } from '../../utils/logger';
 
 export default class RemoveSlashCommand extends BaseCommand {
   constructor() {
@@ -18,12 +19,12 @@ export default class RemoveSlashCommand extends BaseCommand {
       this.removeGuildSlashCommands(args[0]),
     ])
       .then(() => {
-        client.logger.info('Slash commands removed');
+        Logger.info('Slash commands removed');
         return message.react('✅');
       })
       .catch((error) => {
-        client.logger.error('Failed to remove slash commands');
-        client.logger.error(error);
+        Logger.error('Failed to remove slash commands');
+        Logger.error(error);
         return message.react('⛔');
       });
   }

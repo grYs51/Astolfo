@@ -2,6 +2,7 @@
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { Events } from 'discord.js';
+import { Logger } from '../../utils/logger';
 
 export default class ErrorEvent extends BaseEvent {
   constructor() {
@@ -9,6 +10,6 @@ export default class ErrorEvent extends BaseEvent {
   }
 
   async event(client: DiscordClient, error: Error) {
-    client.logger.error(error);
+    Logger.error('Error:', error);
   }
 }

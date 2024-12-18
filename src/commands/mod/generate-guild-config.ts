@@ -1,7 +1,7 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
-import logger from '../../utils/logger';
+import { Logger } from '../../utils/logger';
 
 export default class GenerateGuildConfigs extends BaseCommand {
   constructor() {
@@ -17,7 +17,7 @@ export default class GenerateGuildConfigs extends BaseCommand {
       client.guilds.cache.forEach(async (guild) => {
         if (client.guildConfigs.has(guild.id)) return;
 
-        logger.info(`Initializing guild ${guild.name} (${guild.id})`);
+        Logger.info(`Initializing guild ${guild.name} (${guild.id})`);
         client.dataSource.guildConfigurations
           .upsert({
             where: {
@@ -34,7 +34,7 @@ export default class GenerateGuildConfigs extends BaseCommand {
           });
       });
     } catch (e) {
-      client.logger.error(e);
+      Logger.error('Error initializing guilds', e);
       return message.react('❌');
     }
 
