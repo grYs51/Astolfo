@@ -1,7 +1,6 @@
-import { Message, MessageReaction } from 'discord.js';
+import { Message } from 'discord.js';
 import DiscordClient from '../../client/client';
 import { commandsCount } from '../../api/utils.ts/counter';
-import { Logger } from '../logger';
 
 export default abstract class BaseCommand {
   constructor(
@@ -24,15 +23,12 @@ export default abstract class BaseCommand {
 
   run(client: DiscordClient, message: Message, args: Array<string> | null) {
     commandsCount(this.name);
-    return this.command(client, message, args).catch((error) => {
-      Logger.error('Error:', error);
-      return message.react('⛔');
-    });
+    return this.command(client, message, args);
   }
 
   protected abstract command(
     client: DiscordClient,
     message: Message,
     args: Array<string> | null
-  ): Promise<Message | MessageReaction>;
+  ): void;
 }
