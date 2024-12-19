@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import DiscordClient from '../../client/client';
 import BaseCommand from '../../utils/structures/base-command';
 import { Logger } from '../../utils/logger';
+import { MessageUtils } from '../../utils/message-utils';
 
 export default class GenerateUserConfig extends BaseCommand {
   constructor() {
@@ -10,7 +11,7 @@ export default class GenerateUserConfig extends BaseCommand {
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id !== client.ownerId) {
-      return message.react('⛔');
+      return MessageUtils.react(message, '⛔');
     }
 
     try {
@@ -33,10 +34,10 @@ export default class GenerateUserConfig extends BaseCommand {
         });
       });
 
-      return message.react('✅');
+      return MessageUtils.react(message, '✅');
     } catch (e) {
       Logger.error('Error initializing users', e);
-      return message.react('❌');
+      return MessageUtils.react(message, '💥');
     }
   }
 }

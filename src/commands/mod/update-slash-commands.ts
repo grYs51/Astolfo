@@ -3,6 +3,7 @@ import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
 import rest from '../../utils/functions/rest';
+import { MessageUtils } from '../../utils/message-utils';
 
 export default class UpdateSlashCommands extends BaseCommand {
   constructor() {
@@ -11,7 +12,7 @@ export default class UpdateSlashCommands extends BaseCommand {
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id !== client.ownerId) {
-      return message.react('⛔');
+      return MessageUtils.react(message, '⛔');
     }
 
     return rest
@@ -22,7 +23,11 @@ export default class UpdateSlashCommands extends BaseCommand {
       })
       .then(() => {
         Logger.info('Successfully registered application commands.');
-        return message.react('✅');
+        return MessageUtils.react(message, '✅');
+      })
+      .catch((error) => {
+        Logger.error('Failed to register application commands.', error);
+        return MessageUtils.react(message, '💥');
       });
   }
 }

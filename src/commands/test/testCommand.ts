@@ -1,6 +1,7 @@
 import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
+import { MessageUtils } from '../../utils/message-utils';
 
 export default class TestCommand extends BaseCommand {
   constructor() {
@@ -8,11 +9,6 @@ export default class TestCommand extends BaseCommand {
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
-    return message.reply({
-      content: 'Test command works!',
-      allowedMentions: {
-        repliedUser: false,
-      },
-    });
+    MessageUtils.reply(message, 'Test command works!');
   }
 }

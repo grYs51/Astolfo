@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
+import { MessageUtils } from '../../utils/message-utils';
 
 export default class SetPrefixCommand extends BaseCommand {
   constructor() {
@@ -12,7 +13,8 @@ export default class SetPrefixCommand extends BaseCommand {
     const config = client.guildConfigs.get(message.guildId!);
 
     if (!args.length) {
-      return message.reply(
+      return MessageUtils.reply(
+        message,
         `Please provide an prefix\nUsage: \`${
           config?.prefix ?? ','
         }prefix <new prefix>\``
@@ -31,11 +33,11 @@ export default class SetPrefixCommand extends BaseCommand {
       })
       .then((updatedConfig) => {
         client.guildConfigs.set(message.guildId!, updatedConfig);
-        return message.react('✅');
+        return MessageUtils.react(message, '✅');
       })
       .catch((e) => {
         Logger.error(e);
-        return message.react('❌');
+        return MessageUtils.react(message, '💥');
       });
   }
 }

@@ -2,6 +2,7 @@ import { Message } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
+import { MessageUtils } from '../../utils/message-utils';
 
 export default class GenerateGuildConfigs extends BaseCommand {
   constructor() {
@@ -10,7 +11,7 @@ export default class GenerateGuildConfigs extends BaseCommand {
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {
     if (message.author.id != client.ownerId) {
-      return message.react('⛔');
+      return MessageUtils.react(message, '❌');
     }
 
     try {
@@ -35,9 +36,9 @@ export default class GenerateGuildConfigs extends BaseCommand {
       });
     } catch (e) {
       Logger.error('Error initializing guilds', e);
-      return message.react('❌');
+      return MessageUtils.react(message, '💥');
     }
 
-    return message.react('✅');
+    return MessageUtils.react(message, '✅');
   }
 }
