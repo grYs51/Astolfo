@@ -1,11 +1,17 @@
 FROM node:23-alpine
 
-# Install tini
-RUN apk add --no-cache tini
+# Install system packages first
+RUN apk add --no-cache tini openssl
+
+# Create a non-root user
+RUN addgroup -S bot \
+    && adduser -S bot -G bot
+
+# Switch to non-root user
+USER bot
 
 # Create the bot's directory
 WORKDIR /app
-RUN apk add --no-cache openssl
 
 # Build arguments for environment variables
 ARG DATABASE_URL
@@ -29,5 +35,4 @@ EXPOSE 3000
 ENTRYPOINT ["/sbin/tini", "--"]
 
 # Run migrations and start the bot
-# Don't use npm start because node will run a sub-process of npm and won't receive signals
 CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
