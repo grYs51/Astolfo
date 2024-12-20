@@ -8,6 +8,8 @@ export interface Db {
   userConfigs: PrismaClient['user_configs'];
   userStatus: PrismaClient['user_statuses'];
   metrics: PrismaClient['metrics'];
+  gameTypes: PrismaClient['game_type'];
+  gameResults : PrismaClient['game_result'];
 }
 
 let currentClient: PrismaClient;
@@ -34,6 +36,8 @@ export function getDb(): Db {
     userConfigs: currentClient.user_configs,
     userStatus: currentClient.user_statuses,
     metrics: currentClient.metrics,
+    gameTypes: currentClient.game_type,
+    gameResults: currentClient.game_result
   };
 }
 

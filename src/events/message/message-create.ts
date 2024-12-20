@@ -13,7 +13,6 @@ export default class MessageEvent extends BaseEvent {
     if (!message || message.author.bot) return;
 
     saveMessage(message);
-
     runCommand(client, message);
   }
 }

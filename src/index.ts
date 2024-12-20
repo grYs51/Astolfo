@@ -14,6 +14,7 @@ import { setConfigs } from './utils/functions/set-config';
 import server from './api';
 import { initPrometheusData } from './api/utils.ts/load-on-start';
 import { setupShutdownHandler } from './utils/handlers/shutdown-handler'; // Import the new shutdown handler
+import { saveGamesToDb } from './utils/handlers/games-handler';
 
 export const client = new DiscordClient({
   intents: [
@@ -30,6 +31,7 @@ export const client = new DiscordClient({
 const main = () =>
   createPrismaClient()
     .then(() => setConfigs())
+    .then(() => saveGamesToDb())
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
