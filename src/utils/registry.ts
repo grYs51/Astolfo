@@ -6,6 +6,7 @@ import BaseEvent from './structures/base-event';
 import { BaseSlash } from './structures/base-slash';
 import { client } from '..';
 import BaseInteraction from './structures/base-interaction';
+import { Logger } from './logger';
 
 enum FileType {
   COMMANDS = 'commands',
@@ -60,7 +61,11 @@ async function registerFiles(
       await registerFiles(client, path.join(dir, file), fileType);
     if (file.endsWith('.js') || file.endsWith('.ts')) {
       const { default: instance } = await import(path.join(dir, file));
-      fileTypeHandlers[fileType](new instance(), client);
+      try {
+        fileTypeHandlers[fileType](new instance(), client);
+      } catch (error) {
+        Logger.error('Failed to register file', error);
+      }
     }
   }
 }

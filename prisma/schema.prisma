@@ -64,3 +64,30 @@ model metrics {
   updated_at DateTime @default(now()) @db.Timestamp(6)
   id         Int      @id @default(autoincrement())
 }
+
+// GAMES
+
+model game_type {
+  id           String        @id
+  name         String        @unique
+  game_results game_result[]
+}
+
+model game_result {
+  id           String        @id @default(uuid()) @db.VarChar
+  game_type_id String
+  game_type    game_type     @relation(fields: [game_type_id], references: [id])
+  guild_id     String
+  players      game_player[]
+  created_at   DateTime      @default(now())
+  metadata     Json? // Store game-specific data
+}
+
+model game_player {
+  id             String      @id @default(uuid()) @db.VarChar
+  game_result_id String
+  game_result    game_result @relation(fields: [game_result_id], references: [id])
+  user_id        String
+  result         Int // 0 = loss, 1 = win, 2 = tie
+  move           String? // Store player's move/action
+}
