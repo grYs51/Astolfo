@@ -85,13 +85,14 @@ export default class RockPaperScissors extends BaseSlash {
       components: [buttons],
     });
 
-    const filter = (i: any) =>
-      i.user.id === interaction.user.id || i.user.id === opponent.id;
-
     if (!interaction.channel?.isSendable()) return;
 
     const collector = interaction.channel?.createMessageComponentCollector({
-      filter,
+      filter: (i) =>
+        i.isButton() &&
+        (i.user.id === opponent.id || i.user.id === interaction.user.id) &&
+        i.message.interactionMetadata!.id.endsWith(interaction.id),
+
       componentType: ComponentType.Button,
       time: 60000,
     });
@@ -99,32 +100,36 @@ export default class RockPaperScissors extends BaseSlash {
     const choices: { [key: string]: string } = {};
 
     collector?.on('collect', async (i) => {
-      // Store player's choice
-      choices[i.user.id] = i.customId;
-      await i.deferUpdate();
+      try {
+        choices[i.user.id] = i.customId;
+        await i.deferUpdate();
 
-      // Check if both players have made their choices
-      if (choices[interaction.user.id] && choices[opponent.id]) {
-        const userChoice = choices[interaction.user.id];
-        const opponentChoice = choices[opponent.id];
+        // Check if both players have made their choices
+        if (choices[interaction.user.id] && choices[opponent.id]) {
+          const userChoice = choices[interaction.user.id];
+          const opponentChoice = choices[opponent.id];
 
-        // Determine winner
-        const outcome = this.getGameOutcome(
-          userChoice,
-          opponentChoice,
-          interaction.user,
-          opponent
-        );
+          // Determine winner
+          const outcome = this.getGameOutcome(
+            userChoice,
+            opponentChoice,
+            interaction.user,
+            opponent
+          );
 
-        // Show results
-        await InterActionUtils.editReply(interaction, {
-          content: `${interaction.user} chose ${userChoice}, ${opponent} chose ${opponentChoice}. ${outcome.result}`,
-          components: [],
-        });
+          // Show results
+          await InterActionUtils.editReply(interaction, {
+            content: `${interaction.user} chose ${userChoice}, ${opponent} chose ${opponentChoice}. ${outcome.result}`,
+            components: [],
+          });
 
-        // Save game results
-        await this.saveGameResult(client, interaction, outcome);
+          // Save game results
+          await this.saveGameResult(client, interaction, outcome);
 
+          collector.stop();
+        }
+      } catch (err) {
+        Logger.error('Failed to collect button interaction', err);
         collector.stop();
       }
     });
