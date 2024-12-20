@@ -14,15 +14,18 @@ on:
 jobs:
   deploy:
     runs-on: self-hosted
-    environment: .env    
-
+    environment: .env
+    permissions:
+      contents: read
+      packages: write
+      actions: write
     steps:
       - name: Checkout
         uses: actions/checkout@v2
-      
+
       - name: run astolfo-bot
         run: docker-compose up -d --build
-        env: 
+        env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DEFAULT_PREFIX: ${{ secrets.DEFAULT_PREFIX }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
