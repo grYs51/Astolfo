@@ -1,7 +1,17 @@
 import { Events, VoiceState } from 'discord.js';
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
-import { handleVoiceChannelStateChanges } from '../../utils/handlers/vc';
+import {
+  getChangedUserVoiceStates,
+  handleUserChangeVoiceChannel,
+  handleUserChangeVoiceStates,
+  handleUserJoinedVoiceChannel,
+  handleUserLeftVoiceChannel,
+  userChangedVoiceChannel,
+  userJoinedVoiceChannel,
+  userLeftVoiceChannel,
+} from '../../utils/handlers/vc';
+
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   constructor() {
     super(Events.VoiceStateUpdate);
@@ -13,6 +23,28 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     newState: VoiceState
   ) {
     const date = new Date();
-    return handleVoiceChannelStateChanges(oldState, newState, date);
+
+    if (userJoinedVoiceChannel(oldState, newState)) {
+      return handleUserJoinedVoiceChannel(newState, date);
+    }
+
+    if (userLeftVoiceChannel(oldState, newState)) {
+      return handleUserLeftVoiceChannel(oldState, date);
+    }
+
+    if (userChangedVoiceChannel(oldState, newState)) {
+      return handleUserChangeVoiceChannel(oldState, newState, date);
+    }
+
+    //include added/removed states here? idk
+    const changedVoiceStates = getChangedUserVoiceStates(oldState, newState);
+    if (Object.values(changedVoiceStates).length > 0) {
+      return handleUserChangeVoiceStates(
+        oldState,
+        newState,
+        date,
+        changedVoiceStates
+      );
+    }
   }
 }
