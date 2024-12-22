@@ -3,28 +3,25 @@ import { client } from '../..';
 import { GuildMember, VoiceBasedChannel } from 'discord.js';
 import { Logger } from '../logger';
 import { schedule5hrVoiceChannelJob } from '../schedulers/voice-channel.scheduler';
-
-const createVoiceStat = (
-  channel: VoiceBasedChannel,
-  member: GuildMember,
-  date: Date
-) => {
-  return {
-    channel_id: channel.id,
-    guild_id: channel.guild.id,
-    issued_on: date,
-    member_id: member.id,
-    type: 'VOICE',
-  };
-};
+import { createVoiceStat, getActiveVoiceStates } from '../handlers/vc';
 
 const processMember = async (
   channel: VoiceBasedChannel,
   member: GuildMember,
   date: Date
 ) => {
-  const voiceStat = createVoiceStat(channel, member, date);
-  client.voiceUsers.push(voiceStat);
+  const voiceVoiceStat = createVoiceStat(
+    channel.guild.id,
+    channel.id,
+    member.id,
+    date
+  );
+
+  const otherVoiceStats = getActiveVoiceStates(member.voice).map((type) =>
+    createVoiceStat(channel.guild.id, channel.id, member.id, date, type)
+  );
+
+  client.voiceUsers.push(voiceVoiceStat, ...otherVoiceStats);
   schedule5hrVoiceChannelJob(member, channel.id, date);
 };
 
