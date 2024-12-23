@@ -9,10 +9,12 @@ import {
 import client from '../../client/client';
 import { BaseSlash } from '../../utils/structures/base-slash';
 import {
+  LeaderboardTimeRanges,
+  LeaderboardTypes,
   getLeaderboard,
-  getLonerBoard,
-} from '../../utils/functions/leaderboard';
-import { voice_stats } from '@prisma/client';
+  leaderboardTimeRangeLabels,
+  leaderboardTypesLabels,
+} from '../../utils/functions/leaderboard/leaderboard';
 import { createBar } from '../../utils/functions/create-bar';
 import { Logger } from '../../utils/logger';
 
@@ -25,22 +27,30 @@ export default class LeaderboardEvent extends BaseSlash {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
-      .addSubcommandGroup((group) =>
-        group
+      .addStringOption((option) =>
+        option
           .setName('type')
-          .setDescription('Type of leaderboard')
-          .addSubcommand((sub) =>
-            sub.setName('all-time').setDescription('All time leaderboard')
+          .setDescription('The Leaderboard Type')
+          .addChoices(
+            ...Object.entries(leaderboardTypesLabels).map(([value, name]) => ({
+              name,
+              value,
+            }))
           )
-          .addSubcommand((sub) =>
-            sub.setName('current').setDescription('Current leaderboard')
-          )
-          .addSubcommand((sub) =>
-            sub.setName('loner').setDescription('Loner leaderboard')
+      )
+      .addStringOption((option) =>
+        option
+          .setName('time-range')
+          .setDescription('Time Range of data')
+          .addChoices(
+            ...Object.entries(leaderboardTimeRangeLabels).map(
+              ([value, name]) => ({ name, value })
+            )
           )
       )
       .setContexts(InteractionContextType.Guild);
   }
+
   async slash(
     client: client,
     interaction: CommandInteraction<CacheType>
@@ -55,45 +65,20 @@ export default class LeaderboardEvent extends BaseSlash {
       return;
     }
 
-    const allTime =
-      interaction.options.data[0].options?.[0].name === 'all-time';
-    const current = interaction.options.data[0].options?.[0].name === 'current';
-    const loner = interaction.options.data[0].options?.[0].name === 'loner';
+    const type =
+      (interaction.options.get('type')?.value as LeaderboardTypes) ?? 'active';
+    const timeRange =
+      (interaction.options.get('time-range')?.value as LeaderboardTimeRanges) ??
+      'allTime';
 
     await interaction.deferReply().catch(Logger.error);
 
-    //set starting voiceStats list
-    const dbVoiceStatsOfGuild = !current
-      ? await client.dataSource.voiceStats.findMany({
-          where: {
-            guild_id: guild.id,
-            type: 'VOICE', // TODO: Add type to voice_stats
-          },
-        })
-      : [];
+    const leaderboard = await getLeaderboard(client, guild.id, type, timeRange);
 
-    const inChannel = client.voiceUsers
-      .filter((x) => x.guild_id === guild.id && x.type === 'VOICE') // TODO: Add type to voice_stats
-      .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
-
-    const fullStats = inChannel.length
-      ? [...dbVoiceStatsOfGuild, ...inChannel]
-      : dbVoiceStatsOfGuild;
-
-    if (!fullStats.length) {
-      await interaction.editReply({
-        content: !current ? 'No stats found!' : 'No one is in a voice channel!',
-      });
+    if (!leaderboard) {
+      await interaction.editReply('no data');
       return;
     }
-
-    const members = client.guilds.cache
-      .get(guild.id)!
-      .members.cache.map((x) => x);
-
-    const leaderboard = !loner
-      ? getLeaderboard(members, fullStats)
-      : getLonerBoard(members, fullStats);
 
     const longestInVc = leaderboard
       .sort((a, b) => b.count - a.count)
@@ -113,8 +98,8 @@ export default class LeaderboardEvent extends BaseSlash {
 
     const embed = new EmbedBuilder()
       .setColor('#000000')
-      .setTitle(!loner ? 'Leaderboard' : 'Lonerboard')
-      .setDescription(`Time spend ${loner ? 'alone' : ''} in voice channels`)
+      .setTitle('Leaderboard')
+      .setDescription(`Time spend in voice channels`)
       .addFields(
         sorted.map((x, i) => {
           return {
