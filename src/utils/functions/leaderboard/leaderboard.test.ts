@@ -1,5 +1,6 @@
 import { voice_stats } from "@prisma/client";
-import { getLonerBoard } from "./leaderboard";
+import { getLonerBoard } from "./lonerLeaderboard";
+
 
 const memberOne = {id:'1',user:{username:'user 1'}}
 const memberTwo = {id:"2",user:{username:'user 2'}}
