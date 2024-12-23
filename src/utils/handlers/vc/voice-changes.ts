@@ -1,4 +1,4 @@
-import { NewsChannel, VoiceState } from 'discord.js';
+import { VoiceState } from 'discord.js';
 import { client } from '../../..';
 import {
   VOICE_TYPE,
@@ -60,32 +60,30 @@ export const handleUserChangeVoiceStates = async (
   date: Date,
   statesChanged: VoiceTypeToVoiceStats
 ) => {
-  //states changed to True, add to VoiceStats
   const statesToAdd = Object.entries(statesChanged)
     .filter(([, state]) => newState[state])
-    .map(([key]) => key);
+    .map(([key]) => key as VOICE_TYPE);
 
-  if (statesToAdd.length) {
-    const newVoiceStats = statesToAdd.map((type) =>
+  if (statesToAdd.length > 0) {
+    const newVoiceStats = statesToAdd.map(type =>
       createVoiceStat(
         newState.guild.id,
         newState.channelId!,
         newState.member!.id,
         date,
-        type as VOICE_TYPE
+        type
       )
     );
     client.voiceUsers.push(...newVoiceStats);
   }
 
-  //states changed to False, save VoiceStat to Db
   const statesToSave = Object.entries(statesChanged)
     .filter(([, state]) => !newState[state])
-    .map(([key]) => key);
+    .map(([key]) => key as VOICE_TYPE);
 
-  if (statesToSave.length) {
-    const voiceStatSavePromises = statesToSave.map((type) =>
-      saveTypeUserVoiceStats(oldState.member!.id, date, type as VOICE_TYPE)
+  if (statesToSave.length > 0) {
+    const voiceStatSavePromises = statesToSave.map(type =>
+      saveTypeUserVoiceStats(oldState.member!.id, date, type)
     );
     await Promise.all(voiceStatSavePromises);
   }

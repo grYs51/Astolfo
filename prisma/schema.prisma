@@ -17,30 +17,28 @@ model guild_configs {
 }
 
 model voice_stats {
-  id             String    @id @default(uuid()) @db.VarChar
-  guild_id       String    @db.VarChar
-  member_id      String    @db.VarChar
-  issued_by_id   String?   @db.VarChar
-  channel_id     String    @db.VarChar
-  new_channel_id String?   @db.VarChar
-  type           String    @db.VarChar
-  issued_on      DateTime  @db.Timestamp(6)
-  ended_on       DateTime? @db.Timestamp(6)
+  id         String   @id @default(uuid()) @db.VarChar
+  guild_id   String   @db.VarChar
+  member_id  String   @db.VarChar
+  channel_id String   @db.VarChar
+  type       String   @db.VarChar
+  issued_on  DateTime @db.Timestamp(6)
+  ended_on   DateTime @db.Timestamp(6)
 }
 
 model user_statuses {
-  id         String    @id @default(uuid()) @db.VarChar
-  user_id    String    @db.VarChar
-  status     String    @db.VarChar
-  created_at DateTime  @default(now()) @db.Timestamp(6)
-  ended_at   DateTime? @db.Timestamp(6)
+  id         String   @id @default(uuid()) @db.VarChar
+  user_id    String   @db.VarChar
+  status     String   @db.VarChar
+  created_at DateTime @db.Timestamp(6)
+  ended_at   DateTime @db.Timestamp(6)
 }
 
 model user_activities {
   id          String   @id @default(uuid()) @db.VarChar
   user_id     String   @db.VarChar
   activity_id String   @db.VarChar
-  created_at  DateTime @default(now()) @db.Timestamp(6)
+  created_at  DateTime @db.Timestamp(6)
   ended_at    DateTime @db.Timestamp(6)
 }
 
@@ -66,7 +64,6 @@ model metrics {
 }
 
 // GAMES
-
 model game_type {
   id           String        @id
   name         String        @unique

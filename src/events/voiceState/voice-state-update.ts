@@ -36,7 +36,7 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
       return handleUserChangeVoiceChannel(oldState, newState, date);
     }
 
-    //include added/removed states here? idk
+    // user changed voice states (mute, deaf, streaming, etc)
     const changedVoiceStates = getChangedUserVoiceStates(oldState, newState);
     if (Object.values(changedVoiceStates).length > 0) {
       return handleUserChangeVoiceStates(

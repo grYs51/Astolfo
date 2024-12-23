@@ -3,9 +3,9 @@ import { GuildMember, VoiceBasedChannel, VoiceState } from 'discord.js';
 export enum VOICE_TYPE {
   VOICE = 'VOICE',
   MUTED = 'MUTED',
-  SERVER_MUTED = 'MUTED_SERVER',
+  SERVER_MUTED = 'SERVER_MUTED',
   DEAF = 'DEAF',
-  SERVER_DEAF = 'DEAF_SERVER',
+  SERVER_DEAF = 'SERVER_DEAF',
   VIDEO = 'VIDEO',
   STREAMING = 'STREAMING',
 }

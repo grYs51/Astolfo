@@ -7,7 +7,6 @@ export const cacheStatus = (newPresence: Presence, date: Date) => {
     user_id: newPresence.userId,
     status: newPresence.status,
     created_at: date,
-    ended_at: null,
   };
 
   client.userStatus.set(newPresence.userId, status);

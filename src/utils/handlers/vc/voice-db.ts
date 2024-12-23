@@ -10,17 +10,19 @@ export const saveAllUserVoiceStatsToDb = async (
     (voiceUser) => voiceUser.member_id === memberId
   );
 
-  if (!voiceUsersStats.length) return;
+  if (voiceUsersStats.length === 0) return;
+
   const savePromises = voiceUsersStats.map(async (voiceUser) => {
     voiceUser.ended_on = date;
     await client.dataSource.voiceStats.create({
       data: voiceUser as voice_stats,
     });
-    client.voiceUsers = client.voiceUsers.filter(
-      (voiceUser) => voiceUser.member_id !== memberId
-    );
   });
+
   await Promise.all(savePromises);
+  client.voiceUsers = client.voiceUsers.filter(
+    (voiceUser) => voiceUser.member_id !== memberId
+  );
 };
 
 export const saveTypeUserVoiceStats = async (
@@ -29,16 +31,15 @@ export const saveTypeUserVoiceStats = async (
   type: VOICE_TYPE
 ) => {
   const voiceUser = client.voiceUsers.find(
-    (voiceUser) => voiceUser.member_id === memberId && type === voiceUser.type
+    (voiceUser) => voiceUser.member_id === memberId && voiceUser.type === type
   );
 
-  if (voiceUser) {
-    voiceUser.ended_on = date;
-    await client.dataSource.voiceStats.create({
-      data: voiceUser as voice_stats,
-    });
-    client.voiceUsers = client.voiceUsers.filter(
-      (voiceUser) => voiceUser.member_id !== memberId
-    );
-  }
+  if (!voiceUser) return;
+
+  voiceUser.ended_on = date;
+
+  await client.dataSource.voiceStats.create({ data: voiceUser as voice_stats });
+  client.voiceUsers = client.voiceUsers.filter(
+    (voiceUser) => voiceUser.member_id !== memberId || voiceUser.type !== type
+  );
 };

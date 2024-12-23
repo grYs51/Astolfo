@@ -67,12 +67,13 @@ export default class LeaderboardEvent extends BaseSlash {
       ? await client.dataSource.voiceStats.findMany({
           where: {
             guild_id: guild.id,
+            type: 'VOICE', // TODO: Add type to voice_stats
           },
         })
       : [];
 
     const inChannel = client.voiceUsers
-      .filter((x) => x.guild_id === guild.id)
+      .filter((x) => x.guild_id === guild.id && x.type === 'VOICE') // TODO: Add type to voice_stats
       .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
 
     const fullStats = inChannel.length
