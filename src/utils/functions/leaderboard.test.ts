@@ -15,8 +15,8 @@ describe('lonerboard',() => {
     */
 
     const voice_stats: voice_stats[] = [
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T12:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:30:00'),ended_on:new Date('2024-12-25T11:30:00'),issued_by_id:'1',type:'1',new_channel_id:''},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T12:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:30:00'),ended_on:new Date('2024-12-25T11:30:00'),type:'1',},
     ]
     const lonerboard = getLonerBoard([memberOne,memberTwo],voice_stats).toSorted((a,b)=>Number(a.id) - Number(b.id))
   
@@ -32,8 +32,8 @@ describe('lonerboard',() => {
     */
 
     const voice_stats: voice_stats[] = [
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T09:00:00'),ended_on:new Date('2024-12-25T10:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T09:30:00'),ended_on:new Date('2024-12-25T11:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T09:00:00'),ended_on:new Date('2024-12-25T10:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T09:30:00'),ended_on:new Date('2024-12-25T11:00:00'),type:'1',},
     ]
     const lonerboard = getLonerBoard([memberOne,memberTwo],voice_stats).toSorted((a,b)=>Number(a.id) - Number(b.id))
   
@@ -53,12 +53,12 @@ describe('lonerboard',() => {
     */
 
     const voice_stats: voice_stats[] = [
-      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T09:00:00'),ended_on:new Date('2024-12-25T11:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T12:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T11:00:00'),ended_on:new Date('2024-12-25T16:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T12:00:00'),ended_on:new Date('2024-12-25T15:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T16:00:00'),ended_on:new Date('2024-12-25T17:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T16:00:00'),ended_on:new Date('2024-12-25T18:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
+      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T09:00:00'),ended_on:new Date('2024-12-25T11:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T12:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T11:00:00'),ended_on:new Date('2024-12-25T16:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T12:00:00'),ended_on:new Date('2024-12-25T15:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'3',channel_id:'1',issued_on:new Date('2024-12-25T16:00:00'),ended_on:new Date('2024-12-25T17:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T16:00:00'),ended_on:new Date('2024-12-25T18:00:00'),type:'1',},
     ]
     const lonerboard = getLonerBoard([memberOne,memberTwo,memberThree],voice_stats).toSorted((a,b)=>Number(a.id) - Number(b.id))
     
@@ -77,8 +77,8 @@ describe('lonerboard',() => {
     */
 
     const voice_stats: voice_stats[] = [
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T08:00:00'),ended_on:new Date('2024-12-25T09:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T11:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T08:00:00'),ended_on:new Date('2024-12-25T09:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'2',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T11:00:00'),type:'1',},
     ]
     const lonerboard = getLonerBoard([memberOne,memberTwo],voice_stats).toSorted((a,b)=>Number(a.id) - Number(b.id))
   
@@ -95,8 +95,8 @@ describe('lonerboard',() => {
     */
 
     const voice_stats: voice_stats[] = [
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T08:00:00'),ended_on:new Date('2024-12-25T09:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
-      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T11:00:00'),issued_by_id:'1',type:'1',new_channel_id:''},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T08:00:00'),ended_on:new Date('2024-12-25T09:00:00'),type:'1',},
+      {id:'1',guild_id:'1',member_id:'1',channel_id:'1',issued_on:new Date('2024-12-25T10:00:00'),ended_on:new Date('2024-12-25T11:00:00'),type:'1',},
     ]
     const lonerboard = getLonerBoard([memberOne,memberTwo],voice_stats).toSorted((a,b)=>Number(a.id) - Number(b.id))
   
