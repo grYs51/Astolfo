@@ -1,7 +1,26 @@
-import { voice_stats } from "@prisma/client";
-import { SimpleGuildMember, Leaderboard } from "./leaderboard";
+import { voice_stats } from '@prisma/client';
+import {
+  SimpleGuildMember,
+  Leaderboard,
+  getVoiceStatsType,
+} from './leaderboard';
+import { VOICE_TYPE } from '../../handlers/vc';
 
-export const getLonerBoard = (
+export const getLonerVoiceStats: getVoiceStatsType = async (
+  client,
+  guildId,
+  fromTime?
+) => {
+  return client.dataSource.voiceStats.findMany({
+    where: {
+      guild_id: guildId,
+      type: VOICE_TYPE.VOICE,
+      issued_on: fromTime ? { gte: fromTime.toISOString() } : undefined,
+    },
+  });
+};
+
+export const getLonerLeaderboard = (
   members: SimpleGuildMember[],
   stats: voice_stats[]
 ): Leaderboard[] => {
@@ -19,8 +38,8 @@ export const getLonerBoard = (
         other.member_id !== member_id && // Different member
         other.channel_id === channel_id && // Same channel
         !(
-          other.ended_on!.getTime()! <= issued_on.getTime() ||
-          other.issued_on.getTime() >= ended_on!.getTime()
+          other.ended_on.getTime() <= issued_on.getTime() ||
+          other.issued_on.getTime() >= ended_on.getTime()
         ) // Overlapping interval
     );
 
@@ -49,8 +68,8 @@ export const getLonerBoard = (
     }
 
     // Add any remaining alone time after the last overlap
-    if (currentStart < ended_on!.getTime()) {
-      aloneTime += ended_on!.getTime() - currentStart;
+    if (currentStart < ended_on.getTime()) {
+      aloneTime += ended_on.getTime() - currentStart;
     }
 
     // Add the time to the member's total
