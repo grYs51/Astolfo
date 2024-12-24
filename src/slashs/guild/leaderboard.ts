@@ -73,22 +73,26 @@ export default class LeaderboardEvent extends BaseSlash {
 
     await interaction.deferReply().catch(Logger.error);
 
-    const leaderboard = await getLeaderboard(client, guild.id, type, timeRange);
+    try {
+      const leaderboard = await getLeaderboard(
+        client,
+        guild.id,
+        type,
+        timeRange
+      );
 
-    if (!leaderboard) {
-      await interaction.editReply('no data');
-      return;
-    }
+      if (!leaderboard) {
+        await interaction.editReply('no data');
+        return;
+      }
 
-    const longestInVc = leaderboard
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 1)[0].count;
+      const sortedLeaderboard = leaderboard.toSorted(
+        (a, b) => b.count - a.count
+      );
 
-    const sorted = leaderboard
-      .sort((a, b) => {
-        return b.count - a.count;
-      })
-      .map((x) => {
+      const longestInVc = sortedLeaderboard[0].count;
+
+      const sorted = sortedLeaderboard.map((x) => {
         return {
           ...x,
           time: humanizeDuration(x.count, { round: true }),
@@ -96,19 +100,25 @@ export default class LeaderboardEvent extends BaseSlash {
         };
       });
 
-    const embed = new EmbedBuilder()
-      .setColor('#000000')
-      .setTitle('Leaderboard')
-      .setDescription(`Time spend in voice channels`)
-      .addFields(
-        sorted.map((x, i) => {
-          return {
-            name: `${i + 1}. ${x.name}`,
-            value: `${x.time}\n${x.bar}`,
-          };
-        })
-      );
+      const embed = new EmbedBuilder()
+        .setColor('#FF69B4')
+        .setTitle('Leaderboard')
+        .setDescription(`Time spend in voice channels`)
+        .addFields(
+          sorted.map((x, i) => {
+            return {
+              name: `${i + 1}. ${x.name}`,
+              value: `${x.time}\n${x.bar}`,
+            };
+          })
+        );
 
-    await interaction.editReply({ embeds: [embed] }).catch(Logger.error);
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      Logger.error('Leaderboard', error);
+      await interaction.editReply(
+        'Something went wrong, please try again later'
+      );
+    }
   }
 }

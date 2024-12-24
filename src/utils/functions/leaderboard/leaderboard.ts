@@ -1,11 +1,14 @@
 import { voice_stats } from '@prisma/client';
 import DiscordClient from '../../../client/client';
-import {
-  getCurrentVoiceStats,
-} from './currentLeaderboard';
+import { getCurrentVoiceStats } from './currentLeaderboard';
 import { getActiveLeaderboard, getActiveVoiceStats } from './activeLeaderboard';
+import { getLonerLeaderboard, getLonerVoiceStats } from './lonerLeaderboard';
 
-export type SimpleGuildMember = { id: string; user: { username: string } };
+export type SimpleGuildMember = {
+  id: string;
+  user: { username: string };
+  displayName: string | null;
+};
 
 export interface Leaderboard {
   id: string;
@@ -25,7 +28,7 @@ export const leaderboardTypesLabels = {
   active: 'Active',
   current: 'Current',
   loner: 'Loner',
-  inactive: 'InActive',
+  inactive: 'Inactive',
 } as const;
 
 export type LeaderboardTypes = keyof typeof leaderboardTypesLabels;
@@ -46,7 +49,6 @@ type GetLeaderBoardType = {
   getLeaderboard: getLeaderboardType;
 };
 
-//TODO: fill in other getters
 const getVoiceStatsAndLeaderboard: Record<
   LeaderboardTypes,
   GetLeaderBoardType
@@ -59,6 +61,25 @@ const getVoiceStatsAndLeaderboard: Record<
     getLeaderboard: getActiveLeaderboard,
     getVoiceStats: getActiveVoiceStats,
   },
+  loner: {
+    getLeaderboard: getLonerLeaderboard,
+    getVoiceStats: getLonerVoiceStats,
+  },
+  inactive: {
+    getVoiceStats: function (
+      client: DiscordClient,
+      guildId: any,
+      fromTime?: Date
+    ): Promise<voice_stats[]> {
+      throw new Error('Function not implemented.');
+    },
+    getLeaderboard: function (
+      members: SimpleGuildMember[],
+      stats: voice_stats[]
+    ): Leaderboard[] {
+      throw new Error('Function not implemented.');
+    },
+  },
 };
 
 export const getLeaderboard = async (
@@ -69,31 +90,34 @@ export const getLeaderboard = async (
 ) => {
   const { getVoiceStats, getLeaderboard } = getVoiceStatsAndLeaderboard[type];
 
-  let startDate;
-  //TODO: fill in correct startDate
+  let startDate: Date | undefined;
+
   switch (timeRange) {
+    case 'allTime':
+      startDate = undefined;
+      break;
     case 'month':
       startDate = new Date();
+      startDate.setDate(startDate.getDate() - 31);
       break;
     case 'week':
       startDate = new Date();
+      startDate.setDate(startDate.getDate() - 7);
       break;
     case 'today':
       startDate = new Date();
+      startDate.setHours(0, 0, 0, 0);
       break;
   }
 
-  const voiceStats = await getVoiceStats(client, guildId,startDate);
+  const voiceStats = await getVoiceStats(client, guildId, startDate);
 
   if (!voiceStats.length) {
     return null;
   }
 
-  const members = client.guilds.cache
-    .get(guildId)!
-    .members.cache.map((x) => x);
-
-  const leaderboard =  getLeaderboard(members, voiceStats);
+  const members = client.guilds.cache.get(guildId)!.members.cache.map((x) => x);
+  const leaderboard = getLeaderboard(members, voiceStats);
 
   return leaderboard;
 };
