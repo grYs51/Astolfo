@@ -11,13 +11,24 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
   guildId,
   fromTime?
 ) => {
-  return client.dataSource.voiceStats.findMany({
+  const dbVoiceStats = await client.dataSource.voiceStats.findMany({
     where: {
       guild_id: guildId,
       type: VOICE_TYPE.VOICE,
       issued_on: fromTime ? { gte: fromTime.toISOString() } : undefined,
     },
   });
+
+  const inChannel = client.voiceUsers
+    .filter(
+      (x) =>
+        x.guild_id === guildId &&
+        x.type === VOICE_TYPE.VOICE &&
+        x.ended_on === null
+    )
+    .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
+
+  return [...dbVoiceStats, ...inChannel];
 };
 
 export const getLonerLeaderboard = (

@@ -61,14 +61,13 @@ export class Logger {
         resText = await obj.text();
       } catch {
         // Ignore
-
       }
       logger
         .child({
           path: obj.url,
           statusCode: obj.status,
           statusName: obj.statusText,
-          headers: JSON.stringify (obj.headers),
+          headers: JSON.stringify(obj.headers),
           body: resText,
         })
         .error(message);
