@@ -17,6 +17,7 @@ import {
 } from '../../utils/functions/leaderboard/leaderboard';
 import { createBar } from '../../utils/functions/create-bar';
 import { Logger } from '../../utils/logger';
+import { InterActionUtils } from '../../utils/interaction-utils';
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -71,7 +72,7 @@ export default class LeaderboardEvent extends BaseSlash {
       (interaction.options.get('time-range')?.value as LeaderboardTimeRanges) ??
       'allTime';
 
-    await interaction.deferReply().catch(Logger.error);
+    await InterActionUtils.deferReply(interaction);
 
     try {
       const leaderboard = await getLeaderboard(
@@ -82,7 +83,10 @@ export default class LeaderboardEvent extends BaseSlash {
       );
 
       if (!leaderboard) {
-        await interaction.editReply('no data');
+        await InterActionUtils.send(
+          interaction,
+          'No data found for this leaderboard'
+        );
         return;
       }
 
@@ -102,23 +106,47 @@ export default class LeaderboardEvent extends BaseSlash {
 
       const embed = new EmbedBuilder()
         .setColor('#FF69B4')
-        .setTitle('Leaderboard')
-        .setDescription(`Time spend in voice channels`)
-        .addFields(
-          sorted.map((x, i) => {
-            return {
-              name: `${i + 1}. ${x.name}`,
-              value: `${x.time}\n${x.bar}`,
-            };
-          })
+        .setTitle(
+          `${leaderboardLabels[type].title} - ${leaderboardTimeRangeLabels[timeRange]}`
+        )
+        .setDescription(leaderboardLabels[type].description)
+        .setFields(
+          sorted.map((x, i) => ({
+            name: `${i + 1}. ${x.name}`,
+            value: `${x.time}\n${x.bar}`,
+          }))
         );
 
-      await interaction.editReply({ embeds: [embed] });
+      await InterActionUtils.send(interaction, embed);
     } catch (error) {
       Logger.error('Leaderboard', error);
-      await interaction.editReply(
-        'Something went wrong, please try again later'
+      await InterActionUtils.send(
+        interaction,
+        'An error occurred while fetching the leaderboard'
       );
     }
   }
 }
+
+const leaderboardLabels: Record<
+  LeaderboardTypes,
+  { title: string; description: string }
+> = {
+  active: {
+    title: 'Active Leaderboard',
+    description:
+      'Time spend in voice channels\nwithout being muted or deafened',
+  },
+  current: {
+    title: 'Current Leaderboard',
+    description: 'Current time spend in voice channels',
+  },
+  loner: {
+    title: 'Loner Leaderboard',
+    description: 'Time spend in voice channels alone',
+  },
+  inactive: {
+    title: 'Inactive Leaderboard',
+    description: 'Time spend in voice channels\nwhile being muted or deafened',
+  },
+};
