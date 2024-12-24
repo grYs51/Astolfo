@@ -3,6 +3,10 @@ import DiscordClient from '../../../client/client';
 import { getCurrentVoiceStats } from './currentLeaderboard';
 import { getActiveLeaderboard, getActiveVoiceStats } from './activeLeaderboard';
 import { getLonerLeaderboard, getLonerVoiceStats } from './lonerLeaderboard';
+import {
+  getInactiveLeaderboard,
+  getInactiveVoiceStats,
+} from './inactiveLeaderboard';
 
 export type SimpleGuildMember = {
   id: string;
@@ -66,19 +70,8 @@ const getVoiceStatsAndLeaderboard: Record<
     getVoiceStats: getLonerVoiceStats,
   },
   inactive: {
-    getVoiceStats: function (
-      client: DiscordClient,
-      guildId: any,
-      fromTime?: Date
-    ): Promise<voice_stats[]> {
-      throw new Error('Function not implemented.');
-    },
-    getLeaderboard: function (
-      members: SimpleGuildMember[],
-      stats: voice_stats[]
-    ): Leaderboard[] {
-      throw new Error('Function not implemented.');
-    },
+    getLeaderboard: getInactiveLeaderboard,
+    getVoiceStats: getInactiveVoiceStats,
   },
 };
 

@@ -65,7 +65,7 @@ export const handleUserChangeVoiceStates = async (
     .map(([key]) => key as VOICE_TYPE);
 
   if (statesToAdd.length > 0) {
-    const newVoiceStats = statesToAdd.map(type =>
+    const newVoiceStats = statesToAdd.map((type) =>
       createVoiceStat(
         newState.guild.id,
         newState.channelId!,
@@ -82,7 +82,7 @@ export const handleUserChangeVoiceStates = async (
     .map(([key]) => key as VOICE_TYPE);
 
   if (statesToSave.length > 0) {
-    const voiceStatSavePromises = statesToSave.map(type =>
+    const voiceStatSavePromises = statesToSave.map((type) =>
       saveTypeUserVoiceStats(oldState.member!.id, date, type)
     );
     await Promise.all(voiceStatSavePromises);
