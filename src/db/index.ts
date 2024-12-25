@@ -10,6 +10,7 @@ export interface Db {
   metrics: PrismaClient['metrics'];
   gameTypes: PrismaClient['game_type'];
   gameResults : PrismaClient['game_result'];
+  gamePlayers : PrismaClient['game_player'];
 }
 
 let currentClient: PrismaClient;
@@ -37,7 +38,8 @@ export function getDb(): Db {
     userStatus: currentClient.user_statuses,
     metrics: currentClient.metrics,
     gameTypes: currentClient.game_type,
-    gameResults: currentClient.game_result
+    gameResults: currentClient.game_result,
+    gamePlayers: currentClient.game_player,
   };
 }
 
