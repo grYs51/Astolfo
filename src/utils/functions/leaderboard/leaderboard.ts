@@ -101,6 +101,8 @@ export const getLeaderboard = async (
       startDate = new Date();
       startDate.setHours(0, 0, 0, 0);
       break;
+    default:
+      startDate = undefined;
   }
 
   const voiceStats = await getVoiceStats(client, guildId, startDate);
