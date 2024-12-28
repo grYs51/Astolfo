@@ -32,6 +32,7 @@ export default class LeaderboardEvent extends BaseSlash {
         option
           .setName('type')
           .setDescription('The Leaderboard Type')
+          .setRequired(false)
           .addChoices(
             ...Object.entries(leaderboardTypesLabels).map(([value, name]) => ({
               name,
@@ -43,6 +44,7 @@ export default class LeaderboardEvent extends BaseSlash {
         option
           .setName('time-range')
           .setDescription('Time Range of data')
+          .setRequired(false)
           .addChoices(
             ...Object.entries(leaderboardTimeRangeLabels).map(
               ([value, name]) => ({ name, value })
@@ -85,7 +87,8 @@ export default class LeaderboardEvent extends BaseSlash {
       if (!leaderboard) {
         await InterActionUtils.send(
           interaction,
-          'No data found for this leaderboard'
+          leaderboardLabels[type].empty ?? 'No data found',
+          true
         );
         return;
       }
@@ -100,15 +103,18 @@ export default class LeaderboardEvent extends BaseSlash {
         return {
           ...x,
           time: humanizeDuration(x.count, { round: true }),
-          bar: createBar(x.count, longestInVc, 20),
+          bar: createBar(x.count, longestInVc, 15),
         };
       });
 
+      const title =
+        type === 'current'
+          ? leaderboardLabels[type].title
+          : `${leaderboardLabels[type].title} - ${leaderboardTimeRangeLabels[timeRange]}`;
+
       const embed = new EmbedBuilder()
         .setColor('#FF69B4')
-        .setTitle(
-          `${leaderboardLabels[type].title} - ${leaderboardTimeRangeLabels[timeRange]}`
-        )
+        .setTitle(title)
         .setDescription(leaderboardLabels[type].description)
         .setFields(
           sorted.map((x, i) => ({
@@ -130,23 +136,27 @@ export default class LeaderboardEvent extends BaseSlash {
 
 const leaderboardLabels: Record<
   LeaderboardTypes,
-  { title: string; description: string }
+  { title: string; description: string; empty?: string }
 > = {
   active: {
     title: 'Active Leaderboard',
     description:
       'Time spend in voice channels\nwithout being muted or deafened',
+    empty: 'No active users found',
   },
   current: {
     title: 'Current Leaderboard',
     description: 'Current time spend in voice channels',
+    empty: 'No one is currently in a voice channel',
   },
   loner: {
     title: 'Loner Leaderboard',
     description: 'Time spend in voice channels alone',
+    empty: 'No loners found',
   },
   inactive: {
     title: 'Inactive Leaderboard',
     description: 'Time spend in voice channels\nwhile being muted or deafened',
+    empty: 'No inactive users found',
   },
 };
