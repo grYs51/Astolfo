@@ -1,9 +1,10 @@
 import { voice_stats } from '@prisma/client';
-import { getLonerBoard } from './lonerLeaderboard';
+import { getLonerLeaderboard } from './lonerLeaderboard';
+import { SimpleGuildMember } from './leaderboard';
 
-const memberOne = { id: '1', user: { username: 'user 1' } };
-const memberTwo = { id: '2', user: { username: 'user 2' } };
-const memberThree = { id: '3', user: { username: 'user 3' } };
+const memberOne = { id: '1', user: { username: 'user 1' } } as SimpleGuildMember;
+const memberTwo = { id: '2', user: { username: 'user 2' } } as SimpleGuildMember;
+const memberThree = { id: '3', user: { username: 'user 3' } } as SimpleGuildMember;
 
 describe('lonerboard', () => {
   test('full overlap', () => {
@@ -32,7 +33,7 @@ describe('lonerboard', () => {
         type: '1',
       },
     ];
-    const lonerboard = getLonerBoard(
+    const lonerboard = getLonerLeaderboard(
       [memberOne, memberTwo],
       voice_stats
     ).toSorted((a, b) => Number(a.id) - Number(b.id));
@@ -68,7 +69,7 @@ describe('lonerboard', () => {
         type: '1',
       },
     ];
-    const lonerboard = getLonerBoard(
+    const lonerboard = getLonerLeaderboard(
       [memberOne, memberTwo],
       voice_stats
     ).toSorted((a, b) => Number(a.id) - Number(b.id));
@@ -143,7 +144,7 @@ describe('lonerboard', () => {
         type: '1',
       },
     ];
-    const lonerboard = getLonerBoard(
+    const lonerboard = getLonerLeaderboard(
       [memberOne, memberTwo, memberThree],
       voice_stats
     ).toSorted((a, b) => Number(a.id) - Number(b.id));
@@ -182,7 +183,7 @@ describe('lonerboard', () => {
         type: '1',
       },
     ];
-    const lonerboard = getLonerBoard(
+    const lonerboard = getLonerLeaderboard(
       [memberOne, memberTwo],
       voice_stats
     ).toSorted((a, b) => Number(a.id) - Number(b.id));
@@ -219,7 +220,7 @@ describe('lonerboard', () => {
         type: '1',
       },
     ];
-    const lonerboard = getLonerBoard(
+    const lonerboard = getLonerLeaderboard(
       [memberOne, memberTwo],
       voice_stats
     ).toSorted((a, b) => Number(a.id) - Number(b.id));
