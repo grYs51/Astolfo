@@ -1,9 +1,5 @@
-import type { Config } from 'jest';
+import { getJestProjectsAsync } from '@nx/jest';
 
-const config: Config = {
-  preset: 'ts-jest',
-  testEnvironment: 'node',
-  testPathIgnorePatterns: ['/node_modules/', '/dist/'],
-};
-
-export default config;
+export default async () => ({
+  projects: await getJestProjectsAsync(),
+});

@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../../../../node_modules/@prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model guild_configs {
+  guild_id           String  @id @db.VarChar
+  prefix             String  @default("!") @db.VarChar
+  welcome_channel_id String? @db.VarChar
+  welcome_message    String  @default("Welcome @member") @db.VarChar(200)
+  goodbye_message    String  @default("Goodbye @member") @db.VarChar(200)
+  toggles            Int     @default(0)
+}
+
+model voice_stats {
+  id         String   @id @default(uuid()) @db.VarChar
+  guild_id   String   @db.VarChar
+  member_id  String   @db.VarChar
+  channel_id String   @db.VarChar
+  type       String   @db.VarChar
+  issued_on  DateTime @db.Timestamp(6)
+  ended_on   DateTime @db.Timestamp(6)
+}
+
+model user_statuses {
+  id         String   @id @default(uuid()) @db.VarChar
+  user_id    String   @db.VarChar
+  status     String   @db.VarChar
+  created_at DateTime @db.Timestamp(6)
+  ended_at   DateTime @db.Timestamp(6)
+}
+
+model user_activities {
+  id          String   @id @default(uuid()) @db.VarChar
+  user_id     String   @db.VarChar
+  activity_id String   @db.VarChar
+  created_at  DateTime @db.Timestamp(6)
+  ended_at    DateTime @db.Timestamp(6)
+}
+
+model message_stats {
+  id         String   @id @default(uuid()) @db.VarChar
+  guild_id   String   @db.VarChar
+  channel_id String   @db.VarChar
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  message_id String   @db.VarChar
+  user_id    String   @db.VarChar
+}
+
+model user_configs {
+  user_id String  @id @db.VarChar
+  mw_id   String? @unique @db.VarChar
+}
+
+model metrics {
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  jsonb      Json
+  updated_at DateTime @default(now()) @db.Timestamp(6)
+  id         Int      @id @default(autoincrement())
+}
+
+model game_type {
+  id           String        @id
+  name         String        @unique
+  game_results game_result[]
+}
+
+model game_result {
+  id           String        @id @default(uuid()) @db.VarChar
+  game_type_id String
+  guild_id     String
+  created_at   DateTime      @default(now())
+  metadata     Json?
+  players      game_player[]
+  game_type    game_type     @relation(fields: [game_type_id], references: [id])
+}
+
+model game_player {
+  id             String      @id @default(uuid()) @db.VarChar
+  game_result_id String
+  user_id        String
+  result         Int
+  move           String?
+  game_result    game_result @relation(fields: [game_result_id], references: [id])
+}

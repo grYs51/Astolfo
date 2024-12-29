@@ -1,0 +1,82 @@
+{
+  "name": "bot",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/bot/src",
+  "projectType": "application",
+  "tags": ["type:app", "platform:node"],
+  "namedInputs": {
+    "dockerFiles": ["{projectRoot}/Dockerfile", "{projectRoot}/package.json"]
+  },
+  "targets": {
+    "build": {
+      "executor": "@nx/esbuild:esbuild",
+      "outputs": ["{options.outputPath}"],
+      "defaultConfiguration": "production",
+      "options": {
+        "platform": "node",
+        "outputPath": "dist/apps/bot",
+        "format": ["cjs"],
+        "bundle": false,
+        "main": "apps/bot/src/index.ts",
+        "tsConfig": "apps/bot/tsconfig.app.json",
+        "assets": ["apps/bot/src/assets"],
+        "generatePackageJson": true,
+        "esbuildOptions": {
+          "sourcemap": true,
+          "outExtension": {
+            ".js": ".js"
+          }
+        }
+      },
+      "configurations": {
+        "development": {},
+        "production": {
+          "esbuildOptions": {
+            "sourcemap": false,
+            "outExtension": {
+              ".js": ".js"
+            }
+          }
+        }
+      }
+    },
+    "serve": {
+      "executor": "@nx/js:node",
+      "defaultConfiguration": "development",
+      "dependsOn": ["build"],
+      "options": {
+        "buildTarget": "bot:build",
+        "runBuildTargetDependencies": false
+      },
+      "configurations": {
+        "development": {
+          "buildTarget": "bot:build:development"
+        },
+        "production": {
+          "buildTarget": "bot:build:production"
+        }
+      }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "inputs": [
+        "dockerFiles",
+        { "dependentTasksOutputFiles": "**/dist/**/*", "transitive": true }
+      ],
+      "cache": true,
+      "dependsOn": ["build"],
+      "options": {
+        "file": "apps/bot/Dockerfile",
+        "platforms": ["linux/amd64", "linux/arm64"],
+        "push": true,
+        "tags": ["ghrc.io/grys/astolfo/bot:latest"],
+        "build-args": ["APP_NAME=astolfo-bot", "NODE_VERSION=23"]
+      }
+    },
+    "test": {
+      "options": {
+        "passWithNoTests": true
+      }
+    }
+  }
+}
