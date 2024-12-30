@@ -15,10 +15,9 @@ coverage
 .vscode
 tmp
 # .gitignore
-# might change if we want to use yarn cache
-.yarn
 .angular
 .env*
 !.env.project
 !.env.vault
 .flaskenv*
+

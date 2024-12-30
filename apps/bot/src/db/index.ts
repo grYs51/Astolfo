@@ -1,4 +1,4 @@
-import { PrismaClient } from '@models/index';
+import { PrismaClient } from '@prisma/client';
 import { Logger } from '../utils/logger';
 
 export interface Db {

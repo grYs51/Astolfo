@@ -1,5 +1,3 @@
-require('dotenv').config();
-import 'reflect-metadata';
 import {
   registerCommands,
   registerEvents,

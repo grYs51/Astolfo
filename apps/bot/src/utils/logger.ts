@@ -1,7 +1,7 @@
 import { DiscordAPIError } from 'discord.js';
 import pino from 'pino';
 
-let logger = pino(
+const logger = pino(
   {
     formatters: {
       level: (label) => {
@@ -21,9 +21,7 @@ let logger = pino(
     },
   })
 );
-
 export class Logger {
-  private static shardId: number;
 
   public static info(message: string, obj?: any): void {
     if (obj) {
@@ -56,7 +54,7 @@ export class Logger {
         })
         .error(message);
     } else if (obj instanceof Response) {
-      let resText: string = '';
+      let resText = '';
       try {
         resText = await obj.text();
       } catch {
