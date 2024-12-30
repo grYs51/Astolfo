@@ -4,6 +4,7 @@
   "sourceRoot": "apps/bot/src",
   "projectType": "application",
   "tags": ["type:app", "platform:node"],
+  "implicitDependencies": ["libs/models"],
   "namedInputs": {
     "dockerFiles": ["{projectRoot}/Dockerfile", "{projectRoot}/package.json"]
   },

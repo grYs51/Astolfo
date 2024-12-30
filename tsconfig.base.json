@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@models/*": ["libs/models/src/*"]
+      "@models/*": ["libs/models/src/*"],
+      "@nx-stolfo/components": ["libs/components/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "coverage"]

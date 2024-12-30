@@ -84,7 +84,7 @@ model game_player {
   id             String      @id @default(uuid()) @db.VarChar
   game_result_id String
   user_id        String
-  result         Int
+  result         Int          // 0 = loss, 1 = win, 2 = tie
   move           String?
   game_result    game_result @relation(fields: [game_result_id], references: [id])
 }

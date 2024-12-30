@@ -49,3 +49,6 @@ Thumbs.db
 
 # yarn
 .yarn/install-state.gz
+
+
+storybook-static

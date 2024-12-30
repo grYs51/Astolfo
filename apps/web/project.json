@@ -4,6 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web/src",
+  "implicitDependencies": ["libs/components"],
   "tags": [],
   "targets": {
     "build": {
@@ -23,6 +24,9 @@
           }
         ],
         "styles": ["apps/web/src/styles.scss"],
+        "stylePreprocessorOptions": {
+          "includePaths": ["libs/styles/src"]
+        },
         "scripts": [],
         "server": "apps/web/src/main.server.ts",
         "ssr": {

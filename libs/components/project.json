@@ -1,0 +1,80 @@
+{
+  "name": "components",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/components/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/components/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/components/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/components/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "port": 4400,
+        "configDir": "libs/components/.storybook",
+        "browserTarget": "components:build-storybook",
+        "styles": ["libs/components/src/styles.scss"],
+        "compodoc": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "outputs": ["{options.outputDir}"],
+      "options": {
+        "outputDir": "dist/storybook/components",
+        "configDir": "libs/components/.storybook",
+        "browserTarget": "components:build-storybook",
+        "styles": ["libs/components/src/styles.scss"],
+        "compodoc": false
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
+    "test-storybook": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "test-storybook -c libs/components/.storybook --url=http://localhost:4400"
+      }
+    },
+    "static-storybook": {
+      "executor": "@nx/web:file-server",
+      "dependsOn": ["build-storybook"],
+      "options": {
+        "buildTarget": "components:build-storybook",
+        "staticFilePath": "dist/storybook/components",
+        "spa": true
+      },
+      "configurations": {
+        "ci": {
+          "buildTarget": "components:build-storybook:ci"
+        }
+      }
+    }
+  }
+}
