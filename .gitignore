@@ -45,6 +45,7 @@ Thumbs.db
 
 # env
 .env*
-No newline at end of file
 !.env.example
-No newline at end of file
+
+# yarn
+.yarn/install-state.gz

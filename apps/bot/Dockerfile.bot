@@ -1,0 +1,48 @@
+ARG NODE_VERSION=23
+
+FROM node:${NODE_VERSION}-alpine AS deps
+
+WORKDIR /usr/src/app
+
+RUN apk add --no-cache openssl
+
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY package.json yarn.lock ./
+COPY ./libs/models/prisma ./prisma
+
+RUN yarn install
+
+COPY . .
+
+RUN npx prisma generate \
+    && npx nx build bot \
+    && rm -rf /usr/src/app/apps/bot/src
+
+
+# runtime image
+FROM node:${NODE_VERSION}-alpine
+
+RUN apk add --no-cache tini dumb-init \
+    && corepack enable && corepack prepare yarn@1.22.22 --activate
+
+ENV NODE_ENV=production
+
+WORKDIR /usr/src/app
+
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY package.json yarn.lock ./
+
+
+RUN yarn workspaces focus --production \
+&& yarn cache clean 
+
+COPY --chown=node:node --from=deps /usr/src/app/dist/apps/bot ./dist
+COPY --chown=node:node --from=deps /usr/src/app/prisma ./prisma
+COPY --chown=node:node --from=deps /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
+
+EXPOSE 3000
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]

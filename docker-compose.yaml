@@ -27,12 +27,12 @@ services:
       - postgres-data:/var/lib/postgresql/data
     networks:
       - astolfo-network
-  
+
   astolfo:
     logging: *default-logging
     build:
       context: .
-      dockerfile: ./apps/bot/Dockerfile
+      dockerfile: ./apps/bot/Dockerfile.bot
       args:
         - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
     container_name: Astolfo-bot
@@ -52,6 +52,8 @@ services:
       - '3003:3000'
     networks:
       - astolfo-network
+    volumes:
+      - ./libs/models/prisma:/app/libs/models/prisma
 
   prometheus:
     image: prom/prometheus:latest
