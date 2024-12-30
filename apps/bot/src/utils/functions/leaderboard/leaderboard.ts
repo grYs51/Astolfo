@@ -1,6 +1,6 @@
 import { voice_stats } from '@prisma/client';
 import DiscordClient from '../../../client/client';
-import { getCurrentVoiceStats } from './currentLeaderboard';
+import { getCurrentLeaderboard, getCurrentVoiceStats } from './currentLeaderboard';
 import { getActiveLeaderboard, getActiveVoiceStats } from './activeLeaderboard';
 import { getLonerLeaderboard, getLonerVoiceStats } from './lonerLeaderboard';
 import {
@@ -58,7 +58,7 @@ const getVoiceStatsAndLeaderboard: Record<
   GetLeaderBoardType
 > = {
   current: {
-    getLeaderboard: getActiveLeaderboard,
+    getLeaderboard: getCurrentLeaderboard,
     getVoiceStats: getCurrentVoiceStats,
   },
   active: {
