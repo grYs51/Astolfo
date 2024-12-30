@@ -4,10 +4,13 @@ import { VOICE_TYPE } from './voice-utils';
 
 export const saveAllUserVoiceStatsToDb = async (
   memberId: string,
+  guildId: string,
   date: Date
 ) => {
   const voiceUsersStats = client.voiceUsers.filter(
-    (voiceUser) => voiceUser.member_id === memberId
+    (voiceUser) =>
+      voiceUser.member_id === memberId &&
+      voiceUser.guild_id === guildId
   );
 
   if (voiceUsersStats.length === 0) return;
@@ -21,17 +24,22 @@ export const saveAllUserVoiceStatsToDb = async (
 
   await Promise.all(savePromises);
   client.voiceUsers = client.voiceUsers.filter(
-    (voiceUser) => voiceUser.member_id !== memberId
+    (voiceUser) =>
+      voiceUser.member_id !== memberId || voiceUser.guild_id !== guildId
   );
 };
 
 export const saveTypeUserVoiceStats = async (
   memberId: string,
+  guildId: string,
   date: Date,
   type: VOICE_TYPE
 ) => {
   const voiceUser = client.voiceUsers.find(
-    (voiceUser) => voiceUser.member_id === memberId && voiceUser.type === type
+    (voiceUser) =>
+      voiceUser.member_id === memberId &&
+      voiceUser.type === type &&
+      voiceUser.guild_id === guildId
   );
 
   if (!voiceUser) return;
@@ -40,6 +48,9 @@ export const saveTypeUserVoiceStats = async (
 
   await client.dataSource.voiceStats.create({ data: voiceUser as voice_stats });
   client.voiceUsers = client.voiceUsers.filter(
-    (voiceUser) => voiceUser.member_id !== memberId || voiceUser.type !== type
+    (voiceUser) =>
+      voiceUser.member_id !== memberId ||
+      voiceUser.type !== type ||
+      voiceUser.guild_id !== guildId
   );
 };
