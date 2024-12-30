@@ -12,7 +12,8 @@
     "docker:dev:database:down": "docker compose -f docker-compose.dev.yaml down",
     "prisma:generate": "nx run models:prisma-generate",
     "prisma:migrate": "nx run models:prisma-migrate",
-    "prisma:deploy": "nx run models:prisma-deploy"
+    "prisma:deploy": "nx run models:prisma-deploy",
+    "nx": "nx"
   },
   "private": true,
   "dependencies": {
