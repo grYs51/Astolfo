@@ -16,7 +16,7 @@ export const handleUserLeftVoiceChannel = async (
   oldState: VoiceState,
   date: Date
 ) => {
-  await saveAllUserVoiceStatsToDb(oldState.member!.id, date);
+  await saveAllUserVoiceStatsToDb(oldState.member!.id, oldState.guild.id, date);
   cancelJob(oldState.member!.id);
 };
 
@@ -83,7 +83,7 @@ export const handleUserChangeVoiceStates = async (
 
   if (statesToSave.length > 0) {
     const voiceStatSavePromises = statesToSave.map((type) =>
-      saveTypeUserVoiceStats(oldState.member!.id, date, type)
+      saveTypeUserVoiceStats(oldState.member!.id, oldState.guild.id, date, type)
     );
     await Promise.all(voiceStatSavePromises);
   }
