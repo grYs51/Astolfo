@@ -4097,6 +4097,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noble/hashes@npm:^1.1.5":
+  version: 1.6.1
+  resolution: "@noble/hashes@npm:1.6.1"
+  checksum: 10c0/27643cd8b551bc933b57cc29aa8c8763d586552fc4c3e06ecf7897f55be3463c0c9dff7f6ebacd88e5ce6d0cdb5415ca4874d0cf4359b5ea4a85be21ada03aab
+  languageName: node
+  linkType: hard
+
 "@nodelib/fs.scandir@npm:2.1.5":
   version: 2.1.5
   resolution: "@nodelib/fs.scandir@npm:2.1.5"
@@ -4261,6 +4268,7 @@ __metadata:
     "@nx/web": "npm:20.3.0"
     "@nx/workspace": "npm:20.3.0"
     "@prisma/client": "npm:^6.1.0"
+    "@quixo3/prisma-session-store": "npm:^3.1.13"
     "@schematics/angular": "npm:~19.0.0"
     "@storybook/addon-essentials": "npm:8.4.7"
     "@storybook/addon-interactions": "npm:^8.4.6"
@@ -4272,17 +4280,23 @@ __metadata:
     "@swc-node/register": "npm:~1.9.1"
     "@swc/core": "npm:~1.5.7"
     "@swc/helpers": "npm:~0.5.11"
+    "@types/cors": "npm:^2.8.17"
     "@types/express": "npm:4.17.14"
+    "@types/express-session": "npm:^1.18.1"
     "@types/jest": "npm:^29.5.12"
     "@types/node": "npm:18.16.9"
+    "@types/passport-discord": "npm:^0.1.14"
     "@typescript-eslint/utils": "npm:^8.13.0"
     angular-eslint: "npm:^19.0.2"
     autoprefixer: "npm:^10.4.0"
+    cors: "npm:^2.8.5"
     discord.js: "npm:^14.16.3"
     esbuild: "npm:^0.19.2"
     eslint: "npm:^9.8.0"
     eslint-config-prettier: "npm:^9.0.0"
     express: "npm:^4.21.2"
+    express-async-handler: "npm:^1.2.0"
+    express-session: "npm:^1.18.1"
     humanize-duration: "npm:^3.32.1"
     jest: "npm:^29.7.0"
     jest-environment-jsdom: "npm:^29.7.0"
@@ -4292,6 +4306,8 @@ __metadata:
     ng-packagr: "npm:~19.0.0"
     node-schedule: "npm:^2.1.1"
     nx: "npm:20.3.0"
+    passport: "npm:^0.7.0"
+    passport-discord: "npm:^0.1.4"
     pino: "npm:^9.6.0"
     pino-pretty: "npm:^13.0.0"
     postcss: "npm:^8.4.5"
@@ -4912,6 +4928,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@paralleldrive/cuid2@npm:^2.2.0":
+  version: 2.2.2
+  resolution: "@paralleldrive/cuid2@npm:2.2.2"
+  dependencies:
+    "@noble/hashes": "npm:^1.1.5"
+  checksum: 10c0/af5826df93de437121308f4f4ce0b2eeb89b60bb57a1a6592fb89c0d40d311ad1d9f3f6a4db2cce6f2bcf572de1aa3f85704254e89b18ce61c41ebb06564c4ee
+  languageName: node
+  linkType: hard
+
 "@parcel/watcher-android-arm64@npm:2.5.0":
   version: 2.5.0
   resolution: "@parcel/watcher-android-arm64@npm:2.5.0"
@@ -5129,6 +5154,20 @@ __metadata:
   dependencies:
     "@prisma/debug": "npm:6.1.0"
   checksum: 10c0/749e62ca455d26b8a10040f61a7b21035c57820d6e67b80958793baa343f94317909a92fbeb7341aac9b1599e162c0b605044eacf7f8f8f23a919390173a6f13
+  languageName: node
+  linkType: hard
+
+"@quixo3/prisma-session-store@npm:^3.1.13":
+  version: 3.1.13
+  resolution: "@quixo3/prisma-session-store@npm:3.1.13"
+  dependencies:
+    "@paralleldrive/cuid2": "npm:^2.2.0"
+    ts-dedent: "npm:^2.2.0"
+    type-fest: "npm:^2.5.2"
+  peerDependencies:
+    "@prisma/client": ">=2.16.1"
+    express-session: ">=1.17.1"
+  checksum: 10c0/a82fe0ef6ecf4bb4558a9b323183cd5e6cc29be3961fe2b70f812605e2619735d4f88d52fef57660fc284c0b64b6bbeb4101c40bfc2380256625c95e4a97e0d2
   languageName: node
   linkType: hard
 
@@ -6761,6 +6800,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/cors@npm:^2.8.17":
+  version: 2.8.17
+  resolution: "@types/cors@npm:2.8.17"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/457364c28c89f3d9ed34800e1de5c6eaaf344d1bb39af122f013322a50bc606eb2aa6f63de4e41a7a08ba7ef454473926c94a830636723da45bf786df032696d
+  languageName: node
+  linkType: hard
+
 "@types/eslint-scope@npm:^3.7.3, @types/eslint-scope@npm:^3.7.7":
   version: 3.7.7
   resolution: "@types/eslint-scope@npm:3.7.7"
@@ -6809,6 +6857,15 @@ __metadata:
     "@types/range-parser": "npm:*"
     "@types/send": "npm:*"
   checksum: 10c0/4281f4ead71723f376b3ddf64868ae26244d434d9906c101cf8d436d4b5c779d01bd046e4ea0ed1a394d3e402216fabfa22b1fa4dba501061cd7c81c54045983
+  languageName: node
+  linkType: hard
+
+"@types/express-session@npm:^1.18.1":
+  version: 1.18.1
+  resolution: "@types/express-session@npm:1.18.1"
+  dependencies:
+    "@types/express": "npm:*"
+  checksum: 10c0/df2d439239f5cc9947772452d1d86d47a8d3e33f90776ebcf602f0fb7801bc85f6410d17557f40cdde881816bc5a2804a7373addfd3a5dbd8c54e7af8aa27000
   languageName: node
   linkType: hard
 
@@ -6982,10 +7039,50 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/oauth@npm:*":
+  version: 0.9.6
+  resolution: "@types/oauth@npm:0.9.6"
+  dependencies:
+    "@types/node": "npm:*"
+  checksum: 10c0/2f3e4ee1059fd28fc2cb6dd9d0973365a0630ea1fa305ac5455ea9666220b73d8ac42e5bee42367a0f12a1041ef103a16c55bf7803d0a82898319c3e32095b4a
+  languageName: node
+  linkType: hard
+
 "@types/parse-json@npm:^4.0.0":
   version: 4.0.2
   resolution: "@types/parse-json@npm:4.0.2"
   checksum: 10c0/b1b863ac34a2c2172fbe0807a1ec4d5cb684e48d422d15ec95980b81475fac4fdb3768a8b13eef39130203a7c04340fc167bae057c7ebcafd7dec9fe6c36aeb1
+  languageName: node
+  linkType: hard
+
+"@types/passport-discord@npm:^0.1.14":
+  version: 0.1.14
+  resolution: "@types/passport-discord@npm:0.1.14"
+  dependencies:
+    "@types/express": "npm:*"
+    "@types/passport": "npm:*"
+    "@types/passport-oauth2": "npm:*"
+  checksum: 10c0/2699a1656314effeda0977de055445ebd1e95f6b4eb272638d2515c3fd2f674e9a4118eb0991f7700c44e6d6d6d66d7632a6d2e3511924d063719ad8aacf97b3
+  languageName: node
+  linkType: hard
+
+"@types/passport-oauth2@npm:*":
+  version: 1.4.17
+  resolution: "@types/passport-oauth2@npm:1.4.17"
+  dependencies:
+    "@types/express": "npm:*"
+    "@types/oauth": "npm:*"
+    "@types/passport": "npm:*"
+  checksum: 10c0/f00c671f93c66c07f871f12257280a1eaf9f95f119694018d03005c3dd35ac44aff2854c65b6cd5d3ea9e19658a27dcf5e9ad43d0742a1237a7876658a94584e
+  languageName: node
+  linkType: hard
+
+"@types/passport@npm:*":
+  version: 1.0.17
+  resolution: "@types/passport@npm:1.0.17"
+  dependencies:
+    "@types/express": "npm:*"
+  checksum: 10c0/09039429a9178117a80880c4e7d437abc83216eac5e0c97bc6f14a03a59193386cff484931dc880693f8b13a512c366ef7a51ecd8cc1a63f17366be68161f633
   languageName: node
   linkType: hard
 
@@ -8221,6 +8318,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"base64url@npm:3.x.x":
+  version: 3.0.1
+  resolution: "base64url@npm:3.0.1"
+  checksum: 10c0/5ca9d6064e9440a2a45749558dddd2549ca439a305793d4f14a900b7256b5f4438ef1b7a494e1addc66ced5d20f5c010716d353ed267e4b769e6c78074991241
+  languageName: node
+  linkType: hard
+
 "basic-auth@npm:^2.0.1":
   version: 2.0.1
   resolution: "basic-auth@npm:2.0.1"
@@ -9063,10 +9167,24 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie-signature@npm:1.0.7":
+  version: 1.0.7
+  resolution: "cookie-signature@npm:1.0.7"
+  checksum: 10c0/e7731ad2995ae2efeed6435ec1e22cdd21afef29d300c27281438b1eab2bae04ef0d1a203928c0afec2cee72aa36540b8747406ebe308ad23c8e8cc3c26c9c51
+  languageName: node
+  linkType: hard
+
 "cookie@npm:0.7.1":
   version: 0.7.1
   resolution: "cookie@npm:0.7.1"
   checksum: 10c0/5de60c67a410e7c8dc8a46a4b72eb0fe925871d057c9a5d2c0e8145c4270a4f81076de83410c4d397179744b478e33cd80ccbcc457abf40a9409ad27dcd21dde
+  languageName: node
+  linkType: hard
+
+"cookie@npm:0.7.2":
+  version: 0.7.2
+  resolution: "cookie@npm:0.7.2"
+  checksum: 10c0/9596e8ccdbf1a3a88ae02cf5ee80c1c50959423e1022e4e60b91dd87c622af1da309253d8abdb258fb5e3eacb4f08e579dc58b4897b8087574eee0fd35dfa5d2
   languageName: node
   linkType: hard
 
@@ -9141,6 +9259,16 @@ __metadata:
   version: 1.0.3
   resolution: "core-util-is@npm:1.0.3"
   checksum: 10c0/90a0e40abbddfd7618f8ccd63a74d88deea94e77d0e8dbbea059fa7ebebb8fbb4e2909667fe26f3a467073de1a542ebe6ae4c73a73745ac5833786759cd906c9
+  languageName: node
+  linkType: hard
+
+"cors@npm:^2.8.5":
+  version: 2.8.5
+  resolution: "cors@npm:2.8.5"
+  dependencies:
+    object-assign: "npm:^4"
+    vary: "npm:^1"
+  checksum: 10c0/373702b7999409922da80de4a61938aabba6929aea5b6fd9096fefb9e8342f626c0ebd7507b0e8b0b311380744cc985f27edebc0a26e0ddb784b54e1085de761
   languageName: node
   linkType: hard
 
@@ -11019,6 +11147,29 @@ __metadata:
   version: 3.1.1
   resolution: "exponential-backoff@npm:3.1.1"
   checksum: 10c0/160456d2d647e6019640bd07111634d8c353038d9fa40176afb7cd49b0548bdae83b56d05e907c2cce2300b81cae35d800ef92fefb9d0208e190fa3b7d6bb579
+  languageName: node
+  linkType: hard
+
+"express-async-handler@npm:^1.2.0":
+  version: 1.2.0
+  resolution: "express-async-handler@npm:1.2.0"
+  checksum: 10c0/0c664965b86d8f6369883080bc7709266215c3c5d7e62ce7b00859e68293720bac409157d4f4ac8859b5fe59608f75b5038ce2b2f683fae356ff9f60874a1341
+  languageName: node
+  linkType: hard
+
+"express-session@npm:^1.18.1":
+  version: 1.18.1
+  resolution: "express-session@npm:1.18.1"
+  dependencies:
+    cookie: "npm:0.7.2"
+    cookie-signature: "npm:1.0.7"
+    debug: "npm:2.6.9"
+    depd: "npm:~2.0.0"
+    on-headers: "npm:~1.0.2"
+    parseurl: "npm:~1.3.3"
+    safe-buffer: "npm:5.2.1"
+    uid-safe: "npm:~2.1.5"
+  checksum: 10c0/7999f128df1528430044c97bb1aac95093afaee86c5fa54b2890c4aad9898d79745301f8c90c2df057d6dfe7af7f8ee220340bf5eb53dca5eff37e52cc2fbec7
   languageName: node
   linkType: hard
 
@@ -15615,7 +15766,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"object-assign@npm:^4.0.1":
+"oauth@npm:0.10.x":
+  version: 0.10.0
+  resolution: "oauth@npm:0.10.0"
+  checksum: 10c0/76f3e186cfd76cb33e5d5d442861c86680a5c3b71b2db1b854212087532c265a69de1a2ab9db683e6c6df733e17cfc67476527b81b224a19c1917de2bc3f75fa
+  languageName: node
+  linkType: hard
+
+"object-assign@npm:^4, object-assign@npm:^4.0.1":
   version: 4.1.1
   resolution: "object-assign@npm:4.1.1"
   checksum: 10c0/1f4df9945120325d041ccf7b86f31e8bcc14e73d29171e37a7903050e96b81323784ec59f93f102ec635bcf6fa8034ba3ea0a8c7e69fa202b87ae3b6cec5a414
@@ -16063,6 +16221,46 @@ __metadata:
   languageName: node
   linkType: hard
 
+"passport-discord@npm:^0.1.4":
+  version: 0.1.4
+  resolution: "passport-discord@npm:0.1.4"
+  dependencies:
+    passport-oauth2: "npm:^1.5.0"
+  checksum: 10c0/bcd2b9801eb06009f03d71ded37a9cd63cca921bdfc03e75cabc1dcd6fb55693c69ac3a00c9ee25356414c97ced92b4aafc9b81176703752a536d2bcb6147a59
+  languageName: node
+  linkType: hard
+
+"passport-oauth2@npm:^1.5.0":
+  version: 1.8.0
+  resolution: "passport-oauth2@npm:1.8.0"
+  dependencies:
+    base64url: "npm:3.x.x"
+    oauth: "npm:0.10.x"
+    passport-strategy: "npm:1.x.x"
+    uid2: "npm:0.0.x"
+    utils-merge: "npm:1.x.x"
+  checksum: 10c0/16b431bd856b84dfe0c9c913dcbea6ff54875befac1035171b0dce1c77f79072dc5e26d785b13c2e62c034c8174a1a47571751d1066bdbcdb9108de217c0b19b
+  languageName: node
+  linkType: hard
+
+"passport-strategy@npm:1.x.x":
+  version: 1.0.0
+  resolution: "passport-strategy@npm:1.0.0"
+  checksum: 10c0/cf4cd32e1bf2538a239651581292fbb91ccc83973cde47089f00d2014c24bed63d3e65af21da8ddef649a8896e089eb9c3ac9ca639f36c797654ae9ee4ed65e1
+  languageName: node
+  linkType: hard
+
+"passport@npm:^0.7.0":
+  version: 0.7.0
+  resolution: "passport@npm:0.7.0"
+  dependencies:
+    passport-strategy: "npm:1.x.x"
+    pause: "npm:0.0.1"
+    utils-merge: "npm:^1.0.1"
+  checksum: 10c0/08c940b86e4adbfe43e753f8097300a5a9d1ce9a3aa002d7b12d27770943a1a87202c54597c0f04dbfd4117d67de76303433577512fc19c7e364fec37b0d3fc5
+  languageName: node
+  linkType: hard
+
 "path-browserify@npm:^1.0.1":
   version: 1.0.1
   resolution: "path-browserify@npm:1.0.1"
@@ -16150,6 +16348,13 @@ __metadata:
   version: 2.0.0
   resolution: "pathval@npm:2.0.0"
   checksum: 10c0/602e4ee347fba8a599115af2ccd8179836a63c925c23e04bd056d0674a64b39e3a081b643cc7bc0b84390517df2d800a46fcc5598d42c155fe4977095c2f77c5
+  languageName: node
+  linkType: hard
+
+"pause@npm:0.0.1":
+  version: 0.0.1
+  resolution: "pause@npm:0.0.1"
+  checksum: 10c0/f362655dfa7f44b946302c5a033148852ed5d05f744bd848b1c7eae6a543f743e79c7751ee896ba519fd802affdf239a358bb2ea5ca1b1c1e4e916279f83ab75
   languageName: node
   linkType: hard
 
@@ -17125,6 +17330,13 @@ __metadata:
   version: 9.4.1
   resolution: "rambda@npm:9.4.1"
   checksum: 10c0/12f9f9c55573cdf72b0e1e238c77a8f7f8355f08abba3a31a727c61bd307011498e10fba97993cbcb3feb5234d059c0f43c42bf37d101da2e9c827fabb310c75
+  languageName: node
+  linkType: hard
+
+"random-bytes@npm:~1.0.0":
+  version: 1.0.0
+  resolution: "random-bytes@npm:1.0.0"
+  checksum: 10c0/71e7a600e0976e9ebc269793a0577d47b965fa678fcc9e9623e427f909d1b3669db5b3a178dbf61229f0724ea23dba64db389f0be0ba675c6a6b837c02f29b8f
   languageName: node
   linkType: hard
 
@@ -19363,7 +19575,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"type-fest@npm:^2.19.0":
+"type-fest@npm:^2.19.0, type-fest@npm:^2.5.2":
   version: 2.19.0
   resolution: "type-fest@npm:2.19.0"
   checksum: 10c0/a5a7ecf2e654251613218c215c7493574594951c08e52ab9881c9df6a6da0aeca7528c213c622bc374b4e0cb5c443aa3ab758da4e3c959783ce884c3194e12cb
@@ -19436,6 +19648,22 @@ __metadata:
   bin:
     uglifyjs: bin/uglifyjs
   checksum: 10c0/83b0a90eca35f778e07cad9622b80c448b6aad457c9ff8e568afed978212b42930a95f9e1be943a1ffa4258a3340fbb899f41461131c05bb1d0a9c303aed8479
+  languageName: node
+  linkType: hard
+
+"uid-safe@npm:~2.1.5":
+  version: 2.1.5
+  resolution: "uid-safe@npm:2.1.5"
+  dependencies:
+    random-bytes: "npm:~1.0.0"
+  checksum: 10c0/ec96862e859fd12175f3da7fda9d1359a2cf412fd521e10837cbdc6d554774079ce252f366981df9401283841c8924782f6dbee8f82a3a81f805ed8a8584595d
+  languageName: node
+  linkType: hard
+
+"uid2@npm:0.0.x":
+  version: 0.0.4
+  resolution: "uid2@npm:0.0.4"
+  checksum: 10c0/c3ed69da75d117214891f4743a1d8521db823d7a2f57644c1a9ae8b3bf25f0ba666d893264bf7e22be3dbbaa292d35a23d71d06ce7283458a65e8dd137c5c362
   languageName: node
   linkType: hard
 
@@ -19656,7 +19884,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"utils-merge@npm:1.0.1":
+"utils-merge@npm:1.0.1, utils-merge@npm:1.x.x, utils-merge@npm:^1.0.1":
   version: 1.0.1
   resolution: "utils-merge@npm:1.0.1"
   checksum: 10c0/02ba649de1b7ca8854bfe20a82f1dfbdda3fb57a22ab4a8972a63a34553cf7aa51bc9081cf7e001b035b88186d23689d69e71b510e610a09a4c66f68aa95b672
@@ -19723,7 +19951,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vary@npm:^1.1.2, vary@npm:~1.1.2":
+"vary@npm:^1, vary@npm:^1.1.2, vary@npm:~1.1.2":
   version: 1.1.2
   resolution: "vary@npm:1.1.2"
   checksum: 10c0/f15d588d79f3675135ba783c91a4083dcd290a2a5be9fcb6514220a1634e23df116847b1cc51f66bfb0644cf9353b2abb7815ae499bab06e46dd33c1a6bf1f4f
