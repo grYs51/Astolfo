@@ -16,12 +16,11 @@ function createExpress() {
 
   app.use(
     cors({
-        origin: [
-            'http://localhost:4200',
-        ],
-        credentials: true,
+      origin: ['http://localhost:4200', 'https://astolfo.grys.me'],
+      credentials: true,
     })
-);
+  );
+
   app.use(
     expressSession({
       cookie: {
