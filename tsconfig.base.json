@@ -17,6 +17,13 @@
     "paths": {
       "@models/*": ["libs/models/src/*"],
       "@nx-stolfo/auth": ["libs/auth/src/index.ts"],
+      "@nx-stolfo/common": ["libs/common/src/index.ts"],
+      "@nx-stolfo/common/api": ["libs/common/api/src/index.ts"],
+      "@nx-stolfo/common/interceptors": [
+        "libs/common/interceptors/src/index.ts"
+      ],
+      "@nx-stolfo/common/pipes": ["libs/common/pipes/src/index.ts"],
+      "@nx-stolfo/common/types": ["libs/common/types/src/index.ts"],
       "@nx-stolfo/components": ["libs/components/src/index.ts"]
     }
   },
