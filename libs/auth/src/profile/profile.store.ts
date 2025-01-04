@@ -1,9 +1,8 @@
-import { effect } from '@angular/core';
+import { effect, inject } from '@angular/core';
 import { patchState, signalStore, withHooks, withState } from '@ngrx/signals';
-import { User } from 'discord.js';
-
+import { botApi, DiscordUser } from '@nx-stolfo/common/api';
 type ProfileState = {
-  profile: User | null;
+  profile: DiscordUser | null;
   isLoading: boolean;
 };
 
@@ -15,25 +14,15 @@ const initialState: ProfileState = {
 export const ProfileStore = signalStore(
   withState(initialState),
   withHooks({
-    onInit: (store) => {
+    onInit: (store, api = inject(botApi)) => {
       effect(() => {
-        fetch('http://localhost:3000/api/auth/status', {
-          credentials: 'include',
-        })
-          .then((response) => {
-            console.log(response);
-
-            return response.json();
-          })
-          .then((data) => {
-            patchState(store, {
-              profile: data,
-              isLoading: false,
-            });
+        api.fetchStatus().subscribe((profile) => {
+          patchState(store, {
+            profile,
+            isLoading: false,
           });
+        });
       });
     },
   })
 );
-
-// TODO: CREATE COMMON LIBS

@@ -5,13 +5,23 @@ import {
   provideClientHydration,
   withEventReplay,
 } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideBackendApi, provideBotApi } from '@nx-stolfo/common/api';
+import { credentialsInterceptor } from '@nx-stolfo/common/interceptors';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideClientHydration(withEventReplay()),
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(appRoutes),
-    provideHttpClient(),
+    provideHttpClient(withInterceptors([credentialsInterceptor])),
+
+    provideBackendApi({
+      useFactory: (env: string) => 'http://localhost:3000/api',
+    }),
+
+    provideBotApi({
+      useFactory: (env: string) => 'http://localhost:3000/api',
+    }),
   ],
 };
