@@ -4081,6 +4081,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@ngrx/signals@npm:^19.0.0":
+  version: 19.0.0
+  resolution: "@ngrx/signals@npm:19.0.0"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/core": ^19.0.0
+    rxjs: ^6.5.3 || ^7.4.0
+  peerDependenciesMeta:
+    rxjs:
+      optional: true
+  checksum: 10c0/fb0edc9549f32924bc3fae3391e9d2216297d82a8ba1153d9e95d6803950c2e99a5fcc2eb84ac8957349e9f87186ddab22d7038b18368ead60c028ae72a06b7f
+  languageName: node
+  linkType: hard
+
 "@ngtools/webpack@npm:19.0.6":
   version: 19.0.6
   resolution: "@ngtools/webpack@npm:19.0.6"
@@ -4255,6 +4270,7 @@ __metadata:
     "@angular/router": "npm:~19.0.0"
     "@angular/ssr": "npm:~19.0.0"
     "@eslint/js": "npm:^9.8.0"
+    "@ngrx/signals": "npm:^19.0.0"
     "@nx-tools/nx-container": "npm:^6.2.0"
     "@nx-tools/nx-prisma": "npm:^6.4.1"
     "@nx/angular": "npm:20.3.0"
@@ -4290,6 +4306,7 @@ __metadata:
     angular-eslint: "npm:^19.0.2"
     autoprefixer: "npm:^10.4.0"
     cors: "npm:^2.8.5"
+    daisyui: "npm:^4.12.23"
     discord.js: "npm:^14.16.3"
     esbuild: "npm:^0.19.2"
     eslint: "npm:^9.8.0"
@@ -9478,6 +9495,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"css-selector-tokenizer@npm:^0.8":
+  version: 0.8.0
+  resolution: "css-selector-tokenizer@npm:0.8.0"
+  dependencies:
+    cssesc: "npm:^3.0.0"
+    fastparse: "npm:^1.1.2"
+  checksum: 10c0/86f68cc666d41f9d153351677694002a9d00e2609e6abc66fcfd7f580be3d6ecc0929e46a06c621ab28da5febbb54567db9709b819414edae4a36d9ff9133e16
+  languageName: node
+  linkType: hard
+
 "css-tree@npm:^2.3.1":
   version: 2.3.1
   resolution: "css-tree@npm:2.3.1"
@@ -9635,6 +9662,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"culori@npm:^3":
+  version: 3.3.0
+  resolution: "culori@npm:3.3.0"
+  checksum: 10c0/acd330a8f940dc22f36650ba722c9302a4745fee3c8fb40a27ac27228767e2cba4221c2dc414fce652b82cb264d28f65d8b76d505df402ecf94dbb9e440319e1
+  languageName: node
+  linkType: hard
+
 "cwd@npm:^0.10.0":
   version: 0.10.0
   resolution: "cwd@npm:0.10.0"
@@ -9642,6 +9676,18 @@ __metadata:
     find-pkg: "npm:^0.1.2"
     fs-exists-sync: "npm:^0.1.0"
   checksum: 10c0/d900a87e31016d4b0c98b33fdc22c89a7534223bfcf2834c27e2a31e9a0d72ed390ff696a03eaca5a5b4b3ffcbf2ade9dfe1ba12ec86e375848a94a1a2a5396a
+  languageName: node
+  linkType: hard
+
+"daisyui@npm:^4.12.23":
+  version: 4.12.23
+  resolution: "daisyui@npm:4.12.23"
+  dependencies:
+    css-selector-tokenizer: "npm:^0.8"
+    culori: "npm:^3"
+    picocolors: "npm:^1"
+    postcss-js: "npm:^4"
+  checksum: 10c0/7699d294c6193800fc1a0671d67f1a5ea46059cd36702a4326a82c6b0bb823de8ba485aca20beac970ee2a47949c5411df8ea60a40c3e00989d7ce2214e6c196
   languageName: node
   linkType: hard
 
@@ -11295,6 +11341,13 @@ __metadata:
   version: 3.0.3
   resolution: "fast-uri@npm:3.0.3"
   checksum: 10c0/4b2c5ce681a062425eae4f15cdc8fc151fd310b2f69b1f96680677820a8b49c3cd6e80661a406e19d50f0c40a3f8bffdd458791baf66f4a879d80be28e10a320
+  languageName: node
+  linkType: hard
+
+"fastparse@npm:^1.1.2":
+  version: 1.1.2
+  resolution: "fastparse@npm:1.1.2"
+  checksum: 10c0/c08d6e7ef10c0928426c1963dd4593e2baaf44d223ab1e5ba5d7b30470144b3a4ecb3605958b73754cea3f857ecef00b67c885f07ca2c312b38b67d9d88b84b5
   languageName: node
   linkType: hard
 
@@ -16358,7 +16411,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picocolors@npm:^1.0.0, picocolors@npm:^1.0.1, picocolors@npm:^1.1.0, picocolors@npm:^1.1.1":
+"picocolors@npm:^1, picocolors@npm:^1.0.0, picocolors@npm:^1.0.1, picocolors@npm:^1.1.0, picocolors@npm:^1.1.1":
   version: 1.1.1
   resolution: "picocolors@npm:1.1.1"
   checksum: 10c0/e2e3e8170ab9d7c7421969adaa7e1b31434f789afb9b3f115f6b96d91945041ac3ceb02e9ec6fe6510ff036bcc0bf91e69a1772edc0b707e12b19c0f2d6bcf58
@@ -16653,7 +16706,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss-js@npm:^4.0.1":
+"postcss-js@npm:^4, postcss-js@npm:^4.0.1":
   version: 4.0.1
   resolution: "postcss-js@npm:4.0.1"
   dependencies:

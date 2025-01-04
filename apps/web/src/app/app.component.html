@@ -1,4 +1,11 @@
-<!-- <app-nx-welcome></app-nx-welcome> -->
-<router-outlet></router-outlet>
-
-<lib-components />
+@if(store?.profile(); as user) {
+    <div class="card w-[300px] bg-base-200 shadow-xl p-sm">
+      <figure>
+        <img [src]="user.displayAvatarURL" alt="avatar" />
+      </figure>
+      <div class="card-body">
+        <h2 class="card-title">{{ user.username }}</h2>
+        <p>{{ user.id }}</p>
+      </div>
+    </div>
+    }
