@@ -1,7 +1,8 @@
 import { effect, inject } from '@angular/core';
 import { patchState, signalStore, withHooks, withState } from '@ngrx/signals';
 import { botApi, DiscordUser } from '@nx-stolfo/common/api';
-type ProfileState = {
+
+export type ProfileState = {
   profile: DiscordUser | null;
   isLoading: boolean;
 };
