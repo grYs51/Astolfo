@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@models/*": ["libs/models/src/*"],
+      "@nx-stolfo/auth": ["libs/auth/src/index.ts"],
       "@nx-stolfo/components": ["libs/components/src/index.ts"]
     }
   },
