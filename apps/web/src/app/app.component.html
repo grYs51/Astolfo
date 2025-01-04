@@ -1,4 +1,4 @@
-@if(store?.profile(); as user) {
+@if(isLoggedIn()) { @if(store?.profile(); as user) {
 <div class="card w-[300px] bg-base-200 shadow-xl p-sm">
   <figure>
     <img
@@ -12,4 +12,6 @@
     <p>{{ user.id }}</p>
   </div>
 </div>
+} } @else {
+<a href="http://localhost:3000/api/auth/login" class="btn btn-primary">Login</a>
 }

@@ -1,18 +1,15 @@
-import { DatePipe, JsonPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
 import { RouterModule } from '@angular/router';
-import { ProfileStore } from '@nx-stolfo/auth';
+import { IS_LOGGED_IN, ProfileStore } from '@nx-stolfo/auth';
 import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
 
 @Component({
-  imports: [RouterModule, JsonPipe, DatePipe, DiscordImagePipe],
+  imports: [RouterModule, DiscordImagePipe],
   selector: 'app-root',
   templateUrl: './app.component.html',
 })
 export class AppComponent {
-  title = 'web';
-
   store = inject(ProfileStore, { optional: true });
 
-  url = '';
+  isLoggedIn = inject(IS_LOGGED_IN);
 }
