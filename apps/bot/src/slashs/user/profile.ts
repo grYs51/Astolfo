@@ -1,4 +1,4 @@
-import { EmbedBuilder } from 'discord.js';
+import { CacheType, CommandInteraction, EmbedBuilder, Interaction, SlashCommandBuilder } from 'discord.js';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { VOICE_TYPE } from '../../utils/handlers/vc';
@@ -18,9 +18,22 @@ export default class ProfileSlash extends BaseSlash {
   constructor() {
     super('profile', 'Show my profile', SlashDeferTypes.PUBLIC);
   }
+
+  createInteraction() {
+    return new SlashCommandBuilder()
+      .setName(this.name)
+      .setDescription(this.description)
+      .addMentionableOption((option) =>
+        option
+          .setName('user')
+          .setDescription("Get other user's profile (optional)")
+          .setRequired(false)
+      );
+  }
+
   async slash(client, interaction) {
     const guildId = interaction.guildId;
-    const userId = interaction.user.id;
+    const userId = interaction.options.get('user')?.user?.id || interaction.user.id;
 
     const { _min: firstVoiceStat } =
       await client.dataSource.voiceStats.aggregate({
@@ -67,19 +80,15 @@ export default class ProfileSlash extends BaseSlash {
       0
     );
 
-    const totalTimePerChannel = allVoiceStats.reduce(
-      (dict, curr) => {
-        dict[curr.channel_id] =
-          (dict[curr.channel_id] || 0) + getDuration(curr);
-        return dict;
-      },
-      {} as Record<string, number>
-    );
+    const totalTimePerChannel = allVoiceStats.reduce((dict, curr) => {
+      dict[curr.channel_id] = (dict[curr.channel_id] || 0) + getDuration(curr);
+      return dict;
+    }, {} as Record<string, number>);
     const favouriteChannelId = Object.entries(totalTimePerChannel).reduce(
-      (max, [id,time]) => (time > max[1] ? [id,time] : max),
+      (max, [id, time]) => (time > max[1] ? [id, time] : max)
     )[0];
 
-    const favouriteChannel = client.channels.cache.get(favouriteChannelId)
+    const favouriteChannel = client.channels.cache.get(favouriteChannelId);
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -128,17 +137,25 @@ export default class ProfileSlash extends BaseSlash {
       //   name: client.user.username,
       //   iconURL: interaction.user.defaultAvatarUrl,
       // })
-      .setTitle(`${interaction.member.displayName}'s ${client.user.username} Profile`)
+      .setTitle(
+        `${interaction.member.displayName}'s ${client.user.username} Profile`
+      )
       .setDescription(
-        `Measuring since ${new Date(firstVoiceStat?.issued_on).toLocaleDateString()}\n
+        `Measuring since ${new Date(
+          firstVoiceStat?.issued_on
+        ).toLocaleDateString()}\n
          Measured ${voiceSessions.length} voice sessions for you.
-         with **${humanizeDuration(maxDurationInOneSession, { round: true })}** as your longest session in VC.\n
+         with **${humanizeDuration(maxDurationInOneSession, {
+           round: true,
+         })}** as your longest session in VC.\n
         `
       )
       .addFields(
         {
           name: `Total Time in VC`,
-          value: `${humanizeDuration(totalTimeSpentInVC, { round: true })} (${recordingVsTotalTimePercentage.toFixed(2)}% of bot time)`,
+          value: `${humanizeDuration(totalTimeSpentInVC, {
+            round: true,
+          })} (${recordingVsTotalTimePercentage.toFixed(2)}% of bot time)`,
         },
         {
           name: `Favourite Channel`,
@@ -146,11 +163,15 @@ export default class ProfileSlash extends BaseSlash {
         },
         {
           name: `Total Time **MUTED** in VC`,
-          value: `${humanizeDuration(timeSpentInVC_muted, { round: true })} (${mutedVsTotalTimePercentage.toFixed(2)}% of your VC time)`,
+          value: `${humanizeDuration(timeSpentInVC_muted, {
+            round: true,
+          })} (${mutedVsTotalTimePercentage.toFixed(2)}% of your VC time)`,
         },
         {
           name: `Total Time Streamed in VC`,
-          value: `${humanizeDuration(timeSpentInVC_streaming, { round: true })} (${streamingVsTotalTimePercentage.toFixed(2)}% of your VC time)`,
+          value: `${humanizeDuration(timeSpentInVC_streaming, {
+            round: true,
+          })} (${streamingVsTotalTimePercentage.toFixed(2)}% of your VC time)`,
         },
         {
           name: `Time spent in VC in the last 7 days`,
