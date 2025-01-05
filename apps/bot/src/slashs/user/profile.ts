@@ -1,4 +1,10 @@
-import { CacheType, CommandInteraction, EmbedBuilder, Interaction, SlashCommandBuilder } from 'discord.js';
+import {
+  CacheType,
+  CommandInteraction,
+  EmbedBuilder,
+  Interaction,
+  SlashCommandBuilder,
+} from 'discord.js';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { VOICE_TYPE } from '../../utils/handlers/vc';
@@ -33,7 +39,8 @@ export default class ProfileSlash extends BaseSlash {
 
   async slash(client, interaction) {
     const guildId = interaction.guildId;
-    const userId = interaction.options.get('user')?.user?.id || interaction.user.id;
+    const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
+    const userId = memberToGetProfileFor.id
 
     const { _min: firstVoiceStat } =
       await client.dataSource.voiceStats.aggregate({
@@ -56,6 +63,15 @@ export default class ProfileSlash extends BaseSlash {
     const voiceSessions = allVoiceStats.filter(
       (stat) => stat.type == VOICE_TYPE.VOICE
     );
+
+    if (voiceSessions.length === 0) {
+      await InterActionUtils.send(
+        interaction,
+        "Couldn't find voice session for this user, encourage the user to join the voice channels UwU",
+        true
+      );
+      return
+    }
 
     const totalTimeSpentInVC = voiceSessions.reduce(voiceStatSum, 0);
     const recordingVsTotalTimePercentage =
@@ -85,7 +101,8 @@ export default class ProfileSlash extends BaseSlash {
       return dict;
     }, {} as Record<string, number>);
     const favouriteChannelId = Object.entries(totalTimePerChannel).reduce(
-      (max, [id, time]) => (time > max[1] ? [id, time] : max)
+      (max, [id, time]) => (time > max[1] ? [id, time] : max),
+      0
     )[0];
 
     const favouriteChannel = client.channels.cache.get(favouriteChannelId);
@@ -138,7 +155,7 @@ export default class ProfileSlash extends BaseSlash {
       //   iconURL: interaction.user.defaultAvatarUrl,
       // })
       .setTitle(
-        `${interaction.member.displayName}'s ${client.user.username} Profile`
+        `${memberToGetProfileFor.displayName}'s ${client.user.username} Profile`
       )
       .setDescription(
         `Measuring since ${new Date(
