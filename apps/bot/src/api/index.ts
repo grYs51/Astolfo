@@ -25,8 +25,6 @@ function createExpress() {
     expressSession({
       cookie: {
         maxAge: 7 * 24 * 60 * 60 * 1000,
-        secure: true,
-        httpOnly: true,
       },
       secret: process.env.COOKIE_SECRET,
       resave: true,

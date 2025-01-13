@@ -9,9 +9,10 @@ export type User = {
   refreshToken: string;
 };
 
-passport.serializeUser<PrismaClient['user_session']>((user, done) =>
-  done(null, user.id as any)
-);
+passport.serializeUser<PrismaClient['user_session']>((user, done) => {
+  // @ts-expect-error - we are not using the full user object
+  return done(null, user.id);
+});
 
 passport.deserializeUser(async (id: string, done) => {
   try {
