@@ -1,6 +1,6 @@
 ARG NODE_VERSION=23
 
-FROM node:${NODE_VERSION}-alpine AS deps
+FROM node:${NODE_VERSION}-alpine AS build
 
 WORKDIR /usr/src/app
 
@@ -38,9 +38,9 @@ COPY package.json yarn.lock ./
 RUN yarn workspaces focus --production \
 && yarn cache clean 
 
-COPY --chown=node:node --from=deps /usr/src/app/dist/apps/bot ./dist
-COPY --chown=node:node --from=deps /usr/src/app/prisma ./prisma
-COPY --chown=node:node --from=deps /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
+COPY --chown=node:node --from=build /usr/src/app/dist/apps/bot ./dist
+COPY --chown=node:node --from=build /usr/src/app/prisma ./prisma
+COPY --chown=node:node --from=build /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
 
 EXPOSE 3000
 
