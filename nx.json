@@ -80,7 +80,10 @@
       "unitTestRunner": "none"
     },
     "@nx/angular:component": {
-      "style": "scss"
+      "style": "scss",
+      "inlineStyle": true,
+      "skipTests": true,
+      "changeDetection": "OnPush"
     }
   },
   "plugins": [

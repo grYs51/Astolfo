@@ -1,4 +1,5 @@
-import { effect, inject } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { effect, inject, PLATFORM_ID } from '@angular/core';
 import { patchState, signalStore, withHooks, withState } from '@ngrx/signals';
 import { botApi, DiscordUser } from '@nx-stolfo/common/api';
 
@@ -15,15 +16,17 @@ const initialState: ProfileState = {
 export const ProfileStore = signalStore(
   withState(initialState),
   withHooks({
-    onInit: (store, api = inject(botApi)) => {
-      effect(() => {
-        api.fetchStatus().subscribe((profile) => {
-          patchState(store, {
-            profile,
-            isLoading: false,
+    onInit: (store, api = inject(botApi), id = inject(PLATFORM_ID)) => {
+      if (isPlatformBrowser(id)) {
+        effect(() => {
+          api.fetchStatus().subscribe((profile) => {
+            patchState(store, {
+              profile,
+              isLoading: false,
+            });
           });
         });
-      });
+      }
     },
   })
 );
