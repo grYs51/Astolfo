@@ -22,7 +22,7 @@ export default class InfoSlash extends BaseSlash {
   ): Promise<InteractionResponse<boolean>> | Promise<void> {
     const nodeVersion = process.version;
     const discordVersion = require('discord.js').version;
-    const botVersion = require('../../../package.json').version;
+    const botVersion = require('../../../../../package.json').version;
     const uptime = client.uptime ?? 0;
 
     // cpu
