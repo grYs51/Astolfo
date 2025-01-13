@@ -9,6 +9,6 @@ export interface DiscordUser {
     avatar?: string;
     banner?: string;
     premium_type?: number;
-    accentColor?: number;
-    globalName?: string;
+    accent_color?: number;
+    global_name?: string;
 }

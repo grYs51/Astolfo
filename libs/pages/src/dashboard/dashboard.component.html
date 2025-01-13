@@ -1,0 +1,13 @@
+<lib-page>
+  <lib-navbar
+    [name]="user()?.username"
+    [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
+    [loginUrl]="'http://localhost:3000/api/auth/login'"
+    [logoutUrl]="'http://localhost:3000/api/auth/logout'"
+  />
+
+  <div>
+    <h1>Dashboard</h1>
+    <p>Welcome to the dashboard</p>
+  </div>
+</lib-page>

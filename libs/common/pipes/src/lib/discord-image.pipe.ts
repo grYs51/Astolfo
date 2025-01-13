@@ -6,7 +6,7 @@ import { Pipe, PipeTransform } from '@angular/core';
 })
 export class DiscordImagePipe implements PipeTransform {
 
-    transform (value: string | undefined, key: 'avatars' | 'icons' | 'banners' | string, id: string): string | null {
+    transform (value: string | undefined, key: 'avatars' | 'icons' | 'banners' | string, id?: string): string {
         if (!value || !id) {
             const random = Math.floor(Math.random() * 6);
             return `https://cdn.discordapp.com/embed/avatars/${random}.png`;
