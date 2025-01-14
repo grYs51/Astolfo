@@ -11,9 +11,11 @@ export interface Db {
   gameTypes: PrismaClient['game_type'];
   gameResults: PrismaClient['game_result'];
   gamePlayers : PrismaClient['game_player'];
+  userSession: PrismaClient['user_session'];
+  session: PrismaClient['session'];
 }
 
-let currentClient: PrismaClient;
+export let currentClient: PrismaClient;
 
 export async function createPrismaClient() {
   currentClient = new PrismaClient();
@@ -41,6 +43,8 @@ export function getDb(): Db {
     gameTypes: currentClient.game_type,
     gameResults: currentClient.game_result,
     gamePlayers: currentClient.game_player,
+    userSession: currentClient.user_session,
+    session: currentClient.session,
   };
 }
 

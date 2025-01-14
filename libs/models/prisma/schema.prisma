@@ -88,3 +88,16 @@ model game_player {
   move           String?
   game_result    game_result @relation(fields: [game_result_id], references: [id])
 }
+
+model session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+}
+
+model user_session {
+  id            String @id
+  access_token  String @unique
+  refresh_token String @unique
+}

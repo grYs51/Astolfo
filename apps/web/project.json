@@ -4,7 +4,7 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web/src",
-  "implicitDependencies": ["libs/components"],
+  "implicitDependencies": ["libs/components", "libs/common"],
   "tags": [],
   "targets": {
     "build": {
@@ -92,6 +92,29 @@
         "buildTarget": "web:build",
         "staticFilePath": "dist/apps/web/browser",
         "spa": true
+      }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "inputs": [
+        { "dependentTasksOutputFiles": "**/dist/**/*", "transitive": true }
+      ],
+      "cache": true,
+      "options": {
+        "file": "apps/web/Dockerfile.web",
+        "platforms": ["linux/amd64", "linux/arm64"],
+        "tags": ["grace51/astolfo/web:latest"],
+        "build-args": ["APP_NAME=astolfo-web", "NODE_VERSION=23"]
+      },
+      "configurations": {
+        "production": {
+          "tags": ["grace51/astolfo/web:latest"],
+          "push": false
+        },
+        "development": {
+          "tags": ["grace51/astolfo/web:dev"],
+          "push": false
+        }
       }
     }
   }
