@@ -1,9 +1,11 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import {
-  inject,
-  InjectionToken
-} from '@angular/core';
-import { Observable } from 'rxjs';
+  HttpClient,
+  HttpHeaders,
+  HttpParams,
+  httpResource,
+  HttpResourceRequest,
+} from '@angular/common/http';
+import { inject, InjectionToken } from '@angular/core';
 
 export const COMMON_BACKEND_API_URL = new InjectionToken<string>(
   'common/backend-api-url'
@@ -18,9 +20,13 @@ export abstract class ApiBase {
     path: string,
     query: { [param: string]: string | string[] } = {},
     headers = new HttpHeaders()
-  ): Observable<T> {
+  ) {
     const params = new HttpParams({ fromObject: query });
-    return this.http.get<T>(this.host + path, { params, headers });
+    const request: HttpResourceRequest = {
+      url: this.host + path,
+      params,
+      headers,
+    };
+    return httpResource<T>(request);
   }
 }
-
