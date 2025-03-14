@@ -1,9 +1,13 @@
 import { Component } from '@angular/core';
-import { RouterModule } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
+import { environment } from '../environments/environment.development';
 @Component({
-  imports: [RouterModule],
-  selector : 'app-root',
+  imports: [RouterOutlet],
+  selector: 'app-root',
   template: `<router-outlet />`,
 })
 export class AppComponent {
+  constructor() {
+    console.log(environment.production);
+  }
 }
