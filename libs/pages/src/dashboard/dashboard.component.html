@@ -4,11 +4,12 @@
     [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
     [loginUrl]="'http://localhost:3000/api/auth/login'"
     [logoutUrl]="'http://localhost:3000/api/auth/logout'"
+    [loading]="!sessionChecked()"
   />
 
   <div>
     <h1>Dashboard</h1>
     <p>Welcome to the dashboard</p>
-    {{ host }}
+    sessionChecked: {{ sessionChecked() }}
   </div>
 </lib-page>
