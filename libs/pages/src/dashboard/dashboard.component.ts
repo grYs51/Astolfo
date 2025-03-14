@@ -1,9 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { ProfileStore, USER } from '@nx-stolfo/auth';
-import { PageComponent, NavbarComponent } from '@nx-stolfo/components';
+import { IS_SESSION_CHECKED, ProfileStore, USER } from '@nx-stolfo/auth';
 import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
-import { COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
-import { Router } from '@angular/router';
+import { NavbarComponent, PageComponent } from '@nx-stolfo/components';
 
 @Component({
   selector: 'lib-dashboard',
@@ -16,5 +14,5 @@ import { Router } from '@angular/router';
 export class DashboardComponent {
   user = inject(USER);
 
-  host = inject(COMMON_BACKEND_API_URL);
+  sessionChecked = inject(IS_SESSION_CHECKED);
 }

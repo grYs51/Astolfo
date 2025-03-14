@@ -3,55 +3,51 @@
     <a class="btn btn-ghost text-xl">Astolfo Stats</a>
   </div>
 
-  <div class="flex-none">
-    @if(name()) {
-    <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-circle hidden">
-        <div class="indicator">
-          <fa-icon [icon]="faConciergeBell" [size]="'lg'" />
-          <span class="badge badge-sm indicator-item">8</span>
+  <div class="flex-none h-[48px]">
+    @if(name() ) {
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle hidden">
+          <div class="indicator">
+            <fa-icon [icon]="faConciergeBell" [size]="'lg'" />
+            <span class="badge badge-sm indicator-item">8</span>
+          </div>
         </div>
-      </div>
-      <div
-        tabindex="0"
-        class="card card-compact dropdown-content bg-base-100 z-[1] mt-3 w-52 shadow"
-      >
-        <div class="card-body">
-          <span class="text-lg font-bold">8 Items</span>
-          <span class="text-info">Subtotal: $999</span>
-          <div class="card-actions">
-            <button class="btn btn-primary btn-block">View cart</button>
+        <div tabindex="0" class="card card-compact dropdown-content bg-base-100 z-[1] mt-3 w-52 shadow">
+          <div class="card-body">
+            <span class="text-lg font-bold">8 Items</span>
+            <span class="text-info">Subtotal: $999</span>
+            <div class="card-actions">
+              <button class="btn btn-primary btn-block">View cart</button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <div class="dropdown dropdown-end">
-      <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
-        <div class="w-10 rounded-full">
-          <img [alt]="name() + '-avatar'" [src]="image()" />
+      <div class="dropdown dropdown-end">
+        <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+          <div class="w-10 rounded-full">
+            <img [alt]="name() + '-avatar'" [src]="image()" />
+          </div>
         </div>
-      </div>
-      <ul
-        tabindex="0"
-        class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow"
-      >
-      <li class="card-title">
-        <span class="font-bold">{{ name() }}</span>
-      </li>
+        <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+          <li class="card-title">
+            <span class="font-bold">{{ name() }}</span>
+          </li>
 
-        <li class="divide-neutral"></li>
-        <li class="disabled">
-          <a class="justify-between">
-            Profile
-            <span class="badge">New</span>
-          </a>
-        </li>
-        <li class="disabled"><a>Settings</a></li>
-        <li><a [href]="logoutUrl()">Logout</a></li>
-      </ul>
-    </div>
+          <li class="divide-neutral"></li>
+          <li class="disabled">
+            <a class="justify-between">
+              Profile
+              <span class="badge">New</span>
+            </a>
+          </li>
+          <li class="disabled"><a>Settings</a></li>
+          <li><a [href]="logoutUrl()">Logout</a></li>
+        </ul>
+      </div>
+    } @else if(!loading()) {
+      <a class="btn btn-ghost" [href]="loginUrl()">Login</a>
     } @else {
-    <a class="btn btn-ghost" [href]="loginUrl()">Login</a>
+      <span class="loading loading-ring loading-lg text-neutral"></span>
     }
   </div>
 </div>
