@@ -6,11 +6,13 @@ import { botApi, DiscordUser } from '@nx-stolfo/common/api';
 export type ProfileState = {
   profile: DiscordUser | null;
   isLoading: boolean;
+  error: unknown;
 };
 
 const initialState: ProfileState = {
   profile: null,
   isLoading: true,
+  error: null,
 };
 
 export const ProfileStore = signalStore(
@@ -18,12 +20,13 @@ export const ProfileStore = signalStore(
   withHooks({
     onInit: (store, api = inject(botApi), id = inject(PLATFORM_ID)) => {
       if (isPlatformBrowser(id)) {
+        const { isLoading, value, error } = api.fetchStatus();
+
         effect(() => {
-          api.fetchStatus().subscribe((profile) => {
-            patchState(store, {
-              profile,
-              isLoading: false,
-            });
+          patchState(store, {
+            profile: value(),
+            isLoading: isLoading(),
+            error: error(),
           });
         });
       }
