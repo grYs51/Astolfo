@@ -44,7 +44,10 @@ module.exports = [
         'error',
         {
           ignoredFiles: ['{projectRoot}/eslint.config.{js,cjs,mjs}'],
+          checkMissingDependencies: true,
+          buildTargets: ['build']
         },
+        
       ],
     },
     languageOptions: {

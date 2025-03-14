@@ -1,0 +1,24 @@
+# Stage 1: Build the app
+ARG NODE_VERSION=23
+
+FROM node:${NODE_VERSION}-alpine AS build
+
+WORKDIR /usr/src/app
+
+COPY .yarnrc.yml ./
+COPY .yarn ./.yarn
+COPY package.json yarn.lock ./
+
+RUN yarn install
+
+COPY . .
+
+RUN npx nx run web:build:production
+
+FROM node:${NODE_VERSION}-alpine
+
+COPY --from=build /usr/src/app/dist/apps/web /usr/src/app
+
+EXPOSE 4200
+
+CMD ["node", "/usr/src/app/server/server.mjs"]

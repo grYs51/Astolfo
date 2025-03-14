@@ -54,11 +54,28 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - '3003:3000'
+      - '3000:3000'
     networks:
       - astolfo-network
     volumes:
       - ./libs/models/prisma:/app/libs/models/prisma
+
+  web:
+    logging: *default-logging
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile.web
+    container_name: Astolfo-web
+    restart: unless-stopped
+    stop_grace_period: 1m
+    environment:
+      - PORT_WEB=${PORT_WEB}
+      - BACKEND_URL=${BACKEND_URL}
+    ports:
+      - '4000:4000'
+    networks:
+      - astolfo-network
+
 
   prometheus:
     image: prom/prometheus:latest

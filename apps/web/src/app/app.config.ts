@@ -13,6 +13,7 @@ import { IS_LOGGED_IN, USER } from '@nx-stolfo/auth';
 import { provideBackendApi, provideBotApi } from '@nx-stolfo/common/api';
 import { credentialsInterceptor } from '@nx-stolfo/common/interceptors';
 import { appRoutes } from './app.routes';
+import { environment } from '../environments/environment.development';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -22,11 +23,11 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(withInterceptors([credentialsInterceptor])),
 
     provideBackendApi({
-      useFactory: (env: string) => 'http://localhost:3000/api',
+      useFactory: () => `${environment.BACKEND_URL}/api`,
     }),
 
     provideBotApi({
-      useFactory: (env: string) => 'http://localhost:3000/api',
+      useFactory: () => `${environment.BACKEND_URL}/api`,
     }),
     {
       provide: IS_LOGGED_IN,

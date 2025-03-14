@@ -2,8 +2,10 @@
   "name": "@nx-stolfo/components",
   "version": "0.0.1",
   "peerDependencies": {
-    "@angular/common": "^19.0.0",
-    "@angular/core": "^19.0.0"
+    "@fortawesome/angular-fontawesome": "^1.0.0",
+    "@fortawesome/free-solid-svg-icons": "^6.7.2",
+    "@nx/angular": "20.3.0",
+    "@angular/core": "~19.0.0"
   },
   "sideEffects": false
 }
