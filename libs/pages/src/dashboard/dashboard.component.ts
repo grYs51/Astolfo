@@ -1,10 +1,7 @@
-import { JsonPipe } from '@angular/common';
-import { httpResource } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
-  inject,
-  linkedSignal,
+  inject
 } from '@angular/core';
 import { IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
 import { COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
@@ -13,7 +10,7 @@ import { NavbarComponent, PageComponent } from '@nx-stolfo/components';
 
 @Component({
   selector: 'lib-dashboard',
-  imports: [PageComponent, NavbarComponent, DiscordImagePipe, JsonPipe],
+  imports: [PageComponent, NavbarComponent, DiscordImagePipe],
   templateUrl: './dashboard.component.html',
   styles: ``,
   changeDetection: ChangeDetectionStrategy.OnPush,
