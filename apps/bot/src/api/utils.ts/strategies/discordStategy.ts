@@ -28,7 +28,7 @@ passport.use(
     {
       clientID: process.env.DISCORD_CLIENT_ID,
       clientSecret: process.env.DISCORD_CLIENT_SECRET,
-      callbackURL: process.env.DISCORD_REDIRECT_URL,
+      callbackURL: process.env.REDIRECT_URI,
       scope: ['identify'],
     },
     async (accessToken, refreshToken, profile: Profile, done) => {
