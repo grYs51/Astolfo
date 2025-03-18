@@ -46,7 +46,7 @@ services:
       - OWNER=${OWNER}
       - DEFAULT_PREFIX=${DEFAULT_PREFIX}
       - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
-      - PORT=${PORT}
+      - PORT=3000
       - COOKIE_SECRET=${COOKIE_SECRET}
       - REDIRECT_URI=${REDIRECT_URI}
       - CLIENT_URL=${CLIENT_URL}
@@ -54,7 +54,7 @@ services:
       postgres:
         condition: service_healthy
     ports:
-      - '3000:3000'
+      - '${PORT}:3000'
     networks:
       - astolfo-network
     volumes:
@@ -65,14 +65,16 @@ services:
     build:
       context: .
       dockerfile: ./apps/web/Dockerfile.web
+      args:
+        BACKEND_URL: ${BACKEND_URL}
     container_name: Astolfo-web
     restart: unless-stopped
     stop_grace_period: 1m
     environment:
-      - PORT_WEB=${PORT_WEB}
+      - PORT_WEB=4200
       - BACKEND_URL=${BACKEND_URL}
     ports:
-      - '4000:4000'
+      - '${PORT_WEB}:4200'
     networks:
       - astolfo-network
 

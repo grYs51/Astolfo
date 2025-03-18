@@ -1,10 +1,10 @@
 # Stage 1: Build the app
 ARG NODE_VERSION=23
-
-FROM node:${NODE_VERSION}-alpine AS build
+FROM node:${NODE_VERSION} AS build
 
 WORKDIR /usr/src/app
-
+ARG BACKEND_URL
+ENV BACKEND_URL ${BACKEND_URL}
 COPY .yarnrc.yml ./
 COPY .yarn ./.yarn
 COPY package.json yarn.lock ./
@@ -12,6 +12,8 @@ COPY package.json yarn.lock ./
 RUN yarn install
 
 COPY . .
+
+RUN echo "export const environment = { production: true, BACKEND_URL: '$BACKEND_URL' };" >> /usr/src/app/apps/web/src/environments/environment.prod.ts
 
 RUN npx nx run web:build:production
 

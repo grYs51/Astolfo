@@ -16,15 +16,15 @@ RUN yarn install
 COPY . .
 
 RUN npx prisma generate \
-    && npx nx build bot \
-    && rm -rf /usr/src/app/apps/bot/src
+  && npx nx build bot \
+  && rm -rf /usr/src/app/apps/bot/src
 
 
 # runtime image
 FROM node:${NODE_VERSION}-alpine
 
 RUN apk add --no-cache tini dumb-init \
-    && corepack enable && corepack prepare yarn@1.22.22 --activate
+  && corepack enable && corepack prepare yarn@1.22.22 --activate
 
 ENV NODE_ENV=production
 
@@ -36,7 +36,7 @@ COPY package.json yarn.lock ./
 
 
 RUN yarn workspaces focus --production \
-&& yarn cache clean 
+  && yarn cache clean
 
 COPY --chown=node:node --from=build /usr/src/app/dist/apps/bot ./dist
 COPY --chown=node:node --from=build /usr/src/app/prisma ./prisma

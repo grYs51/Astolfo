@@ -1,5 +1,4 @@
 import {
-  HttpClient,
   HttpHeaders,
   HttpParams,
   httpResource,
@@ -12,8 +11,6 @@ export const COMMON_BACKEND_API_URL = new InjectionToken<string>(
 );
 
 export abstract class ApiBase {
-  http = inject(HttpClient);
-
   protected host = inject(COMMON_BACKEND_API_URL);
 
   get<T>(

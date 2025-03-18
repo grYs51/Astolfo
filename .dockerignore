@@ -21,3 +21,4 @@ tmp
 !.env.vault
 .flaskenv*
 
+apps/web/src/environments/environment.prod.ts

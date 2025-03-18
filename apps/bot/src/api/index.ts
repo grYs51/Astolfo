@@ -16,7 +16,11 @@ function createExpress() {
 
   app.use(
     cors({
-      origin: ['http://localhost:4200', 'https://astolfo.grys.me'],
+      origin: [
+        'http://localhost:4200',
+        'https://astolfo.grys.me',
+        'http://192.168.129.16:4200',
+      ],
       credentials: true,
     })
   );

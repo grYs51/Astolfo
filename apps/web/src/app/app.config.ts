@@ -13,7 +13,7 @@ import { IS_LOGGED_IN, IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
 import { provideBackendApi, provideBotApi } from '@nx-stolfo/common/api';
 import { credentialsInterceptor } from '@nx-stolfo/common/interceptors';
 import { appRoutes } from './app.routes';
-import { environment } from '../environments/environment.development';
+import { environment } from '../environments/environment';
 
 export const appConfig: ApplicationConfig = {
   providers: [
