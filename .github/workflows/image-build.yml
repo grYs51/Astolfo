@@ -40,6 +40,7 @@ jobs:
           COOKIE_SECRET: ${{ secrets.COOKIE_SECRET }}
           REDIRECT_URI: ${{ secrets.REDIRECT_URI }}
           CLIENT_URL: ${{ secrets.CLIENT_URL }}
-
+          BACKEND_URL: ${{ secrets.BACKEND_URL }}
+          PORT_WEB: ${{ secrets.PORT_WEB }}
       - name: clean up docker images
         run: docker image prune -f
