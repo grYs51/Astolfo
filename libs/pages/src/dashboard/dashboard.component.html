@@ -2,10 +2,13 @@
   <lib-navbar
     [name]="user()?.username"
     [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
-    [loginUrl]="backendUrl + '/auth/login'" [logoutUrl]="backendUrl + '/auth/logout'" [loading]="!sessionChecked()" />
+    [loginUrl]="backendUrl + '/auth/login'"
+    [logoutUrl]="backendUrl + '/auth/logout'"
+    [loading]="!sessionChecked()" />
+
+  <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
 
   <div>
-    <h1>Dashboard</h1>
     <p>Welcome to the dashboard</p>
     <ul>
       <li> sessionChecked: {{sessionChecked()}}</li>

@@ -4,8 +4,9 @@
   "peerDependencies": {
     "@fortawesome/angular-fontawesome": "^1.0.0",
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
-    "@nx/angular": "20.3.0",
-    "@angular/core": "~19.0.0"
+    "@nx/angular": "20.6.0",
+    "@angular/core": "19.2.2",
+    "@angular/router": "19.2.2"
   },
   "sideEffects": false
 }

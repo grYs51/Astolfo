@@ -1,25 +1,41 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject
-} from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
 import { COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
 import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
-import { NavbarComponent, PageComponent } from '@nx-stolfo/components';
+import {
+  BreadCrumbs,
+  BreadCrumbsComponent,
+  NavbarComponent,
+  PageComponent
+} from '@nx-stolfo/components';
+import { map, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'lib-dashboard',
-  imports: [PageComponent, NavbarComponent, DiscordImagePipe],
+  imports: [
+    PageComponent,
+    NavbarComponent,
+    BreadCrumbsComponent,
+    DiscordImagePipe,
+    AsyncPipe,
+  ],
   templateUrl: './dashboard.component.html',
-  styles: ``,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [],
 })
 export class DashboardComponent {
   user = inject(USER);
 
-  sessionChecked = inject(IS_SESSION_CHECKED);
+  readonly sessionChecked = inject(IS_SESSION_CHECKED);
 
-  backendUrl = inject(COMMON_BACKEND_API_URL);
+  readonly backendUrl = inject(COMMON_BACKEND_API_URL);
+
+  private readonly route = inject(ActivatedRoute);
+
+  breadcrumbs$ = this.route.data.pipe(
+    map((data) => data['breadCrumbs'] as BreadCrumbs),
+    tap(console.log)
+  );
 }
