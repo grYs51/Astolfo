@@ -1,31 +1,29 @@
-import { isPlatformServer } from '@angular/common';
-import { computed, effect, inject, PLATFORM_ID } from '@angular/core';
-import { CanActivateFn } from '@angular/router';
-import { IS_LOGGED_IN, IS_SESSION_CHECKED } from '../profile/profile.token';
+import { isPlatformServer } from "@angular/common";
+import { inject, PLATFORM_ID } from "@angular/core";
+import { CanActivateFn, Router } from "@angular/router";
+import { of, filter, switchMap } from "rxjs";
+import { IS_SESSION_CHECKED, IS_LOGGED_IN } from "../profile/profile.token";
+import { toObservable } from '@angular/core/rxjs-interop';
+
 export function AuthGuard(): CanActivateFn {
-  const sessionCheck = inject(IS_SESSION_CHECKED);
-  const isLoggedIn = inject(IS_LOGGED_IN);
-  const platform = inject(PLATFORM_ID);
-
   return () => {
+    const sessionCheck = inject(IS_SESSION_CHECKED);
+    const isLoggedIn = inject(IS_LOGGED_IN);
+    const platform = inject(PLATFORM_ID);
+    const router = inject(Router);
 
-    if (isPlatformServer(platform)) return true;
+    const sessionChecked$ = toObservable(sessionCheck);
 
-    console.log('checking session');
+    if (isPlatformServer(platform)) return of(false);
 
-    const sessionChecked = computed(() => sessionCheck());
-    const loggedIn = computed(() => isLoggedIn());
-
-    effect(() => {
-      if (sessionChecked()) {
-        console.log('session checked');
-        if (!loggedIn()) {
-          console.log('not logged in');
-          // redirect to login
+    return sessionChecked$.pipe(
+      filter(Boolean),
+      switchMap(() => {
+        if (!isLoggedIn()) {
+          return of(router.createUrlTree(['/login']));
         }
-      }
-    });
-
-    return loggedIn();
+        return of(true);
+      })
+    );
   };
 }
