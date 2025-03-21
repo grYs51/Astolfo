@@ -5,7 +5,7 @@
   "scripts": {
     "bot:serve": "nx serve bot",
     "web:serve": "nx serve web",
-    "docker:dev:up": "docker compose --profile dev -p astolfo --env-file .env up --build",
+    "docker:dev:up": "docker compose --profile dev -p astolfo --env-file .env up --build -d",
     "docker:dev:down": "docker compose --profile dev -p astolfo --env-file .env down",
     "docker:dev:log": "docker compose --profile dev -p astolfo logs -f --tail=100",
     "docker:dev:clean": "docker compose --profile dev -p astolfo down -v --rmi all",

@@ -6,13 +6,18 @@
     [logoutUrl]="backendUrl + '/auth/logout'"
     [loading]="!sessionChecked()" />
 
-  <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
+    <div class="container p-sm md:p-lg">
+      <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
 
-  <div>
-    <p>Welcome to the dashboard</p>
-    <ul>
-      <li> sessionChecked: {{sessionChecked()}}</li>
-      <li> backendUrl: {{backendUrl}}</li>
-    </ul>
-  </div>
+      <feature-active-servers />
+
+      <div>
+        <p>Welcome to the dashboard</p>
+        <ul>
+          <li> sessionChecked: {{sessionChecked()}}</li>
+          <li> backendUrl: {{backendUrl}}</li>
+        </ul>
+      </div>
+    </div>
+
 </lib-page>
