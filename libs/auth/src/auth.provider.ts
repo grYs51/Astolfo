@@ -7,7 +7,7 @@ import {
   USER,
 } from './profile/profile.token';
 const isLoggedInFactory = (profileStore: StateSignals<ProfileState>) =>
-  computed(() => !profileStore.isLoading() && profileStore.profile() !== null);
+  computed(() => !profileStore.isLoading() && !!profileStore.profile());
 
 const userFactory = (profileStore: StateSignals<ProfileState>) =>
   computed(() => profileStore.profile());
