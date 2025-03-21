@@ -6,7 +6,7 @@
     [logoutUrl]="backendUrl + '/auth/logout'"
     [loading]="!sessionChecked()" />
 
-    <div class="container p-sm md:p-lg">
+    <div class="container p-sm md:p-lg m-auto">
       <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
 
       <feature-active-servers-list />
