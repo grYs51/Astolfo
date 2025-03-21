@@ -1,10 +1,11 @@
 import { Route } from '@angular/router';
 import { DashboardComponent } from './dashboard.component';
+import { AuthGuard } from '@nx-stolfo/auth';
 export const dashboardRoutes: Route[] = [
   {
     path: '',
-    // canActivate: [AuthGuard()],
     component: DashboardComponent,
+    canActivate: [AuthGuard()],
     data: {
       title: 'Dashboard',
       breadCrumbs: [
