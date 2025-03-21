@@ -1,8 +1,11 @@
 {
-  "name": "@nx-stolfo/active-servers",
+  "name": "@nx-stolfo/data-access",
   "version": "0.0.1",
   "peerDependencies": {
+    "@angular/common": "^19.2.0",
     "@angular/core": "^19.2.0",
+    "@nx-stolfo/common": "0.0.1",
+    "@ngrx/signals": "^19.0.0",
     "@nx/angular": "20.6.0"
   },
   "sideEffects": false

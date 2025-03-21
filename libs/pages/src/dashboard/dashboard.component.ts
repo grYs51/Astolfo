@@ -1,16 +1,11 @@
 import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { ActiveServersComponent } from '@nx-stolfo/active-servers';
-import { IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
+import { ActiveServersListComponent } from '@nx-stolfo/active-servers/ui';
+import { USER, IS_SESSION_CHECKED } from '@nx-stolfo/auth';
 import { COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
 import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
-import {
-  BreadCrumbs,
-  BreadCrumbsComponent,
-  NavbarComponent,
-  PageComponent,
-} from '@nx-stolfo/components';
+import { PageComponent, NavbarComponent, BreadCrumbsComponent, BreadCrumbs } from '@nx-stolfo/components';
 import { map, tap } from 'rxjs/operators';
 
 @Component({
@@ -21,7 +16,7 @@ import { map, tap } from 'rxjs/operators';
     BreadCrumbsComponent,
     DiscordImagePipe,
     AsyncPipe,
-    ActiveServersComponent,
+    ActiveServersListComponent,
   ],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

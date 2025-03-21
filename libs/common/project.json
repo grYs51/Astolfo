@@ -4,7 +4,9 @@
   "sourceRoot": "libs/common",
   "prefix": "lib",
   "projectType": "library",
-  "tags": [],
+  "tags": [
+    "type:common"
+  ],
   "targets": {
     "build": {
       "executor": "@nx/node:build",

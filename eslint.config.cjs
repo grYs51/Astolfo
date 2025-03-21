@@ -35,7 +35,41 @@ module.exports = [
       '**/*.mjs',
     ],
     // Override or add rules here
-    rules: {},
+    rules: {
+      "@nx/enforce-module-boundaries": [
+        "error",
+        {
+          "depConstraints": [
+            {
+              sourceTag: 'type:app',
+              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:common']
+            },
+            {
+              sourceTag: 'type:feature',
+              onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:common']
+            },
+            {
+              sourceTag: 'type:ui',
+              onlyDependOnLibsWithTags: ['type:ui', 'type:data-access', 'type:common']
+            },
+            {
+              sourceTag: 'type:data-access',
+              onlyDependOnLibsWithTags: ['type:data-access', 'type:common']
+            }
+
+            // Domain-based rules
+            // {
+            //   sourceTag: 'scope:orders',
+            //   onlyDependOnLibsWithTags: ['scope:orders', 'scope:products', 'scope:shared']
+            // },
+            // {
+            //   sourceTag: 'scope:products',
+            //   onlyDependOnLibsWithTags: ['scope:products', 'scope:shared']
+            // }
+          ]
+        }
+      ]
+    },
   },
   {
     files: ['**/*.json'],
@@ -47,7 +81,6 @@ module.exports = [
           checkMissingDependencies: true,
           buildTargets: ['build']
         },
-        
       ],
     },
     languageOptions: {
