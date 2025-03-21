@@ -16,12 +16,6 @@
     "baseUrl": ".",
     "paths": {
       "@models/*": ["libs/models/src/*"],
-      "@nx-stolfo/active-servers": [
-        "libs/features/active-servers/src/index.ts"
-      ],
-      "@nx-stolfo/active-servers/data-access": [
-        "libs/feature/active-servers/data-access/src/index.ts"
-      ],
       "@nx-stolfo/auth": ["libs/auth/src/index.ts"],
       "@nx-stolfo/common": ["libs/common/src/index.ts"],
       "@nx-stolfo/common/api": ["libs/common/api/src/index.ts"],
@@ -31,7 +25,13 @@
       "@nx-stolfo/common/pipes": ["libs/common/pipes/src/index.ts"],
       "@nx-stolfo/common/types": ["libs/common/types/src/index.ts"],
       "@nx-stolfo/components": ["libs/components/src/index.ts"],
-      "@nx-stolfo/pages": ["libs/pages/src/index.ts"]
+      "@nx-stolfo/pages": ["libs/pages/src/index.ts"],
+      "@nx-stolfo/active-servers/data-access": [
+        "features/active-servers/data-access/src/index.ts"
+      ],
+      "@nx-stolfo/active-servers/ui": [
+        "features/active-servers/ui/src/index.ts"
+      ]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "coverage"]

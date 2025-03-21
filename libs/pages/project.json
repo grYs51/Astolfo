@@ -4,7 +4,7 @@
   "sourceRoot": "libs/pages/src",
   "prefix": "pages",
   "projectType": "library",
-  "tags": [],
+  "tags": ["scope:pages", "type:feature"],
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"

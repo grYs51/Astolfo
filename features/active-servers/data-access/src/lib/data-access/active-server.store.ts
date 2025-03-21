@@ -2,15 +2,8 @@ import { isPlatformBrowser } from "@angular/common";
 import { effect, inject, PLATFORM_ID } from "@angular/core";
 import { patchState, signalStore, withHooks, withState } from "@ngrx/signals";
 import { ActiveServerApi } from "./active-server.api";
+import { guilds } from "./active-servers.model";
 
-export interface guild {
-  icon: string;
-  name: string;
-  id: string;
-  memberCount: number;
-}
-
-export type guilds = guild[];
 
 export type ProfileState = {
   value: guilds

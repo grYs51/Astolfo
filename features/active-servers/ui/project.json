@@ -1,23 +1,23 @@
 {
-  "name": "active-servers",
+  "name": "active-servers-ui",
   "$schema": "../../../node_modules/nx/schemas/project-schema.json",
-  "sourceRoot": "libs/features/active-servers/src",
-  "prefix": "feature",
+  "sourceRoot": "features/active-servers/ui/src",
+  "prefix": "lib",
   "projectType": "library",
-  "tags": ["features"],
+  "tags": ["type:ui"],
   "targets": {
     "build": {
       "executor": "@nx/angular:ng-packagr-lite",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "libs/features/active-servers/ng-package.json"
+        "project": "features/active-servers/ui/ng-package.json"
       },
       "configurations": {
         "production": {
-          "tsConfig": "libs/features/active-servers/tsconfig.lib.prod.json"
+          "tsConfig": "features/active-servers/ui/tsconfig.lib.prod.json"
         },
         "development": {
-          "tsConfig": "libs/features/active-servers/tsconfig.lib.json"
+          "tsConfig": "features/active-servers/ui/tsconfig.lib.json"
         }
       },
       "defaultConfiguration": "production"
