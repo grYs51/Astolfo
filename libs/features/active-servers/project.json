@@ -1,0 +1,29 @@
+{
+  "name": "active-servers",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/features/active-servers/src",
+  "prefix": "feature",
+  "projectType": "library",
+  "tags": ["features"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "libs/features/active-servers/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "libs/features/active-servers/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "libs/features/active-servers/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

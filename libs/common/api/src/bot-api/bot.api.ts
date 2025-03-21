@@ -1,5 +1,3 @@
-// get(/auth/login)
-
 import { inject } from '@angular/core';
 import { COMMON_BOT_API_URL, DiscordUser } from './bot-api.types';
 import { ApiBase } from '../api.base';
