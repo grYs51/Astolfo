@@ -7,16 +7,15 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
   imports: [HumanizeDurationPipe],
   templateUrl: './active-servers-card.component.html',
   styles: `
-    .isSelected {
-      padding: theme('spacing.md');
-      border: theme('borderWidth.2') solid;
-      border-color: theme('colors.neutral-600');
-    }
+    // example of how to dynamically use tailwind classes
+    // .isSelected {
+    //   padding: theme('spacing.md');
+    //   border: theme('borderWidth.2') solid;
+    //   border-color: theme('colors.neutral-600');
+    // }
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ActiveServersCardComponent {
   guild = input.required<guild>();
-
-  isSelected = input<boolean>();
 }

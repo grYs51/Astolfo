@@ -12,7 +12,7 @@
     </div>
   } @else {
     @for (guild of guilds(); track guild.id ) {
-      <feature-active-servers-card [guild]="guild" (click)="selectGuild(guild.id)" [isSelected]="guild.id === selectedGuildId()" />
+      <feature-active-servers-card [guild]="guild" (click)="selectedGuild.emit(guild.id)" />
     } @empty {
       <feature-active-servers-card-skeleton [title]="'No active servers'" />
     }
