@@ -1,6 +1,7 @@
 @let server = guild();
 
-<div class="bg-base-300 p-md rounded-2xl flex items-center gap-md min-w-[200px] w-80 cursor-pointer border-2 border-transparent" [class.isSelected]="isSelected()">
+<div
+  class="bg-base-300 p-md rounded-2xl flex items-center gap-md min-w-[200px] w-80 cursor-pointer border-2 border-transparent">
   <img width="48" [src]="server.icon" [alt]="server.name" class="w-16 h-16 rounded-full object-cover" />
   <div>
     <h2 class="text-md font-semibold">{{ server.name }}</h2>
