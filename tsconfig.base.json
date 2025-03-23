@@ -29,6 +29,7 @@
         "libs/common/interceptors/src/index.ts"
       ],
       "@nx-stolfo/common/pipes": ["libs/common/pipes/src/index.ts"],
+      "@nx-stolfo/common/store": ["libs/common/store/src/index.ts"],
       "@nx-stolfo/common/types": ["libs/common/types/src/index.ts"],
       "@nx-stolfo/components": ["libs/components/src/index.ts"],
       "@nx-stolfo/pages": ["libs/pages/src/index.ts"]
