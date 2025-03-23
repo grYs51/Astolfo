@@ -1,0 +1,9 @@
+<div class="bg-base-300 p-md rounded-2xl shadow-lg flex items-center gap-md w-80">
+  <div class="w-[48px] h-[48px] bg-base-400 rounded-full"></div>
+  <div>
+    <h2 class="text-lg font-semibold">{{title()}}</h2>
+    @if (description()) {
+      <p class="text-red-500">{{description()}}</p>
+    }
+  </div>
+</div>
