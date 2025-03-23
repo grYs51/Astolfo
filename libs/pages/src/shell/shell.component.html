@@ -1,0 +1,11 @@
+<lib-page>
+  <lib-navbar [name]="user()?.username" [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
+    [loginUrl]="backendUrl + '/auth/login'" [logoutUrl]="backendUrl + '/auth/logout'" [loading]="!sessionChecked()" />
+
+  <div class="container p-sm md:p-lg m-auto">
+    <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
+
+    <router-outlet />
+  </div>
+
+</lib-page>

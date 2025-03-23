@@ -4,8 +4,7 @@ import {
   patchState,
   signalStore,
   withHooks,
-  withMethods,
-  withState,
+  withState
 } from '@ngrx/signals';
 import { ActiveServerApi } from './active-server.api';
 import { guilds } from './active-servers.model';
@@ -14,14 +13,12 @@ export type ProfileState = {
   value: guilds;
   isLoading: boolean;
   error: unknown;
-  selectedGuild: string;
 };
 
 const initialState: ProfileState = {
   value: [],
   isLoading: true,
   error: null,
-  selectedGuild: '',
 };
 
 export const ActiveServerStore = signalStore(
@@ -44,10 +41,5 @@ export const ActiveServerStore = signalStore(
         });
       }
     },
-  }),
-  withMethods((store) => ({
-    selectGuild(guild: string) {
-      patchState(store, { selectedGuild: guild });
-    },
-  }))
+  })
 );

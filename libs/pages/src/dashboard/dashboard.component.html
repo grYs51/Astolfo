@@ -1,23 +1,9 @@
-<lib-page>
-  <lib-navbar
-    [name]="user()?.username"
-    [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
-    [loginUrl]="backendUrl + '/auth/login'"
-    [logoutUrl]="backendUrl + '/auth/logout'"
-    [loading]="!sessionChecked()" />
+<feature-active-servers-list (selectedGuild)="selectedGuild($event)" />
 
-    <div class="container p-sm md:p-lg m-auto">
-      <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
-
-      <feature-active-servers-list />
-
-      <div>
-        <p>Welcome to the dashboard</p>
-        <ul>
-          <li> sessionChecked: {{sessionChecked()}}</li>
-          <li> backendUrl: {{backendUrl}}</li>
-        </ul>
-      </div>
-    </div>
-
-</lib-page>
+<div>
+  <p>Welcome to the dashboard</p>
+  <ul>
+    <li> sessionChecked: {{sessionChecked()}}</li>
+    <li> backendUrl: {{backendUrl}}</li>
+  </ul>
+</div>

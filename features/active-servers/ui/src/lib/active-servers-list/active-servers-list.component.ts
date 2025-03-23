@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  output,
 } from '@angular/core';
 import {
   ActiveServerApi,
@@ -20,6 +21,8 @@ import { ActiveServersCardSkeletonComponent } from '../active-servers-card-skele
   providers: [ActiveServerStore, ActiveServerApi],
 })
 export class ActiveServersListComponent {
+  selectedGuild = output<string>();
+
   backendUrl = inject(COMMON_BACKEND_API_URL);
 
   #store = inject(ActiveServerStore);
@@ -29,11 +32,4 @@ export class ActiveServersListComponent {
   isLoading = computed(() => this.#store.isLoading());
 
   error = computed(() => this.#store.error());
-
-  selectedGuildId = computed(() => this.#store.selectedGuild());
-
-  selectGuild(guildId: string) {
-    this.#store.selectGuild(guildId);
-    console.log('Selected guild:', guildId);
-  }
 }
