@@ -95,7 +95,7 @@ export default class LeaderboardEvent extends BaseSlash {
 
       const sortedLeaderboard = leaderboard.toSorted(
         (a, b) => b.count - a.count
-      );
+      ).slice(0, 12);
 
       const longestInVc = sortedLeaderboard[0].count;
 
