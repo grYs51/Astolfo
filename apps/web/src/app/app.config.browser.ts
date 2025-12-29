@@ -1,9 +1,9 @@
 import { ApplicationConfig, mergeApplicationConfig } from '@angular/core';
-import { appConfig } from './app.config';
 import { provideAuth } from '@nx-stolfo/auth';
+import { appConfig } from './app.config';
 
 const browserConfig: ApplicationConfig = {
-  providers: [provideAuth()]
+  providers: [provideAuth()],
 };
 
 export const config = mergeApplicationConfig(appConfig, browserConfig);

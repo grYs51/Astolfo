@@ -2,10 +2,8 @@ import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import {
   ActivatedRoute,
-  ActivationEnd,
-  NavigationEnd,
   Router,
-  RouterOutlet,
+  RouterOutlet
 } from '@angular/router';
 import { IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
 import { COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
@@ -16,7 +14,7 @@ import {
   NavbarComponent,
   PageComponent,
 } from '@nx-stolfo/components';
-import { concatMap, filter, map, startWith, tap, withLatestFrom } from 'rxjs';
+import { map } from 'rxjs';
 
 @Component({
   selector: 'pages-shell',
