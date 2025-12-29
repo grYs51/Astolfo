@@ -111,7 +111,7 @@ export const getLeaderboard = async (
     return null;
   }
 
-  const members = client.guilds.cache.get(guildId)!.members.cache.map((x) => x);
+  const members = client.guilds.cache.get(guildId)?.members.cache.map((x) => x);
   const leaderboard = getLeaderboard(members, voiceStats);
 
   return leaderboard;
