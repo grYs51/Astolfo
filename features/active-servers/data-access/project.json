@@ -1,0 +1,29 @@
+{
+  "name": "data-access-active-servers",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "features/active-servers/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["type:data-access"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "features/active-servers/data-access/ng-package.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "features/active-servers/data-access/tsconfig.lib.prod.json"
+        },
+        "development": {
+          "tsConfig": "features/active-servers/data-access/tsconfig.lib.json"
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

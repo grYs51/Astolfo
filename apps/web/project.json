@@ -4,28 +4,39 @@
   "projectType": "application",
   "prefix": "app",
   "sourceRoot": "apps/web/src",
-  "implicitDependencies": ["libs/components"],
-  "tags": [],
+  "tags": [
+    "scope:web",
+    "type:app"
+  ],
   "targets": {
     "build": {
-      "executor": "@angular-devkit/build-angular:application",
-      "outputs": ["{options.outputPath}"],
+      "executor": "@nx/angular:application",
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "options": {
         "outputPath": "dist/apps/web",
         "index": "apps/web/src/index.html",
         "browser": "apps/web/src/main.ts",
-        "polyfills": ["zone.js"],
+        "polyfills": [
+          "zone.js"
+        ],
         "tsConfig": "apps/web/tsconfig.app.json",
         "inlineStyleLanguage": "scss",
+        "plugins": [],
         "assets": [
           {
             "glob": "**/*",
             "input": "apps/web/public"
           }
         ],
-        "styles": ["apps/web/src/styles.scss"],
+        "styles": [
+          "apps/web/src/styles.scss"
+        ],
         "stylePreprocessorOptions": {
-          "includePaths": ["libs/styles/src"]
+          "includePaths": [
+            "libs/styles/src"
+          ]
         },
         "scripts": [],
         "server": "apps/web/src/main.server.ts",
@@ -36,6 +47,12 @@
       },
       "configurations": {
         "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/web/src/environments/environment.ts",
+              "with": "apps/web/src/environments/environment.prod.ts"
+            }
+          ],
           "budgets": [
             {
               "type": "initial",
@@ -53,13 +70,19 @@
         "development": {
           "optimization": false,
           "extractLicenses": false,
-          "sourceMap": true
+          "sourceMap": true,
+          "fileReplacements": [
+            {
+              "replace": "apps/web/src/environments/environment.ts",
+              "with": "apps/web/src/environments/environment.development.ts"
+            }
+          ]
         }
       },
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@angular-devkit/build-angular:dev-server",
+      "executor": "@nx/angular:dev-server",
       "configurations": {
         "production": {
           "buildTarget": "web:build:production"
@@ -81,7 +104,9 @@
     },
     "test": {
       "executor": "@nx/jest:jest",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
         "jestConfig": "apps/web/jest.config.ts"
       }
@@ -92,6 +117,38 @@
         "buildTarget": "web:build",
         "staticFilePath": "dist/apps/web/browser",
         "spa": true
+      }
+    },
+    "container": {
+      "executor": "@nx-tools/nx-container:build",
+      "inputs": [],
+      "cache": true,
+      "options": {
+        "file": "apps/web/Dockerfile.web",
+        "platforms": [
+          "linux/amd64"
+        ],
+        "tags": [
+          "grace51/astolfo/web:latest"
+        ],
+        "build-args": [
+          "APP_NAME=astolfo-web",
+          "NODE_VERSION=23"
+        ]
+      },
+      "configurations": {
+        "production": {
+          "tags": [
+            "grace51/astolfo/web:latest"
+          ],
+          "push": false
+        },
+        "development": {
+          "tags": [
+            "grace51/astolfo/web:dev"
+          ],
+          "push": false
+        }
       }
     }
   }

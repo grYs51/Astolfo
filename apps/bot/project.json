@@ -67,7 +67,7 @@
       "cache": true,
       "dependsOn": ["build"],
       "options": {
-        "file": "apps/bot/Dockerfile",
+        "file": "apps/bot/Dockerfile.bot",
         "platforms": ["linux/amd64", "linux/arm64"],
         "tags": ["grace51/astolfo/bot:latest"],
         "build-args": ["APP_NAME=astolfo-bot", "NODE_VERSION=23"]

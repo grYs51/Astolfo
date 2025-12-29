@@ -39,21 +39,45 @@ services:
     restart: unless-stopped
     stop_grace_period: 1m
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       - DISCORD_CLIENT_ID=${DISCORD_CLIENT_ID}
       - DISCORD_BOT_TOKEN=${DISCORD_BOT_TOKEN}
       - DISCORD_PUBLIC_KEY=${DISCORD_PUBLIC_KEY}
       - DISCORD_CLIENT_SECRET=${DISCORD_CLIENT_SECRET}
       - OWNER=${OWNER}
+      - DEFAULT_PREFIX=${DEFAULT_PREFIX}
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      - PORT=3000
+      - COOKIE_SECRET=${COOKIE_SECRET}
+      - REDIRECT_URI=${REDIRECT_URI}
+      - CLIENT_URL=${CLIENT_URL}
     depends_on:
       postgres:
         condition: service_healthy
     ports:
-      - '3003:3000'
+      - '${PORT}:3000'
     networks:
       - astolfo-network
     volumes:
       - ./libs/models/prisma:/app/libs/models/prisma
+
+  web:
+    logging: *default-logging
+    build:
+      context: .
+      dockerfile: ./apps/web/Dockerfile.web
+      args:
+        BACKEND_URL: ${BACKEND_URL}
+    container_name: Astolfo-web
+    restart: unless-stopped
+    stop_grace_period: 1m
+    environment:
+      - PORT_WEB=4200
+      - BACKEND_URL=${BACKEND_URL}
+    ports:
+      - '${PORT_WEB}:4200'
+    networks:
+      - astolfo-network
+
 
   prometheus:
     image: prom/prometheus:latest

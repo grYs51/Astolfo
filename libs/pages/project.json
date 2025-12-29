@@ -1,0 +1,13 @@
+{
+  "name": "pages",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "libs/pages/src",
+  "prefix": "pages",
+  "projectType": "library",
+  "tags": ["scope:pages", "type:feature"],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
-  "defaultBase": "master",
+  "defaultBase": "main",
   "namedInputs": {
     "default": ["{projectRoot}/**/*", "sharedGlobals"],
     "production": [
@@ -66,8 +66,24 @@
       "style": "scss",
       "unitTestRunner": "jest"
     },
-    "@nx/angular:library": { "linter": "eslint", "unitTestRunner": "none" },
-    "@nx/angular:component": { "style": "scss" }
+    "@nx/angular:library": {
+      "linter": "eslint",
+      "unitTestRunner": "none",
+      "style": "scss",
+      "buildable": true,
+      "lazy": true,
+      "addTailwind": true,
+      "changeDetection": "OnPush",
+      "strict": true,
+      "standalone": true
+    },
+    "@nx/angular:component": {
+      "style": "scss",
+      "inlineStyle": true,
+      "skipTests": true,
+      "changeDetection": "OnPush",
+      "standalone": true
+    }
   },
   "plugins": [
     {

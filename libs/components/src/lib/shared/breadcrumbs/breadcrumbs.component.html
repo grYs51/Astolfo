@@ -1,0 +1,9 @@
+<div class="breadcrumbs text-sm">
+  <ul>
+    @for (breadCrumb of breadCrumbs(); track breadCrumb.name) {
+      <li>
+        <a [routerLink]="breadCrumb.path" [class.pointer-events-none]="!breadCrumb.path">{{ breadCrumb.name }}</a>
+      </li>
+    }
+  </ul>
+</div>

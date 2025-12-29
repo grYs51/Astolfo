@@ -21,8 +21,9 @@ export const schedule5hrVoiceChannelJob = (
     const channel = client.channels.cache.get(channel_id);
     if (channel?.isSendable()) {
       //member.toString() makes it a mention (pinging the user)
+      const straightOrGay = Math.random() > 0.9 ? 'straight' : 'gay';
       channel.send(
-        `${member} has been in the voice channel for 5 hours straight!`
+        `${member} has been in the voice channel for 5 hours ${straightOrGay}!`
       );
     }
   });

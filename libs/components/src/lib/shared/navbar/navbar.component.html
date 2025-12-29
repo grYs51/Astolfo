@@ -1,0 +1,38 @@
+<div class="navbar bg-base-300">
+  <div class="container mx-auto">
+    <div class="flex-1">
+      <a class="btn btn-ghost text-xl">Astolfo Stats</a>
+    </div>
+
+    <div class="flex-none h-[48px]">
+      @if(name() ) {
+        <div class="dropdown dropdown-end">
+          <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+            <div class="w-10 rounded-full">
+              <img [alt]="name() + '-avatar'" [src]="image()" />
+            </div>
+          </div>
+          <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-200 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+            <li class="card-title">
+              <span class="font-bold">{{ name() }}</span>
+            </li>
+
+            <li class="divide-neutral"></li>
+            <li class="disabled">
+              <a class="justify-between">
+                Profile
+                <span class="badge">New</span>
+              </a>
+            </li>
+            <li class="disabled"><a>Settings</a></li>
+            <li><a [href]="logoutUrl()">Logout</a></li>
+          </ul>
+        </div>
+      } @else if(!loading()) {
+        <a class="btn btn-ghost" [href]="loginUrl()">Login</a>
+      } @else {
+        <span class="loading loading-ring loading-lg text-neutral"></span>
+      }
+    </div>
+  </div>
+</div>
