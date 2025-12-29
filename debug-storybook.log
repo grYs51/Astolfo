@@ -1,0 +1,965 @@
+[17:13:21.061] [INFO] Storybook upgrade - v10.1.11
+[17:13:21.063] [INFO] detect-projects-spinner-start: Detecting projects...
+[17:13:21.064] [DEBUG] Finding Storybook projects...
+[17:13:21.518] [DEBUG] Found 1 Storybook projects
+[17:13:21.520] [INFO] detect-projects-spinner: Detecting projects: 1 projects
+[17:13:21.520] [DEBUG] Getting Storybook data...
+[17:13:21.520] [DEBUG] Getting Storybook info...
+[17:13:21.595] [DEBUG] Loading main config...
+[17:13:21.595] [DEBUG] Getting stories paths...
+[17:13:21.607] [DEBUG] Getting package manager...
+[17:13:21.800] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json...
+[17:13:21.800] [DEBUG] Getting Storybook version...
+[17:13:21.801] [DEBUG] C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook - Validating before version... 10.1.0
+[17:13:21.801] [DEBUG] C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook - Validating upgrade compatibility...
+[17:13:21.801] [DEBUG] C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook - Fetching NPM version information...
+[17:13:21.801] [DEBUG] Getting CLI versions from NPM for storybook...
+[17:13:21.801] [DEBUG] Executing command: yarn npm info storybook --fields version --json
+[17:13:21.810] [DEBUG] Getting CLI versions from NPM for storybook@next...
+[17:13:21.810] [DEBUG] Executing command: yarn npm info storybook@next --fields version --json
+[17:13:22.507] [DEBUG] C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook - Evaluating blockers...
+[17:13:22.522] [DEBUG] Getting installed version for @storybook/experimental-addon-test...
+[17:13:22.522] [DEBUG] Executing command: yarn info --name-only --recursive @storybook/experimental-addon-test
+[17:13:22.829] [INFO] detect-projects-spinner-stop: 1 project detected
+[17:13:22.829] [DEBUG] Found 1 valid projects and 0 error projects
+[17:13:22.829] [INFO] Upgrading from [1m10.1.0[22m to [1m10.1.11[22m
+[17:13:22.830] [INFO] upgrade-dependencies-task-start: Fetching versions to update package.json files..
+[17:13:22.830] [DEBUG] Updating dependencies in C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:22.830] [INFO] upgrade-dependencies-task: C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/package.json
+C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json
+[17:13:22.831] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:22.831] [DEBUG] {
+  "upgradedDependencies": []
+}
+[17:13:22.831] [DEBUG] {
+  "upgradedDevDependencies": []
+}
+[17:13:22.831] [DEBUG] {
+  "upgradedPeerDependencies": []
+}
+[17:13:22.831] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/package.json...
+[17:13:22.831] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:22.831] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/package.json...
+[17:13:22.831] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:22.831] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/package.json...
+[17:13:22.831] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:22.832] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:22.832] [DEBUG] Getting CLI versions from NPM for @storybook/test-runner...
+[17:13:22.832] [DEBUG] Executing command: yarn npm info @storybook/test-runner --fields version --json
+[17:13:23.310] [DEBUG] {
+  "upgradedDependencies": []
+}
+[17:13:23.310] [DEBUG] {
+  "upgradedDevDependencies": [
+    "@storybook/angular@10.1.11",
+    "storybook@10.1.11",
+    "@storybook/test-runner@0.24.2"
+  ]
+}
+[17:13:23.310] [DEBUG] {
+  "upgradedPeerDependencies": []
+}
+[17:13:23.310] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json...
+[17:13:23.310] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:23.311] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json...
+[17:13:23.311] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:23.311] [DEBUG] Getting CLI versions from NPM for @storybook/angular...
+[17:13:23.311] [DEBUG] Executing command: yarn npm info @storybook/angular --fields version --json
+[17:13:24.210] [DEBUG] Using cached version for storybook...
+[17:13:24.210] [DEBUG] Using cached version for @storybook/test-runner...
+[17:13:24.211] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json...
+[17:13:24.211] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.211] [INFO] upgrade-dependencies-task-success: Updated package versions in package.json files
+[17:13:24.212] [INFO] detect-automigrations-task-start: Detecting automigrations...
+[17:13:24.212] [DEBUG] Starting automigration collection across 1 projects and 19 fixes...
+[17:13:24.212] [INFO] detect-automigrations-task: Checking automigrations for
+C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:24.212] [DEBUG] Processing project: C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook
+[17:13:24.212] [DEBUG] Checking fix eslintPlugin for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:24.212] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:24.212] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.212] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.214] [DEBUG] Checking fix addon-mdx-gfm-remove for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:24.214] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:24.214] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.214] [DEBUG] Checking fix addon-storysource-code-panel for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:24.214] [DEBUG] Checking fix upgrade-storybook-related-dependencies for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:24.214] [DEBUG] Checking for incompatible storybook packages...
+[17:13:24.214] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:24.214] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.216] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:24.216] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:24.216] [DEBUG] Getting installed version for @nx/storybook...
+[17:13:24.216] [DEBUG] Executing command: yarn info --name-only --recursive @nx/storybook
+[17:13:24.223] [DEBUG] Getting installed version for @storybook/core-server...
+[17:13:24.223] [DEBUG] Executing command: yarn info --name-only --recursive @storybook/core-server
+[17:13:24.230] [DEBUG] Getting installed version for @storybook/jest...
+[17:13:24.230] [DEBUG] Executing command: yarn info --name-only --recursive @storybook/jest
+[17:13:24.236] [DEBUG] Getting installed version for @storybook/testing-library...
+[17:13:24.236] [DEBUG] Executing command: yarn info --name-only --recursive @storybook/testing-library
+[17:13:24.536] [DEBUG] Getting CLI versions from NPM for @nx/storybook...
+[17:13:24.536] [DEBUG] Executing command: yarn npm info @nx/storybook --fields version --json
+[17:13:24.545] [DEBUG] Getting CLI versions from NPM for @storybook/core-server...
+[17:13:24.545] [DEBUG] Executing command: yarn npm info @storybook/core-server --fields version --json
+[17:13:24.553] [DEBUG] Getting CLI versions from NPM for @storybook/testing-library...
+[17:13:24.553] [DEBUG] Executing command: yarn npm info @storybook/testing-library --fields version --json
+[17:13:24.561] [DEBUG] Getting CLI versions from NPM for @storybook/jest...
+[17:13:24.561] [DEBUG] Executing command: yarn npm info @storybook/jest --fields version --json
+[17:13:25.614] [DEBUG] Checking fix initial-globals for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.620] [DEBUG] Checking fix addon-globals-api for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.622] [DEBUG] Checking fix addon-a11y-addon-test for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.622] [DEBUG] Checking fix consolidated-imports for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Checking fix addon-experimental-test for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Using cached installed version for @storybook/experimental-addon-test...
+[17:13:25.623] [DEBUG] Checking fix rnstorybook-config for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.623] [DEBUG] Checking fix migrate-addon-console for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.623] [DEBUG] Checking fix nextjs-to-nextjs-vite for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.623] [DEBUG] Checking fix remove-addon-interactions for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:25.623] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.623] [DEBUG] Checking fix renderer-to-framework for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.624] [DEBUG] Checking fix remove-essential-addons for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.624] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:25.624] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.624] [DEBUG] Checking fix addon-a11y-parameters for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.624] [DEBUG] Checking fix remove-docs-autodocs for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.633] [DEBUG] Checking fix wrap-getAbsolutePath for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.638] [DEBUG] Checking fix fix-faux-esm-require for project C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook...
+[17:13:25.639] [INFO] detect-automigrations-task: 
+Automigrations detected:
+[17:13:25.639] [INFO] detect-automigrations-task: [32m[32m✔[32m eslintPlugin[39m
+[17:13:25.640] [INFO] detect-automigrations-task: [32m[32m✔[32m consolidated-imports[39m
+[17:13:25.640] [INFO] detect-automigrations-task: [32m[32m✔[32m remove-addon-interactions[39m
+[17:13:25.641] [INFO] detect-automigrations-task: [32m[32m✔[32m remove-essential-addons[39m
+[17:13:25.641] [INFO] detect-automigrations-task: [32m[32m✔[32m wrap-getAbsolutePath[39m
+[17:13:25.641] [INFO] detect-automigrations-task-success: 5 automigration(s) detected
+[17:13:25.642] [INFO] Running all detected automigrations:
+[17:13:25.642] [INFO]   - eslintPlugin (C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook)
+[17:13:25.642] [INFO]   - consolidated-imports (C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook)
+[17:13:25.642] [INFO]   - remove-addon-interactions (C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook)
+[17:13:25.643] [INFO]   - remove-essential-addons (C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook)
+[17:13:25.643] [INFO]   - wrap-getAbsolutePath (C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook)
+[17:13:25.644] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task-start: Running automigrations for C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook
+[17:13:25.644] [DEBUG] Adding dependencies: eslint-plugin-storybook@10.1.11
+[17:13:25.644] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:25.644] [DEBUG] Getting CLI versions from NPM for eslint-plugin-storybook...
+[17:13:25.644] [DEBUG] Executing command: yarn npm info eslint-plugin-storybook --fields version --json
+[17:13:26.116] [DEBUG] Detected flat config at C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\eslint.config.cjs
+[17:13:26.125] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task: [32m[32m✔[32m eslintPlugin[39m
+[17:13:26.133] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task: [32m[32m✔[32m consolidated-imports[39m
+[17:13:26.136] [DEBUG] Uninstalling @storybook/addon-interactions
+[17:13:26.136] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:26.136] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:26.136] [DEBUG] Removing '@storybook/addon-interactions' from main.js addons field.
+[17:13:26.137] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task: [32m[32m✔[32m remove-addon-interactions[39m
+[17:13:26.139] [DEBUG] Uninstalling @storybook/addon-essentials
+[17:13:26.139] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:26.139] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:26.139] [DEBUG] Removing '@storybook/addon-essentials' from main.js addons field.
+[17:13:26.142] [DEBUG] Getting Storybook info...
+[17:13:26.153] [DEBUG] Loading main config...
+[17:13:26.153] [DEBUG] Getting stories paths...
+[17:13:26.153] [DEBUG] Getting package manager...
+[17:13:26.173] [DEBUG] Getting package.json info for C:/Users/grace/Documents/appdev/projects/nx-stolfo/package.json...
+[17:13:26.173] [DEBUG] Getting Storybook version...
+[17:13:26.178] [INFO] Verifying @storybook/addon-docs
+[17:13:26.178] [DEBUG] Getting dependency version for storybook...
+[17:13:26.178] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:26.178] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:26.178] [INFO] Installing @storybook/addon-docs@10.1.11
+[17:13:26.178] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:26.178] [DEBUG] Getting CLI versions from NPM for @storybook/addon-docs...
+[17:13:26.178] [DEBUG] Executing command: yarn npm info @storybook/addon-docs --fields version --json
+[17:13:26.801] [INFO] Adding '@storybook/addon-docs' to the "addons" field in C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\.storybook\main.ts
+[17:13:26.831] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task: [32m[32m✔[32m remove-essential-addons[39m
+[17:13:26.839] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task: [32m[32m✔[32m wrap-getAbsolutePath[39m
+[17:13:26.839] [INFO] automigrate-C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook-task-success: Completed automigrations for C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook
+[17:13:26.839] [INFO] Installing dependencies...
+[17:13:26.839] [INFO] install-dependencies-spinner-start: Installing dependencies...
+[17:13:26.840] [DEBUG] Executing command: yarn install
+[17:13:27.161] [INFO] Installing dependencies...: ➤ YN0000: · Yarn 4.12.0
+
+[17:13:27.161] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: · Yarn 4.12.0
+[17:13:27.165] [INFO] Installing dependencies...: ➤ YN0000: ┌ Resolution step
+
+[17:13:27.165] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: ┌ Resolution st
+[17:13:29.234] [INFO] Installing dependencies...: ➤ YN0085: │ + @storybook/addon-docs@npm:10.1.11, @storybook/angular@npm:10.1.11, @storybook/test-runner@npm:0.24.2, eslint-plugin-storybook@npm:10.1.11, and 15 more.
+
+[17:13:29.234] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0085: │ + @storybook/
+[17:13:29.234] [INFO] Installing dependencies...: ➤ YN0085: │ - @jest/console@npm:29.7.0, @jest/core@npm:29.7.0, @jest/create-cache-key-function@npm:29.7.0, @jest/expect-utils@npm:29.7.0, @jest/expect@npm:29.7.0, and 88 more.
+
+[17:13:29.234] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0085: │ - @jest/conso
+[17:13:29.269] [INFO] Installing dependencies...: ➤ YN0000: └ Completed in 2s 104ms
+
+[17:13:29.269] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: └ Completed in 
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0000: ┌ Post-resolution validation
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: ┌ Post-resoluti
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0060: │ @angular/core is listed by your project with version 21.0.6 (p12e051), which doesn't satisfy what @fortawesome/angular-fontawesome and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ @nx/js is listed by your project with version 22.3.3 (p92020a), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ jest is listed by your project with version 30.0.5 (p0174ea), which doesn't satisfy what @angular-devkit/build-angular and other dependencies request (^30.2.0).
+➤ YN0060: │ jest-environment-jsdom is listed by your project with version 30.0.5 (pd62aea), which doesn't satisfy what @angular-devkit/build-angular requests (^30.2.0).
+➤ YN0060: │ nx is listed by your project with version 22.3.3 (p352099), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ storybook is listed by your project with version 10.1.11 (p4d608b), which doesn't satisfy what @storybook/core-server and other dependencies request (but they have non-overlapping ranges!).
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0060: │ @angular/core
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0060: │ typescript is listed by your project with version 5.9.3 (pe02ad5), which doesn't satisfy what @typescript-eslint/utils (via angular-eslint) and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @angular-devkit/architect (p8e6ee5), requested by @storybook/angular.
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0060: │ typescript is
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @nx/devkit (p506daa), requested by @nx-tools/nx-container and other dependencies.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @typescript-eslint/parser (p833417), requested by @nx/eslint-plugin.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide dotenv (pe82e7e), requested by @nx-tools/nx-container.
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0002: │ @nx-stolfo/so
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide jsdom (p99a9cf), requested by jest-preset-angular.
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0002: │ @nx-stolfo/so
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0086: │ Some peer dep
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0000: └ Completed
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: └ Completed
+[17:13:29.270] [INFO] Installing dependencies...: ➤ YN0000: ┌ Fetch step
+
+[17:13:29.270] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: ┌ Fetch step
+[17:13:30.024] [INFO] Installing dependencies...: ➤ YN0013: │ 18 packages were added to the project (+ 3.33 MiB).
+
+[17:13:30.024] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0013: │ 18 packages w
+[17:13:30.024] [INFO] Installing dependencies...: ➤ YN0000: └ Completed in 0s 753ms
+
+[17:13:30.024] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: └ Completed in 
+[17:13:30.065] [INFO] Installing dependencies...: ➤ YN0000: ┌ Link step
+
+[17:13:30.065] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: ┌ Link step
+[17:13:33.237] [INFO] Installing dependencies...: ➤ YN0007: │ esbuild@npm:0.26.0 must be built because it never has been before or the last one failed
+
+[17:13:33.237] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ esbuild@npm:0
+[17:13:33.237] [INFO] Installing dependencies...: ➤ YN0007: │ @swc/core@npm:1.10.4 [3ad1d] must be built because it never has been before or the last one failed
+
+[17:13:33.237] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ @swc/core@npm
+[17:13:33.237] [INFO] Installing dependencies...: ➤ YN0007: │ @swc/core@npm:1.5.29 [d88cf] must be built because it never has been before or the last one failed
+
+[17:13:33.237] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ @swc/core@npm
+[17:13:33.237] [INFO] Installing dependencies...: ➤ YN0007: │ esbuild@npm:0.19.12 must be built because it never has been before or the last one failed
+
+[17:13:33.237] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ esbuild@npm:0
+[17:13:33.237] [INFO] Installing dependencies...: ➤ YN0007: │ esbuild@npm:0.27.2 must be built because it never has been before or the last one failed
+
+[17:13:33.237] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ esbuild@npm:0
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ nx@npm:22.3.3 [1dc10] must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ nx@npm:22.3.3
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ unrs-resolver@npm:1.11.1 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ unrs-resolver
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ @parcel/watcher@npm:2.5.0 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ @parcel/watch
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ esbuild@npm:0.25.1 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ esbuild@npm:0
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ @prisma/engines@npm:6.1.0 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ @prisma/engin
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ less@npm:4.5.1 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ less@npm:4.5.
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ msgpackr-extract@npm:3.0.3 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ msgpackr-extr
+[17:13:33.238] [INFO] Installing dependencies...: ➤ YN0007: │ core-js-pure@npm:3.39.0 must be built because it never has been before or the last one failed
+
+[17:13:33.238] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ core-js-pure@
+[17:13:34.236] [INFO] Installing dependencies...: ➤ YN0007: │ prisma@npm:6.1.0 must be built because it never has been before or the last one failed
+
+[17:13:34.236] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ prisma@npm:6.
+[17:13:34.236] [INFO] Installing dependencies...: ➤ YN0007: │ lmdb@npm:3.4.3 must be built because it never has been before or the last one failed
+
+[17:13:34.236] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ lmdb@npm:3.4.
+[17:13:34.440] [INFO] Installing dependencies...: ➤ YN0007: │ @prisma/client@npm:6.1.0 [d88cf] must be built because it never has been before or the last one failed
+
+[17:13:34.440] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0007: │ @prisma/clien
+[17:13:34.815] [INFO] Installing dependencies...: ➤ YN0000: └ Completed in 4s 750ms
+
+[17:13:34.815] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: └ Completed in 
+[17:13:34.932] [INFO] Installing dependencies...: ➤ YN0000: · Done with warnings in 7s 772ms
+
+[17:13:34.932] [INFO] install-dependencies-spinner: Installing dependencies...: ➤ YN0000: · Done with war
+[17:13:34.964] [INFO] Dependencies installed
+[17:13:34.964] [INFO] install-dependencies-spinner-stop: Dependencies installed
+[17:13:34.965] [WARN] Since you are in a monorepo, we advise you to deduplicate your dependencies. We can do this for you but it might take some time.
+[17:13:34.965] [INFO] Deduplicating dependencies...
+[17:13:34.965] [INFO] Deduplicating dependencies...
+[17:13:34.965] [DEBUG] Executing command: yarn dedupe
+[17:13:35.276] [INFO] ➤ YN0000: ┌ Deduplication step
+[17:13:35.276] [INFO] ➤ YN0000: ┌ Deduplication step
+[17:13:35.357] [INFO] ➤ YN0000: │ @babel/compat-data@npm:^7.22.6 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+[17:13:35.357] [INFO] ➤ YN0000: │ @babel/compat-data@npm:^7.22.6 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+[17:13:35.358] [INFO] ➤ YN0000: │ @babel/compat-data@npm:^7.25.9 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+➤ YN0000: │ @babel/compat-data@npm:^7.26.0 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.0.0 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.10.4 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.12.13 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.14.5 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.18.6 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.22.5 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.25.9 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.8.0 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-string-parser@npm:^7.25.9 can be deduped from @babel/helper-string-parser@npm:7.25.9 to @babel/helper-string-parser@npm:7.27.1
+➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.25.9 can be deduped from @babel/helper-validator-identifier@npm:7.25.9 to @babel/helper-validator-identifier@npm:7.28.5
+➤ YN0000: │ @babel/helper-validator-option@npm:^7.25.9 can be deduped from @babel/helper-validator-option@npm:7.25.9 to @babel/helper-validator-option@npm:7.27.1
+➤ YN0000: │ @babel/runtime@npm:^7.12.5 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @babel/runtime@npm:^7.22.6 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @babel/runtime@npm:^7.8.4 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @eslint/js@npm:^9.8.0 can be deduped from @eslint/js@npm:9.17.0 to @eslint/js@npm:9.39.2
+➤ YN0000: │ @eslint/object-schema@npm:^2.1.5 can be deduped from @eslint/object-schema@npm:2.1.5 to @eslint/object-schema@npm:2.1.7
+➤ YN0000: │ @humanwhocodes/retry@npm:^0.4.1 can be deduped from @humanwhocodes/retry@npm:0.4.1 to @humanwhocodes/retry@npm:0.4.3
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.10 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.14 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.5.0 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+[17:13:35.358] [INFO] ➤ YN0000: │ @babel/compat-data@npm:^7.25.9 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+➤ YN0000: │ @babel/compat-data@npm:^7.26.0 can be deduped from @babel/compat-data@npm:7.26.3 to @babel/compat-data@npm:7.28.5
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.0.0 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.10.4 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.12.13 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.14.5 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.18.6 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.22.5 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.25.9 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-plugin-utils@npm:^7.8.0 can be deduped from @babel/helper-plugin-utils@npm:7.25.9 to @babel/helper-plugin-utils@npm:7.27.1
+➤ YN0000: │ @babel/helper-string-parser@npm:^7.25.9 can be deduped from @babel/helper-string-parser@npm:7.25.9 to @babel/helper-string-parser@npm:7.27.1
+➤ YN0000: │ @babel/helper-validator-identifier@npm:^7.25.9 can be deduped from @babel/helper-validator-identifier@npm:7.25.9 to @babel/helper-validator-identifier@npm:7.28.5
+➤ YN0000: │ @babel/helper-validator-option@npm:^7.25.9 can be deduped from @babel/helper-validator-option@npm:7.25.9 to @babel/helper-validator-option@npm:7.27.1
+➤ YN0000: │ @babel/runtime@npm:^7.12.5 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @babel/runtime@npm:^7.22.6 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @babel/runtime@npm:^7.8.4 can be deduped from @babel/runtime@npm:7.26.0 to @babel/runtime@npm:7.28.4
+➤ YN0000: │ @eslint/js@npm:^9.8.0 can be deduped from @eslint/js@npm:9.17.0 to @eslint/js@npm:9.39.2
+➤ YN0000: │ @eslint/object-schema@npm:^2.1.5 can be deduped from @eslint/object-schema@npm:2.1.5 to @eslint/object-schema@npm:2.1.7
+➤ YN0000: │ @humanwhocodes/retry@npm:^0.4.1 can be deduped from @humanwhocodes/retry@npm:0.4.1 to @humanwhocodes/retry@npm:0.4.3
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.10 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.4.14 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+➤ YN0000: │ @jridgewell/sourcemap-codec@npm:^1.5.0 can be deduped from @jridgewell/sourcemap-codec@npm:1.5.0 to @jridgewell/sourcemap-codec@npm:1.5.5
+[17:13:35.361] [INFO] ➤ YN0000: │ @rspack/lite-tapable@npm:^1.0.0 can be deduped from @rspack/lite-tapable@npm:1.0.1 to @rspack/lite-tapable@npm:1.1.0
+➤ YN0000: │ @testing-library/user-event@npm:^14.4.0 can be deduped from @testing-library/user-event@npm:14.5.2 to @testing-library/user-event@npm:14.6.1
+➤ YN0000: │ @types/estree@npm:* can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @types/estree@npm:^1.0.0 can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @types/estree@npm:^1.0.6 can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @typescript-eslint/types@npm:^8.0.0 can be deduped from @typescript-eslint/types@npm:8.18.2 to @typescript-eslint/types@npm:8.50.1
+➤ YN0000: │ acorn@npm:^8.11.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.14.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.4.1 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.5.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.8.2 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.9.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ caniuse-lite@npm:^1.0.0 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ caniuse-lite@npm:^1.0.30001646 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ caniuse-lite@npm:^1.0.30001688 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ chalk@npm:^5.2.0 can be deduped from chalk@npm:5.4.1 to chalk@npm:5.6.2
+➤ YN0000: │ chalk@npm:^5.4.1 can be deduped from chalk@npm:5.4.1 to chalk@npm:5.6.2
+➤ YN0000: │ ci-info@npm:^4.0.0 can be deduped from ci-info@npm:4.1.0 to ci-info@npm:4.3.1
+➤ YN0000: │ electron-to-chromium@npm:^1.5.73 can be deduped from electron-to-chromium@npm:1.5.76 to electron-to-chromium@npm:1.5.267
+➤ YN0000: │ eslint-visitor-keys@npm:^4.2.0 can be deduped from eslint-visitor-keys@npm:4.2.0 to eslint-visitor-keys@npm:4.2.1
+➤ YN0000: │ get-east-asian-width@npm:^1.0.0 can be deduped from get-east-asian-width@npm:1.3.0 to get-east-asian-width@npm:1.4.0
+➤ YN0000: │ loader-runner@npm:^4.2.0 can be deduped from loader-runner@npm:4.3.0 to loader-runner@npm:4.3.1
+➤ YN0000: │ loupe@npm:^3.1.0 can be deduped from loupe@npm:3.1.2 to loupe@npm:3.2.1
+➤ YN0000: │ lru-cache@npm:^11.0.0 can be deduped from lru-cache@npm:11.0.2 to lru-cache@npm:11.2.4
+➤ YN0000: │ mime-db@npm:>= 1.43.0 < 2 can be deduped from mime-db@npm:1.53.0 to mime-db@npm:1.54.0
+➤ YN0000: │ nanoid@npm:^3.3.7 can be deduped from nanoid@npm:3.3.8 to nanoid@npm:3.3.11
+➤ YN0000: │ nanoid@npm:^3.3.8 can be deduped from nanoid@npm:3.3.9 to nanoid@npm:3.3.11
+➤ YN0000: │ node-releases@npm:^2.0.19 can be deduped from node-releases@npm:2.0.19 to node-releases@npm:2.0.27
+➤ YN0000: │ picomatch@npm:^4.0.2 can be deduped from picomatch@npm:4.0.2 to picomatch@npm:4.0.3
+➤ YN0000: │ pirates@npm:^4.0.1 can be deduped from pirates@npm:4.0.6 to pirates@npm:4.0.7
+➤ YN0000: │ pirates@npm:^4.0.6 can be deduped from pirates@npm:4.0.6 to pirates@npm:4.0.7
+➤ YN0000: │ semver@npm:^7.0.0 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.1.1 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.3.4 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.3.5 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.5.3 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.5.4 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.0 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.2 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.3 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ source-map@npm:^0.7.4 can be deduped from source-map@npm:0.7.4 to source-map@npm:0.7.6
+➤ YN0000: │ tapable@npm:^2.0.0 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.1.1 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.2.0 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.2.1 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tree-dump@npm:^1.0.1 can be deduped from tree-dump@npm:1.0.2 to tree-dump@npm:1.1.0
+➤ YN0000: │ unicode-match-property-value-ecmascript@npm:^2.1.0 can be deduped from unicode-match-property-value-ecmascript@npm:2.2.0 to unicode-match-property-value-ecmascript@npm:2.2.1
+➤ YN0000: │ webpack-sources@npm:^3.0.0 can be deduped from webpack-sources@npm:3.2.3 to webpack-sources@npm:3.3.3
+➤ YN0000: │ webpack-sources@npm:^3.2.3 can be deduped from webpack-sources@npm:3.2.3 to webpack-sources@npm:3.3.3
+[17:13:35.361] [INFO] ➤ YN0000: │ @rspack/lite-tapable@npm:^1.0.0 can be deduped from @rspack/lite-tapable@npm:1.0.1 to @rspack/lite-tapable@npm:1.1.0
+➤ YN0000: │ @testing-library/user-event@npm:^14.4.0 can be deduped from @testing-library/user-event@npm:14.5.2 to @testing-library/user-event@npm:14.6.1
+➤ YN0000: │ @types/estree@npm:* can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @types/estree@npm:^1.0.0 can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @types/estree@npm:^1.0.6 can be deduped from @types/estree@npm:1.0.6 to @types/estree@npm:1.0.8
+➤ YN0000: │ @typescript-eslint/types@npm:^8.0.0 can be deduped from @typescript-eslint/types@npm:8.18.2 to @typescript-eslint/types@npm:8.50.1
+➤ YN0000: │ acorn@npm:^8.11.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.14.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.4.1 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.5.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.8.2 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ acorn@npm:^8.9.0 can be deduped from acorn@npm:8.14.0 to acorn@npm:8.15.0
+➤ YN0000: │ caniuse-lite@npm:^1.0.0 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ caniuse-lite@npm:^1.0.30001646 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ caniuse-lite@npm:^1.0.30001688 can be deduped from caniuse-lite@npm:1.0.30001690 to caniuse-lite@npm:1.0.30001761
+➤ YN0000: │ chalk@npm:^5.2.0 can be deduped from chalk@npm:5.4.1 to chalk@npm:5.6.2
+➤ YN0000: │ chalk@npm:^5.4.1 can be deduped from chalk@npm:5.4.1 to chalk@npm:5.6.2
+➤ YN0000: │ ci-info@npm:^4.0.0 can be deduped from ci-info@npm:4.1.0 to ci-info@npm:4.3.1
+➤ YN0000: │ electron-to-chromium@npm:^1.5.73 can be deduped from electron-to-chromium@npm:1.5.76 to electron-to-chromium@npm:1.5.267
+➤ YN0000: │ eslint-visitor-keys@npm:^4.2.0 can be deduped from eslint-visitor-keys@npm:4.2.0 to eslint-visitor-keys@npm:4.2.1
+➤ YN0000: │ get-east-asian-width@npm:^1.0.0 can be deduped from get-east-asian-width@npm:1.3.0 to get-east-asian-width@npm:1.4.0
+➤ YN0000: │ loader-runner@npm:^4.2.0 can be deduped from loader-runner@npm:4.3.0 to loader-runner@npm:4.3.1
+➤ YN0000: │ loupe@npm:^3.1.0 can be deduped from loupe@npm:3.1.2 to loupe@npm:3.2.1
+➤ YN0000: │ lru-cache@npm:^11.0.0 can be deduped from lru-cache@npm:11.0.2 to lru-cache@npm:11.2.4
+➤ YN0000: │ mime-db@npm:>= 1.43.0 < 2 can be deduped from mime-db@npm:1.53.0 to mime-db@npm:1.54.0
+➤ YN0000: │ nanoid@npm:^3.3.7 can be deduped from nanoid@npm:3.3.8 to nanoid@npm:3.3.11
+➤ YN0000: │ nanoid@npm:^3.3.8 can be deduped from nanoid@npm:3.3.9 to nanoid@npm:3.3.11
+➤ YN0000: │ node-releases@npm:^2.0.19 can be deduped from node-releases@npm:2.0.19 to node-releases@npm:2.0.27
+➤ YN0000: │ picomatch@npm:^4.0.2 can be deduped from picomatch@npm:4.0.2 to picomatch@npm:4.0.3
+➤ YN0000: │ pirates@npm:^4.0.1 can be deduped from pirates@npm:4.0.6 to pirates@npm:4.0.7
+➤ YN0000: │ pirates@npm:^4.0.6 can be deduped from pirates@npm:4.0.6 to pirates@npm:4.0.7
+➤ YN0000: │ semver@npm:^7.0.0 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.1.1 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.3.4 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.3.5 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.5.3 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.5.4 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.0 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.2 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ semver@npm:^7.6.3 can be deduped from semver@npm:7.6.3 to semver@npm:7.7.3
+➤ YN0000: │ source-map@npm:^0.7.4 can be deduped from source-map@npm:0.7.4 to source-map@npm:0.7.6
+➤ YN0000: │ tapable@npm:^2.0.0 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.1.1 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.2.0 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tapable@npm:^2.2.1 can be deduped from tapable@npm:2.2.1 to tapable@npm:2.3.0
+➤ YN0000: │ tree-dump@npm:^1.0.1 can be deduped from tree-dump@npm:1.0.2 to tree-dump@npm:1.1.0
+➤ YN0000: │ unicode-match-property-value-ecmascript@npm:^2.1.0 can be deduped from unicode-match-property-value-ecmascript@npm:2.2.0 to unicode-match-property-value-ecmascript@npm:2.2.1
+➤ YN0000: │ webpack-sources@npm:^3.0.0 can be deduped from webpack-sources@npm:3.2.3 to webpack-sources@npm:3.3.3
+➤ YN0000: │ webpack-sources@npm:^3.2.3 can be deduped from webpack-sources@npm:3.2.3 to webpack-sources@npm:3.3.3
+[17:13:35.369] [INFO] ➤ YN0000: │ @babel/helper-annotate-as-pure@npm:^7.25.9 can be deduped from @babel/helper-annotate-as-pure@npm:7.25.9 to @babel/helper-annotate-as-pure@npm:7.27.3
+[17:13:35.369] [INFO] ➤ YN0000: │ @babel/helper-annotate-as-pure@npm:^7.25.9 can be deduped from @babel/helper-annotate-as-pure@npm:7.25.9 to @babel/helper-annotate-as-pure@npm:7.27.3
+[17:13:35.370] [INFO] ➤ YN0000: │ @babel/helper-optimise-call-expression@npm:^7.25.9 can be deduped from @babel/helper-optimise-call-expression@npm:7.25.9 to @babel/helper-optimise-call-expression@npm:7.27.1
+➤ YN0000: │ @babel/parser@npm:^7.1.0 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.20.7 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.23.9 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.25.9 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.26.0 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.26.3 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:7.25.9 to @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:7.27.1
+➤ YN0000: │ @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:7.25.9 to @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-assertions@npm:^7.26.0 can be deduped from @babel/plugin-syntax-import-assertions@npm:7.26.0 to @babel/plugin-syntax-import-assertions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-attributes@npm:^7.24.7 can be deduped from @babel/plugin-syntax-import-attributes@npm:7.26.0 to @babel/plugin-syntax-import-attributes@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-attributes@npm:^7.26.0 can be deduped from @babel/plugin-syntax-import-attributes@npm:7.26.0 to @babel/plugin-syntax-import-attributes@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-jsx@npm:^7.25.9 can be deduped from @babel/plugin-syntax-jsx@npm:7.25.9 to @babel/plugin-syntax-jsx@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-typescript@npm:^7.25.9 can be deduped from @babel/plugin-syntax-typescript@npm:7.25.9 to @babel/plugin-syntax-typescript@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-typescript@npm:^7.3.3 can be deduped from @babel/plugin-syntax-typescript@npm:7.25.9 to @babel/plugin-syntax-typescript@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-arrow-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-arrow-functions@npm:7.25.9 to @babel/plugin-transform-arrow-functions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-block-scoped-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-block-scoped-functions@npm:7.25.9 to @babel/plugin-transform-block-scoped-functions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-block-scoping@npm:^7.25.9 can be deduped from @babel/plugin-transform-block-scoping@npm:7.25.9 to @babel/plugin-transform-block-scoping@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-duplicate-keys@npm:^7.25.9 can be deduped from @babel/plugin-transform-duplicate-keys@npm:7.25.9 to @babel/plugin-transform-duplicate-keys@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-dynamic-import@npm:^7.25.9 can be deduped from @babel/plugin-transform-dynamic-import@npm:7.25.9 to @babel/plugin-transform-dynamic-import@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-exponentiation-operator@npm:^7.25.9 can be deduped from @babel/plugin-transform-exponentiation-operator@npm:7.26.3 to @babel/plugin-transform-exponentiation-operator@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-export-namespace-from@npm:^7.25.9 can be deduped from @babel/plugin-transform-export-namespace-from@npm:7.25.9 to @babel/plugin-transform-export-namespace-from@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-json-strings@npm:^7.25.9 can be deduped from @babel/plugin-transform-json-strings@npm:7.25.9 to @babel/plugin-transform-json-strings@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-literals@npm:7.25.9 to @babel/plugin-transform-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-logical-assignment-operators@npm:^7.25.9 can be deduped from @babel/plugin-transform-logical-assignment-operators@npm:7.25.9 to @babel/plugin-transform-logical-assignment-operators@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-member-expression-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-member-expression-literals@npm:7.25.9 to @babel/plugin-transform-member-expression-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-new-target@npm:^7.25.9 can be deduped from @babel/plugin-transform-new-target@npm:7.25.9 to @babel/plugin-transform-new-target@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-nullish-coalescing-operator@npm:^7.25.9 can be deduped from @babel/plugin-transform-nullish-coalescing-operator@npm:7.25.9 to @babel/plugin-transform-nullish-coalescing-operator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-numeric-separator@npm:^7.25.9 can be deduped from @babel/plugin-transform-numeric-separator@npm:7.25.9 to @babel/plugin-transform-numeric-separator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-optional-catch-binding@npm:^7.25.9 can be deduped from @babel/plugin-transform-optional-catch-binding@npm:7.25.9 to @babel/plugin-transform-optional-catch-binding@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-parameters@npm:^7.25.9 can be deduped from @babel/plugin-transform-parameters@npm:7.25.9 to @babel/plugin-transform-parameters@npm:7.27.7
+➤ YN0000: │ @babel/plugin-transform-property-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-property-literals@npm:7.25.9 to @babel/plugin-transform-property-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-regenerator@npm:^7.25.9 can be deduped from @babel/plugin-transform-regenerator@npm:7.25.9 to @babel/plugin-transform-regenerator@npm:7.28.4
+➤ YN0000: │ @babel/plugin-transform-reserved-words@npm:^7.25.9 can be deduped from @babel/plugin-transform-reserved-words@npm:7.25.9 to @babel/plugin-transform-reserved-words@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-shorthand-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-shorthand-properties@npm:7.25.9 to @babel/plugin-transform-shorthand-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-sticky-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-sticky-regex@npm:7.25.9 to @babel/plugin-transform-sticky-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-template-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-template-literals@npm:7.25.9 to @babel/plugin-transform-template-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-typeof-symbol@npm:^7.25.9 can be deduped from @babel/plugin-transform-typeof-symbol@npm:7.25.9 to @babel/plugin-transform-typeof-symbol@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-escapes@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-escapes@npm:7.25.9 to @babel/plugin-transform-unicode-escapes@npm:7.27.1
+➤ YN0000: │ @emnapi/runtime@npm:^1.1.0 can be deduped from @emnapi/runtime@npm:1.3.1 to @emnapi/runtime@npm:1.7.1
+➤ YN0000: │ @eslint-community/eslint-utils@npm:^4.2.0 can be deduped from @eslint-community/eslint-utils@npm:4.4.1 to @eslint-community/eslint-utils@npm:4.9.0
+➤ YN0000: │ @eslint-community/eslint-utils@npm:^4.4.0 can be deduped from @eslint-community/eslint-utils@npm:4.4.1 to @eslint-community/eslint-utils@npm:4.9.0
+[17:13:35.370] [INFO] ➤ YN0000: │ @babel/helper-optimise-call-expression@npm:^7.25.9 can be deduped from @babel/helper-optimise-call-expression@npm:7.25.9 to @babel/helper-optimise-call-expression@npm:7.27.1
+➤ YN0000: │ @babel/parser@npm:^7.1.0 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.20.7 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.23.9 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.25.9 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.26.0 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/parser@npm:^7.26.3 can be deduped from @babel/parser@npm:7.26.3 to @babel/parser@npm:7.28.5
+➤ YN0000: │ @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:7.25.9 to @babel/plugin-bugfix-safari-class-field-initializer-scope@npm:7.27.1
+➤ YN0000: │ @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:7.25.9 to @babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-assertions@npm:^7.26.0 can be deduped from @babel/plugin-syntax-import-assertions@npm:7.26.0 to @babel/plugin-syntax-import-assertions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-attributes@npm:^7.24.7 can be deduped from @babel/plugin-syntax-import-attributes@npm:7.26.0 to @babel/plugin-syntax-import-attributes@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-import-attributes@npm:^7.26.0 can be deduped from @babel/plugin-syntax-import-attributes@npm:7.26.0 to @babel/plugin-syntax-import-attributes@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-jsx@npm:^7.25.9 can be deduped from @babel/plugin-syntax-jsx@npm:7.25.9 to @babel/plugin-syntax-jsx@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-typescript@npm:^7.25.9 can be deduped from @babel/plugin-syntax-typescript@npm:7.25.9 to @babel/plugin-syntax-typescript@npm:7.27.1
+➤ YN0000: │ @babel/plugin-syntax-typescript@npm:^7.3.3 can be deduped from @babel/plugin-syntax-typescript@npm:7.25.9 to @babel/plugin-syntax-typescript@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-arrow-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-arrow-functions@npm:7.25.9 to @babel/plugin-transform-arrow-functions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-block-scoped-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-block-scoped-functions@npm:7.25.9 to @babel/plugin-transform-block-scoped-functions@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-block-scoping@npm:^7.25.9 can be deduped from @babel/plugin-transform-block-scoping@npm:7.25.9 to @babel/plugin-transform-block-scoping@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-duplicate-keys@npm:^7.25.9 can be deduped from @babel/plugin-transform-duplicate-keys@npm:7.25.9 to @babel/plugin-transform-duplicate-keys@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-dynamic-import@npm:^7.25.9 can be deduped from @babel/plugin-transform-dynamic-import@npm:7.25.9 to @babel/plugin-transform-dynamic-import@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-exponentiation-operator@npm:^7.25.9 can be deduped from @babel/plugin-transform-exponentiation-operator@npm:7.26.3 to @babel/plugin-transform-exponentiation-operator@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-export-namespace-from@npm:^7.25.9 can be deduped from @babel/plugin-transform-export-namespace-from@npm:7.25.9 to @babel/plugin-transform-export-namespace-from@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-json-strings@npm:^7.25.9 can be deduped from @babel/plugin-transform-json-strings@npm:7.25.9 to @babel/plugin-transform-json-strings@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-literals@npm:7.25.9 to @babel/plugin-transform-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-logical-assignment-operators@npm:^7.25.9 can be deduped from @babel/plugin-transform-logical-assignment-operators@npm:7.25.9 to @babel/plugin-transform-logical-assignment-operators@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-member-expression-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-member-expression-literals@npm:7.25.9 to @babel/plugin-transform-member-expression-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-new-target@npm:^7.25.9 can be deduped from @babel/plugin-transform-new-target@npm:7.25.9 to @babel/plugin-transform-new-target@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-nullish-coalescing-operator@npm:^7.25.9 can be deduped from @babel/plugin-transform-nullish-coalescing-operator@npm:7.25.9 to @babel/plugin-transform-nullish-coalescing-operator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-numeric-separator@npm:^7.25.9 can be deduped from @babel/plugin-transform-numeric-separator@npm:7.25.9 to @babel/plugin-transform-numeric-separator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-optional-catch-binding@npm:^7.25.9 can be deduped from @babel/plugin-transform-optional-catch-binding@npm:7.25.9 to @babel/plugin-transform-optional-catch-binding@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-parameters@npm:^7.25.9 can be deduped from @babel/plugin-transform-parameters@npm:7.25.9 to @babel/plugin-transform-parameters@npm:7.27.7
+➤ YN0000: │ @babel/plugin-transform-property-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-property-literals@npm:7.25.9 to @babel/plugin-transform-property-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-regenerator@npm:^7.25.9 can be deduped from @babel/plugin-transform-regenerator@npm:7.25.9 to @babel/plugin-transform-regenerator@npm:7.28.4
+➤ YN0000: │ @babel/plugin-transform-reserved-words@npm:^7.25.9 can be deduped from @babel/plugin-transform-reserved-words@npm:7.25.9 to @babel/plugin-transform-reserved-words@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-shorthand-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-shorthand-properties@npm:7.25.9 to @babel/plugin-transform-shorthand-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-sticky-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-sticky-regex@npm:7.25.9 to @babel/plugin-transform-sticky-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-template-literals@npm:^7.25.9 can be deduped from @babel/plugin-transform-template-literals@npm:7.25.9 to @babel/plugin-transform-template-literals@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-typeof-symbol@npm:^7.25.9 can be deduped from @babel/plugin-transform-typeof-symbol@npm:7.25.9 to @babel/plugin-transform-typeof-symbol@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-escapes@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-escapes@npm:7.25.9 to @babel/plugin-transform-unicode-escapes@npm:7.27.1
+➤ YN0000: │ @emnapi/runtime@npm:^1.1.0 can be deduped from @emnapi/runtime@npm:1.3.1 to @emnapi/runtime@npm:1.7.1
+➤ YN0000: │ @eslint-community/eslint-utils@npm:^4.2.0 can be deduped from @eslint-community/eslint-utils@npm:4.4.1 to @eslint-community/eslint-utils@npm:4.9.0
+➤ YN0000: │ @eslint-community/eslint-utils@npm:^4.4.0 can be deduped from @eslint-community/eslint-utils@npm:4.4.1 to @eslint-community/eslint-utils@npm:4.9.0
+[17:13:35.372] [INFO] ➤ YN0000: │ @types/yargs@npm:^17.0.8 can be deduped from @types/yargs@npm:17.0.33 to @types/yargs@npm:17.0.35
+➤ YN0000: │ babel-plugin-polyfill-regenerator@npm:^0.6.1 can be deduped from babel-plugin-polyfill-regenerator@npm:0.6.3 to babel-plugin-polyfill-regenerator@npm:0.6.5
+➤ YN0000: │ core-js-compat@npm:^3.38.0 can be deduped from core-js-compat@npm:3.39.0 to core-js-compat@npm:3.47.0
+➤ YN0000: │ core-js-compat@npm:^3.38.1 can be deduped from core-js-compat@npm:3.39.0 to core-js-compat@npm:3.47.0
+➤ YN0000: │ debug@npm:4 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.1.0 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.1.1 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.1 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.2 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.4 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.6 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.4.0 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ js-yaml@npm:^4.1.0 can be deduped from js-yaml@npm:4.1.0 to js-yaml@npm:4.1.1
+➤ YN0000: │ magic-string@npm:^0.30.5 can be deduped from magic-string@npm:0.30.17 to magic-string@npm:0.30.21
+➤ YN0000: │ magic-string@npm:~0.30.2 can be deduped from magic-string@npm:0.30.17 to magic-string@npm:0.30.21
+➤ YN0000: │ memfs@npm:^3.4.12 can be deduped from memfs@npm:3.5.3 to memfs@npm:3.6.0
+➤ YN0000: │ minimatch@npm:^10.0.0 can be deduped from minimatch@npm:10.0.1 to minimatch@npm:10.1.1
+➤ YN0000: │ minizlib@npm:^3.0.1 can be deduped from minizlib@npm:3.0.1 to minizlib@npm:3.1.0
+➤ YN0000: │ parse5@npm:^7.0.0 can be deduped from parse5@npm:7.2.1 to parse5@npm:7.3.0
+➤ YN0000: │ qs@npm:^6.4.0 can be deduped from qs@npm:6.13.1 to qs@npm:6.14.0
+➤ YN0000: │ regenerate-unicode-properties@npm:^10.2.0 can be deduped from regenerate-unicode-properties@npm:10.2.0 to regenerate-unicode-properties@npm:10.2.2
+➤ YN0000: │ rxjs@npm:^7.8.0 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ rxjs@npm:^7.8.1 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ rxjs@npm:~7.8.0 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ strip-ansi@npm:^7.0.1 can be deduped from strip-ansi@npm:7.1.0 to strip-ansi@npm:7.1.2
+➤ YN0000: │ strip-ansi@npm:^7.1.0 can be deduped from strip-ansi@npm:7.1.0 to strip-ansi@npm:7.1.2
+[17:13:35.372] [INFO] ➤ YN0000: │ @types/yargs@npm:^17.0.8 can be deduped from @types/yargs@npm:17.0.33 to @types/yargs@npm:17.0.35
+➤ YN0000: │ babel-plugin-polyfill-regenerator@npm:^0.6.1 can be deduped from babel-plugin-polyfill-regenerator@npm:0.6.3 to babel-plugin-polyfill-regenerator@npm:0.6.5
+➤ YN0000: │ core-js-compat@npm:^3.38.0 can be deduped from core-js-compat@npm:3.39.0 to core-js-compat@npm:3.47.0
+➤ YN0000: │ core-js-compat@npm:^3.38.1 can be deduped from core-js-compat@npm:3.39.0 to core-js-compat@npm:3.47.0
+➤ YN0000: │ debug@npm:4 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.1.0 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.1.1 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.1 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.2 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.4 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.3.6 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ debug@npm:^4.4.0 can be deduped from debug@npm:4.4.0 to debug@npm:4.4.3
+➤ YN0000: │ js-yaml@npm:^4.1.0 can be deduped from js-yaml@npm:4.1.0 to js-yaml@npm:4.1.1
+➤ YN0000: │ magic-string@npm:^0.30.5 can be deduped from magic-string@npm:0.30.17 to magic-string@npm:0.30.21
+➤ YN0000: │ magic-string@npm:~0.30.2 can be deduped from magic-string@npm:0.30.17 to magic-string@npm:0.30.21
+➤ YN0000: │ memfs@npm:^3.4.12 can be deduped from memfs@npm:3.5.3 to memfs@npm:3.6.0
+➤ YN0000: │ minimatch@npm:^10.0.0 can be deduped from minimatch@npm:10.0.1 to minimatch@npm:10.1.1
+➤ YN0000: │ minizlib@npm:^3.0.1 can be deduped from minizlib@npm:3.0.1 to minizlib@npm:3.1.0
+➤ YN0000: │ parse5@npm:^7.0.0 can be deduped from parse5@npm:7.2.1 to parse5@npm:7.3.0
+➤ YN0000: │ qs@npm:^6.4.0 can be deduped from qs@npm:6.13.1 to qs@npm:6.14.0
+➤ YN0000: │ regenerate-unicode-properties@npm:^10.2.0 can be deduped from regenerate-unicode-properties@npm:10.2.0 to regenerate-unicode-properties@npm:10.2.2
+➤ YN0000: │ rxjs@npm:^7.8.0 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ rxjs@npm:^7.8.1 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ rxjs@npm:~7.8.0 can be deduped from rxjs@npm:7.8.1 to rxjs@npm:7.8.2
+➤ YN0000: │ strip-ansi@npm:^7.0.1 can be deduped from strip-ansi@npm:7.1.0 to strip-ansi@npm:7.1.2
+➤ YN0000: │ strip-ansi@npm:^7.1.0 can be deduped from strip-ansi@npm:7.1.0 to strip-ansi@npm:7.1.2
+[17:13:35.374] [INFO] ➤ YN0000: │ @babel/helper-member-expression-to-functions@npm:^7.25.9 can be deduped from @babel/helper-member-expression-to-functions@npm:7.25.9 to @babel/helper-member-expression-to-functions@npm:7.28.5
+➤ YN0000: │ @babel/helper-module-imports@npm:^7.25.9 can be deduped from @babel/helper-module-imports@npm:7.25.9 to @babel/helper-module-imports@npm:7.27.1
+➤ YN0000: │ @babel/helper-skip-transparent-expression-wrappers@npm:^7.25.9 can be deduped from @babel/helper-skip-transparent-expression-wrappers@npm:7.25.9 to @babel/helper-skip-transparent-expression-wrappers@npm:7.27.1
+➤ YN0000: │ @babel/helpers@npm:^7.26.0 can be deduped from @babel/helpers@npm:7.26.0 to @babel/helpers@npm:7.28.4
+➤ YN0000: │ @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:7.25.9 to @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:7.28.5
+➤ YN0000: │ @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:7.25.9 to @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:7.28.3
+➤ YN0000: │ @babel/plugin-transform-class-properties@npm:^7.22.5 can be deduped from @babel/plugin-transform-class-properties@npm:7.25.9 to @babel/plugin-transform-class-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-class-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-class-properties@npm:7.25.9 to @babel/plugin-transform-class-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-class-static-block@npm:^7.26.0 can be deduped from @babel/plugin-transform-class-static-block@npm:7.26.0 to @babel/plugin-transform-class-static-block@npm:7.28.3
+➤ YN0000: │ @babel/plugin-transform-computed-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-computed-properties@npm:7.25.9 to @babel/plugin-transform-computed-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-destructuring@npm:^7.25.9 can be deduped from @babel/plugin-transform-destructuring@npm:7.25.9 to @babel/plugin-transform-destructuring@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-dotall-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-dotall-regex@npm:7.25.9 to @babel/plugin-transform-dotall-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:7.25.9 to @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-for-of@npm:^7.25.9 can be deduped from @babel/plugin-transform-for-of@npm:7.25.9 to @babel/plugin-transform-for-of@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-amd@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-amd@npm:7.25.9 to @babel/plugin-transform-modules-amd@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-commonjs@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-commonjs@npm:7.26.3 to @babel/plugin-transform-modules-commonjs@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-umd@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-umd@npm:7.25.9 to @babel/plugin-transform-modules-umd@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-named-capturing-groups-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-named-capturing-groups-regex@npm:7.25.9 to @babel/plugin-transform-named-capturing-groups-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-object-super@npm:^7.25.9 can be deduped from @babel/plugin-transform-object-super@npm:7.25.9 to @babel/plugin-transform-object-super@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-optional-chaining@npm:^7.25.9 can be deduped from @babel/plugin-transform-optional-chaining@npm:7.25.9 to @babel/plugin-transform-optional-chaining@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-private-methods@npm:^7.25.9 can be deduped from @babel/plugin-transform-private-methods@npm:7.25.9 to @babel/plugin-transform-private-methods@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-regexp-modifiers@npm:^7.26.0 can be deduped from @babel/plugin-transform-regexp-modifiers@npm:7.26.0 to @babel/plugin-transform-regexp-modifiers@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-spread@npm:^7.25.9 can be deduped from @babel/plugin-transform-spread@npm:7.25.9 to @babel/plugin-transform-spread@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-property-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-property-regex@npm:7.25.9 to @babel/plugin-transform-unicode-property-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-regex@npm:7.25.9 to @babel/plugin-transform-unicode-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-sets-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-sets-regex@npm:7.25.9 to @babel/plugin-transform-unicode-sets-regex@npm:7.27.1
+➤ YN0000: │ @babel/types@npm:^7.0.0 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.20.7 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.22.5 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.24.7 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.25.9 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.26.0 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.26.3 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.4.4 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @emnapi/core@npm:^1.1.0 can be deduped from @emnapi/core@npm:1.3.1 to @emnapi/core@npm:1.7.1
+➤ YN0000: │ @jridgewell/gen-mapping@npm:^0.3.2 can be deduped from @jridgewell/gen-mapping@npm:0.3.8 to @jridgewell/gen-mapping@npm:0.3.13
+➤ YN0000: │ @jridgewell/gen-mapping@npm:^0.3.5 can be deduped from @jridgewell/gen-mapping@npm:0.3.8 to @jridgewell/gen-mapping@npm:0.3.13
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.12 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.18 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.24 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.25 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jsonjoy.com/util@npm:^1.1.2 can be deduped from @jsonjoy.com/util@npm:1.5.0 to @jsonjoy.com/util@npm:1.9.0
+➤ YN0000: │ @jsonjoy.com/util@npm:^1.3.0 can be deduped from @jsonjoy.com/util@npm:1.5.0 to @jsonjoy.com/util@npm:1.9.0
+➤ YN0000: │ enhanced-resolve@npm:^5.0.0 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ enhanced-resolve@npm:^5.17.1 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ enhanced-resolve@npm:^5.7.0 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ eslint-scope@npm:^8.2.0 can be deduped from eslint-scope@npm:8.2.0 to eslint-scope@npm:8.4.0
+[17:13:35.374] [INFO] ➤ YN0000: │ @babel/helper-member-expression-to-functions@npm:^7.25.9 can be deduped from @babel/helper-member-expression-to-functions@npm:7.25.9 to @babel/helper-member-expression-to-functions@npm:7.28.5
+➤ YN0000: │ @babel/helper-module-imports@npm:^7.25.9 can be deduped from @babel/helper-module-imports@npm:7.25.9 to @babel/helper-module-imports@npm:7.27.1
+➤ YN0000: │ @babel/helper-skip-transparent-expression-wrappers@npm:^7.25.9 can be deduped from @babel/helper-skip-transparent-expression-wrappers@npm:7.25.9 to @babel/helper-skip-transparent-expression-wrappers@npm:7.27.1
+➤ YN0000: │ @babel/helpers@npm:^7.26.0 can be deduped from @babel/helpers@npm:7.26.0 to @babel/helpers@npm:7.28.4
+➤ YN0000: │ @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:7.25.9 to @babel/plugin-bugfix-firefox-class-in-computed-class-key@npm:7.28.5
+➤ YN0000: │ @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:7.25.9 to @babel/plugin-bugfix-v8-static-class-fields-redefine-readonly@npm:7.28.3
+➤ YN0000: │ @babel/plugin-transform-class-properties@npm:^7.22.5 can be deduped from @babel/plugin-transform-class-properties@npm:7.25.9 to @babel/plugin-transform-class-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-class-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-class-properties@npm:7.25.9 to @babel/plugin-transform-class-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-class-static-block@npm:^7.26.0 can be deduped from @babel/plugin-transform-class-static-block@npm:7.26.0 to @babel/plugin-transform-class-static-block@npm:7.28.3
+➤ YN0000: │ @babel/plugin-transform-computed-properties@npm:^7.25.9 can be deduped from @babel/plugin-transform-computed-properties@npm:7.25.9 to @babel/plugin-transform-computed-properties@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-destructuring@npm:^7.25.9 can be deduped from @babel/plugin-transform-destructuring@npm:7.25.9 to @babel/plugin-transform-destructuring@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-dotall-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-dotall-regex@npm:7.25.9 to @babel/plugin-transform-dotall-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:7.25.9 to @babel/plugin-transform-duplicate-named-capturing-groups-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-for-of@npm:^7.25.9 can be deduped from @babel/plugin-transform-for-of@npm:7.25.9 to @babel/plugin-transform-for-of@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-amd@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-amd@npm:7.25.9 to @babel/plugin-transform-modules-amd@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-commonjs@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-commonjs@npm:7.26.3 to @babel/plugin-transform-modules-commonjs@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-modules-umd@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-umd@npm:7.25.9 to @babel/plugin-transform-modules-umd@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-named-capturing-groups-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-named-capturing-groups-regex@npm:7.25.9 to @babel/plugin-transform-named-capturing-groups-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-object-super@npm:^7.25.9 can be deduped from @babel/plugin-transform-object-super@npm:7.25.9 to @babel/plugin-transform-object-super@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-optional-chaining@npm:^7.25.9 can be deduped from @babel/plugin-transform-optional-chaining@npm:7.25.9 to @babel/plugin-transform-optional-chaining@npm:7.28.5
+➤ YN0000: │ @babel/plugin-transform-private-methods@npm:^7.25.9 can be deduped from @babel/plugin-transform-private-methods@npm:7.25.9 to @babel/plugin-transform-private-methods@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-regexp-modifiers@npm:^7.26.0 can be deduped from @babel/plugin-transform-regexp-modifiers@npm:7.26.0 to @babel/plugin-transform-regexp-modifiers@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-spread@npm:^7.25.9 can be deduped from @babel/plugin-transform-spread@npm:7.25.9 to @babel/plugin-transform-spread@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-property-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-property-regex@npm:7.25.9 to @babel/plugin-transform-unicode-property-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-regex@npm:7.25.9 to @babel/plugin-transform-unicode-regex@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-unicode-sets-regex@npm:^7.25.9 can be deduped from @babel/plugin-transform-unicode-sets-regex@npm:7.25.9 to @babel/plugin-transform-unicode-sets-regex@npm:7.27.1
+➤ YN0000: │ @babel/types@npm:^7.0.0 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.20.7 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.22.5 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.24.7 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.25.9 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.26.0 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.26.3 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @babel/types@npm:^7.4.4 can be deduped from @babel/types@npm:7.26.3 to @babel/types@npm:7.28.5
+➤ YN0000: │ @emnapi/core@npm:^1.1.0 can be deduped from @emnapi/core@npm:1.3.1 to @emnapi/core@npm:1.7.1
+➤ YN0000: │ @jridgewell/gen-mapping@npm:^0.3.2 can be deduped from @jridgewell/gen-mapping@npm:0.3.8 to @jridgewell/gen-mapping@npm:0.3.13
+➤ YN0000: │ @jridgewell/gen-mapping@npm:^0.3.5 can be deduped from @jridgewell/gen-mapping@npm:0.3.8 to @jridgewell/gen-mapping@npm:0.3.13
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.12 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.18 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.24 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jridgewell/trace-mapping@npm:^0.3.25 can be deduped from @jridgewell/trace-mapping@npm:0.3.25 to @jridgewell/trace-mapping@npm:0.3.31
+➤ YN0000: │ @jsonjoy.com/util@npm:^1.1.2 can be deduped from @jsonjoy.com/util@npm:1.5.0 to @jsonjoy.com/util@npm:1.9.0
+➤ YN0000: │ @jsonjoy.com/util@npm:^1.3.0 can be deduped from @jsonjoy.com/util@npm:1.5.0 to @jsonjoy.com/util@npm:1.9.0
+➤ YN0000: │ enhanced-resolve@npm:^5.0.0 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ enhanced-resolve@npm:^5.17.1 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ enhanced-resolve@npm:^5.7.0 can be deduped from enhanced-resolve@npm:5.18.0 to enhanced-resolve@npm:5.18.4
+➤ YN0000: │ eslint-scope@npm:^8.2.0 can be deduped from eslint-scope@npm:8.2.0 to eslint-scope@npm:8.4.0
+[17:13:35.377] [INFO] ➤ YN0000: │ update-browserslist-db@npm:^1.1.1 can be deduped from update-browserslist-db@npm:1.1.1 to update-browserslist-db@npm:1.2.3
+➤ YN0000: │ watchpack@npm:^2.4.1 can be deduped from watchpack@npm:2.4.2 to watchpack@npm:2.5.0
+➤ YN0000: │ @babel/code-frame@npm:^7.0.0 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.10.4 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.12.13 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.16.7 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.25.9 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.26.0 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+[17:13:35.377] [INFO] ➤ YN0000: │ update-browserslist-db@npm:^1.1.1 can be deduped from update-browserslist-db@npm:1.1.1 to update-browserslist-db@npm:1.2.3
+➤ YN0000: │ watchpack@npm:^2.4.1 can be deduped from watchpack@npm:2.4.2 to watchpack@npm:2.5.0
+➤ YN0000: │ @babel/code-frame@npm:^7.0.0 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.10.4 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.12.13 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.16.7 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.25.9 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/code-frame@npm:^7.26.0 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+[17:13:35.378] [INFO] ➤ YN0000: │ @babel/code-frame@npm:^7.26.2 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/helper-create-regexp-features-plugin@npm:^7.18.6 can be deduped from @babel/helper-create-regexp-features-plugin@npm:7.26.3 to @babel/helper-create-regexp-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/helper-create-regexp-features-plugin@npm:^7.25.9 can be deduped from @babel/helper-create-regexp-features-plugin@npm:7.26.3 to @babel/helper-create-regexp-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/helper-module-transforms@npm:^7.25.9 can be deduped from @babel/helper-module-transforms@npm:7.26.0 to @babel/helper-module-transforms@npm:7.28.3
+➤ YN0000: │ @babel/helper-module-transforms@npm:^7.26.0 can be deduped from @babel/helper-module-transforms@npm:7.26.0 to @babel/helper-module-transforms@npm:7.28.3
+➤ YN0000: │ @babel/helper-remap-async-to-generator@npm:^7.25.9 can be deduped from @babel/helper-remap-async-to-generator@npm:7.25.9 to @babel/helper-remap-async-to-generator@npm:7.27.1
+➤ YN0000: │ @babel/helper-replace-supers@npm:^7.25.9 can be deduped from @babel/helper-replace-supers@npm:7.25.9 to @babel/helper-replace-supers@npm:7.27.1
+➤ YN0000: │ @babel/helper-wrap-function@npm:^7.25.9 can be deduped from @babel/helper-wrap-function@npm:7.25.9 to @babel/helper-wrap-function@npm:7.28.3
+➤ YN0000: │ @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:7.25.9 to @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-async-generator-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-async-generator-functions@npm:7.25.9 to @babel/plugin-transform-async-generator-functions@npm:7.28.0
+➤ YN0000: │ @babel/plugin-transform-async-to-generator@npm:^7.25.9 can be deduped from @babel/plugin-transform-async-to-generator@npm:7.25.9 to @babel/plugin-transform-async-to-generator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-function-name@npm:^7.25.9 can be deduped from @babel/plugin-transform-function-name@npm:7.25.9 to @babel/plugin-transform-function-name@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-private-property-in-object@npm:^7.25.9 can be deduped from @babel/plugin-transform-private-property-in-object@npm:7.25.9 to @babel/plugin-transform-private-property-in-object@npm:7.27.1
+➤ YN0000: │ @babel/template@npm:^7.22.5 can be deduped from @babel/template@npm:7.25.9 to @babel/template@npm:7.27.2
+➤ YN0000: │ @babel/template@npm:^7.25.9 can be deduped from @babel/template@npm:7.25.9 to @babel/template@npm:7.27.2
+➤ YN0000: │ axios@npm:^1.6.1 can be deduped from axios@npm:1.7.9 to axios@npm:1.13.2
+➤ YN0000: │ babel-plugin-polyfill-corejs2@npm:^0.4.10 can be deduped from babel-plugin-polyfill-corejs2@npm:0.4.12 to babel-plugin-polyfill-corejs2@npm:0.4.14
+➤ YN0000: │ domutils@npm:^3.0.1 can be deduped from domutils@npm:3.2.1 to domutils@npm:3.2.2
+➤ YN0000: │ espree@npm:^10.0.1 can be deduped from espree@npm:10.3.0 to espree@npm:10.4.0
+➤ YN0000: │ espree@npm:^10.3.0 can be deduped from espree@npm:10.3.0 to espree@npm:10.4.0
+➤ YN0000: │ postcss-loader@npm:^8.1.1 can be deduped from postcss-loader@npm:8.1.1 to postcss-loader@npm:8.2.0
+➤ YN0000: │ postcss@npm:^8.2.14 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.24 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.33 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.38 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.47 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.5 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.49 can be deduped from postcss@npm:8.5.3 to postcss@npm:8.5.6
+➤ YN0000: │ resolve@npm:^1.1.7 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.14.2 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.19.0 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.22.8 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+[17:13:35.378] [INFO] ➤ YN0000: │ @babel/code-frame@npm:^7.26.2 can be deduped from @babel/code-frame@npm:7.26.2 to @babel/code-frame@npm:7.27.1
+➤ YN0000: │ @babel/helper-create-regexp-features-plugin@npm:^7.18.6 can be deduped from @babel/helper-create-regexp-features-plugin@npm:7.26.3 to @babel/helper-create-regexp-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/helper-create-regexp-features-plugin@npm:^7.25.9 can be deduped from @babel/helper-create-regexp-features-plugin@npm:7.26.3 to @babel/helper-create-regexp-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/helper-module-transforms@npm:^7.25.9 can be deduped from @babel/helper-module-transforms@npm:7.26.0 to @babel/helper-module-transforms@npm:7.28.3
+➤ YN0000: │ @babel/helper-module-transforms@npm:^7.26.0 can be deduped from @babel/helper-module-transforms@npm:7.26.0 to @babel/helper-module-transforms@npm:7.28.3
+➤ YN0000: │ @babel/helper-remap-async-to-generator@npm:^7.25.9 can be deduped from @babel/helper-remap-async-to-generator@npm:7.25.9 to @babel/helper-remap-async-to-generator@npm:7.27.1
+➤ YN0000: │ @babel/helper-replace-supers@npm:^7.25.9 can be deduped from @babel/helper-replace-supers@npm:7.25.9 to @babel/helper-replace-supers@npm:7.27.1
+➤ YN0000: │ @babel/helper-wrap-function@npm:^7.25.9 can be deduped from @babel/helper-wrap-function@npm:7.25.9 to @babel/helper-wrap-function@npm:7.28.3
+➤ YN0000: │ @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:^7.25.9 can be deduped from @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:7.25.9 to @babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-async-generator-functions@npm:^7.25.9 can be deduped from @babel/plugin-transform-async-generator-functions@npm:7.25.9 to @babel/plugin-transform-async-generator-functions@npm:7.28.0
+➤ YN0000: │ @babel/plugin-transform-async-to-generator@npm:^7.25.9 can be deduped from @babel/plugin-transform-async-to-generator@npm:7.25.9 to @babel/plugin-transform-async-to-generator@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-function-name@npm:^7.25.9 can be deduped from @babel/plugin-transform-function-name@npm:7.25.9 to @babel/plugin-transform-function-name@npm:7.27.1
+➤ YN0000: │ @babel/plugin-transform-private-property-in-object@npm:^7.25.9 can be deduped from @babel/plugin-transform-private-property-in-object@npm:7.25.9 to @babel/plugin-transform-private-property-in-object@npm:7.27.1
+➤ YN0000: │ @babel/template@npm:^7.22.5 can be deduped from @babel/template@npm:7.25.9 to @babel/template@npm:7.27.2
+➤ YN0000: │ @babel/template@npm:^7.25.9 can be deduped from @babel/template@npm:7.25.9 to @babel/template@npm:7.27.2
+➤ YN0000: │ axios@npm:^1.6.1 can be deduped from axios@npm:1.7.9 to axios@npm:1.13.2
+➤ YN0000: │ babel-plugin-polyfill-corejs2@npm:^0.4.10 can be deduped from babel-plugin-polyfill-corejs2@npm:0.4.12 to babel-plugin-polyfill-corejs2@npm:0.4.14
+➤ YN0000: │ domutils@npm:^3.0.1 can be deduped from domutils@npm:3.2.1 to domutils@npm:3.2.2
+➤ YN0000: │ espree@npm:^10.0.1 can be deduped from espree@npm:10.3.0 to espree@npm:10.4.0
+➤ YN0000: │ espree@npm:^10.3.0 can be deduped from espree@npm:10.3.0 to espree@npm:10.4.0
+➤ YN0000: │ postcss-loader@npm:^8.1.1 can be deduped from postcss-loader@npm:8.1.1 to postcss-loader@npm:8.2.0
+➤ YN0000: │ postcss@npm:^8.2.14 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.24 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.33 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.38 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.47 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.5 can be deduped from postcss@npm:8.4.49 to postcss@npm:8.5.6
+➤ YN0000: │ postcss@npm:^8.4.49 can be deduped from postcss@npm:8.5.3 to postcss@npm:8.5.6
+➤ YN0000: │ resolve@npm:^1.1.7 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.14.2 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.19.0 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+➤ YN0000: │ resolve@npm:^1.22.8 can be deduped from resolve@npm:1.22.10 to resolve@npm:1.22.11
+[17:13:35.380] [INFO] ➤ YN0000: │ @babel/plugin-transform-modules-systemjs@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-systemjs@npm:7.25.9 to @babel/plugin-transform-modules-systemjs@npm:7.28.5
+[17:13:35.380] [INFO] ➤ YN0000: │ @babel/plugin-transform-modules-systemjs@npm:^7.25.9 can be deduped from @babel/plugin-transform-modules-systemjs@npm:7.25.9 to @babel/plugin-transform-modules-systemjs@npm:7.28.5
+[17:13:35.380] [INFO] ➤ YN0000: │ @types/express-serve-static-core@npm:^4.17.33 can be deduped from @types/express-serve-static-core@npm:4.19.6 to @types/express-serve-static-core@npm:4.19.7
+➤ YN0000: │ @typescript-eslint/utils@npm:^8.0.0 can be deduped from @typescript-eslint/utils@npm:8.18.2 to @typescript-eslint/utils@npm:8.50.1
+➤ YN0000: │ open@npm:^10.0.3 can be deduped from open@npm:10.1.0 to open@npm:10.2.0
+➤ YN0000: │ sass@npm:^1.81.0 can be deduped from sass@npm:1.85.1 to sass@npm:1.93.2
+➤ YN0000: │ sass@npm:^1.85.0 can be deduped from sass@npm:1.85.1 to sass@npm:1.93.2
+➤ YN0000: │ schema-utils@npm:^4.0.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.0.1 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.2.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.3.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ terser@npm:^5.10.0 can be deduped from terser@npm:5.37.0 to terser@npm:5.44.0
+➤ YN0000: │ terser@npm:^5.31.1 can be deduped from terser@npm:5.37.0 to terser@npm:5.44.0
+[17:13:35.380] [INFO] ➤ YN0000: │ @types/express-serve-static-core@npm:^4.17.33 can be deduped from @types/express-serve-static-core@npm:4.19.6 to @types/express-serve-static-core@npm:4.19.7
+➤ YN0000: │ @typescript-eslint/utils@npm:^8.0.0 can be deduped from @typescript-eslint/utils@npm:8.18.2 to @typescript-eslint/utils@npm:8.50.1
+➤ YN0000: │ open@npm:^10.0.3 can be deduped from open@npm:10.1.0 to open@npm:10.2.0
+➤ YN0000: │ sass@npm:^1.81.0 can be deduped from sass@npm:1.85.1 to sass@npm:1.93.2
+➤ YN0000: │ sass@npm:^1.85.0 can be deduped from sass@npm:1.85.1 to sass@npm:1.93.2
+➤ YN0000: │ schema-utils@npm:^4.0.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.0.1 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.2.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ schema-utils@npm:^4.3.0 can be deduped from schema-utils@npm:4.3.0 to schema-utils@npm:4.3.3
+➤ YN0000: │ terser@npm:^5.10.0 can be deduped from terser@npm:5.37.0 to terser@npm:5.44.0
+➤ YN0000: │ terser@npm:^5.31.1 can be deduped from terser@npm:5.37.0 to terser@npm:5.44.0
+[17:13:35.381] [INFO] ➤ YN0000: │ @babel/generator@npm:^7.22.5 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+➤ YN0000: │ @babel/generator@npm:^7.26.0 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+[17:13:35.381] [INFO] ➤ YN0000: │ @babel/generator@npm:^7.22.5 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+➤ YN0000: │ @babel/generator@npm:^7.26.0 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+[17:13:35.381] [INFO] ➤ YN0000: │ @babel/generator@npm:^7.26.3 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.22.6 can be deduped from @babel/helper-compilation-targets@npm:7.25.9 to @babel/helper-compilation-targets@npm:7.27.2
+➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.25.9 can be deduped from @babel/helper-compilation-targets@npm:7.25.9 to @babel/helper-compilation-targets@npm:7.27.2
+➤ YN0000: │ @babel/helper-define-polyfill-provider@npm:^0.6.2 can be deduped from @babel/helper-define-polyfill-provider@npm:0.6.3 to @babel/helper-define-polyfill-provider@npm:0.6.5
+➤ YN0000: │ @babel/helper-define-polyfill-provider@npm:^0.6.3 can be deduped from @babel/helper-define-polyfill-provider@npm:0.6.3 to @babel/helper-define-polyfill-provider@npm:0.6.5
+➤ YN0000: │ @babel/plugin-transform-object-rest-spread@npm:^7.25.9 can be deduped from @babel/plugin-transform-object-rest-spread@npm:7.25.9 to @babel/plugin-transform-object-rest-spread@npm:7.28.4
+➤ YN0000: │ @typescript-eslint/type-utils@npm:^8.0.0 can be deduped from @typescript-eslint/type-utils@npm:8.18.2 to @typescript-eslint/type-utils@npm:8.50.1
+➤ YN0000: │ browserslist@npm:^4.0.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.23.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.23.3 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.2 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.4 can be deduped from browserslist@npm:4.24.4 to browserslist@npm:4.28.1
+➤ YN0000: │ form-data@npm:^4.0.0 can be deduped from form-data@npm:4.0.1 to form-data@npm:4.0.5
+➤ YN0000: │ tar@npm:^7.4.3 can be deduped from tar@npm:7.4.3 to tar@npm:7.5.2
+[17:13:35.381] [INFO] ➤ YN0000: │ @babel/generator@npm:^7.26.3 can be deduped from @babel/generator@npm:7.26.3 to @babel/generator@npm:7.28.5
+➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.22.6 can be deduped from @babel/helper-compilation-targets@npm:7.25.9 to @babel/helper-compilation-targets@npm:7.27.2
+➤ YN0000: │ @babel/helper-compilation-targets@npm:^7.25.9 can be deduped from @babel/helper-compilation-targets@npm:7.25.9 to @babel/helper-compilation-targets@npm:7.27.2
+➤ YN0000: │ @babel/helper-define-polyfill-provider@npm:^0.6.2 can be deduped from @babel/helper-define-polyfill-provider@npm:0.6.3 to @babel/helper-define-polyfill-provider@npm:0.6.5
+➤ YN0000: │ @babel/helper-define-polyfill-provider@npm:^0.6.3 can be deduped from @babel/helper-define-polyfill-provider@npm:0.6.3 to @babel/helper-define-polyfill-provider@npm:0.6.5
+➤ YN0000: │ @babel/plugin-transform-object-rest-spread@npm:^7.25.9 can be deduped from @babel/plugin-transform-object-rest-spread@npm:7.25.9 to @babel/plugin-transform-object-rest-spread@npm:7.28.4
+➤ YN0000: │ @typescript-eslint/type-utils@npm:^8.0.0 can be deduped from @typescript-eslint/type-utils@npm:8.18.2 to @typescript-eslint/type-utils@npm:8.50.1
+➤ YN0000: │ browserslist@npm:^4.0.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.23.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.23.3 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.0 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.2 can be deduped from browserslist@npm:4.24.3 to browserslist@npm:4.28.1
+➤ YN0000: │ browserslist@npm:^4.24.4 can be deduped from browserslist@npm:4.24.4 to browserslist@npm:4.28.1
+➤ YN0000: │ form-data@npm:^4.0.0 can be deduped from form-data@npm:4.0.1 to form-data@npm:4.0.5
+➤ YN0000: │ tar@npm:^7.4.3 can be deduped from tar@npm:7.4.3 to tar@npm:7.5.2
+[17:13:35.383] [INFO] ➤ YN0000: │ terser-webpack-plugin@npm:^5.3.10 can be deduped from terser-webpack-plugin@npm:5.3.11 to terser-webpack-plugin@npm:5.3.16
+➤ YN0000: │ terser-webpack-plugin@npm:^5.3.3 can be deduped from terser-webpack-plugin@npm:5.3.11 to terser-webpack-plugin@npm:5.3.16
+➤ YN0000: │ @babel/plugin-transform-classes@npm:^7.25.9 can be deduped from @babel/plugin-transform-classes@npm:7.25.9 to @babel/plugin-transform-classes@npm:7.28.4
+➤ YN0000: │ @babel/plugin-transform-runtime@npm:^7.23.2 can be deduped from @babel/plugin-transform-runtime@npm:7.25.9 to @babel/plugin-transform-runtime@npm:7.28.3
+➤ YN0000: │ @testing-library/jest-dom@npm:^6.1.2 can be deduped from @testing-library/jest-dom@npm:6.6.3 to @testing-library/jest-dom@npm:6.9.1
+➤ YN0000: │ autoprefixer@npm:^10.4.0 can be deduped from autoprefixer@npm:10.4.20 to autoprefixer@npm:10.4.21
+➤ YN0000: │ autoprefixer@npm:^10.4.9 can be deduped from autoprefixer@npm:10.4.20 to autoprefixer@npm:10.4.21
+➤ YN0000: │ memfs@npm:^4.14.0 can be deduped from memfs@npm:4.17.0 to memfs@npm:4.51.1
+➤ YN0000: │ memfs@npm:^4.6.0 can be deduped from memfs@npm:4.15.1 to memfs@npm:4.51.1
+➤ YN0000: │ regexpu-core@npm:^6.2.0 can be deduped from regexpu-core@npm:6.2.0 to regexpu-core@npm:6.4.0
+➤ YN0000: │ webpack-dev-middleware@npm:^7.4.2 can be deduped from webpack-dev-middleware@npm:7.4.2 to webpack-dev-middleware@npm:7.4.5
+[17:13:35.383] [INFO] ➤ YN0000: │ terser-webpack-plugin@npm:^5.3.10 can be deduped from terser-webpack-plugin@npm:5.3.11 to terser-webpack-plugin@npm:5.3.16
+➤ YN0000: │ terser-webpack-plugin@npm:^5.3.3 can be deduped from terser-webpack-plugin@npm:5.3.11 to terser-webpack-plugin@npm:5.3.16
+➤ YN0000: │ @babel/plugin-transform-classes@npm:^7.25.9 can be deduped from @babel/plugin-transform-classes@npm:7.25.9 to @babel/plugin-transform-classes@npm:7.28.4
+➤ YN0000: │ @babel/plugin-transform-runtime@npm:^7.23.2 can be deduped from @babel/plugin-transform-runtime@npm:7.25.9 to @babel/plugin-transform-runtime@npm:7.28.3
+➤ YN0000: │ @testing-library/jest-dom@npm:^6.1.2 can be deduped from @testing-library/jest-dom@npm:6.6.3 to @testing-library/jest-dom@npm:6.9.1
+➤ YN0000: │ autoprefixer@npm:^10.4.0 can be deduped from autoprefixer@npm:10.4.20 to autoprefixer@npm:10.4.21
+➤ YN0000: │ autoprefixer@npm:^10.4.9 can be deduped from autoprefixer@npm:10.4.20 to autoprefixer@npm:10.4.21
+➤ YN0000: │ memfs@npm:^4.14.0 can be deduped from memfs@npm:4.17.0 to memfs@npm:4.51.1
+➤ YN0000: │ memfs@npm:^4.6.0 can be deduped from memfs@npm:4.15.1 to memfs@npm:4.51.1
+➤ YN0000: │ regexpu-core@npm:^6.2.0 can be deduped from regexpu-core@npm:6.2.0 to regexpu-core@npm:6.4.0
+➤ YN0000: │ webpack-dev-middleware@npm:^7.4.2 can be deduped from webpack-dev-middleware@npm:7.4.2 to webpack-dev-middleware@npm:7.4.5
+[17:13:35.383] [INFO] ➤ YN0000: │ @babel/helper-create-class-features-plugin@npm:^7.25.9 can be deduped from @babel/helper-create-class-features-plugin@npm:7.25.9 to @babel/helper-create-class-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/traverse@npm:^7.16.0 can be deduped from @babel/traverse@npm:7.26.4 to @babel/traverse@npm:7.28.5
+➤ YN0000: │ @babel/traverse@npm:^7.25.9 can be deduped from @babel/traverse@npm:7.26.4 to @babel/traverse@npm:7.28.5
+[17:13:35.383] [INFO] ➤ YN0000: │ @babel/helper-create-class-features-plugin@npm:^7.25.9 can be deduped from @babel/helper-create-class-features-plugin@npm:7.25.9 to @babel/helper-create-class-features-plugin@npm:7.28.5
+➤ YN0000: │ @babel/traverse@npm:^7.16.0 can be deduped from @babel/traverse@npm:7.26.4 to @babel/traverse@npm:7.28.5
+➤ YN0000: │ @babel/traverse@npm:^7.25.9 can be deduped from @babel/traverse@npm:7.26.4 to @babel/traverse@npm:7.28.5
+[17:13:35.384] [INFO] ➤ YN0000: │ @jsonjoy.com/json-pack@npm:^1.0.3 can be deduped from @jsonjoy.com/json-pack@npm:1.1.1 to @jsonjoy.com/json-pack@npm:1.21.0
+[17:13:35.384] [INFO] ➤ YN0000: │ @jsonjoy.com/json-pack@npm:^1.0.3 can be deduped from @jsonjoy.com/json-pack@npm:1.1.1 to @jsonjoy.com/json-pack@npm:1.21.0
+[17:13:35.384] [INFO] ➤ YN0000: │ @eslint/eslintrc@npm:^3.2.0 can be deduped from @eslint/eslintrc@npm:3.2.0 to @eslint/eslintrc@npm:3.3.3
+[17:13:35.384] [INFO] ➤ YN0000: │ @eslint/eslintrc@npm:^3.2.0 can be deduped from @eslint/eslintrc@npm:3.2.0 to @eslint/eslintrc@npm:3.3.3
+[17:13:35.385] [INFO] ➤ YN0000: │ less@npm:^4.2.0 can be deduped from less@npm:4.2.1 to less@npm:4.5.1
+[17:13:35.385] [INFO] ➤ YN0000: │ less@npm:^4.2.0 can be deduped from less@npm:4.2.1 to less@npm:4.5.1
+[17:13:35.387] [INFO] ➤ YN0000: │ @babel/core@npm:^7.22.5 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+➤ YN0000: │ @babel/core@npm:^7.23.2 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+[17:13:35.387] [INFO] ➤ YN0000: │ @babel/core@npm:^7.22.5 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+➤ YN0000: │ @babel/core@npm:^7.23.2 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+[17:13:35.387] [INFO] ➤ YN0000: │ @babel/core@npm:^7.23.9 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+➤ YN0000: │ @babel/core@npm:^7.7.5 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+[17:13:35.387] [INFO] ➤ YN0000: │ @babel/core@npm:^7.23.9 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+➤ YN0000: │ @babel/core@npm:^7.7.5 can be deduped from @babel/core@npm:7.26.0 to @babel/core@npm:7.28.5
+[17:13:35.388] [INFO] ➤ YN0000: │ rollup@npm:^4.24.0 can be deduped from rollup@npm:4.29.1 to rollup@npm:4.54.0
+[17:13:35.388] [INFO] ➤ YN0000: │ rollup@npm:^4.24.0 can be deduped from rollup@npm:4.29.1 to rollup@npm:4.54.0
+[17:13:35.389] [INFO] ➤ YN0000: │ webpack@npm:5 can be deduped from webpack@npm:5.97.1 to webpack@npm:5.104.1
+[17:13:35.389] [INFO] ➤ YN0000: │ webpack@npm:5 can be deduped from webpack@npm:5.97.1 to webpack@npm:5.104.1
+[17:13:35.389] [INFO] ➤ YN0000: │ eslint@npm:^9.17.0 can be deduped from eslint@npm:9.17.0 to eslint@npm:9.39.2
+[17:13:35.389] [INFO] ➤ YN0000: │ eslint@npm:^9.17.0 can be deduped from eslint@npm:9.17.0 to eslint@npm:9.39.2
+[17:13:35.390] [INFO] ➤ YN0000: │ @babel/preset-env@npm:^7.23.2 can be deduped from @babel/preset-env@npm:7.26.0 to @babel/preset-env@npm:7.28.3
+[17:13:35.390] [INFO] ➤ YN0000: │ @babel/preset-env@npm:^7.23.2 can be deduped from @babel/preset-env@npm:7.26.0 to @babel/preset-env@npm:7.28.3
+[17:13:35.390] [INFO] ➤ YN0000: │ 282 packages can be deduped using the highest strategy
+[17:13:35.390] [INFO] ➤ YN0000: │ 282 packages can be deduped using the highest strategy
+[17:13:35.390] [INFO] ➤ YN0000: └ Completed
+➤ YN0000: · Yarn 4.12.0
+[17:13:35.390] [INFO] ➤ YN0000: └ Completed
+➤ YN0000: · Yarn 4.12.0
+[17:13:35.391] [INFO] ➤ YN0000: ┌ Resolution step
+[17:13:35.391] [INFO] ➤ YN0000: ┌ Resolution step
+[17:13:35.513] [INFO] ➤ YN0085: │ - @babel/code-frame@npm:7.26.2, @babel/compat-data@npm:7.26.3, @babel/core@npm:7.26.0, @babel/generator@npm:7.26.3, and 204 more.
+[17:13:35.513] [INFO] ➤ YN0085: │ - @babel/code-frame@npm:7.26.2, @babel/compat-data@npm:7.26.3, @babel/core@npm:7.26.0, @babel/generator@npm:7.26.3, and 204 more.
+[17:13:35.545] [INFO] ➤ YN0000: └ Completed
+[17:13:35.545] [INFO] ➤ YN0000: └ Completed
+[17:13:35.546] [INFO] ➤ YN0000: ┌ Post-resolution validation
+[17:13:35.546] [INFO] ➤ YN0000: ┌ Post-resolution validation
+[17:13:35.546] [INFO] ➤ YN0060: │ @angular/core is listed by your project with version 21.0.6 (p12e051), which doesn't satisfy what @fortawesome/angular-fontawesome and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ @nx/js is listed by your project with version 22.3.3 (p92020a), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ jest is listed by your project with version 30.0.5 (p0174ea), which doesn't satisfy what @angular-devkit/build-angular and other dependencies request (^30.2.0).
+➤ YN0060: │ jest-environment-jsdom is listed by your project with version 30.0.5 (pd62aea), which doesn't satisfy what @angular-devkit/build-angular requests (^30.2.0).
+➤ YN0060: │ nx is listed by your project with version 22.3.3 (p352099), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ storybook is listed by your project with version 10.1.11 (p4d608b), which doesn't satisfy what @storybook/core-server and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @angular-devkit/architect (p8e6ee5), requested by @storybook/angular.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @nx/devkit (p506daa), requested by @nx-tools/nx-container and other dependencies.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @typescript-eslint/parser (p833417), requested by @nx/eslint-plugin.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide dotenv (pe82e7e), requested by @nx-tools/nx-container.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide jsdom (p99a9cf), requested by jest-preset-angular.
+➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+[17:13:35.546] [INFO] ➤ YN0060: │ @angular/core is listed by your project with version 21.0.6 (p12e051), which doesn't satisfy what @fortawesome/angular-fontawesome and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0060: │ @nx/js is listed by your project with version 22.3.3 (p92020a), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ jest is listed by your project with version 30.0.5 (p0174ea), which doesn't satisfy what @angular-devkit/build-angular and other dependencies request (^30.2.0).
+➤ YN0060: │ jest-environment-jsdom is listed by your project with version 30.0.5 (pd62aea), which doesn't satisfy what @angular-devkit/build-angular requests (^30.2.0).
+➤ YN0060: │ nx is listed by your project with version 22.3.3 (p352099), which doesn't satisfy what @nx-tools/nx-container requests (^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0).
+➤ YN0060: │ storybook is listed by your project with version 10.1.11 (p4d608b), which doesn't satisfy what @storybook/core-server and other dependencies request (but they have non-overlapping ranges!).
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @angular-devkit/architect (p8e6ee5), requested by @storybook/angular.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @nx/devkit (p506daa), requested by @nx-tools/nx-container and other dependencies.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide @typescript-eslint/parser (p833417), requested by @nx/eslint-plugin.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide dotenv (pe82e7e), requested by @nx-tools/nx-container.
+➤ YN0002: │ @nx-stolfo/source@workspace:. doesn't provide jsdom (p99a9cf), requested by jest-preset-angular.
+➤ YN0086: │ Some peer dependencies are incorrectly met by your project; run yarn explain peer-requirements <hash> for details, where <hash> is the six-letter p-prefixed code.
+➤ YN0086: │ Some peer dependencies are incorrectly met by dependencies; run yarn explain peer-requirements for details.
+➤ YN0000: └ Completed
+[17:13:35.548] [INFO] ➤ YN0000: ┌ Fetch step
+[17:13:35.548] [INFO] ➤ YN0000: ┌ Fetch step
+[17:13:36.212] [INFO] ➤ YN0000: └ Completed in 0s 666ms
+[17:13:36.213] [INFO] ➤ YN0000: └ Completed in 0s 666ms
+[17:13:36.275] [INFO] ➤ YN0000: ┌ Link step
+[17:13:36.275] [INFO] ➤ YN0000: ┌ Link step
+[17:13:48.232] [INFO] ➤ YN0008: │ esbuild@npm:0.26.0 must be rebuilt because its dependency tree changed
+[17:13:48.232] [INFO] ➤ YN0008: │ esbuild@npm:0.26.0 must be rebuilt because its dependency tree changed
+[17:13:48.234] [INFO] ➤ YN0008: │ less@npm:4.5.1 must be rebuilt because its dependency tree changed
+[17:13:48.234] [INFO] ➤ YN0008: │ less@npm:4.5.1 must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ nx@npm:22.3.3 [1dc10] must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ nx@npm:22.3.3 [1dc10] must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ @parcel/watcher@npm:2.5.0 must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ @parcel/watcher@npm:2.5.0 must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ msgpackr-extract@npm:3.0.3 must be rebuilt because its dependency tree changed
+[17:13:48.235] [INFO] ➤ YN0008: │ msgpackr-extract@npm:3.0.3 must be rebuilt because its dependency tree changed
+[17:13:48.830] [INFO] ➤ YN0008: │ prisma@npm:6.1.0 must be rebuilt because its dependency tree changed
+[17:13:48.830] [INFO] ➤ YN0008: │ prisma@npm:6.1.0 must be rebuilt because its dependency tree changed
+[17:13:48.830] [INFO] ➤ YN0008: │ lmdb@npm:3.4.3 must be rebuilt because its dependency tree changed
+[17:13:48.830] [INFO] ➤ YN0008: │ lmdb@npm:3.4.3 must be rebuilt because its dependency tree changed
+[17:13:48.985] [INFO] ➤ YN0008: │ @prisma/client@npm:6.1.0 [d88cf] must be rebuilt because its dependency tree changed
+[17:13:48.985] [INFO] ➤ YN0008: │ @prisma/client@npm:6.1.0 [d88cf] must be rebuilt because its dependency tree changed
+[17:13:49.318] [INFO] ➤ YN0000: └ Completed in 13s 42ms
+[17:13:49.318] [INFO] ➤ YN0000: └ Completed in 13s 42ms
+[17:13:49.429] [INFO] ➤ YN0000: · Done with warnings in 14s 39ms
+[17:13:49.429] [INFO] ➤ YN0000: · Done with warnings in 14s 39ms
+[17:13:49.452] [INFO] Dependencies deduplicated
+[17:13:49.452] [INFO] [32mDependencies deduplicated[39m
+[17:13:49.452] [INFO] Checking the health of your project(s)..
+[17:13:49.453] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\libs\components\package.json...
+[17:13:49.453] [DEBUG] Using cached package.json for C:\Users\grace\Documents\appdev\projects\nx-stolfo\package.json...
+[17:13:49.455] [DEBUG] Executing command: yarn info --name-only --recursive @storybook/* storybook
+[17:13:49.763] [WARN] C:/Users/grace/Documents/appdev/projects/nx-stolfo/libs/components/.storybook: 1 issue found
+[17:13:49.764] [INFO] You are currently using Storybook [1m10.1.11[22m but you have packages which are incompatible with it:
+
+- @storybook/core-server@8.6.11 which depends on ^8.2.0 || ^8.3.0-0 || ^8.4.0-0 || ^8.5.0-0 || ^8.6.0-0
+ Repo: https://github.com/storybookjs/storybook/tree/next/code/lib/core-server
+
+Please consider updating your packages or contacting the maintainers for compatibility details.
+
+For more details on compatibility guidance, see:
+https://github.com/storybookjs/storybook/issues/32836
+[17:13:49.765] [INFO] Storybook doctor is complete!
+[17:13:49.765] [INFO] You can always recheck the health of your project(s) by running:
+[36mnpx storybook doctor[39m
+[17:13:49.766] [INFO] [33mYour project(s) have been upgraded successfully, but some issues were found which need your attention, please check Storybook doctor logs above.[39m
+[17:13:49.766] [INFO] If you want to learn more about the automigrations that executed in your project(s), please check the following links:
+• ]8;;https://storybook.js.org/docs/9/configure/integration/eslint-plugineslintPlugin]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#dropped-support-for-legacy-packagesconsolidated-imports]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-coreremove-addon-interactions]8;;
+• ]8;;https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#essentials-addon-viewport-controls-interactions-and-actions-moved-to-coreremove-essential-addons]8;;
+• ]8;;https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environmentswrap-getAbsolutePath]8;;
+[17:13:49.767] [INFO] For a full list of changes, please check our migration guide: [36mhttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade[39m
+[17:13:49.768] [INFO] Storybook collects completely anonymous usage telemetry. We use it to shape Storybook's roadmap and prioritize features. You can learn more, including how to opt out, at https://storybook.js.org/telemetry
+[17:13:50.779] [INFO] Storybook upgrade completed!

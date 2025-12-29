@@ -10,15 +10,14 @@
       "executor": "@nx/angular:ng-packagr-lite",
       "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
       "options": {
-        "project": "features/active-servers/ui/ng-package.json"
+        "project": "features/active-servers/ui/ng-package.json",
+        "tsConfig": "features/active-servers/ui/tsconfig.lib.json"
       },
       "configurations": {
         "production": {
           "tsConfig": "features/active-servers/ui/tsconfig.lib.prod.json"
         },
-        "development": {
-          "tsConfig": "features/active-servers/ui/tsconfig.lib.json"
-        }
+        "development": {}
       },
       "defaultConfiguration": "production"
     },

@@ -24,6 +24,6 @@ export abstract class ApiBase {
       params,
       headers,
     };
-    return httpResource<T>(request);
+    return httpResource<T>(() => request);
   }
 }
