@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { fireEvent, within } from '@storybook/test';
+import { fireEvent, within } from 'storybook/test';
 
 import { BreadCrumbsComponent } from './breadcrumbs.component';
 
