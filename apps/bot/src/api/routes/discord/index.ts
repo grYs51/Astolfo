@@ -4,12 +4,17 @@ import { isAuthenticated } from '../../utils.ts/middleware/isAuthenticated';
 import passport from 'passport';
 
 export default (router: Router) => {
-  router.route('/auth/status').get(isAuthenticated, getStatus);
+  router.use('/auth', router);
   router
-    .route('/auth/login')
+    .route('/status')
+    .get(isAuthenticated, getStatus);
+  router
+    .route('/login')
     .get(passport.authenticate('discord'), discordAuth);
   router
-    .route('/auth/redirect')
+    .route('/redirect')
     .get(passport.authenticate('discord'), redirect);
-  router.route('/auth/logout').get(signOut);
+  router
+    .route('/logout')
+    .get(signOut);
 };
