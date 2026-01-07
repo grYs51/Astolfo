@@ -26,12 +26,12 @@ export function withFetchOnInit<T>(apiCallback: () => HttpResourceRef<T>) {
 
         effect(() => {
           patchState(store, {
-            value: value(),
+            value: error() ? undefined : value(),
             isLoading: isLoading(),
             error: error(),
           });
         });
       },
-    })
+    }),
   );
 }

@@ -18,8 +18,8 @@ function createExpress() {
     cors({
       origin: [
         'http://localhost:4200',
-        'https://astolfo.grys.me',
-        'http://192.168.129.16:4200',
+        'https://astolfo.grys.dev',
+        'http://192.168.1.16:4200',
       ],
       credentials: true,
     })
