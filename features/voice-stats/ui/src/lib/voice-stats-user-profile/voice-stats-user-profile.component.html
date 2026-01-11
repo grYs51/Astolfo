@@ -1,0 +1,97 @@
+@let stats = userStats();
+
+<div class="space-y-lg">
+  <!-- User Overview Stats -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+    <lib-stat-card
+      label="Total Voice Time"
+      [value]="stats.totalDurationHours + 'h ' + stats.totalDurationMinutes + 'm'"
+      icon="🎙️"
+      [subtitle]="stats.sessionCount + ' sessions'"
+      iconColor="text-blue-500"
+    />
+
+    <lib-stat-card
+      label="Favorite Channel"
+      [value]="stats.favoriteChannel ? stats.favoriteChannel.slice(0, 8) + '...' : 'N/A'"
+      icon="❤️"
+      subtitle="Most time spent"
+      iconColor="text-red-500"
+    />
+
+    <lib-stat-card
+      label="Avg Session"
+      [value]="stats.averageSessionDurationMinutes + 'm'"
+      icon="⏱️"
+      [subtitle]="stats.uniqueChannels + ' unique channels'"
+      iconColor="text-purple-500"
+    />
+  </div>
+
+  <!-- Channel Breakdown -->
+  <div class="bg-base-300 rounded-2xl p-lg">
+    <h3 class="text-xl font-bold mb-lg">Channel Distribution</h3>
+    @if (stats.channelBreakdown.length === 0) {
+      <p class="text-gray-400 text-center py-md">No channel data available</p>
+    } @else {
+      <div class="space-y-md">
+        @for (channel of stats.channelBreakdown; track channel.channelId) {
+          <div class="bg-base-200 p-md rounded-xl">
+            <div class="flex justify-between items-center mb-sm">
+              <div>
+                <p class="font-medium text-gray-100">
+                  {{ channel.channelId.slice(0, 12) }}...
+                </p>
+                <p class="text-xs text-gray-500">{{ channel.sessionCount }} sessions</p>
+              </div>
+              <div class="text-right">
+                <p class="font-semibold text-primary-400">
+                  {{ channel.totalDurationHours }}h {{ channel.totalDurationMinutes }}m
+                </p>
+                <p class="text-xs text-gray-500">{{ channel.percentage }}%</p>
+              </div>
+            </div>
+            <lib-progress-bar
+              [percentage]="channel.percentage"
+              [showLabel]="false"
+              barColor="bg-primary-500"
+            />
+          </div>
+        }
+      </div>
+    }
+  </div>
+
+
+  <!-- Recent Sessions -->
+  <div class="bg-base-300 rounded-2xl p-lg">
+    <h3 class="text-xl font-bold mb-lg">Recent Sessions</h3>
+    @if (stats.recentSessions.length === 0) {
+      <p class="text-gray-400 text-center py-md">No recent sessions</p>
+    } @else {
+      <div class="space-y-sm">
+        @for (session of stats.recentSessions; track session.id) {
+          <div class="bg-base-200 p-md rounded-xl flex items-center justify-between hover:bg-base-100 transition-colors">
+            <div class="flex items-center gap-md">
+              <div class="w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-xl">
+                🎤
+              </div>
+              <div>
+                <p class="font-medium text-gray-100 text-sm">
+                  Channel {{ session.channelId.slice(0, 8) }}...
+                </p>
+                <p class="text-xs text-gray-500">
+                  {{ session.issuedOn | date: 'short' }}
+                </p>
+              </div>
+            </div>
+            <div class="text-right">
+              <p class="font-semibold text-primary-400">{{ session.durationMinutes }}m</p>
+              <p class="text-xs text-gray-500">{{ session.channelType }}</p>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</div>

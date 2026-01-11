@@ -1,0 +1,75 @@
+@let data = timeline();
+
+<div class="bg-base-300 rounded-2xl p-lg">
+  <div class="flex justify-between items-center mb-lg">
+    <h2 class="text-2xl font-bold">📈 Activity Timeline</h2>
+    <div class="flex gap-sm text-xs">
+      <span class="bg-base-100 px-md py-xs rounded-full text-gray-400">
+        {{ data.period | uppercase }}
+      </span>
+      <span class="bg-base-100 px-md py-xs rounded-full text-gray-400">
+        {{ data.granularity | uppercase }}
+      </span>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="bg-base-200 h-64 rounded-xl animate-pulse"></div>
+  } @else if (data.timeline.length === 0) {
+    <div class="text-center py-xl">
+      <p class="text-gray-400 text-lg">No timeline data available</p>
+    </div>
+  } @else {
+    <!-- Chart -->
+    <div class="bg-base-200 rounded-xl p-md">
+      <div class="flex items-end justify-between gap-xs h-64 overflow-x-auto">
+        @for (bucket of data.timeline; track bucket.timestamp) {
+          <div class="flex flex-col items-center flex-1 min-w-[40px] group">
+            <!-- Bar -->
+            <div class="relative w-full flex items-end justify-center h-full">
+              <div
+                [style.height.%]="getBarHeight(bucket.totalDuration)"
+                class="w-full bg-gradient-to-t from-primary-600 to-primary-400 rounded-t-md transition-all duration-300 hover:from-primary-500 hover:to-primary-300 cursor-pointer relative group-hover:scale-105">
+                <!-- Tooltip on hover -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                  <div class="bg-gray-900 text-white text-xs rounded-lg p-sm shadow-lg whitespace-nowrap">
+                    <p class="font-semibold">{{ bucket.totalDurationHours }}h {{ bucket.totalDurationMinutes }}m</p>
+                    <p class="text-gray-400">{{ bucket.uniqueUsers }} users</p>
+                    <p class="text-gray-400">{{ bucket.sessionCount }} sessions</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- Label -->
+            <p class="text-xs text-gray-500 mt-xs rotate-0 md:rotate-0 text-center">
+              {{ formatTimestamp(bucket.timestamp) }}
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Stats Summary -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-md mt-lg">
+      <div class="bg-base-200 p-md rounded-xl text-center">
+        <p class="text-gray-400 text-sm">Total Time</p>
+        <p class="text-xl font-bold text-primary-400">{{ stats().totalHours }}h</p>
+      </div>
+
+      <div class="bg-base-200 p-md rounded-xl text-center">
+        <p class="text-gray-400 text-sm">Sessions</p>
+        <p class="text-xl font-bold text-green-400">{{ stats().totalSessions }}</p>
+      </div>
+
+      <div class="bg-base-200 p-md rounded-xl text-center">
+        <p class="text-gray-400 text-sm">Avg Users</p>
+        <p class="text-xl font-bold text-blue-400">{{ stats().avgUsers }}</p>
+      </div>
+
+      <div class="bg-base-200 p-md rounded-xl text-center">
+        <p class="text-gray-400 text-sm">Peak</p>
+        <p class="text-xl font-bold text-purple-400">{{ stats().peakHours }}h</p>
+      </div>
+    </div>
+  }
+</div>
