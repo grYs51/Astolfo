@@ -1,0 +1,28 @@
+{
+  "name": "data-access-voice-stats",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "features/voice-stats/data-access/src",
+  "prefix": "lib",
+  "projectType": "library",
+  "tags": ["type:data-access"],
+  "targets": {
+    "build": {
+      "executor": "@nx/angular:ng-packagr-lite",
+      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
+      "options": {
+        "project": "features/voice-stats/data-access/ng-package.json",
+        "tsConfig": "features/voice-stats/data-access/tsconfig.lib.json"
+      },
+      "configurations": {
+        "production": {
+          "tsConfig": "features/voice-stats/data-access/tsconfig.lib.prod.json"
+        },
+        "development": {}
+      },
+      "defaultConfiguration": "production"
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}
