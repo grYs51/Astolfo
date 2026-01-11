@@ -18,6 +18,6 @@ export class DashboardComponent {
   readonly backendUrl = inject(COMMON_BACKEND_API_URL);
 
   selectedGuild(guildId: string) {
-    this.router.navigate(['overview', guildId]);
+    this.router.navigate(['overview', 'detail', guildId]);
   }
 }

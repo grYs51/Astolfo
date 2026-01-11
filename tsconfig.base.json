@@ -32,7 +32,11 @@
       "@nx-stolfo/common/store": ["libs/common/store/src/index.ts"],
       "@nx-stolfo/common/types": ["libs/common/types/src/index.ts"],
       "@nx-stolfo/components": ["libs/components/src/index.ts"],
-      "@nx-stolfo/pages": ["libs/pages/src/index.ts"]
+      "@nx-stolfo/pages": ["libs/pages/src/index.ts"],
+      "@nx-stolfo/data-access-voice-stats": [
+        "features/voice-stats/data-access/src/index.ts"
+      ],
+      "@nx-stolfo/ui-voice-stats": ["features/voice-stats/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "coverage"]

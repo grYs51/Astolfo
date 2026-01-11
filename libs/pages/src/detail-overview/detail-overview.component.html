@@ -1,1 +1,226 @@
-<h2 class="text-xl font-semibold pb-sm">Detail Overview</h2>
+<div class="container mx-auto px-md py-lg space-y-lg">
+  <!-- Header -->
+  <div class="mb-xl">
+    <h1 class="text-4xl font-bold mb-sm">Voice Statistics</h1>
+    <p class="text-gray-400">Server ID: {{ id() }}</p>
+  </div>
+
+  <!-- Overview Section -->
+  <section>
+    @if (overviewResource.isLoading()) {
+      <div class="animate-pulse">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+          @for (i of [1,2,3,4]; track i) {
+            <div class="h-32 rounded-2xl bg-base-200"></div>
+          }
+        </div>
+      </div>
+    } @else if (overviewResource.hasValue()) {
+      <feature-voice-stats-overview
+        [overview]="overviewResource.value()!"
+      />
+    } @else if (overviewResource.error()) {
+      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+        <p class="text-red-400">Failed to load overview data</p>
+      </div>
+    }
+  </section>
+
+  <!-- Leaderboard and Channels Row -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+    <!-- Leaderboard Section -->
+    <section>
+      <div class="mb-md flex justify-between items-center">
+        <h2 class="text-2xl font-bold">Leaderboard</h2>
+        <div class="flex gap-xs">
+          <button
+            (click)="setPeriod('day')"
+            [class]="selectedPeriod() === 'day' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Day
+          </button>
+          <button
+            (click)="setPeriod('week')"
+            [class]="selectedPeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Week
+          </button>
+          <button
+            (click)="setPeriod('month')"
+            [class]="selectedPeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Month
+          </button>
+          <button
+            (click)="setPeriod('all')"
+            [class]="selectedPeriod() === 'all' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            All
+          </button>
+        </div>
+      </div>
+
+      @if (leaderboardResource.isLoading()) {
+        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
+          <div class="space-y-sm">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="h-20 rounded-xl bg-base-200"></div>
+            }
+          </div>
+        </div>
+      } @else if (leaderboardResource.hasValue()) {
+        <feature-voice-stats-leaderboard
+          [leaderboard]="leaderboardResource.value()!"
+          (userClick)="onUserClick($event)"
+        />
+      } @else if (leaderboardResource.error()) {
+        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+          <p class="text-red-400">Failed to load leaderboard data</p>
+        </div>
+      }
+    </section>
+
+    <!-- Channels Section -->
+    <section>
+      <h2 class="text-2xl font-bold mb-md">Channel Insights</h2>
+
+      @if (channelsResource.isLoading()) {
+        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
+          <div class="space-y-md">
+            @for (i of [1,2,3,4]; track i) {
+              <div class="h-24 rounded-xl bg-base-200"></div>
+            }
+          </div>
+        </div>
+      } @else if (channelsResource.hasValue()) {
+        <feature-voice-stats-channels
+          [channels]="channelsResource.value()!"
+        />
+      } @else if (channelsResource.error()) {
+        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+          <p class="text-red-400">Failed to load channels data</p>
+        </div>
+      }
+    </section>
+  </div>
+
+  <!-- Timeline Section -->
+  <section>
+    <div class="mb-md flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Activity Timeline</h2>
+      <div class="flex gap-md">
+        <!-- Period Selection -->
+        <div class="flex gap-xs">
+          <button
+            (click)="setTimelinePeriod('day')"
+            [class]="selectedTimelinePeriod() === 'day' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            24h
+          </button>
+          <button
+            (click)="setTimelinePeriod('week')"
+            [class]="selectedTimelinePeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Week
+          </button>
+          <button
+            (click)="setTimelinePeriod('month')"
+            [class]="selectedTimelinePeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Month
+          </button>
+          <button
+            (click)="setTimelinePeriod('year')"
+            [class]="selectedTimelinePeriod() === 'year' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+            Year
+          </button>
+        </div>
+
+        <!-- Granularity Selection -->
+        <div class="flex gap-xs border-l border-gray-600 pl-md">
+          <button
+            (click)="setGranularity('hour')"
+            [class]="selectedGranularity() === 'hour' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
+            Hourly
+          </button>
+          <button
+            (click)="setGranularity('day')"
+            [class]="selectedGranularity() === 'day' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
+            Daily
+          </button>
+          <button
+            (click)="setGranularity('week')"
+            [class]="selectedGranularity() === 'week' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
+            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
+            Weekly
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (timelineResource.isLoading()) {
+      <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
+        <div class="h-64 rounded-xl bg-base-200"></div>
+      </div>
+    } @else if (timelineResource.hasValue()) {
+      <feature-voice-stats-timeline
+        [timeline]="timelineResource.value()!"
+      />
+    } @else if (timelineResource.error()) {
+      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+        <p class="text-red-400">Failed to load timeline data</p>
+      </div>
+    }
+  </section>
+
+  <!-- Heatmap Section -->
+  <section>
+    <div class="mb-md flex justify-between items-center">
+      <h2 class="text-2xl font-bold">Activity Heatmap</h2>
+      <div class="flex gap-xs">
+        <button
+          (click)="setHeatmapPeriod('week')"
+          [class]="selectedHeatmapPeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+          Week
+        </button>
+        <button
+          (click)="setHeatmapPeriod('month')"
+          [class]="selectedHeatmapPeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+          Month
+        </button>
+        <button
+          (click)="setHeatmapPeriod('year')"
+          [class]="selectedHeatmapPeriod() === 'year' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+          Year
+        </button>
+        <button
+          (click)="setHeatmapPeriod('all')"
+          [class]="selectedHeatmapPeriod() === 'all' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
+          All Time
+        </button>
+      </div>
+    </div>
+
+    @if (heatmapResource.isLoading()) {
+      <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
+        <div class="h-[500px] rounded-xl bg-base-200"></div>
+      </div>
+    } @else if (heatmapResource.hasValue()) {
+      <feature-voice-stats-heatmap
+        [heatmap]="heatmapResource.value()!"
+        [loading]="heatmapResource.isLoading()"
+      />
+    } @else if (heatmapResource.error()) {
+      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+        <p class="text-red-400">Failed to load heatmap data</p>
+      </div>
+    }
+  </section>
+</div>

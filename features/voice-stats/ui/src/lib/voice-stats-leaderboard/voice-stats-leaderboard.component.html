@@ -1,0 +1,37 @@
+@let data = leaderboard();
+
+<div class="bg-base-300 rounded-2xl p-lg">
+  <div class="flex justify-between items-center mb-lg">
+    <h2 class="text-2xl font-bold">🏆 Voice Time Leaderboard</h2>
+    <span class="text-sm text-gray-400 bg-base-100 px-md py-xs rounded-full">
+      {{ data.period | uppercase }}
+    </span>
+  </div>
+
+  @if (loading()) {
+    <div class="space-y-md">
+      @for (i of [1,2,3,4,5]; track i) {
+        <div class="bg-base-200 h-20 rounded-xl animate-pulse"></div>
+      }
+    </div>
+  } @else if (data.leaderboard.length === 0) {
+    <div class="text-center py-xl">
+      <p class="text-gray-400 text-lg">No voice activity yet</p>
+      <p class="text-gray-500 text-sm mt-xs">Be the first to join a voice channel!</p>
+    </div>
+  } @else {
+    <div class="space-y-sm">
+      @for (entry of data.leaderboard; track entry.memberId; let idx = $index) {
+        <lib-leaderboard-item
+          [rank]="idx + 1"
+          [title]="'User ' + entry.memberId.slice(0, 8) + '...'"
+          [value]="entry.totalDurationHours + 'h ' + entry.totalDurationMinutes + 'm'"
+          [subtitle]="entry.sessionCount + ' sessions'"
+          [secondaryValue]="entry.uniqueChannels + ' channels'"
+          icon="🎤"
+          (itemClick)="userClick.emit(entry.memberId)"
+        />
+      }
+    </div>
+  }
+</div>

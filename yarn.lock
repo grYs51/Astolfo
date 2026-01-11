@@ -5541,6 +5541,7 @@ __metadata:
     cors: "npm:^2.8.5"
     daisyui: "npm:^4.12.23"
     discord.js: "npm:^14.16.3"
+    echarts: "npm:^6.0.0"
     esbuild: "npm:^0.19.2"
     eslint: "npm:^9.28.0"
     eslint-config-prettier: "npm:10.0.0"
@@ -5558,6 +5559,7 @@ __metadata:
     jsdom: "npm:^27.1.0"
     jsonc-eslint-parser: "npm:^2.1.0"
     ng-packagr: "npm:21.0.1"
+    ngx-echarts: "npm:^21.0.0"
     node-schedule: "npm:^2.1.1"
     nx: "npm:22.3.3"
     passport: "npm:^0.7.0"
@@ -11780,6 +11782,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"echarts@npm:^6.0.0":
+  version: 6.0.0
+  resolution: "echarts@npm:6.0.0"
+  dependencies:
+    tslib: "npm:2.3.0"
+    zrender: "npm:6.0.0"
+  checksum: 10c0/60bbb4f00ac679d2f81d7a0aa684597c8ccc46041c5ae536def4c4bbb85d5557c1653a536ac6e11f42757718ab66e2bbc35d53d795173c50e8541154c8d59bbd
+  languageName: node
+  linkType: hard
+
 "ee-first@npm:1.1.1":
   version: 1.1.1
   resolution: "ee-first@npm:1.1.1"
@@ -17553,6 +17565,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"ngx-echarts@npm:^21.0.0":
+  version: 21.0.0
+  resolution: "ngx-echarts@npm:21.0.0"
+  dependencies:
+    tslib: "npm:^2.3.0"
+  peerDependencies:
+    "@angular/core": ">=21.0.0"
+    echarts: ">=5.0.0"
+  checksum: 10c0/f22828a55107015c60b602fa3bdb52f7287d5a70461407b314effd4fd8218d9d2ab0fcd2333acafdbab80a6944a5d0633e83061bd6d876f293625dd9e5e6f29c
+  languageName: node
+  linkType: hard
+
 "no-case@npm:^3.0.4":
   version: 3.0.4
   resolution: "no-case@npm:3.0.4"
@@ -22091,6 +22115,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tslib@npm:2.3.0":
+  version: 2.3.0
+  resolution: "tslib@npm:2.3.0"
+  checksum: 10c0/a845aed84e7e7dbb4c774582da60d7030ea39d67307250442d35c4c5dd77e4b44007098c37dd079e100029c76055f2a362734b8442ba828f8cc934f15ed9be61
+  languageName: node
+  linkType: hard
+
 "tslib@npm:2.8.1, tslib@npm:^2.0.0, tslib@npm:^2.0.1, tslib@npm:^2.0.3, tslib@npm:^2.1.0, tslib@npm:^2.3.0, tslib@npm:^2.4.0, tslib@npm:^2.6.2, tslib@npm:^2.6.3, tslib@npm:^2.8.0, tslib@npm:^2.8.1":
   version: 2.8.1
   resolution: "tslib@npm:2.8.1"
@@ -23656,5 +23687,14 @@ __metadata:
   version: 0.16.0
   resolution: "zone.js@npm:0.16.0"
   checksum: 10c0/89fa5873077c31e928ed98a4e535dd661a2c860fba580dcb6dc4641295ae6bc831712dfc4d4de67ac7be1d32605bb12913ed9e87784421e47ba453613016577b
+  languageName: node
+  linkType: hard
+
+"zrender@npm:6.0.0":
+  version: 6.0.0
+  resolution: "zrender@npm:6.0.0"
+  dependencies:
+    tslib: "npm:2.3.0"
+  checksum: 10c0/c794e05ee969c750de6d17cfff60d9d4e6342d1591cf6ba3e488fb084ac7a0415355fe4aec55f83a400fd4cda63792db0533362455058ac06f6e1343be28d0ce
   languageName: node
   linkType: hard

@@ -3,7 +3,7 @@ import { DetailOverviewComponent } from "./detail-overview.component";
 
 export const detailOverviewRoutes: Route[] = [
   {
-    path: '',
+    path: ':id',
     component: DetailOverviewComponent,
     data: {
       title: 'detail-overview',
@@ -18,5 +18,5 @@ export const detailOverviewRoutes: Route[] = [
         },
       ],
     },
-  }
+  },
 ];

@@ -19,7 +19,7 @@ export const appRoutes: Route[] = [
           import('@nx-stolfo/pages').then((m) => m.dashboardRoutes),
       },
       {
-        path: ':id',
+        path: 'detail',
         loadChildren: () =>
           import('@nx-stolfo/pages').then((m) => m.detailOverviewRoutes),
       },

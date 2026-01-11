@@ -32,6 +32,6 @@ export function withFetchOnInit<T>(apiCallback: () => HttpResourceRef<T>) {
           });
         });
       },
-    }),
+    })
   );
 }

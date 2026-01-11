@@ -1,0 +1,43 @@
+@if (loading()) {
+  <lib-skeleton-loader type="stat-grid" />
+} @else {
+  @let stats = overview();
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+    <!-- Total Voice Time -->
+    <lib-stat-card
+      label="Total Voice Time"
+      [value]="stats.totalDurationHours + 'h ' + stats.totalDurationMinutes + 'm'"
+      icon="🎙️"
+      [subtitle]="stats.totalSessions + ' sessions'"
+      iconColor="text-blue-500"
+    />
+
+    <!-- Active Users -->
+    <lib-stat-card
+      label="Active Users"
+      [value]="stats.activeUsers"
+      icon="👥"
+      subtitle="Unique members"
+      iconColor="text-green-500"
+    />
+
+    <!-- Active Sessions -->
+    <lib-stat-card
+      label="Live Now"
+      [value]="stats.activeSessions"
+      icon="🔴"
+      subtitle="Current sessions"
+      iconColor="text-red-500"
+    />
+
+    <!-- Most Active Channel -->
+    <lib-stat-card
+      label="Top Channel"
+      [value]="stats.mostActiveChannelSessions"
+      icon="📊"
+      [subtitle]="stats.mostActiveChannel || 'N/A'"
+      iconColor="text-purple-500"
+    />
+  </div>
+}

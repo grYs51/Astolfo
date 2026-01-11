@@ -87,12 +87,12 @@
     "@nx/angular:library": {
       "linter": "eslint",
       "unitTestRunner": "none",
+      "strict": true,
       "style": "scss",
       "buildable": true,
       "lazy": true,
       "addTailwind": true,
       "changeDetection": "OnPush",
-      "strict": true,
       "standalone": true
     },
     "@nx/angular:component": {
