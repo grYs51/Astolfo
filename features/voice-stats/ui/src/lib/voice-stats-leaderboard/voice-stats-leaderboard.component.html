@@ -21,15 +21,16 @@
     </div>
   } @else {
     <div class="space-y-sm">
-      @for (entry of data.leaderboard; track entry.memberId; let idx = $index) {
+      @for (entry of data.leaderboard; track entry.member.id; let idx = $index) {
         <lib-leaderboard-item
           [rank]="idx + 1"
-          [title]="'User ' + entry.memberId.slice(0, 8) + '...'"
+          [title]="entry.member.displayName || entry.member.username"
           [value]="entry.totalDurationHours + 'h ' + entry.totalDurationMinutes + 'm'"
           [subtitle]="entry.sessionCount + ' sessions'"
           [secondaryValue]="entry.uniqueChannels + ' channels'"
+          [avatarUrl]="entry.member.avatar || undefined"
+          (itemClick)="userClick.emit(entry.member.id)"
           icon="🎤"
-          (itemClick)="userClick.emit(entry.memberId)"
         />
       }
     </div>
