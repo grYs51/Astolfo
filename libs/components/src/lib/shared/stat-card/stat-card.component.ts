@@ -5,18 +5,20 @@ import { CommonModule } from '@angular/common';
   selector: 'lib-stat-card',
   imports: [CommonModule],
   template: `
-    <div [class]="'bg-base-300 p-lg rounded-2xl ' + containerClass()">
-      @if (icon()) {
-        <div [class]="'text-4xl mb-md ' + iconColor()">
-          {{ icon() }}
-        </div>
-      }
-      <div>
-        <p class="text-gray-400 text-sm font-medium mb-xs">{{ label() }}</p>
-        <p [class]="'font-bold ' + valueSize()">{{ value() }}</p>
-        @if (subtitle()) {
-          <p class="text-gray-500 text-xs mt-xs">{{ subtitle() }}</p>
+    <div class="card bg-base-300 p-lg">
+      <div class="card-body p-0">
+        @if (icon()) {
+          <div [class]="'text-4xl mb-md ' + iconColor()">
+            {{ icon() }}
+          </div>
         }
+        <div>
+          <p class="text-base-content/60 text-sm font-medium mb-xs">{{ label() }}</p>
+          <p [class]="'font-bold text-base-content ' + valueSize()">{{ value() }}</p>
+          @if (subtitle()) {
+            <p class="text-base-content/50 text-xs mt-xs">{{ subtitle() }}</p>
+          }
+        </div>
       </div>
     </div>
   `,

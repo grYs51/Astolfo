@@ -36,7 +36,7 @@
       label="Top Channel"
       [value]="stats.mostActiveChannelSessions"
       icon="📊"
-      [subtitle]="stats.mostActiveChannel || 'N/A'"
+      [subtitle]="stats.mostActiveChannel?.name || 'N/A'"
       iconColor="text-purple-500"
     />
   </div>

@@ -1,12 +1,20 @@
 import { UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
 import { VoiceStatsTimeline } from '@nx-stolfo/data-access-voice-stats';
+import { StatCardComponent } from '@nx-stolfo/components';
+import * as echarts from 'echarts/core';
+import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
+import { CanvasRenderer } from 'echarts/renderers';
+import { GridComponent, TooltipComponent } from 'echarts/components';
+import { BarChart } from 'echarts/charts';
+echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
 
 @Component({
   selector: 'feature-voice-stats-timeline',
-  imports: [UpperCasePipe],
+  imports: [UpperCasePipe, NgxEchartsDirective, StatCardComponent],
+  providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-timeline.component.html',
-  styles: ``,
+  styleUrl: './voice-stats-timeline.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoiceStatsTimelineComponent {
@@ -34,6 +42,116 @@ export class VoiceStatsTimelineComponent {
       totalSessions,
       avgUsers,
       peakHours: peakBucket.totalDurationHours,
+    };
+  });
+
+  chartOption = computed(() => {
+    const data = this.timeline();
+
+    const labels = data.timeline.map(bucket => this.formatTimestamp(bucket.timestamp));
+    const values = data.timeline.map(bucket => bucket.totalDuration / 1000 / 60);
+    const sessions = data.timeline.map(bucket => bucket.sessionCount);
+    const users = data.timeline.map(bucket => bucket.uniqueUsers);
+
+    return {
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: '#1f2937',
+        borderColor: '#374151',
+        borderWidth: 1,
+        textStyle: {
+          color: '#f3f4f6',
+        },
+        formatter: (params: any) => {
+          const index = params[0].dataIndex;
+          const bucket = data.timeline[index];
+          return `
+            <strong>${params[0].axisValue}</strong><br/>
+            Duration: ${bucket.totalDurationHours}h ${bucket.totalDurationMinutes}m<br/>
+            Sessions: ${bucket.sessionCount}<br/>
+            Users: ${bucket.uniqueUsers}
+          `;
+        },
+      },
+      grid: {
+        left: '60px',
+        right: '40px',
+        top: '40px',
+        bottom: '60px',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: labels,
+        axisLabel: {
+          color: '#9ca3af',
+          rotate: 45,
+          fontSize: 11,
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#374151',
+          },
+        },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Hours',
+        nameTextStyle: {
+          color: '#9ca3af',
+        },
+        axisLabel: {
+          color: '#9ca3af',
+          formatter: (value: number) => `${value.toFixed(0)}h`,
+        },
+        axisLine: {
+          lineStyle: {
+            color: '#374151',
+          },
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#374151',
+            type: 'dashed',
+          },
+        },
+      },
+      series: [
+        {
+          name: 'Voice Time',
+          type: 'bar',
+          data: values,
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: '#a855f7' }, // Primary purple
+                { offset: 1, color: '#7c3aed' }, // Darker purple
+              ],
+            },
+            borderRadius: [4, 4, 0, 0],
+          },
+          emphasis: {
+            itemStyle: {
+              color: {
+                type: 'linear',
+                x: 0,
+                y: 0,
+                x2: 0,
+                y2: 1,
+                colorStops: [
+                  { offset: 0, color: '#c084fc' },
+                  { offset: 1, color: '#a855f7' },
+                ],
+              },
+            },
+          },
+        },
+      ],
     };
   });
 
