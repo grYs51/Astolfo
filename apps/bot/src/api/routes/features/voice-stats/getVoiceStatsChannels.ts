@@ -1,5 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { client } from '../../../..';
+import { ChannelType } from 'discord.js';
 
 export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
@@ -67,8 +69,40 @@ export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, unknown
       }))
       .sort((a, b) => b.totalDuration - a.totalDuration);
 
+    // Fetch guild and enrich with channel data
+    const guild = client.guilds.cache.get(serverId);
+
+    const enrichedChannels = channels.map((channelStat) => {
+      const channel = guild?.channels.cache.get(channelStat.channelId);
+
+      let channelData = {
+        id: channelStat.channelId,
+        name: 'Unknown Channel',
+        type: channelStat.channelType,
+      };
+
+      if (channel) {
+        channelData = {
+          id: channel.id,
+          name: channel.name,
+          type: ChannelType[channel.type],
+        };
+      }
+
+      return {
+        channel: channelData,
+        totalDuration: channelStat.totalDuration,
+        totalDurationHours: channelStat.totalDurationHours,
+        totalDurationMinutes: channelStat.totalDurationMinutes,
+        sessionCount: channelStat.sessionCount,
+        uniqueUsers: channelStat.uniqueUsers,
+        averageSessionDuration: channelStat.averageSessionDuration,
+        averageSessionDurationMinutes: channelStat.averageSessionDurationMinutes,
+      };
+    });
+
     res.send({
-      channels,
-      total: channels.length,
+      channels: enrichedChannels,
+      total: enrichedChannels.length,
     });
   });

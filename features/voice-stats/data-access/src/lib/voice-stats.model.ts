@@ -1,3 +1,17 @@
+// Discord Data Types
+export interface DiscordMember {
+  id: string;
+  username: string;
+  displayName: string | null;
+  avatar: string | null;
+}
+
+export interface DiscordChannel {
+  id: string;
+  name: string;
+  type: string;
+}
+
 // Voice Stats Overview Response
 export interface VoiceStatsOverview {
   totalDuration: number;
@@ -5,7 +19,7 @@ export interface VoiceStatsOverview {
   totalDurationMinutes: number;
   activeUsers: number;
   totalSessions: number;
-  mostActiveChannel: string | null;
+  mostActiveChannel: DiscordChannel | null;
   mostActiveChannelDuration: number;
   mostActiveChannelSessions: number;
   activeSessions: number;
@@ -13,7 +27,7 @@ export interface VoiceStatsOverview {
 
 // Voice Stats Leaderboard Response
 export interface VoiceStatsLeaderboardEntry {
-  memberId: string;
+  member: DiscordMember;
   totalDuration: number;
   totalDurationHours: number;
   totalDurationMinutes: number;
@@ -30,8 +44,7 @@ export interface VoiceStatsLeaderboard {
 
 // Voice Stats Channels Response
 export interface VoiceStatsChannel {
-  channelId: string;
-  channelType: string;
+  channel: DiscordChannel;
   totalDuration: number;
   totalDurationHours: number;
   totalDurationMinutes: number;
@@ -49,8 +62,7 @@ export interface VoiceStatsChannels {
 // Voice Stats User Response
 export interface VoiceSession {
   id: string;
-  channelId: string;
-  channelType: string;
+  channel: DiscordChannel;
   issuedOn: Date;
   endedOn: Date;
   duration: number;
@@ -58,8 +70,7 @@ export interface VoiceSession {
 }
 
 export interface VoiceChannelBreakdown {
-  channelId: string;
-  channelType: string;
+  channel: DiscordChannel;
   totalDuration: number;
   totalDurationHours: number;
   totalDurationMinutes: number;
@@ -74,7 +85,7 @@ export interface VoiceStatsUser {
   totalDurationMinutes: number;
   sessionCount: number;
   uniqueChannels: number;
-  favoriteChannel: string | null;
+  favoriteChannel: DiscordChannel | null;
   favoriteChannelDuration: number;
   averageSessionDuration: number;
   averageSessionDurationMinutes: number;

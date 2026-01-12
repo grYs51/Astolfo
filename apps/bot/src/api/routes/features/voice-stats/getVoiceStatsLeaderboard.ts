@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { client } from '../../../..';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
@@ -81,9 +82,48 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
       .sort((a, b) => b.totalDuration - a.totalDuration)
       .slice(0, limit);
 
+    // Fetch guild and member data from Discord
+    const guild = client.guilds.cache.get(serverId);
+
+    // Enrich with Discord member data
+    const enrichedLeaderboard = await Promise.all(
+      leaderboard.map(async (entry) => {
+        let member = null;
+        try {
+          const guildMember = await guild?.members.fetch(entry.memberId);
+          if (guildMember) {
+            member = {
+              id: guildMember.id,
+              username: guildMember.user.username,
+              displayName: guildMember.displayName,
+              avatar: guildMember.user.displayAvatarURL(),
+            };
+          }
+        } catch (_) {
+          // Member not found or left server
+          member = {
+            id: entry.memberId,
+            username: 'Unknown User',
+            displayName: null,
+            avatar: null,
+          };
+        }
+
+        return {
+          member,
+          totalDuration: entry.totalDuration,
+          totalDurationHours: entry.totalDurationHours,
+          totalDurationMinutes: entry.totalDurationMinutes,
+          sessionCount: entry.sessionCount,
+          uniqueChannels: entry.uniqueChannels,
+          averageSessionDuration: entry.averageSessionDuration,
+        };
+      })
+    );
+
     res.send({
-      leaderboard,
+      leaderboard: enrichedLeaderboard,
       period: period || 'all',
-      total: leaderboard.length,
+      total: enrichedLeaderboard.length,
     });
   });

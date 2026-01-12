@@ -13,31 +13,40 @@
     </div>
 
     <!-- Stats Summary -->
-    <div class="stats-grid">
-      <div class="stat-item">
-        <div class="stat-label">Total Hours</div>
-        <div class="stat-value">{{ totalHours() }}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Peak Time</div>
-        <div class="stat-value text-primary-400">{{ peakTimeDisplay() }}</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Avg per Cell</div>
-        <div class="stat-value">{{ avgMinutes() }}m</div>
-      </div>
-      <div class="stat-item">
-        <div class="stat-label">Max Activity</div>
-        <div class="stat-value">{{ Math.floor(heatmap().stats.maxValue / 60) }}h</div>
-      </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+      <lib-stat-card
+        label="Total Hours"
+        [value]="totalHours()"
+        icon="⏱️"
+        iconColor="text-blue-500"
+      />
+      <lib-stat-card
+        label="Peak Time"
+        [value]="peakTimeDisplay()"
+        icon="🔥"
+        iconColor="text-primary-500"
+      />
+      <lib-stat-card
+        label="Avg per Cell"
+        [value]="avgMinutes() + 'm'"
+        icon="📊"
+        iconColor="text-green-500"
+      />
+      <lib-stat-card
+        label="Max Activity"
+        [value]="Math.floor(heatmap().stats.maxValue / 60) + 'h'"
+        icon="⚡"
+        iconColor="text-purple-500"
+      />
     </div>
 
     <!-- ECharts Heatmap -->
-    <div class="chart-container">
-      <div echarts
-           [options]="chartOption()"
-           class="heatmap-chart"
-           [theme]="'dark'">
+    <div class="bg-base-200 rounded-2xl p-6">
+      <div
+        echarts
+        [options]="chartOption()"
+        [initOpts]="{ renderer: 'canvas' }"
+        class="heatmap-chart">
       </div>
     </div>
 

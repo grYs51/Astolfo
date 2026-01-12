@@ -19,10 +19,12 @@ import { CommonModule } from '@angular/common';
         <img
           [src]="avatarUrl()!"
           [alt]="title()"
-          class="w-12 h-12 rounded-full object-cover"
+          [width]="48"
+          [height]="48"
+          class="w-4 h-4 rounded-full object-cover"
         />
       } @else if (icon()) {
-        <div class="w-12 h-12 rounded-full bg-base-100 flex items-center justify-center text-2xl">
+        <div class="w-4 h-4 rounded-full bg-base-100 flex items-center justify-center text-2xl">
           {{ icon() }}
         </div>
       }

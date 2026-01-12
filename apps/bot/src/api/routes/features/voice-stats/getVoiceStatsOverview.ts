@@ -1,5 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { client } from '../../../..';
+import { ChannelType } from 'discord.js';
 
 export const getVoiceStatsOverview: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
@@ -60,13 +62,35 @@ export const getVoiceStatsOverview: RequestHandler<{ serverId: string }, unknown
       (s) => s.ended_on > recentThreshold
     ).length;
 
+    // Fetch guild and enrich most active channel
+    const guild = client.guilds.cache.get(serverId);
+    let mostActiveChannelData = null;
+
+    if (mostActiveChannel.channelId) {
+      const channel = guild?.channels.cache.get(mostActiveChannel.channelId);
+
+      if (channel) {
+        mostActiveChannelData = {
+          id: channel.id,
+          name: channel.name,
+          type: ChannelType[channel.type],
+        };
+      } else {
+        mostActiveChannelData = {
+          id: mostActiveChannel.channelId,
+          name: 'Unknown Channel',
+          type: 'VOICE',
+        };
+      }
+    }
+
     res.send({
       totalDuration, // in milliseconds
       totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
       totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
       activeUsers,
       totalSessions: voiceSessions.length,
-      mostActiveChannel: mostActiveChannel.channelId || null,
+      mostActiveChannel: mostActiveChannelData,
       mostActiveChannelDuration: mostActiveChannel.duration,
       mostActiveChannelSessions: mostActiveChannel.sessions,
       activeSessions,

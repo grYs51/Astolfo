@@ -1,5 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { client } from '../../../..';
+import { ChannelType } from 'discord.js';
 
 export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: string }, unknown> =
   asyncHandler(async (req, res) => {
@@ -98,6 +100,52 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
       durationMinutes: Math.floor((session.ended_on.getTime() - session.issued_on.getTime()) / (1000 * 60)),
     }));
 
+    // Fetch guild and enrich with channel data
+    const guild = client.guilds.cache.get(serverId);
+
+    // Helper to get channel data
+    const getChannelData = (channelId: string, fallbackType: string) => {
+      const channel = guild?.channels.cache.get(channelId);
+      if (channel) {
+        return {
+          id: channel.id,
+          name: channel.name,
+          type: ChannelType[channel.type],
+        };
+      }
+      return {
+        id: channelId,
+        name: 'Unknown Channel',
+        type: fallbackType,
+      };
+    };
+
+    // Enrich favorite channel
+    let favoriteChannelData = null;
+    if (favoriteChannel.channelId) {
+      favoriteChannelData = getChannelData(favoriteChannel.channelId, favoriteChannel.channelType);
+    }
+
+    // Enrich channel breakdown
+    const enrichedChannelBreakdown = channelBreakdown.map((breakdown) => ({
+      channel: getChannelData(breakdown.channelId, breakdown.channelType),
+      totalDuration: breakdown.totalDuration,
+      totalDurationHours: breakdown.totalDurationHours,
+      totalDurationMinutes: breakdown.totalDurationMinutes,
+      sessionCount: breakdown.sessionCount,
+      percentage: breakdown.percentage,
+    }));
+
+    // Enrich recent sessions
+    const enrichedRecentSessions = recentSessions.map((session) => ({
+      id: session.id,
+      channel: getChannelData(session.channelId, session.channelType),
+      issuedOn: session.issuedOn,
+      endedOn: session.endedOn,
+      duration: session.duration,
+      durationMinutes: session.durationMinutes,
+    }));
+
     res.send({
       userId,
       totalDuration,
@@ -105,11 +153,11 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
       totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
       sessionCount: userSessions.length,
       uniqueChannels: Object.keys(channelStats).length,
-      favoriteChannel: favoriteChannel.channelId || null,
+      favoriteChannel: favoriteChannelData,
       favoriteChannelDuration: favoriteChannel.duration,
       averageSessionDuration: Math.floor(totalDuration / userSessions.length),
       averageSessionDurationMinutes: Math.floor(totalDuration / userSessions.length / (1000 * 60)),
-      recentSessions,
-      channelBreakdown,
+      recentSessions: enrichedRecentSessions,
+      channelBreakdown: enrichedChannelBreakdown,
     });
   });

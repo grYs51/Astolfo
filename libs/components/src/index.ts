@@ -5,3 +5,8 @@ export * from './lib/shared/stat-card/stat-card.component';
 export * from './lib/shared/progress-bar/progress-bar.component';
 export * from './lib/shared/leaderboard-item/leaderboard-item.component';
 export * from './lib/shared/skeleton-loader/skeleton-loader.component';
+export * from './lib/shared/card/card.component';
+export * from './lib/shared/collapsible-card/collapsible-card.component';
+export * from './lib/shared/badge/badge.component';
+export * from './lib/shared/button/button.component';
+export * from './lib/shared/button-group/button-group.component';
