@@ -5,3 +5,4 @@ export * from './getVoiceStatsChannels';
 export * from './getVoiceStatsUser';
 export * from './getVoiceStatsTimeline';
 export * from './getVoiceStatsHeatmap';
+export * from './getVoiceStatsUserHeatmap';

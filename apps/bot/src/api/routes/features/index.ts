@@ -9,6 +9,7 @@ import {
   getVoiceStatsUser,
   getVoiceStatsTimeline,
   getVoiceStatsHeatmap,
+  getVoiceStatsUserHeatmap,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -23,6 +24,7 @@ export default (router: Router) => {
   router.get('/voice-stats/:serverId/leaderboard', isAuthenticated, getVoiceStatsLeaderboard);
   router.get('/voice-stats/:serverId/channels', isAuthenticated, getVoiceStatsChannels);
   router.get('/voice-stats/:serverId/users/:userId', isAuthenticated, getVoiceStatsUser);
+  router.get('/voice-stats/:serverId/users/:userId/heatmap', isAuthenticated, getVoiceStatsUserHeatmap);
   router.get('/voice-stats/:serverId/timeline', isAuthenticated, getVoiceStatsTimeline);
   router.get('/voice-stats/:serverId/heatmap', isAuthenticated, getVoiceStatsHeatmap);
 };

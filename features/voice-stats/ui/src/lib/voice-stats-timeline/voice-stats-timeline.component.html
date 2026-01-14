@@ -2,12 +2,15 @@
 
 <div class="bg-base-300 rounded-2xl p-lg">
   <div class="flex justify-between items-center mb-lg">
-    <h2 class="text-2xl font-bold">📈 Activity Timeline</h2>
+    <div>
+      <h2 class="text-2xl font-bold mb-xs">📈 Voice Activity Timeline</h2>
+      <p class="text-sm text-gray-400">Total voice duration over time</p>
+    </div>
     <div class="flex gap-sm text-xs">
-      <span class="bg-base-100 px-md py-xs rounded-full text-gray-400">
+      <span class="bg-primary-500/20 text-primary-400 px-md py-xs rounded-full font-medium">
         {{ data.period | uppercase }}
       </span>
-      <span class="bg-base-100 px-md py-xs rounded-full text-gray-400">
+      <span class="bg-secondary-500/20 text-secondary-400 px-md py-xs rounded-full font-medium">
         {{ data.granularity | uppercase }}
       </span>
     </div>
@@ -33,12 +36,12 @@
     <!-- Stats Summary -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-md mt-lg">
             <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Total Time</p>
+              <p class="text-gray-400 text-sm">Total Duration</p>
               <p class="text-xl font-bold text-primary-400">{{ stats().totalHours }}h</p>
             </div>
 
             <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Sessions</p>
+              <p class="text-gray-400 text-sm">Total Sessions</p>
               <p class="text-xl font-bold text-green-400">{{ stats().totalSessions }}</p>
             </div>
 

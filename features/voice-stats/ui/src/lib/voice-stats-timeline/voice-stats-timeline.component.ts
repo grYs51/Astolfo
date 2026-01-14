@@ -11,7 +11,7 @@ echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
 
 @Component({
   selector: 'feature-voice-stats-timeline',
-  imports: [UpperCasePipe, NgxEchartsDirective, StatCardComponent],
+  imports: [UpperCasePipe, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-timeline.component.html',
   styleUrl: './voice-stats-timeline.component.scss',
