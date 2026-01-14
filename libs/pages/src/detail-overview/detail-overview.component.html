@@ -1,22 +1,30 @@
-<div class="container mx-auto px-md py-lg space-y-lg">
+<div class="container mx-auto px-md py-lg space-y-xl">
   <!-- Header -->
   <div class="mb-xl">
-    <h1 class="text-4xl font-bold mb-sm">Voice Statistics</h1>
-    <p class="text-gray-400">Server ID: {{ id() }}</p>
+    <h1 class="text-4xl font-bold mb-sm">Voice Statistics Dashboard</h1>
+    <p class="text-gray-400">Comprehensive voice activity analytics for Server ID: {{ id() }}</p>
   </div>
 
-  <!-- Overview Section -->
+  <!-- Server Overview Section -->
   <section>
+    <div class="mb-md">
+      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-primary-500/20 to-purple-500/20 px-lg py-sm rounded-full border border-primary-500/30">
+        <span class="text-lg">🌐</span>
+        <span class="font-semibold text-primary-300">Server Statistics</span>
+      </div>
+    </div>
+
     @if (overviewResource.isLoading()) {
       <div class="animate-pulse">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md mb-lg">
           @for (i of [1,2,3,4]; track i) {
             <div class="h-32 rounded-2xl bg-base-200"></div>
           }
         </div>
+        <div class="h-96 rounded-2xl bg-base-200"></div>
       </div>
     } @else if (overviewResource.hasValue()) {
-      <feature-voice-stats-overview
+      <feature-voice-stats-server-overview
         [overview]="overviewResource.value()!"
       />
     } @else if (overviewResource.error()) {
@@ -26,10 +34,18 @@
     }
   </section>
 
-  <!-- Leaderboard and Channels Row -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-    <!-- Leaderboard Section -->
-    <section>
+  <!-- User Activity Section -->
+  <section>
+    <div class="mb-md">
+      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-green-500/20 to-blue-500/20 px-lg py-sm rounded-full border border-green-500/30">
+        <span class="text-lg">👥</span>
+        <span class="font-semibold text-green-300">User Activity</span>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
+    <!-- Leaderboard -->
+    <div>
       <div class="mb-md flex justify-between items-center">
         <h2 class="text-2xl font-bold">Leaderboard</h2>
         <div class="flex gap-xs">
@@ -71,17 +87,16 @@
       } @else if (leaderboardResource.hasValue()) {
         <feature-voice-stats-leaderboard
           [leaderboard]="leaderboardResource.value()!"
-          (userClick)="onUserClick($event)"
         />
       } @else if (leaderboardResource.error()) {
         <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
           <p class="text-red-400">Failed to load leaderboard data</p>
         </div>
       }
-    </section>
+    </div>
 
-    <!-- Channels Section -->
-    <section>
+    <!-- Channels -->
+    <div>
       <h2 class="text-2xl font-bold mb-md">Channel Insights</h2>
 
       @if (channelsResource.isLoading()) {
@@ -101,11 +116,21 @@
           <p class="text-red-400">Failed to load channels data</p>
         </div>
       }
-    </section>
-  </div>
+    </div>
+    </div>
+  </section>
 
-  <!-- Timeline Section -->
+  <!-- Analytics & Insights Section -->
   <section>
+    <div class="mb-md">
+      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-purple-500/20 to-pink-500/20 px-lg py-sm rounded-full border border-purple-500/30">
+        <span class="text-lg">📊</span>
+        <span class="font-semibold text-purple-300">Analytics & Trends</span>
+      </div>
+    </div>
+
+  <!-- Timeline -->
+  <div>
     <div class="mb-md flex justify-between items-center">
       <h2 class="text-2xl font-bold">Activity Timeline</h2>
       <div class="flex gap-md">
@@ -174,10 +199,10 @@
         <p class="text-red-400">Failed to load timeline data</p>
       </div>
     }
-  </section>
+  </div>
 
-  <!-- Heatmap Section -->
-  <section>
+  <!-- Heatmap -->
+  <div>
     <div class="mb-md flex justify-between items-center">
       <h2 class="text-2xl font-bold">Activity Heatmap</h2>
       <div class="flex gap-xs">
@@ -222,5 +247,60 @@
         <p class="text-red-400">Failed to load heatmap data</p>
       </div>
     }
+  </div>
   </section>
+
+  <!-- User Comparison Heatmap Section -->
+  @if (currentUser()?.id) {
+    <section id="user-heatmap-section">
+      <div class="mb-md">
+        <div class="inline-flex items-center gap-sm bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-lg py-sm rounded-full border border-cyan-500/30">
+          <span class="text-lg">👤</span>
+          <span class="font-semibold text-cyan-300">Your Activity Comparison</span>
+        </div>
+      </div>
+
+      <div class="mb-md flex justify-end gap-xs">
+        <button
+          (click)="setUserHeatmapPeriod('week')"
+          [class]="selectedUserHeatmapPeriod() === 'week' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
+          Week
+        </button>
+        <button
+          (click)="setUserHeatmapPeriod('month')"
+          [class]="selectedUserHeatmapPeriod() === 'month' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
+          Month
+        </button>
+        <button
+          (click)="setUserHeatmapPeriod('year')"
+          [class]="selectedUserHeatmapPeriod() === 'year' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
+          Year
+        </button>
+        <button
+          (click)="setUserHeatmapPeriod('all')"
+          [class]="selectedUserHeatmapPeriod() === 'all' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
+          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
+          All Time
+        </button>
+      </div>
+
+      @if (userHeatmapResource.isLoading()) {
+        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
+          <div class="h-[500px] rounded-xl bg-base-200"></div>
+        </div>
+      } @else if (userHeatmapResource.hasValue()) {
+        <feature-voice-stats-user-heatmap
+          [heatmap]="userHeatmapResource.value()!"
+          [loading]="userHeatmapResource.isLoading()"
+        />
+      } @else if (userHeatmapResource.error()) {
+        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
+          <p class="text-red-400">Failed to load user heatmap data</p>
+        </div>
+      }
+    </section>
+  }
 </div>

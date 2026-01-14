@@ -7,41 +7,55 @@
       </div>
     </div>
   } @else {
-    <div class="heatmap-header">
-      <h3 class="text-lg font-semibold text-neutral-100">Activity Heatmap</h3>
-      <p class="text-sm text-neutral-400">Voice activity by time of day and day of week</p>
+    <div class="heatmap-header mb-md">
+      <div class="flex items-center justify-between">
+        <div>
+          <h3 class="text-2xl font-semibold text-neutral-100 mb-xs">📅 Voice Activity Heatmap</h3>
+          <p class="text-sm text-neutral-400">Total voice duration by hour and day of week</p>
+        </div>
+        <div class="bg-primary-500/20 text-primary-400 px-md py-xs rounded-lg text-xs font-medium">
+          Shows: Duration (Minutes)
+        </div>
+      </div>
     </div>
 
     <!-- Stats Summary -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
       <lib-stat-card
-        label="Total Hours"
+        label="Total Duration"
         [value]="totalHours()"
         icon="⏱️"
+        subtitle="hours of voice activity"
         iconColor="text-blue-500"
       />
       <lib-stat-card
         label="Peak Time"
         [value]="peakTimeDisplay()"
         icon="🔥"
+        subtitle="highest activity"
         iconColor="text-primary-500"
       />
       <lib-stat-card
         label="Avg per Cell"
         [value]="avgMinutes() + 'm'"
         icon="📊"
+        subtitle="average duration"
         iconColor="text-green-500"
       />
       <lib-stat-card
         label="Max Activity"
         [value]="Math.floor(heatmap().stats.maxValue / 60) + 'h'"
         icon="⚡"
+        subtitle="peak cell duration"
         iconColor="text-purple-500"
       />
     </div>
 
     <!-- ECharts Heatmap -->
-    <div class="bg-base-200 rounded-2xl p-6">
+    <div class="bg-base-200 rounded-2xl p-6 mt-lg">
+      <div class="text-xs text-gray-400 mb-sm text-center">
+        Darker colors = higher voice activity (in minutes)
+      </div>
       <div
         echarts
         [options]="chartOption()"
