@@ -7,16 +7,16 @@
     <!-- Total Voice Time -->
     <lib-stat-card
       label="Total Voice Time"
-      [value]="stats.totalDurationHours + 'h ' + stats.totalDurationMinutes + 'm'"
+      [value]="stats.server.totalDurationHours + 'h ' + stats.server.totalDurationMinutes + 'm'"
       icon="🎙️"
-      [subtitle]="stats.totalSessions + ' sessions'"
+      [subtitle]="stats.server.totalSessions + ' sessions'"
       iconColor="text-blue-500"
     />
 
     <!-- Active Users -->
     <lib-stat-card
       label="Active Users"
-      [value]="stats.activeUsers"
+      [value]="stats.server.activeUsers"
       icon="👥"
       subtitle="Unique members"
       iconColor="text-green-500"
@@ -25,7 +25,7 @@
     <!-- Active Sessions -->
     <lib-stat-card
       label="Live Now"
-      [value]="stats.activeSessions"
+      [value]="stats.server.activeSessions"
       icon="🔴"
       subtitle="Current sessions"
       iconColor="text-red-500"
@@ -34,9 +34,9 @@
     <!-- Most Active Channel -->
     <lib-stat-card
       label="Top Channel"
-      [value]="stats.mostActiveChannelSessions"
+      [value]="stats.server.mostActiveChannelSessions"
       icon="📊"
-      [subtitle]="stats.mostActiveChannel?.name || 'N/A'"
+      [subtitle]="stats.server.mostActiveChannel?.name || 'N/A'"
       iconColor="text-purple-500"
     />
   </div>

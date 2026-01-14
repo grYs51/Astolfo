@@ -5,15 +5,15 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
     <lib-stat-card
       label="Total Voice Time"
-      [value]="stats.totalDurationHours + 'h ' + stats.totalDurationMinutes + 'm'"
+      [value]="stats.summary.totalDurationHours + 'h ' + stats.summary.totalDurationMinutes + 'm'"
       icon="🎙️"
-      [subtitle]="stats.sessionCount + ' sessions'"
+      [subtitle]="stats.summary.sessionCount + ' sessions'"
       iconColor="text-blue-500"
     />
 
     <lib-stat-card
       label="Favorite Channel"
-      [value]="stats.favoriteChannel ? stats.favoriteChannel.name : 'N/A'"
+      [value]="stats.summary.favoriteChannel ? stats.summary.favoriteChannel.name : 'N/A'"
       icon="❤️"
       subtitle="Most time spent"
       iconColor="text-red-500"
@@ -21,9 +21,9 @@
 
     <lib-stat-card
       label="Avg Session"
-      [value]="stats.averageSessionDurationMinutes + 'm'"
+      [value]="stats.summary.averageSessionDurationMinutes + 'm'"
       icon="⏱️"
-      [subtitle]="stats.uniqueChannels + ' unique channels'"
+      [subtitle]="stats.summary.uniqueChannels + ' unique channels'"
       iconColor="text-purple-500"
     />
   </div>

@@ -8,6 +8,7 @@ import {
   VoiceStatsUser,
   VoiceStatsTimeline,
   VoiceStatsHeatmap,
+  VoiceStatsUserHeatmap,
 } from './voice-stats.model';
 
 export class VoiceStatsApi extends ApiBase {
@@ -154,6 +155,36 @@ export class VoiceStatsApi extends ApiBase {
       typeof guildId === 'function'
         ? () => `/features/voice-stats/${guildId()}/heatmap`
         : `/features/voice-stats/${guildId}/heatmap`,
+      () => {
+        const params: Record<string, string> = {};
+        const periodVal = typeof period === 'function' ? period() : period;
+
+        if (periodVal) params['period'] = periodVal;
+
+        return params;
+      }
+    );
+  }
+
+  /**
+   * Fetch user-specific heatmap data with server comparison
+   * @param guildId - Can be a static string or a signal/computed function
+   * @param userId - Can be a static string or a signal/computed function
+   * @param period - Optional time period filter
+   */
+  fetchVoiceStatsUserHeatmap(
+    guildId: string | (() => string),
+    userId: string | (() => string),
+    period?: ('week' | 'month' | 'year' | 'all') | (() => 'week' | 'month' | 'year' | 'all' | undefined)
+  ) {
+    return this.get<VoiceStatsUserHeatmap>(
+      typeof guildId === 'function' || typeof userId === 'function'
+        ? () => {
+            const guild = typeof guildId === 'function' ? guildId() : guildId;
+            const user = typeof userId === 'function' ? userId() : userId;
+            return `/features/voice-stats/${guild}/users/${user}/heatmap`;
+          }
+        : `/features/voice-stats/${guildId}/users/${userId}/heatmap`,
       () => {
         const params: Record<string, string> = {};
         const periodVal = typeof period === 'function' ? period() : period;
