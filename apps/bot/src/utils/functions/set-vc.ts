@@ -21,7 +21,9 @@ const processMember = async (
     createVoiceStat(channel.guild.id, channel.id, member.id, date, type)
   );
 
-  client.voiceUsers.push(voiceVoiceStat, ...otherVoiceStats);
+  const k = `${channel.guild.id}:${member.id}`;
+  const existing = client.voiceUsers.get(k) ?? [];
+  client.voiceUsers.set(k, [...existing, voiceVoiceStat, ...otherVoiceStats]);
   schedule5hrVoiceChannelJob(member, channel.id, date);
 };
 
@@ -58,8 +60,9 @@ export const setVc = async () => {
 export const saveVc = async () => {
   const date = new Date();
 
+  const allStats = Array.from(client.voiceUsers.values()).flat();
   return Promise.all(
-    client.voiceUsers.map(async (voiceStat) => {
+    allStats.map(async (voiceStat) => {
       voiceStat.ended_on = date;
       await client.dataSource.voiceStats.create({
         data: voiceStat as voice_stats,

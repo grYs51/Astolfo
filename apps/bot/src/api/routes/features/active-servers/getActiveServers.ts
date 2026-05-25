@@ -4,20 +4,17 @@ import { client } from '../../../..';
 
 export const getActiveServers: RequestHandler<unknown, any> = asyncHandler(
   async (req, res) => {
-    const { user } = req;
-
-    if (!user || !user.id) {
-      res.status(401).send({ error: 'Unauthorized' });
+    const memberId = req.user?.id;
+    if (!memberId) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-
-    const { id } = user;
 
     try {
       // Get all voice stats for the user with type 'VOICE'
       const voiceStats = await req.db.voiceStats.findMany({
         where: {
-          member_id: id,
+          member_id: memberId,
           type: 'VOICE',
         },
         select: {

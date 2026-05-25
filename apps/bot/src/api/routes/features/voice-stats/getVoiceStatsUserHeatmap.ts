@@ -25,6 +25,15 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
     const { serverId, userId } = req.params;
     const { period = 'month' } = req.query;
 
+    const isMember = await req.db.voiceStats.findFirst({
+      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
+      select: { id: true },
+    });
+    if (!isMember) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
     // Calculate date range based on period
     const now = new Date();
     let startDate: Date;

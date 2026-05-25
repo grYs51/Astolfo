@@ -7,8 +7,10 @@ import {
 import { VOICE_TYPE } from '../../handlers/vc';
 
 export const getCurrentVoiceStats: getVoiceStatsType = (client, guildId) => {
-  const stats = client.voiceUsers
-    .filter((x) => x.guild_id === guildId && x.type === VOICE_TYPE.VOICE)
+  const stats = Array.from(client.voiceUsers.entries())
+    .filter(([key]) => key.startsWith(`${guildId}:`))
+    .flatMap(([, s]) => s)
+    .filter((x) => x.type === VOICE_TYPE.VOICE)
     .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
 
   return Promise.resolve(stats);

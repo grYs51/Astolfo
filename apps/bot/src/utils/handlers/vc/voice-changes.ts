@@ -41,7 +41,9 @@ export const handleUserJoinedVoiceChannel = (
     )
   );
 
-  client.voiceUsers.push(voiceVoiceStat, ...otherVoiceStats);
+  const joinKey = `${newState.guild.id}:${newState.member!.id}`;
+  const existing = client.voiceUsers.get(joinKey) ?? [];
+  client.voiceUsers.set(joinKey, [...existing, voiceVoiceStat, ...otherVoiceStats]);
   schedule5hrVoiceChannelJob(newState.member!, newState.channel!.id, date);
 };
 
@@ -74,7 +76,9 @@ export const handleUserChangeVoiceStates = async (
         type
       )
     );
-    client.voiceUsers.push(...newVoiceStats);
+    const stateKey = `${newState.guild.id}:${newState.member!.id}`;
+    const existingStats = client.voiceUsers.get(stateKey) ?? [];
+    client.voiceUsers.set(stateKey, [...existingStats, ...newVoiceStats]);
   }
 
   const statesToSave = Object.entries(statesChanged)

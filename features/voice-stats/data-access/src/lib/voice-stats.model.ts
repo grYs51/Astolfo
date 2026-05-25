@@ -12,14 +12,15 @@ export interface DiscordChannel {
   type: string;
 }
 
-// Voice Activity Types
+// Voice Activity Types — values match VOICE_TYPE stored in the DB (uppercase)
 export enum VoiceActivityType {
-  VOICE = 'voice',
-  DEAFENED = 'deafened',
-  MUTED = 'muted',
-  STREAMING = 'streaming',
-  VIDEO = 'video',
-  SCREENSHARE = 'screenshare'
+  VOICE = 'VOICE',
+  DEAF = 'DEAF',
+  SERVER_DEAF = 'SERVER_DEAF',
+  MUTED = 'MUTED',
+  SERVER_MUTED = 'SERVER_MUTED',
+  STREAMING = 'STREAMING',
+  VIDEO = 'VIDEO',
 }
 
 // Activity Type Breakdown

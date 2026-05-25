@@ -3,101 +3,64 @@ import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
 import { ChannelType } from 'discord.js';
 
+type ChannelAggRow = {
+  channel_id: string;
+  total_duration: bigint;
+  session_count: bigint;
+  unique_users: bigint;
+};
+
 export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
-    const { user } = req;
     const { serverId } = req.params;
-
-    if (!user || !user.id) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
 
     if (!serverId) {
       res.status(400).send({ error: 'Missing serverId' });
       return;
     }
 
-    // Fetch voice sessions for the server
-    const voiceSessions = await req.db.voiceStats.findMany({
-      where: {
-        guild_id: serverId,
-      },
+    const isMember = await req.db.voiceStats.findFirst({
+      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
+      select: { id: true },
     });
+    if (!isMember) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-    // Aggregate by channel
-    const channelStats = voiceSessions.reduce((acc, session) => {
-      const duration = session.ended_on.getTime() - session.issued_on.getTime();
+    // Aggregate channel stats via SQL — no full table scan into memory
+    const channelRows = await req.db.$queryRaw<ChannelAggRow[]>`
+      SELECT
+        channel_id,
+        SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+        COUNT(*)::bigint AS session_count,
+        COUNT(DISTINCT member_id)::bigint AS unique_users
+      FROM voice_stats
+      WHERE guild_id = ${serverId}
+      GROUP BY channel_id
+      ORDER BY total_duration DESC
+    `;
 
-      if (!acc[session.channel_id]) {
-        acc[session.channel_id] = {
-          channelId: session.channel_id,
-          totalDuration: 0,
-          sessionCount: 0,
-          uniqueUsers: new Set<string>(),
-          peakOccupancy: 0,
-          channelType: session.type,
-        };
-      }
-
-      acc[session.channel_id].totalDuration += duration;
-      acc[session.channel_id].sessionCount += 1;
-      acc[session.channel_id].uniqueUsers.add(session.member_id);
-
-      return acc;
-    }, {} as Record<string, {
-      channelId: string;
-      totalDuration: number;
-      sessionCount: number;
-      uniqueUsers: Set<string>;
-      peakOccupancy: number;
-      channelType: string;
-    }>);
-
-    // Calculate average session duration and format response
-    const channels = Object.values(channelStats)
-      .map((stat) => ({
-        channelId: stat.channelId,
-        channelType: stat.channelType,
-        totalDuration: stat.totalDuration,
-        totalDurationHours: Math.floor(stat.totalDuration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((stat.totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
-        sessionCount: stat.sessionCount,
-        uniqueUsers: stat.uniqueUsers.size,
-        averageSessionDuration: Math.floor(stat.totalDuration / stat.sessionCount),
-        averageSessionDurationMinutes: Math.floor(stat.totalDuration / stat.sessionCount / (1000 * 60)),
-      }))
-      .sort((a, b) => b.totalDuration - a.totalDuration);
-
-    // Fetch guild and enrich with channel data
     const guild = client.guilds.cache.get(serverId);
 
-    const enrichedChannels = channels.map((channelStat) => {
-      const channel = guild?.channels.cache.get(channelStat.channelId);
+    const enrichedChannels = channelRows.map((row) => {
+      const totalDuration = Number(row.total_duration);
+      const sessionCount = Number(row.session_count);
+      const discordChannel = guild?.channels.cache.get(row.channel_id);
 
-      let channelData = {
-        id: channelStat.channelId,
-        name: 'Unknown Channel',
-        type: channelStat.channelType,
-      };
-
-      if (channel) {
-        channelData = {
-          id: channel.id,
-          name: channel.name,
-          type: ChannelType[channel.type],
-        };
-      }
+      const channel = discordChannel
+        ? { id: discordChannel.id, name: discordChannel.name, type: ChannelType[discordChannel.type] }
+        : { id: row.channel_id, name: 'Unknown Channel', type: 'VOICE' };
 
       return {
-        channel: channelData,
-        totalDuration: channelStat.totalDuration,
-        totalDurationHours: channelStat.totalDurationHours,
-        totalDurationMinutes: channelStat.totalDurationMinutes,
-        sessionCount: channelStat.sessionCount,
-        uniqueUsers: channelStat.uniqueUsers,
-        averageSessionDuration: channelStat.averageSessionDuration,
-        averageSessionDurationMinutes: channelStat.averageSessionDurationMinutes,
+        channel,
+        totalDuration,
+        totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
+        totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+        sessionCount,
+        uniqueUsers: Number(row.unique_users),
+        averageSessionDuration: sessionCount > 0 ? Math.floor(totalDuration / sessionCount) : 0,
+        averageSessionDurationMinutes: sessionCount > 0 ? Math.floor(totalDuration / sessionCount / (1000 * 60)) : 0,
       };
     });
 

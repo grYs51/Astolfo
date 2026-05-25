@@ -2,150 +2,107 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
 import { ChannelType } from 'discord.js';
-import { voice_stats } from '@prisma/client';
 
-// Helper to calculate activity breakdown
-function calculateActivityBreakdown(sessions: voice_stats[]) {
-  const activityMap = new Map<string, { duration: number; sessions: number }>();
-
-  sessions.forEach((session) => {
-    const type = session.type || 'voice';
-    const duration = session.ended_on.getTime() - session.issued_on.getTime();
-
-    const existing = activityMap.get(type);
-    if (existing) {
-      existing.duration += duration;
-      existing.sessions += 1;
-    } else {
-      activityMap.set(type, { duration, sessions: 1 });
-    }
-  });
-
-  const totalDuration = Array.from(activityMap.values()).reduce(
-    (sum, v) => sum + v.duration,
-    0,
-  );
-
-  return Array.from(activityMap.entries()).map(([type, data]) => ({
-    type,
-    duration: data.duration,
-    durationHours: Math.floor(data.duration / (1000 * 60 * 60)),
-    durationMinutes: Math.floor(
-      (data.duration % (1000 * 60 * 60)) / (1000 * 60),
-    ),
-    sessionCount: data.sessions,
-    percentage:
-      totalDuration > 0 ? Math.round((data.duration / totalDuration) * 100) : 0,
-  }));
-}
+type TotalsRow = {
+  total_duration: bigint;
+  session_count: bigint;
+  unique_users: bigint;
+  active_sessions: bigint;
+};
+type ChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
+type TypeRow = { type: string; duration: bigint; session_count: bigint };
 
 export const getVoiceStatsOverview: RequestHandler<
   { serverId: string },
   unknown
 > = asyncHandler(async (req, res) => {
-  const { user } = req;
   const { serverId } = req.params;
-
-  if (!user || !user.id) {
-    res.status(401).send({ error: 'Unauthorized' });
-    return;
-  }
 
   if (!serverId) {
     res.status(400).send({ error: 'Missing serverId' });
     return;
   }
 
-  // Get total voice time for the server
-  const voiceSessions = await req.db.voiceStats.findMany({
-    where: {
-      guild_id: serverId,
-    },
+  const isMember = await req.db.voiceStats.findFirst({
+    where: { guild_id: serverId, member_id: req.user?.id ?? '' },
+    select: { id: true },
   });
-
-  // Calculate total duration in milliseconds
-  const totalDuration = voiceSessions.reduce((acc, session) => {
-    const duration = session.ended_on.getTime() - session.issued_on.getTime();
-    return acc + duration;
-  }, 0);
-
-  // Get unique active users
-  const activeUsers = new Set(voiceSessions.map((s) => s.member_id)).size;
-
-  // Calculate most active channel
-  const channelStats = voiceSessions.reduce(
-    (acc, session) => {
-      const duration = session.ended_on.getTime() - session.issued_on.getTime();
-      if (!acc[session.channel_id]) {
-        acc[session.channel_id] = { duration: 0, sessions: 0 };
-      }
-      acc[session.channel_id].duration += duration;
-      acc[session.channel_id].sessions += 1;
-      return acc;
-    },
-    {} as Record<string, { duration: number; sessions: number }>,
-  );
-
-  const mostActiveChannel = Object.entries(channelStats).reduce(
-    (max, [channelId, stats]) => {
-      if (stats.duration > max.duration) {
-        return {
-          channelId,
-          duration: stats.duration,
-          sessions: stats.sessions,
-        };
-      }
-      return max;
-    },
-    { channelId: '', duration: 0, sessions: 0 },
-  );
-
-  // Get current active sessions (sessions with ended_on in the future or very recent)
-  const now = new Date();
-  const recentThreshold = new Date(now.getTime() - 5 * 60 * 1000); // 5 minutes ago
-  const activeSessions = voiceSessions.filter(
-    (s) => s.ended_on > recentThreshold,
-  ).length;
-
-  // Fetch guild and enrich most active channel
-  const guild = client.guilds.cache.get(serverId);
-  let mostActiveChannelData = null;
-
-  if (mostActiveChannel.channelId) {
-    const channel = guild?.channels.cache.get(mostActiveChannel.channelId);
-
-    if (channel) {
-      mostActiveChannelData = {
-        id: channel.id,
-        name: channel.name,
-        type: ChannelType[channel.type],
-      };
-    } else {
-      mostActiveChannelData = {
-        id: mostActiveChannel.channelId,
-        name: 'Unknown Channel',
-        type: 'VOICE',
-      };
-    }
+  if (!isMember) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
   }
 
-  // Calculate activity breakdown
-  const activityBreakdown = calculateActivityBreakdown(voiceSessions);
+  // Server totals + active sessions in a single SQL query
+  const [totals] = await req.db.$queryRaw<TotalsRow[]>`
+    SELECT
+      COALESCE(SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint, 0) AS total_duration,
+      COUNT(*)::bigint AS session_count,
+      COUNT(DISTINCT member_id)::bigint AS unique_users,
+      COUNT(*) FILTER (WHERE ended_on > NOW() - INTERVAL '5 minutes')::bigint AS active_sessions
+    FROM voice_stats
+    WHERE guild_id = ${serverId}
+  `;
+
+  // Most active channel by cumulative duration
+  const [topChannel] = await req.db.$queryRaw<ChannelRow[]>`
+    SELECT
+      channel_id,
+      SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+      COUNT(*)::bigint AS session_count
+    FROM voice_stats
+    WHERE guild_id = ${serverId}
+    GROUP BY channel_id
+    ORDER BY total_duration DESC
+    LIMIT 1
+  `;
+
+  // Activity breakdown grouped by type
+  const typeRows = await req.db.$queryRaw<TypeRow[]>`
+    SELECT
+      type,
+      SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS duration,
+      COUNT(*)::bigint AS session_count
+    FROM voice_stats
+    WHERE guild_id = ${serverId}
+    GROUP BY type
+  `;
+
+  const totalDuration = Number(totals.total_duration);
+  const totalTypesDuration = typeRows.reduce((sum, r) => sum + Number(r.duration), 0);
+
+  const activityBreakdown = typeRows.map((r) => {
+    const duration = Number(r.duration);
+    return {
+      type: r.type,
+      duration,
+      durationHours: Math.floor(duration / (1000 * 60 * 60)),
+      durationMinutes: Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60)),
+      sessionCount: Number(r.session_count),
+      percentage: totalTypesDuration > 0 ? Math.round((duration / totalTypesDuration) * 100) : 0,
+    };
+  });
+
+  // Enrich most active channel with Discord metadata
+  const guild = client.guilds.cache.get(serverId);
+  let mostActiveChannelData = null;
+  if (topChannel) {
+    const discordChannel = guild?.channels.cache.get(topChannel.channel_id);
+    mostActiveChannelData = discordChannel
+      ? { id: discordChannel.id, name: discordChannel.name, type: ChannelType[discordChannel.type] }
+      : { id: topChannel.channel_id, name: 'Unknown Channel', type: 'VOICE' };
+  }
 
   res.send({
-    // New structured format
     server: {
       totalDuration,
       totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
-      totalDurationMinutes: Math.floor(
-        (totalDuration % (1000 * 60 * 60)) / (1000 * 60),
-      ),
-      totalSessions: voiceSessions.length,
-      activeUsers,
-      activeSessions,
+      totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+      totalSessions: Number(totals.session_count),
+      activeUsers: Number(totals.unique_users),
+      activeSessions: Number(totals.active_sessions),
       mostActiveChannel: mostActiveChannelData,
-      mostActiveChannelDuration: mostActiveChannel.duration,
-      mostActiveChannelSessions: mostActiveChannel.sessions,
+      mostActiveChannelDuration: topChannel ? Number(topChannel.total_duration) : 0,
+      mostActiveChannelSessions: topChannel ? Number(topChannel.session_count) : 0,
     },
     activityBreakdown,
   });
