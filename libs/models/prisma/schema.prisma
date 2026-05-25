@@ -25,6 +25,12 @@ model voice_stats {
   type       String   @db.VarChar
   issued_on  DateTime @db.Timestamp(6)
   ended_on   DateTime @db.Timestamp(6)
+
+  @@index([guild_id])
+  @@index([guild_id, member_id])
+  @@index([guild_id, type])
+  @@index([guild_id, issued_on])
+  @@index([member_id])
 }
 
 model user_statuses {

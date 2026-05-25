@@ -6,16 +6,19 @@ import { Prisma } from '@prisma/client';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
-    const { user } = req;
     const { serverId } = req.params;
-
-    if (!user || !user.id) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
 
     if (!serverId) {
       res.status(400).send({ error: 'Missing serverId' });
+      return;
+    }
+
+    const isMember = await req.db.voiceStats.findFirst({
+      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
+      select: { id: true },
+    });
+    if (!isMember) {
+      res.status(403).json({ error: 'Forbidden' });
       return;
     }
 

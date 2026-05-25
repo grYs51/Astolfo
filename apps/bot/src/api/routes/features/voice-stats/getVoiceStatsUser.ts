@@ -3,33 +3,58 @@ import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
 import { ChannelType } from 'discord.js';
 
+type UserTotalsRow = { total_duration: bigint; session_count: bigint };
+type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
+
 export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: string }, unknown> =
   asyncHandler(async (req, res) => {
-    const { user } = req;
     const { serverId, userId } = req.params;
-
-    if (!user || !user.id) {
-      res.status(401).send({ error: 'Unauthorized' });
-      return;
-    }
 
     if (!serverId || !userId) {
       res.status(400).send({ error: 'Missing serverId or userId' });
       return;
     }
 
-    // Fetch voice sessions for the specific user in the server
-    const userSessions = await req.db.voiceStats.findMany({
-      where: {
-        guild_id: serverId,
-        member_id: userId,
-      },
-      orderBy: {
-        issued_on: 'desc',
-      },
+    const isMember = await req.db.voiceStats.findFirst({
+      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
+      select: { id: true },
     });
+    if (!isMember) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
 
-    if (userSessions.length === 0) {
+    // Run all three queries in parallel: totals, channel breakdown, recent sessions
+    const [totalsResult, channelRows, recentSessions] = await Promise.all([
+      req.db.$queryRaw<UserTotalsRow[]>`
+        SELECT
+          COALESCE(SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint, 0) AS total_duration,
+          COUNT(*)::bigint AS session_count
+        FROM voice_stats
+        WHERE guild_id = ${serverId} AND member_id = ${userId}
+      `,
+      req.db.$queryRaw<UserChannelRow[]>`
+        SELECT
+          channel_id,
+          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+          COUNT(*)::bigint AS session_count
+        FROM voice_stats
+        WHERE guild_id = ${serverId} AND member_id = ${userId}
+        GROUP BY channel_id
+        ORDER BY total_duration DESC
+      `,
+      req.db.voiceStats.findMany({
+        where: { guild_id: serverId, member_id: userId },
+        orderBy: { issued_on: 'desc' },
+        take: 10,
+      }),
+    ]);
+
+    const [totals] = totalsResult;
+    const totalDuration = Number(totals.total_duration);
+    const sessionCount = Number(totals.session_count);
+
+    if (sessionCount === 0) {
       res.send({
         userId,
         totalDuration: 0,
@@ -45,119 +70,53 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
       return;
     }
 
-    // Calculate total duration
-    const totalDuration = userSessions.reduce((acc, session) => {
-      const duration = session.ended_on.getTime() - session.issued_on.getTime();
-      return acc + duration;
-    }, 0);
-
-    // Aggregate by channel to find favorite and breakdown
-    const channelStats = userSessions.reduce((acc, session) => {
-      const duration = session.ended_on.getTime() - session.issued_on.getTime();
-
-      if (!acc[session.channel_id]) {
-        acc[session.channel_id] = {
-          channelId: session.channel_id,
-          duration: 0,
-          sessions: 0,
-          channelType: session.type,
-        };
-      }
-
-      acc[session.channel_id].duration += duration;
-      acc[session.channel_id].sessions += 1;
-
-      return acc;
-    }, {} as Record<string, { channelId: string; duration: number; sessions: number; channelType: string }>);
-
-    // Find favorite channel (most time spent)
-    const favoriteChannel = Object.values(channelStats).reduce(
-      (max, stat) => (stat.duration > max.duration ? stat : max),
-      { channelId: '', duration: 0, sessions: 0, channelType: '' }
-    );
-
-    // Format channel breakdown
-    const channelBreakdown = Object.values(channelStats)
-      .map((stat) => ({
-        channelId: stat.channelId,
-        channelType: stat.channelType,
-        totalDuration: stat.duration,
-        totalDurationHours: Math.floor(stat.duration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((stat.duration % (1000 * 60 * 60)) / (1000 * 60)),
-        sessionCount: stat.sessions,
-        percentage: Math.round((stat.duration / totalDuration) * 100),
-      }))
-      .sort((a, b) => b.totalDuration - a.totalDuration);
-
-    // Get recent sessions (last 10)
-    const recentSessions = userSessions.slice(0, 10).map((session) => ({
-      id: session.id,
-      channelId: session.channel_id,
-      channelType: session.type,
-      issuedOn: session.issued_on,
-      endedOn: session.ended_on,
-      duration: session.ended_on.getTime() - session.issued_on.getTime(),
-      durationMinutes: Math.floor((session.ended_on.getTime() - session.issued_on.getTime()) / (1000 * 60)),
-    }));
-
-    // Fetch guild and enrich with channel data
     const guild = client.guilds.cache.get(serverId);
-
-    // Helper to get channel data
-    const getChannelData = (channelId: string, fallbackType: string) => {
+    const getChannelData = (channelId: string) => {
       const channel = guild?.channels.cache.get(channelId);
-      if (channel) {
-        return {
-          id: channel.id,
-          name: channel.name,
-          type: ChannelType[channel.type],
-        };
-      }
-      return {
-        id: channelId,
-        name: 'Unknown Channel',
-        type: fallbackType,
-      };
+      return channel
+        ? { id: channel.id, name: channel.name, type: ChannelType[channel.type] }
+        : { id: channelId, name: 'Unknown Channel', type: 'VOICE' };
     };
 
-    // Enrich favorite channel
-    let favoriteChannelData = null;
-    if (favoriteChannel.channelId) {
-      favoriteChannelData = getChannelData(favoriteChannel.channelId, favoriteChannel.channelType);
-    }
+    const channelBreakdown = channelRows.map((row) => {
+      const duration = Number(row.total_duration);
+      return {
+        channel: getChannelData(row.channel_id),
+        totalDuration: duration,
+        totalDurationHours: Math.floor(duration / (1000 * 60 * 60)),
+        totalDurationMinutes: Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60)),
+        sessionCount: Number(row.session_count),
+        percentage: totalDuration > 0 ? Math.round((duration / totalDuration) * 100) : 0,
+      };
+    });
 
-    // Enrich channel breakdown
-    const enrichedChannelBreakdown = channelBreakdown.map((breakdown) => ({
-      channel: getChannelData(breakdown.channelId, breakdown.channelType),
-      totalDuration: breakdown.totalDuration,
-      totalDurationHours: breakdown.totalDurationHours,
-      totalDurationMinutes: breakdown.totalDurationMinutes,
-      sessionCount: breakdown.sessionCount,
-      percentage: breakdown.percentage,
-    }));
+    const favoriteRow = channelRows[0];
+    const favoriteChannelData = favoriteRow ? getChannelData(favoriteRow.channel_id) : null;
 
-    // Enrich recent sessions
-    const enrichedRecentSessions = recentSessions.map((session) => ({
-      id: session.id,
-      channel: getChannelData(session.channelId, session.channelType),
-      issuedOn: session.issuedOn,
-      endedOn: session.endedOn,
-      duration: session.duration,
-      durationMinutes: session.durationMinutes,
-    }));
+    const enrichedRecentSessions = recentSessions.map((session) => {
+      const duration = session.ended_on.getTime() - session.issued_on.getTime();
+      return {
+        id: session.id,
+        channel: getChannelData(session.channel_id),
+        issuedOn: session.issued_on,
+        endedOn: session.ended_on,
+        duration,
+        durationMinutes: Math.floor(duration / (1000 * 60)),
+      };
+    });
 
     res.send({
       userId,
       totalDuration,
       totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
       totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
-      sessionCount: userSessions.length,
-      uniqueChannels: Object.keys(channelStats).length,
+      sessionCount,
+      uniqueChannels: channelRows.length,
       favoriteChannel: favoriteChannelData,
-      favoriteChannelDuration: favoriteChannel.duration,
-      averageSessionDuration: Math.floor(totalDuration / userSessions.length),
-      averageSessionDurationMinutes: Math.floor(totalDuration / userSessions.length / (1000 * 60)),
+      favoriteChannelDuration: favoriteRow ? Number(favoriteRow.total_duration) : 0,
+      averageSessionDuration: Math.floor(totalDuration / sessionCount),
+      averageSessionDurationMinutes: Math.floor(totalDuration / sessionCount / (1000 * 60)),
       recentSessions: enrichedRecentSessions,
-      channelBreakdown: enrichedChannelBreakdown,
+      channelBreakdown,
     });
   });

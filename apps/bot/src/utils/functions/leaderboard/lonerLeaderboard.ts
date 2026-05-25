@@ -19,13 +19,10 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
     },
   });
 
-  const inChannel = client.voiceUsers
-    .filter(
-      (x) =>
-        x.guild_id === guildId &&
-        x.type === VOICE_TYPE.VOICE &&
-        x.ended_on === null
-    )
+  const inChannel = Array.from(client.voiceUsers.entries())
+    .filter(([key]) => key.startsWith(`${guildId}:`))
+    .flatMap(([, s]) => s)
+    .filter((x) => x.type === VOICE_TYPE.VOICE && x.ended_on === null)
     .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
 
   return [...dbVoiceStats, ...inChannel];

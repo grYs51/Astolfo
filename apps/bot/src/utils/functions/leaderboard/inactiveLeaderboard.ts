@@ -26,16 +26,16 @@ export const getInactiveVoiceStats: getVoiceStatsType = async (
     },
   });
 
-  const inChannel = client.voiceUsers
-    .filter(
-      (x) =>
-        x.guild_id === guildId &&
-        [
-          VOICE_TYPE.DEAF,
-          VOICE_TYPE.MUTED,
-          VOICE_TYPE.SERVER_DEAF,
-          VOICE_TYPE.SERVER_MUTED,
-        ].includes(x.type as VOICE_TYPE)
+  const inChannel = Array.from(client.voiceUsers.entries())
+    .filter(([key]) => key.startsWith(`${guildId}:`))
+    .flatMap(([, s]) => s)
+    .filter((x) =>
+      [
+        VOICE_TYPE.DEAF,
+        VOICE_TYPE.MUTED,
+        VOICE_TYPE.SERVER_DEAF,
+        VOICE_TYPE.SERVER_MUTED,
+      ].includes(x.type as VOICE_TYPE)
     )
     .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
 

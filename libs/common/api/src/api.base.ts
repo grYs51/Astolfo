@@ -30,13 +30,14 @@ export abstract class ApiBase {
    * );
    */
   get<T>(
-    path: string | (() => string),
+    path: string | (() => string | undefined | null),
     query?: { [param: string]: string | string[] } | (() => { [param: string]: string | string[] }),
     headers?: HttpHeaders | (() => HttpHeaders)
   ) {
     return httpResource<T>(() => {
       // Evaluate functions to track signal dependencies
       const url = typeof path === 'function' ? path() : path;
+      if (!url) return undefined; // skip request when url is not yet available
       const queryObj = typeof query === 'function' ? query() : (query ?? {});
       const headersObj = typeof headers === 'function' ? headers() : (headers ?? new HttpHeaders());
 
