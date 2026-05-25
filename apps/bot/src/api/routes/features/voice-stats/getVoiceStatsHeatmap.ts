@@ -44,6 +44,7 @@ export const getVoiceStatsHeatmap = asyncHandler(
     // Fetch all sessions in the period
     const sessions = await req.db.voiceStats.findMany({
       where: {
+        type: 'voice',
         guild_id: serverId,
         issued_on: {
           gte: startDate,
