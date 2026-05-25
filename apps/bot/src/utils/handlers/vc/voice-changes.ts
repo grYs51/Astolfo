@@ -17,7 +17,7 @@ export const handleUserLeftVoiceChannel = async (
   date: Date
 ) => {
   await saveAllUserVoiceStatsToDb(oldState.member!.id, oldState.guild.id, date);
-  cancelJob(oldState.member!.id);
+  cancelJob(oldState.guild.id, oldState.member!.id);
 };
 
 export const handleUserJoinedVoiceChannel = (

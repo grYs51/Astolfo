@@ -6,7 +6,6 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import {
   VoiceStatsServerOverviewComponent,
   VoiceStatsLeaderboardComponent,
@@ -21,7 +20,6 @@ import { USER } from '@nx-stolfo/auth';
 @Component({
   selector: 'pages-detail-overview',
   imports: [
-    CommonModule,
     VoiceStatsServerOverviewComponent,
     VoiceStatsLeaderboardComponent,
     VoiceStatsChannelsComponent,

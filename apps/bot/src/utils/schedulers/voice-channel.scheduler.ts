@@ -10,7 +10,8 @@ export const schedule5hrVoiceChannelJob = (
   channel_id: string,
   date: Date
 ) => {
-  scheduleJob(member.id, new Date(date.getTime() + 5 * 60 * 60 * 1000), () => {
+  const jobKey = `${member.guild.id}-${member.id}`;
+  scheduleJob(jobKey, new Date(date.getTime() + 5 * 60 * 60 * 1000), () => {
     const guildConfig = client.guildConfigs.get(member.guild.id);
     if (
       guildConfig?.toggles === undefined ||
@@ -34,10 +35,11 @@ const scheduleJob = (userId: string, date: Date, callback: () => void) => {
   scheduledJobs.set(userId, job);
 };
 
-export const cancelJob = (userId: string): void => {
-  const job = scheduledJobs.get(userId);
+export const cancelJob = (guildId: string, userId: string): void => {
+  const jobKey = `${guildId}-${userId}`;
+  const job = scheduledJobs.get(jobKey);
   if (job) {
     job.cancel();
-    scheduledJobs.delete(userId);
+    scheduledJobs.delete(jobKey);
   }
 };

@@ -11,7 +11,6 @@ echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent
 
 @Component({
   selector: 'feature-voice-stats-heatmap',
-  standalone: true,
   imports: [CommonModule, NgxEchartsDirective, StatCardComponent],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-heatmap.component.html',

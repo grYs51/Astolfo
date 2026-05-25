@@ -2,9 +2,10 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
 import { ChannelType } from 'discord.js';
+import { voice_stats } from '@prisma/client';
 
 // Helper to calculate activity breakdown
-function calculateActivityBreakdown(sessions: any[]) {
+function calculateActivityBreakdown(sessions: voice_stats[]) {
   const activityMap = new Map<string, { duration: number; sessions: number }>();
 
   sessions.forEach((session) => {

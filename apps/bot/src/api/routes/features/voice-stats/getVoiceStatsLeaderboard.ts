@@ -1,6 +1,8 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
+import { currentClient } from '../../../../db';
+import { Prisma } from '@prisma/client';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
@@ -40,47 +42,48 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
         startDate = undefined;
     }
 
-    // Fetch voice sessions
-    const voiceSessions = await req.db.voiceStats.findMany({
-      where: {
-        guild_id: serverId,
-        ...(startDate && { issued_on: { gte: startDate } }),
-      },
+    // Aggregate per-user duration and session counts directly in the database
+    // to avoid fetching thousands of rows into application memory.
+    type LeaderboardRow = {
+      member_id: string;
+      total_duration: bigint;
+      session_count: bigint;
+      unique_channels: bigint;
+    };
+
+    const dateFilter = startDate
+      ? Prisma.sql`AND issued_on >= ${startDate}`
+      : Prisma.empty;
+
+    const leaderboardRaw = await currentClient.$queryRaw<LeaderboardRow[]>(
+      Prisma.sql`
+        SELECT
+          member_id,
+          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+          COUNT(*)::bigint AS session_count,
+          COUNT(DISTINCT channel_id)::bigint AS unique_channels
+        FROM voice_stats
+        WHERE guild_id = ${serverId}
+        ${dateFilter}
+        GROUP BY member_id
+        ORDER BY total_duration DESC
+        LIMIT ${limit}
+      `
+    );
+
+    const leaderboard = leaderboardRaw.map((row) => {
+      const totalDuration = Number(row.total_duration);
+      const sessionCount = Number(row.session_count);
+      return {
+        memberId: row.member_id,
+        totalDuration,
+        totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
+        totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+        sessionCount,
+        uniqueChannels: Number(row.unique_channels),
+        averageSessionDuration: sessionCount > 0 ? Math.floor(totalDuration / sessionCount) : 0,
+      };
     });
-
-    // Aggregate by user
-    const userStats = voiceSessions.reduce((acc, session) => {
-      const duration = session.ended_on.getTime() - session.issued_on.getTime();
-
-      if (!acc[session.member_id]) {
-        acc[session.member_id] = {
-          memberId: session.member_id,
-          totalDuration: 0,
-          sessionCount: 0,
-          channels: new Set<string>(),
-        };
-      }
-
-      acc[session.member_id].totalDuration += duration;
-      acc[session.member_id].sessionCount += 1;
-      acc[session.member_id].channels.add(session.channel_id);
-
-      return acc;
-    }, {} as Record<string, { memberId: string; totalDuration: number; sessionCount: number; channels: Set<string> }>);
-
-    // Sort by total duration and take top N
-    const leaderboard = Object.values(userStats)
-      .map((stat) => ({
-        memberId: stat.memberId,
-        totalDuration: stat.totalDuration,
-        totalDurationHours: Math.floor(stat.totalDuration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((stat.totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
-        sessionCount: stat.sessionCount,
-        uniqueChannels: stat.channels.size,
-        averageSessionDuration: Math.floor(stat.totalDuration / stat.sessionCount),
-      }))
-      .sort((a, b) => b.totalDuration - a.totalDuration)
-      .slice(0, limit);
 
     // Fetch guild and member data from Discord
     const guild = client.guilds.cache.get(serverId);

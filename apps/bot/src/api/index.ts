@@ -8,7 +8,7 @@ import expressSession from 'express-session';
 import { PrismaSessionStore } from '@quixo3/prisma-session-store';
 import { currentClient } from '../db';
 import passport from 'passport';
-import './utils.ts/strategies/discordStategy';
+import './utils.ts/strategies/discordStrategy';
 collectDefaultMetrics();
 function createExpress() {
   const app = express();
@@ -31,8 +31,8 @@ function createExpress() {
         maxAge: 7 * 24 * 60 * 60 * 1000,
       },
       secret: process.env.COOKIE_SECRET,
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       store: new PrismaSessionStore(currentClient, {
         checkPeriod: 2 * 60 * 1000, // 2 minutes
         dbRecordIdIsSessionId: true,

@@ -27,11 +27,14 @@ export const getVoiceStats: RequestHandler<{ serverId: string }, unknown> =
     // Prisma-style where clause: filter by server and user
     // TODO: add model-aware filtering once field names are confirmed
 
-    // Count total rows (adjust filtering when model fields are confirmed)
-    const total = await req.db.voiceStats.count();
+    // Count total rows filtered by server
+    const total = await req.db.voiceStats.count({
+      where: { guild_id: serverId },
+    });
 
-    // Fetch paginated items (add filtering when model fields are confirmed)
+    // Fetch paginated items filtered by server
     const items = await req.db.voiceStats.findMany({
+      where: { guild_id: serverId },
       skip: offset,
       take: limit,
     });

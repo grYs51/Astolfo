@@ -5,16 +5,12 @@ import { User } from 'discord.js';
 export const getStatus: RequestHandler<unknown, User> = asyncHandler(
   async (req, res) => {
     const { user } = req;
-    fetch('https://discord.com/api/users/@me', {
+    const response = await fetch('https://discord.com/api/users/@me', {
       headers: {
-        Authorization: `Bearer ${user.access_token}`,
+        Authorization: `Bearer ${user!.access_token}`,
       },
-    })
-      .then((response) => {
-        return response.json();
-      })
-      .then((data) => {
-        res.send(data);
-      });
+    });
+    const data = await response.json();
+    res.send(data);
   }
 );
