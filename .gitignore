@@ -53,3 +53,11 @@ Thumbs.db
 
 storybook-static
 __screenshots__/
+
+
+# APM dependencies
+apm_modules/
+
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json
