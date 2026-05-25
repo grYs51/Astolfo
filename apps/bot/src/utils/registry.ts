@@ -62,11 +62,15 @@ async function registerFiles(
       await registerFiles(client, path.join(dir, file), fileType);
     if (file.endsWith('.js') || file.endsWith('.ts')) {
       const filePath = pathToFileURL(path.join(dir, file)).pathname;
-      const { default: instance } = await import(filePath);
       try {
-        fileTypeHandlers[fileType](new instance.default(), client);
+        const { default: instance } = await import(filePath);
+        try {
+          fileTypeHandlers[fileType](new instance.default(), client);
+        } catch (error) {
+          Logger.error('Failed to register file', error);
+        }
       } catch (error) {
-        Logger.error('Failed to register file', error);
+        Logger.error(`Failed to import file: ${filePath}`, error);
       }
     }
   }

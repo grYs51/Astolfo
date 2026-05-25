@@ -5,6 +5,12 @@ import { client } from '../../../..';
 export const getActiveServers: RequestHandler<unknown, any> = asyncHandler(
   async (req, res) => {
     const { user } = req;
+
+    if (!user || !user.id) {
+      res.status(401).send({ error: 'Unauthorized' });
+      return;
+    }
+
     const { id } = user;
 
     try {
@@ -59,7 +65,8 @@ export const getActiveServers: RequestHandler<unknown, any> = asyncHandler(
 
       res.send(uniqueServers);
     } catch (error) {
-      res.status(500).send(error);
+      console.error('Error fetching active servers:', error);
+      res.status(500).send({ error: 'Internal server error' });
     }
   }
 );

@@ -1,10 +1,14 @@
 import { Presence } from 'discord.js';
 import { client } from '../../..';
 import { user_statuses } from '@prisma/client';
+import { Logger } from '../../logger';
 
 export const saveStatus = async (oldStatus: Presence, date: Date) => {
   const status = client.userStatus.get(oldStatus.userId);
-  if (!status) return;
+  if (!status) {
+    Logger.warn(`saveStatus: no cached entry found for user ${oldStatus.userId} — status duration lost`);
+    return;
+  }
 
   const timeDiff = (date.getTime() - status.created_at!.getTime()) / 1000;
 
