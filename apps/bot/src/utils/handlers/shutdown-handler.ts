@@ -29,7 +29,6 @@ async function shutdown() {
 }
 
 export function setupShutdownHandler() {
-  process.on('exit', shutdown);
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 }
