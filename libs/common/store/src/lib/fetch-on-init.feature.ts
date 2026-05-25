@@ -1,5 +1,5 @@
 import { HttpResourceRef } from '@angular/common/http';
-import { effect } from '@angular/core';
+import { DestroyRef, effect, inject } from '@angular/core';
 import {
   patchState,
   signalStoreFeature,
@@ -22,15 +22,18 @@ export function withFetchOnInit<T>(apiCallback: () => HttpResourceRef<T>) {
     }),
     withHooks({
       onInit: (store) => {
+        const destroyRef = inject(DestroyRef);
         const { isLoading, value, error } = apiCallback();
 
-        effect(() => {
+        const effectRef = effect(() => {
           patchState(store, {
             value: error() ? undefined : value(),
             isLoading: isLoading(),
             error: error(),
           });
         });
+
+        destroyRef.onDestroy(() => effectRef.destroy());
       },
     })
   );

@@ -2,16 +2,15 @@ import { client } from '../../..';
 import { voice_stats } from '@prisma/client';
 import { VOICE_TYPE } from './voice-utils';
 
+const voiceKey = (guildId: string, memberId: string) => `${guildId}:${memberId}`;
+
 export const saveAllUserVoiceStatsToDb = async (
   memberId: string,
   guildId: string,
   date: Date
 ) => {
-  const voiceUsersStats = client.voiceUsers.filter(
-    (voiceUser) =>
-      voiceUser.member_id === memberId &&
-      voiceUser.guild_id === guildId
-  );
+  const k = voiceKey(guildId, memberId);
+  const voiceUsersStats = client.voiceUsers.get(k) ?? [];
 
   if (voiceUsersStats.length === 0) return;
 
@@ -23,10 +22,7 @@ export const saveAllUserVoiceStatsToDb = async (
   });
 
   await Promise.all(savePromises);
-  client.voiceUsers = client.voiceUsers.filter(
-    (voiceUser) =>
-      voiceUser.member_id !== memberId || voiceUser.guild_id !== guildId
-  );
+  client.voiceUsers.delete(k);
 };
 
 export const saveTypeUserVoiceStats = async (
@@ -35,22 +31,21 @@ export const saveTypeUserVoiceStats = async (
   date: Date,
   type: VOICE_TYPE
 ) => {
-  const voiceUser = client.voiceUsers.find(
-    (voiceUser) =>
-      voiceUser.member_id === memberId &&
-      voiceUser.type === type &&
-      voiceUser.guild_id === guildId
-  );
+  const k = voiceKey(guildId, memberId);
+  const stats = client.voiceUsers.get(k);
 
-  if (!voiceUser) return;
+  if (!stats) return;
 
+  const idx = stats.findIndex((v) => v.type === type);
+  if (idx === -1) return;
+
+  const voiceUser = stats[idx];
   voiceUser.ended_on = date;
 
   await client.dataSource.voiceStats.create({ data: voiceUser as voice_stats });
-  client.voiceUsers = client.voiceUsers.filter(
-    (voiceUser) =>
-      voiceUser.member_id !== memberId ||
-      voiceUser.type !== type ||
-      voiceUser.guild_id !== guildId
-  );
+
+  stats.splice(idx, 1);
+  if (stats.length === 0) {
+    client.voiceUsers.delete(k);
+  }
 };

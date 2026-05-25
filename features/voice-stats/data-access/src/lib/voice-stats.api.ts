@@ -174,17 +174,16 @@ export class VoiceStatsApi extends ApiBase {
    */
   fetchVoiceStatsUserHeatmap(
     guildId: string | (() => string),
-    userId: string | (() => string),
+    userId: string | (() => string | undefined | null),
     period?: ('week' | 'month' | 'year' | 'all') | (() => 'week' | 'month' | 'year' | 'all' | undefined)
   ) {
     return this.get<VoiceStatsUserHeatmap>(
-      typeof guildId === 'function' || typeof userId === 'function'
-        ? () => {
-            const guild = typeof guildId === 'function' ? guildId() : guildId;
-            const user = typeof userId === 'function' ? userId() : userId;
-            return `/features/voice-stats/${guild}/users/${user}/heatmap`;
-          }
-        : `/features/voice-stats/${guildId}/users/${userId}/heatmap`,
+      () => {
+        const guild = typeof guildId === 'function' ? guildId() : guildId;
+        const user = typeof userId === 'function' ? userId() : userId;
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guild}/users/${user}/heatmap`;
+      },
       () => {
         const params: Record<string, string> = {};
         const periodVal = typeof period === 'function' ? period() : period;

@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { Logger } from '../utils/logger';
 
 export interface Db {
+  $queryRaw: PrismaClient['$queryRaw'];
   guildConfigurations: PrismaClient['guild_configs'];
   voiceStats: PrismaClient['voice_stats'];
   messageStats: PrismaClient['message_stats'];
@@ -34,6 +35,7 @@ export function getDb(): Db {
   }
 
   return {
+    $queryRaw: currentClient.$queryRaw.bind(currentClient),
     guildConfigurations: currentClient.guild_configs,
     voiceStats: currentClient.voice_stats,
     messageStats: currentClient.message_stats,

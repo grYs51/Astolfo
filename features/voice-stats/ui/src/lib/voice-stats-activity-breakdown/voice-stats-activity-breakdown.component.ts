@@ -136,11 +136,12 @@ export class VoiceStatsActivityBreakdownComponent {
   getActivityIcon(type: VoiceActivityType | string): string {
     const iconMap: Record<string, string> = {
       [VoiceActivityType.VOICE]: '🎤',
-      [VoiceActivityType.DEAFENED]: '🔇',
+      [VoiceActivityType.DEAF]: '🔇',
+      [VoiceActivityType.SERVER_DEAF]: '🔕',
       [VoiceActivityType.MUTED]: '🔈',
+      [VoiceActivityType.SERVER_MUTED]: '🔇',
       [VoiceActivityType.STREAMING]: '📺',
       [VoiceActivityType.VIDEO]: '📹',
-      [VoiceActivityType.SCREENSHARE]: '🖥️',
     };
     return iconMap[type] || '🎙️';
   }
@@ -148,11 +149,12 @@ export class VoiceStatsActivityBreakdownComponent {
   getActivityLabel(type: VoiceActivityType | string): string {
     const labelMap: Record<string, string> = {
       [VoiceActivityType.VOICE]: 'Voice',
-      [VoiceActivityType.DEAFENED]: 'Deafened',
+      [VoiceActivityType.DEAF]: 'Deafened',
+      [VoiceActivityType.SERVER_DEAF]: 'Server Deafened',
       [VoiceActivityType.MUTED]: 'Muted',
+      [VoiceActivityType.SERVER_MUTED]: 'Server Muted',
       [VoiceActivityType.STREAMING]: 'Streaming',
       [VoiceActivityType.VIDEO]: 'Video',
-      [VoiceActivityType.SCREENSHARE]: 'Screen Share',
     };
     return labelMap[type] || type;
   }
@@ -160,11 +162,12 @@ export class VoiceStatsActivityBreakdownComponent {
   getActivityColor(type: VoiceActivityType | string): string {
     const colorMap: Record<string, string> = {
       [VoiceActivityType.VOICE]: '#3b82f6', // blue
-      [VoiceActivityType.DEAFENED]: '#6b7280', // gray
+      [VoiceActivityType.DEAF]: '#6b7280', // gray
+      [VoiceActivityType.SERVER_DEAF]: '#4b5563', // dark gray
       [VoiceActivityType.MUTED]: '#f59e0b', // amber
+      [VoiceActivityType.SERVER_MUTED]: '#d97706', // dark amber
       [VoiceActivityType.STREAMING]: '#8b5cf6', // purple
       [VoiceActivityType.VIDEO]: '#ec4899', // pink
-      [VoiceActivityType.SCREENSHARE]: '#10b981', // green
     };
     return colorMap[type] || '#6366f1';
   }
