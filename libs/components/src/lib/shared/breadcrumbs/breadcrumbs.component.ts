@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 export interface BreadCrumb {
@@ -12,6 +12,7 @@ export type BreadCrumbs = BreadCrumb[];
   selector: 'lib-breadcrumbs',
   templateUrl: './breadcrumbs.component.html',
   imports: [RouterLink],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class BreadCrumbsComponent {
   breadCrumbs = input<BreadCrumb[] | null>([]);

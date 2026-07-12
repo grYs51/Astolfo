@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 import { VoiceStatsUserHeatmap } from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent } from '@nx-stolfo/components';
 import * as echarts from 'echarts/core';
@@ -7,6 +12,12 @@ import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import { HeatmapChart } from 'echarts/charts';
+import {
+  HEATMAP_DAYS_OF_WEEK,
+  HEATMAP_HOURS,
+  buildHeatmapGrid,
+  heatmapKey,
+} from '../heatmap-grid';
 echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
 
 @Component({
@@ -16,6 +27,7 @@ echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-user-heatmap.component.html',
   styleUrls: ['./voice-stats-user-heatmap.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoiceStatsUserHeatmapComponent {
   heatmap = input.required<VoiceStatsUserHeatmap>();
@@ -24,15 +36,8 @@ export class VoiceStatsUserHeatmapComponent {
   // Expose Math for template
   protected readonly Math = Math;
 
-  // Days of week labels
-  private readonly daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  // Hours of day (0-23)
-  private readonly hours = Array.from({ length: 24 }, (_, i) => {
-    const hour = i % 12 || 12;
-    const period = i < 12 ? 'AM' : 'PM';
-    return `${hour}${period}`;
-  });
+  private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
+  private readonly hours = HEATMAP_HOURS;
 
   totalHours = computed(() => Math.floor(this.heatmap().stats.user.totalMinutes / 60));
 
@@ -71,8 +76,7 @@ export class VoiceStatsUserHeatmapComponent {
 
     // Populate map with actual data
     data.userHeatmap.forEach((point) => {
-      const key = `${point.hour}-${point.dayOfWeek}`;
-      dataMap.set(key, {
+      dataMap.set(heatmapKey(point.hour, point.dayOfWeek), {
         userValue: point.userValue,
         serverAvg: point.serverAverage,
         diff: point.difference,
@@ -82,15 +86,9 @@ export class VoiceStatsUserHeatmapComponent {
     // Transform data for ECharts: [hour, dayOfWeek, difference]
     // Positive difference = user above average (green/blue)
     // Negative difference = user below average (red/orange)
-    const chartData: [number, number, number][] = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let day = 0; day < 7; day++) {
-        const key = `${hour}-${day}`;
-        const cellData = dataMap.get(key);
-        const value = cellData?.diff || 0;
-        chartData.push([hour, day, value]);
-      }
-    }
+    const chartData = buildHeatmapGrid(
+      (hour, day) => dataMap.get(heatmapKey(hour, day))?.diff || 0
+    );
 
     // Find min and max for color scale (centered at 0)
     const maxAbsValue = Math.max(
@@ -113,8 +111,7 @@ export class VoiceStatsUserHeatmapComponent {
           const day = this.daysOfWeek[value[1]];
           const difference = value[2];
 
-          const key = `${value[0]}-${value[1]}`;
-          const cellData = dataMap.get(key);
+          const cellData = dataMap.get(heatmapKey(value[0], value[1]));
 
           if (!cellData || cellData.userValue === 0) {
             return `<strong>${day} at ${hour}</strong><br/>No activity`;

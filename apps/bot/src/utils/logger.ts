@@ -36,7 +36,9 @@ export class Logger {
     }
   }
 
-  public static async error(message: string, obj?: any): Promise<void> {
+  // Synchronous on purpose: no caller awaits error(), and fatal paths
+  // (uncaughtException → process.exit) must not depend on a pending promise.
+  public static error(message: string, obj?: any): void {
     // Log just a message if no error object
     if (!obj) {
       logger.error(message);
@@ -51,19 +53,13 @@ export class Logger {
         })
         .error(message);
     } else if (obj instanceof Response) {
-      let resText = '';
-      try {
-        resText = await obj.text();
-      } catch {
-        // Ignore
-      }
+      // Body is intentionally not read — that would make this async
       logger
         .child({
           path: obj.url,
           statusCode: obj.status,
           statusName: obj.statusText,
           headers: JSON.stringify(obj.headers),
-          body: resText,
         })
         .error(message);
     } else if (obj instanceof DiscordAPIError) {

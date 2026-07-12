@@ -37,6 +37,7 @@
     "echarts": "^6.0.0",
     "express": "4.21.2",
     "express-async-handler": "^1.2.0",
+    "express-rate-limit": "^8.5.2",
     "express-session": "^1.18.1",
     "humanize-duration": "^3.32.1",
     "ngx-echarts": "^21.0.0",

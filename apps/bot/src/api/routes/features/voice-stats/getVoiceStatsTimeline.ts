@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
 type TimelineRow = {
   bucket: Date;
@@ -20,44 +21,13 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, unknown
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
-    if (!serverId) {
-      res.status(400).send({ error: 'Missing serverId' });
-      return;
-    }
-
-    const isMember = await req.db.voiceStats.findFirst({
-      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
-      select: { id: true },
-    });
-    if (!isMember) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
     // Get granularity from query (hour, day, week)
     const granularity = (req.query.granularity as string) || 'day';
     const period = (req.query.period as string) || 'month'; // day, week, month, year
 
-    // Calculate date range
     const now = new Date();
-    let startDate: Date;
-
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      case 'year':
-        startDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-    }
+    const startDate =
+      getStartDateForPeriod(period) ?? getStartDateForPeriod('month')!;
 
     // Validate granularity against whitelist to prevent SQL injection
     const pgGranularity = VALID_GRANULARITIES[granularity] ?? 'day';
@@ -80,13 +50,14 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, unknown
     const timeline = rows.map((row) => {
       const totalDuration = Number(row.total_duration);
       const sessionCount = Number(row.session_count);
+      const parts = toDurationParts(totalDuration);
       const isoStr = row.bucket.toISOString();
       const timestamp = granularity === 'hour' ? isoStr.substring(0, 16) : isoStr.substring(0, 10);
       return {
         timestamp,
         totalDuration,
-        totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+        totalDurationHours: parts.hours,
+        totalDurationMinutes: parts.minutes,
         sessionCount,
         uniqueUsers: Number(row.unique_users),
         uniqueChannels: Number(row.unique_channels),

@@ -26,7 +26,8 @@ model voice_stats {
   issued_on  DateTime @db.Timestamp(6)
   ended_on   DateTime @db.Timestamp(6)
 
-  @@index([guild_id])
+  // No standalone [guild_id] index: it's the leftmost prefix of the
+  // composite indexes below
   @@index([guild_id, member_id])
   @@index([guild_id, type])
   @@index([guild_id, issued_on])
@@ -39,6 +40,8 @@ model user_statuses {
   status     String   @db.VarChar
   created_at DateTime @db.Timestamp(6)
   ended_at   DateTime @db.Timestamp(6)
+
+  @@index([user_id])
 }
 
 model user_activities {
@@ -56,6 +59,9 @@ model message_stats {
   created_at DateTime @default(now()) @db.Timestamp(6)
   message_id String   @db.VarChar
   user_id    String   @db.VarChar
+
+  @@index([guild_id, user_id])
+  @@index([guild_id, created_at])
 }
 
 model user_configs {
@@ -104,6 +110,9 @@ model session {
 
 model user_session {
   id            String @id
-  access_token  String @unique
-  refresh_token String @unique
+  // No @unique on the tokens: token collisions aren't a real scenario, and
+  // unique indexes on secrets cost a write per insert and copy the secret
+  // into index pages
+  access_token  String
+  refresh_token String
 }

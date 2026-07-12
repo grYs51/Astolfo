@@ -1,5 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
+import { currentClient } from '../../../../db';
+import { Prisma } from '@prisma/client';
+import { getStartDateForPeriod } from '../helpers';
 
 interface HeatmapDataPoint {
   hour: number; // 0-23
@@ -9,104 +12,52 @@ interface HeatmapDataPoint {
   uniqueUsers: number;
 }
 
-interface HeatmapDataPointWithUsers extends HeatmapDataPoint {
-  _users: string[];
-}
-
 export const getVoiceStatsHeatmap = asyncHandler(
   async (req: Request, res: Response) => {
     const { serverId } = req.params;
     const { period = 'month' } = req.query;
 
-    const isMember = await req.db.voiceStats.findFirst({
-      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
-      select: { id: true },
-    });
-    if (!isMember) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
+    // 'all' (or unknown) means no lower bound
+    const startDate = getStartDateForPeriod(period as string);
+    const dateFilter = startDate
+      ? Prisma.sql`AND issued_on >= ${startDate}`
+      : Prisma.empty;
 
-    // Calculate date range based on period
-    const now = new Date();
-    let startDate: Date;
+    // Aggregate in the database — bounded 168-row result instead of loading
+    // every session of the period into memory. EXTRACT uses the DB timezone,
+    // matching the user-heatmap endpoint's server-side aggregation.
+    type HeatmapRow = {
+      hour: number;
+      day_of_week: number;
+      total_minutes: number;
+      session_count: bigint;
+      unique_users: bigint;
+    };
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case 'year':
-        startDate = new Date(now);
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case 'all':
-      default:
-        startDate = new Date(0); // Beginning of time
-        break;
-    }
+    const rows = await currentClient.$queryRaw<HeatmapRow[]>(
+      Prisma.sql`
+        SELECT
+          EXTRACT(HOUR FROM issued_on)::int AS hour,
+          EXTRACT(DOW  FROM issued_on)::int AS day_of_week,
+          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) / 60)::int AS total_minutes,
+          COUNT(*)::bigint AS session_count,
+          COUNT(DISTINCT member_id)::bigint AS unique_users
+        FROM voice_stats
+        WHERE guild_id = ${serverId}
+          AND type = 'VOICE'
+          AND ended_on IS NOT NULL
+          ${dateFilter}
+        GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
+      `
+    );
 
-    // Fetch all sessions in the period
-    const sessions = await req.db.voiceStats.findMany({
-      where: {
-        type: 'VOICE',
-        guild_id: serverId,
-        issued_on: {
-          gte: startDate,
-        },
-      },
-      select: {
-        member_id: true,
-        issued_on: true,
-        ended_on: true,
-      },
-    });
-
-    // Create a map for aggregation: "hour-dayOfWeek" -> data
-    const heatmapMap = new Map<string, HeatmapDataPointWithUsers>();
-
-    sessions.forEach((session) => {
-      if (!session.ended_on) return; // Skip active sessions
-
-      const startTime = new Date(session.issued_on);
-      const endTime = new Date(session.ended_on);
-      const durationMs = endTime.getTime() - startTime.getTime();
-      const durationMinutes = Math.floor(durationMs / 1000 / 60);
-
-      // Get hour and day of week from start time
-      const hour = startTime.getHours(); // 0-23
-      const dayOfWeek = startTime.getDay(); // 0-6 (Sunday-Saturday)
-      const key = `${hour}-${dayOfWeek}`;
-
-      const existing = heatmapMap.get(key);
-      if (existing) {
-        existing.value += durationMinutes;
-        existing.sessionCount += 1;
-        // Track unique users
-        const users = new Set<string>(existing._users);
-        users.add(session.member_id);
-        existing._users = Array.from(users);
-        existing.uniqueUsers = users.size;
-      } else {
-        heatmapMap.set(key, {
-          hour,
-          dayOfWeek,
-          value: durationMinutes,
-          sessionCount: 1,
-          uniqueUsers: 1,
-          _users: [session.member_id],
-        });
-      }
-    });
-
-    // Convert map to array and remove temporary _users property
-    const heatmapData: HeatmapDataPoint[] = Array.from(
-      heatmapMap.values()
-    ).map(({ _users: _, ...clean }) => clean);
+    const heatmapData: HeatmapDataPoint[] = rows.map((row) => ({
+      hour: row.hour,
+      dayOfWeek: row.day_of_week,
+      value: row.total_minutes,
+      sessionCount: Number(row.session_count),
+      uniqueUsers: Number(row.unique_users),
+    }));
 
     // Calculate stats
     const totalMinutes = heatmapData.reduce(

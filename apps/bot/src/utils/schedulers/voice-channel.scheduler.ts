@@ -2,6 +2,7 @@ import schedule, { Job } from 'node-schedule';
 import { GuildMember } from 'discord.js';
 import { client } from '../..';
 import { isEnabled, SETTING_FLAGS } from '../handlers/settings-handler';
+import { voiceKey } from '../handlers/vc/voice-utils';
 
 const scheduledJobs = new Map<string, Job>();
 
@@ -10,7 +11,7 @@ export const schedule5hrVoiceChannelJob = (
   channel_id: string,
   date: Date
 ) => {
-  const jobKey = `${member.guild.id}-${member.id}`;
+  const jobKey = voiceKey(member.guild.id, member.id);
   scheduleJob(jobKey, new Date(date.getTime() + 5 * 60 * 60 * 1000), () => {
     const guildConfig = client.guildConfigs.get(member.guild.id);
     if (
@@ -30,13 +31,15 @@ export const schedule5hrVoiceChannelJob = (
   });
 };
 
-const scheduleJob = (userId: string, date: Date, callback: () => void) => {
+const scheduleJob = (jobKey: string, date: Date, callback: () => void) => {
+  // Cancel any pending job for this key so it isn't orphaned in node-schedule
+  scheduledJobs.get(jobKey)?.cancel();
   const job = schedule.scheduleJob(date, callback);
-  scheduledJobs.set(userId, job);
+  scheduledJobs.set(jobKey, job);
 };
 
 export const cancelJob = (guildId: string, userId: string): void => {
-  const jobKey = `${guildId}-${userId}`;
+  const jobKey = voiceKey(guildId, userId);
   const job = scheduledJobs.get(jobKey);
   if (job) {
     job.cancel();

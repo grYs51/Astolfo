@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
+import { getStartDateForPeriod } from '../helpers';
 
 interface VoiceSession {
   member_id: string;
@@ -25,37 +26,8 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
     const { serverId, userId } = req.params;
     const { period = 'month' } = req.query;
 
-    const isMember = await req.db.voiceStats.findFirst({
-      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
-      select: { id: true },
-    });
-    if (!isMember) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
-    // Calculate date range based on period
-    const now = new Date();
-    let startDate: Date;
-
-    switch (period) {
-      case 'week':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case 'month':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
-        break;
-      case 'year':
-        startDate = new Date(now);
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case 'all':
-      default:
-        startDate = new Date(0); // Beginning of time
-        break;
-    }
+    // 'all' (or unknown) means from the beginning of time
+    const startDate = getStartDateForPeriod(period as string) ?? new Date(0);
 
     // Fetch user's sessions in the period
     const userSessions = await req.db.voiceStats.findMany({

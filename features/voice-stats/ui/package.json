@@ -3,7 +3,12 @@
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^21.0.0",
-    "@angular/core": "^21.0.0"
+    "@angular/core": "^21.0.0",
+    "@nx-stolfo/data-access-voice-stats": "0.0.1",
+    "echarts": "^6.0.0",
+    "ngx-echarts": "^21.0.0",
+    "@nx-stolfo/components": "0.0.1",
+    "@nx/angular": "22.3.3"
   },
   "sideEffects": false
 }
