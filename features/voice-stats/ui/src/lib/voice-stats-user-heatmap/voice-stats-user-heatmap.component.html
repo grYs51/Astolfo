@@ -8,32 +8,30 @@
     </div>
   } @else {
     <!-- Stats summary -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-sm">
       <lib-stat-card
         label="Your Total"
-        [value]="totalHours() + 'h'"
-        icon="⏱️"
-        [subtitle]="heatmap().stats.user.totalMinutes + 'm total'"
+        [value]="heatmap().stats.user.totalMinutes * 60000 | humanizeDuration: true"
+        subtitle="in voice channels"
+        [dense]="true"
       />
       <lib-stat-card
         label="Server Average"
-        [value]="Math.floor(heatmap().stats.server.avgPerUser / 60) + 'h'"
-        icon="📊"
-        [subtitle]="'Among ' + heatmap().stats.server.totalUsers + ' users'"
+        [value]="heatmap().stats.server.avgPerUser * 60000 | humanizeDuration: true"
+        [subtitle]="'among ' + heatmap().stats.server.totalUsers + (heatmap().stats.server.totalUsers === 1 ? ' user' : ' users')"
+        [dense]="true"
       />
       <lib-stat-card
         label="Your Peak Time"
         [value]="peakTimeDisplay()"
-        icon="🔥"
-        subtitle="Most active time"
-        valueSize="text-xl"
+        subtitle="most active hour"
+        [dense]="true"
       />
       <lib-stat-card
         label="Activity Level"
         [value]="heatmap().stats.comparison.userVsServerAvg + '%'"
-        icon="📈"
-        [subtitle]="comparisonText()"
-        [iconColor]="comparisonColor()"
+        [subtitle]="comparisonText() + ' vs the server'"
+        [dense]="true"
       />
     </div>
 

@@ -32,6 +32,7 @@ export class HumanizeDurationPipe implements PipeTransform {
         short ? `${seconds}s` : `${seconds} second${seconds > 1 ? 's' : ''}`
       );
 
-    return parts.join(' ');
+    // Keep the two most significant units — "2h 15m", not "2h 15m 3s"
+    return parts.slice(0, 2).join(' ');
   }
 }
