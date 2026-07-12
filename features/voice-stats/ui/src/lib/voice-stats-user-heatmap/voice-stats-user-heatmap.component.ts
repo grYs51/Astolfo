@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { VoiceStatsUserHeatmap } from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent } from '@nx-stolfo/components';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -23,7 +24,7 @@ echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent
 @Component({
   selector: 'feature-voice-stats-user-heatmap',
   standalone: true,
-  imports: [CommonModule, NgxEchartsDirective, StatCardComponent],
+  imports: [CommonModule, NgxEchartsDirective, StatCardComponent, HumanizeDurationPipe],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-user-heatmap.component.html',
   styleUrls: ['./voice-stats-user-heatmap.component.scss'],
@@ -33,39 +34,25 @@ export class VoiceStatsUserHeatmapComponent {
   heatmap = input.required<VoiceStatsUserHeatmap>();
   loading = input<boolean>(false);
 
-  // Expose Math for template
-  protected readonly Math = Math;
+  private readonly durationPipe = new HumanizeDurationPipe();
 
   private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
   private readonly hours = HEATMAP_HOURS;
-
-  totalHours = computed(() => Math.floor(this.heatmap().stats.user.totalMinutes / 60));
 
   peakTimeDisplay = computed(() => {
     const data = this.heatmap();
     const day = this.daysOfWeek[data.stats.user.peakDay];
     const hour = this.hours[data.stats.user.peakHour];
-    return `${day} ${hour}`;
+    return `${day} at ${hour}`;
   });
-
-  avgMinutes = computed(() => this.heatmap().stats.user.avgValue);
 
   comparisonText = computed(() => {
     const data = this.heatmap();
     const percentage = data.stats.comparison.userVsServerAvg;
-    if (percentage > 150) return 'Very Active';
-    if (percentage > 100) return 'Above Average';
-    if (percentage > 75) return 'Average';
-    return 'Below Average';
-  });
-
-  comparisonColor = computed(() => {
-    const data = this.heatmap();
-    const percentage = data.stats.comparison.userVsServerAvg;
-    if (percentage > 150) return 'text-purple-400';
-    if (percentage > 100) return 'text-green-400';
-    if (percentage > 75) return 'text-blue-400';
-    return 'text-gray-400';
+    if (percentage > 150) return 'very active';
+    if (percentage > 100) return 'above average';
+    if (percentage > 75) return 'about average';
+    return 'below average';
   });
 
   chartOption = computed(() => {
@@ -117,14 +104,9 @@ export class VoiceStatsUserHeatmapComponent {
             return `<strong>${day} at ${hour}</strong><br/>No activity`;
           }
 
-          const userHours = Math.floor(cellData.userValue / 60);
-          const userMins = cellData.userValue % 60;
-          const avgHours = Math.floor(cellData.serverAvg / 60);
-          const avgMins = cellData.serverAvg % 60;
-
           let tooltip = `<strong>${day} at ${hour}</strong><br/>`;
-          tooltip += `Your time: ${userHours}h ${userMins}m<br/>`;
-          tooltip += `Server avg: ${avgHours}h ${avgMins}m<br/>`;
+          tooltip += `Your time: ${this.durationPipe.transform(cellData.userValue * 60000, true)}<br/>`;
+          tooltip += `Server avg: ${this.durationPipe.transform(cellData.serverAvg * 60000, true)}<br/>`;
           tooltip += `<span style="color: ${difference > 0 ? '#10b981' : '#ef4444'}">`;
           tooltip += difference > 0 ? '+' : '';
           tooltip += `${difference}m ${difference > 0 ? 'above' : 'below'} avg</span>`;

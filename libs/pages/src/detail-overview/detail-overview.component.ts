@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import {
   VoiceStatsServerOverviewComponent,
+  VoiceStatsActivityBreakdownComponent,
   VoiceStatsLeaderboardComponent,
   VoiceStatsChannelsComponent,
   VoiceStatsTimelineComponent,
@@ -29,6 +30,7 @@ type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
   selector: 'pages-detail-overview',
   imports: [
     VoiceStatsServerOverviewComponent,
+    VoiceStatsActivityBreakdownComponent,
     VoiceStatsLeaderboardComponent,
     VoiceStatsChannelsComponent,
     VoiceStatsTimelineComponent,
@@ -45,6 +47,18 @@ export class DetailOverviewComponent {
 
   private voiceStatsApi = inject(VoiceStatsApi);
   currentUser = inject(USER);
+
+  readonly sections = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'timeline', label: 'Timeline' },
+    { id: 'engagement', label: 'Engagement' },
+    { id: 'heatmap', label: 'Weekly pattern' },
+    { id: 'you', label: 'Your activity' },
+  ];
+
+  scrollTo(sectionId: string) {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 
   readonly periodOptions: SegmentedControlOption<Period>[] = [
     { value: 'day', label: 'Day' },

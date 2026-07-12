@@ -29,7 +29,7 @@
     <div class="mt-md grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-white/5 md:grid-cols-4">
       <div class="bg-base-200 p-md text-center">
         <p class="text-xs uppercase tracking-wider text-gray-500">Total</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalHours }}h</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalMs | humanizeDuration: true }}</p>
       </div>
       <div class="bg-base-200 p-md text-center">
         <p class="text-xs uppercase tracking-wider text-gray-500">Sessions</p>
@@ -41,7 +41,7 @@
       </div>
       <div class="bg-base-200 p-md text-center">
         <p class="text-xs uppercase tracking-wider text-gray-500">Peak</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().peakHours }}h</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().peakMs | humanizeDuration: true }}</p>
       </div>
     </div>
   }

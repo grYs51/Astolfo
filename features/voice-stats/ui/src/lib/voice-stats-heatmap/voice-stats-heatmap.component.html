@@ -8,31 +8,30 @@
     </div>
   } @else {
     <!-- Stats summary -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-sm">
       <lib-stat-card
-        label="Total Duration"
-        [value]="totalHours() + 'h'"
-        icon="⏱️"
+        label="Total"
+        [value]="heatmap().stats.totalMinutes * 60000 | humanizeDuration: true"
         subtitle="of voice activity"
+        [dense]="true"
       />
       <lib-stat-card
         label="Peak Time"
         [value]="peakTimeDisplay()"
-        icon="🔥"
-        subtitle="highest activity"
-        valueSize="text-xl"
+        subtitle="busiest hour of the week"
+        [dense]="true"
       />
       <lib-stat-card
         label="Avg per Cell"
-        [value]="avgMinutes() + 'm'"
-        icon="📊"
-        subtitle="average duration"
+        [value]="heatmap().stats.avgValue * 60000 | humanizeDuration: true"
+        subtitle="per hour slot"
+        [dense]="true"
       />
       <lib-stat-card
-        label="Max Activity"
-        [value]="Math.floor(heatmap().stats.maxValue / 60) + 'h'"
-        icon="⚡"
-        subtitle="peak cell duration"
+        label="Busiest Cell"
+        [value]="heatmap().stats.maxValue * 60000 | humanizeDuration: true"
+        subtitle="most in a single slot"
+        [dense]="true"
       />
     </div>
 

@@ -1,74 +1,51 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { VoiceStatsOverview } from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent, SkeletonLoaderComponent } from '@nx-stolfo/components';
-import { VoiceStatsActivityBreakdownComponent } from '../voice-stats-activity-breakdown/voice-stats-activity-breakdown.component';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
 @Component({
   selector: 'feature-voice-stats-server-overview',
   standalone: true,
-  imports: [StatCardComponent, SkeletonLoaderComponent, VoiceStatsActivityBreakdownComponent],
+  imports: [StatCardComponent, SkeletonLoaderComponent, HumanizeDurationPipe],
   template: `
     @if (loading()) {
       <lib-skeleton-loader type="stat-grid" />
     } @else {
-      @let stats = overview();
-      @let serverData = stats.server;
+      @let serverData = overview().server;
 
-      <!-- Headline stats -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
+      <!-- KPI strip -->
+      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-sm">
         <lib-stat-card
-          label="Total Voice Time"
-          [value]="serverData.totalDurationHours + 'h ' + serverData.totalDurationMinutes + 'm'"
-          icon="🎙️"
-          [subtitle]="serverData.totalSessions + ' total sessions'"
+          label="Voice Time"
+          [value]="serverData.totalDuration | humanizeDuration: true"
+          [dense]="true"
+        />
+        <lib-stat-card
+          label="Sessions"
+          [value]="serverData.totalSessions"
+          [dense]="true"
         />
         <lib-stat-card
           label="Active Users"
           [value]="serverData.activeUsers"
-          icon="👥"
-          subtitle="Unique members"
+          [dense]="true"
         />
         <lib-stat-card
           label="Live Now"
           [value]="serverData.activeSessions"
-          icon="🔴"
-          subtitle="Current sessions"
+          [dense]="true"
+        />
+        <lib-stat-card
+          label="Avg Session"
+          [value]="averageSessionMs(serverData.totalDuration, serverData.totalSessions) | humanizeDuration: true"
+          [dense]="true"
         />
         <lib-stat-card
           label="Top Channel"
           [value]="serverData.mostActiveChannel?.name || 'N/A'"
-          icon="📊"
-          [subtitle]="serverData.mostActiveChannelSessions + ' sessions'"
-          valueSize="text-xl"
+          [dense]="true"
         />
       </div>
-
-      <!-- Secondary insights -->
-      <div class="mt-md grid grid-cols-1 md:grid-cols-3 gap-md">
-        <lib-stat-card
-          label="Avg Session Duration"
-          [value]="getAverageSessionDuration(serverData.totalDuration, serverData.totalSessions)"
-          valueSize="text-xl"
-        />
-        <lib-stat-card
-          label="Avg Sessions / User"
-          [value]="getSessionsPerUser(serverData.totalSessions, serverData.activeUsers)"
-          valueSize="text-xl"
-        />
-        <lib-stat-card
-          label="Top Channel Usage"
-          [value]="getTopChannelPercentage(serverData.mostActiveChannelDuration, serverData.totalDuration) + '%'"
-          subtitle="of total server time"
-          valueSize="text-xl"
-        />
-      </div>
-
-      <!-- Activity breakdown -->
-      @if (stats.activityBreakdown && stats.activityBreakdown.length > 0) {
-        <div class="mt-md">
-          <feature-voice-stats-activity-breakdown [breakdown]="stats.activityBreakdown" />
-        </div>
-      }
     }
   `,
   styles: [
@@ -84,21 +61,8 @@ export class VoiceStatsServerOverviewComponent {
   overview = input.required<VoiceStatsOverview>();
   loading = input<boolean>(false);
 
-  getAverageSessionDuration(totalDuration: number, totalSessions: number): string {
-    if (totalSessions === 0) return '0m';
-    const avgMs = totalDuration / totalSessions;
-    const hours = Math.floor(avgMs / (1000 * 60 * 60));
-    const minutes = Math.floor((avgMs % (1000 * 60 * 60)) / (1000 * 60));
-    return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
-  }
-
-  getSessionsPerUser(totalSessions: number, activeUsers: number): string {
-    if (activeUsers === 0) return '0';
-    return (totalSessions / activeUsers).toFixed(1);
-  }
-
-  getTopChannelPercentage(channelDuration: number, totalDuration: number): number {
-    if (totalDuration === 0) return 0;
-    return Math.round((channelDuration / totalDuration) * 100);
+  averageSessionMs(totalDuration: number, totalSessions: number): number {
+    if (totalSessions === 0) return 0;
+    return totalDuration / totalSessions;
   }
 }

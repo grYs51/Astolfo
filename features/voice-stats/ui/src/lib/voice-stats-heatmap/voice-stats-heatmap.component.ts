@@ -10,6 +10,7 @@ import {
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent } from '@nx-stolfo/components';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -25,7 +26,7 @@ echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent
 
 @Component({
   selector: 'feature-voice-stats-heatmap',
-  imports: [CommonModule, NgxEchartsDirective, StatCardComponent],
+  imports: [CommonModule, NgxEchartsDirective, StatCardComponent, HumanizeDurationPipe],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-heatmap.component.html',
   styleUrls: ['./voice-stats-heatmap.component.scss'],
@@ -35,8 +36,7 @@ export class VoiceStatsHeatmapComponent {
   heatmap = input.required<VoiceStatsHeatmap>();
   loading = input<boolean>(false);
 
-  // Expose Math for template
-  protected readonly Math = Math;
+  private readonly durationPipe = new HumanizeDurationPipe();
 
   private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
   private readonly hours = HEATMAP_HOURS;
@@ -73,13 +73,11 @@ export class VoiceStatsHeatmapComponent {
           const hour = this.hours[value[0]]; // X-axis is hour
           const day = this.daysOfWeek[value[1]]; // Y-axis is day
           const minutes = value[2];
-          const hours = Math.floor(minutes / 60);
-          const mins = minutes % 60;
 
           const dataPoint = dataMap.get(heatmapKey(value[0], value[1]));
 
           let tooltip = `<strong>${day} at ${hour}</strong><br/>`;
-          tooltip += `Duration: ${hours}h ${mins}m<br/>`;
+          tooltip += `Duration: ${this.durationPipe.transform(minutes * 60000, true)}<br/>`;
           if (dataPoint) {
             tooltip += `Sessions: ${dataPoint.sessionCount}<br/>`;
             tooltip += `Users: ${dataPoint.uniqueUsers}`;
@@ -181,12 +179,4 @@ export class VoiceStatsHeatmapComponent {
     return `${day} at ${hour}`;
   });
 
-  totalHours = computed(() => {
-    const minutes = this.heatmap().stats.totalMinutes;
-    return Math.floor(minutes / 60);
-  });
-
-  avgMinutes = computed(() => {
-    return this.heatmap().stats.avgValue;
-  });
 }

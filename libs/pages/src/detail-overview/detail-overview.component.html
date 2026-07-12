@@ -1,153 +1,190 @@
-<div class="mx-auto max-w-7xl px-md lg:px-lg py-lg space-y-10">
-  <!-- Page header -->
-  <header class="flex flex-wrap items-end justify-between gap-md border-b border-white/5 pb-lg">
-    <div>
-      <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-100">Voice Statistics</h1>
-      <p class="mt-xs text-sm text-gray-500">Voice activity analytics for this server</p>
-    </div>
-    <span class="inline-flex items-center gap-sm rounded-lg border border-white/10 bg-base-300 px-sm py-xs text-xs font-medium text-gray-400">
-      <span class="h-2 w-2 rounded-full bg-primary-500"></span>
-      Server {{ id() }}
-    </span>
-  </header>
+<div class="mx-auto max-w-[1440px] px-md lg:px-lg py-md">
+  <div class="lg:grid lg:grid-cols-[190px_minmax(0,1fr)] lg:gap-lg">
+    <!-- Side rail -->
+    <aside class="hidden lg:block">
+      <nav class="sticky top-20 space-y-lg">
+        <div>
+          <p class="mb-sm text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+            Server
+          </p>
+          <div class="rounded-lg border border-white/5 bg-base-300 px-sm py-sm">
+            <p class="flex items-center gap-sm text-xs font-medium text-gray-300">
+              <span class="h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
+              <span class="truncate">{{ id() }}</span>
+            </p>
+          </div>
+        </div>
 
-  <!-- Overview -->
-  <section>
-    <div class="mb-md">
-      <h2 class="text-lg font-semibold text-gray-100">Server overview</h2>
-      <p class="text-sm text-gray-500">Totals across all tracked voice activity</p>
-    </div>
+        <div>
+          <p class="mb-sm text-[10px] font-semibold uppercase tracking-widest text-gray-600">
+            Sections
+          </p>
+          <div class="space-y-xs">
+            @for (section of sections; track section.id) {
+              <button
+                type="button"
+                (click)="scrollTo(section.id)"
+                class="block w-full rounded-md px-sm py-xs text-left text-sm text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-200"
+              >
+                {{ section.label }}
+              </button>
+            }
+          </div>
+        </div>
+      </nav>
+    </aside>
 
-    @if (overviewResource.isLoading()) {
-      <div class="animate-pulse">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md mb-lg">
-          @for (i of [1, 2, 3, 4]; track i) {
-            <div class="h-32 rounded-xl bg-base-300"></div>
+    <!-- Content -->
+    <div class="min-w-0 space-y-lg">
+      <!-- Page header -->
+      <header class="flex flex-wrap items-center justify-between gap-sm">
+        <div>
+          <h1 class="text-xl font-bold tracking-tight text-gray-100">Voice statistics</h1>
+          <p class="text-xs text-gray-500">Server-wide voice activity analytics</p>
+        </div>
+      </header>
+
+      <!-- Overview KPIs -->
+      <section id="overview" class="scroll-mt-20">
+        @if (overviewResource.isLoading()) {
+          <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-sm animate-pulse">
+            @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+              <div class="h-20 rounded-xl bg-base-300"></div>
+            }
+          </div>
+        } @else if (overviewResource.error()) {
+          <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+            Failed to load overview data
+          </div>
+        } @else if (overviewResource.hasValue()) {
+          <feature-voice-stats-server-overview [overview]="overviewResource.value()!" />
+        }
+      </section>
+
+      <!-- Timeline -->
+      <section id="timeline" class="scroll-mt-20">
+        <div class="mb-sm flex flex-wrap items-center justify-between gap-sm">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Timeline</h2>
+          <div class="flex flex-wrap items-center gap-sm">
+            <lib-segmented-control [options]="timelinePeriodOptions" [(value)]="selectedTimelinePeriod" />
+            <lib-segmented-control [options]="granularityOptions" [(value)]="selectedGranularity" />
+          </div>
+        </div>
+
+        @if (timelineResource.isLoading()) {
+          <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+            <div class="h-64 rounded-lg bg-base-200"></div>
+          </div>
+        } @else if (timelineResource.error()) {
+          <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+            Failed to load timeline data
+          </div>
+        } @else if (timelineResource.hasValue()) {
+          <feature-voice-stats-timeline [timeline]="timelineResource.value()!" />
+        }
+      </section>
+
+      <!-- Engagement: leaderboard / channels / breakdown -->
+      <section id="engagement" class="scroll-mt-20">
+        <div class="mb-sm flex flex-wrap items-center justify-between gap-sm">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">Engagement</h2>
+          <lib-segmented-control [options]="periodOptions" [(value)]="selectedPeriod" />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-md items-start">
+          <div>
+            @if (leaderboardResource.isLoading()) {
+              <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-sm">
+                @for (i of [1, 2, 3, 4, 5]; track i) {
+                  <div class="h-12 rounded-lg bg-base-200"></div>
+                }
+              </div>
+            } @else if (leaderboardResource.error()) {
+              <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+                Failed to load leaderboard data
+              </div>
+            } @else if (leaderboardResource.hasValue()) {
+              <feature-voice-stats-leaderboard [leaderboard]="leaderboardResource.value()!" />
+            }
+          </div>
+
+          <div>
+            @if (channelsResource.isLoading()) {
+              <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-md">
+                @for (i of [1, 2, 3, 4]; track i) {
+                  <div class="h-16 rounded-lg bg-base-200"></div>
+                }
+              </div>
+            } @else if (channelsResource.error()) {
+              <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+                Failed to load channels data
+              </div>
+            } @else if (channelsResource.hasValue()) {
+              <feature-voice-stats-channels [channels]="channelsResource.value()!" />
+            }
+          </div>
+
+          <div>
+            @if (overviewResource.hasValue() && overviewResource.value()!.activityBreakdown.length > 0) {
+              <feature-voice-stats-activity-breakdown
+                [breakdown]="overviewResource.value()!.activityBreakdown"
+              />
+            }
+          </div>
+        </div>
+      </section>
+
+      <!-- Heatmap -->
+      <section id="heatmap" class="scroll-mt-20">
+        <div class="mb-sm flex flex-wrap items-center justify-between gap-sm">
+          <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">
+            Weekly pattern
+          </h2>
+          <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedHeatmapPeriod" />
+        </div>
+
+        @if (heatmapResource.isLoading()) {
+          <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+            <div class="h-96 rounded-lg bg-base-200"></div>
+          </div>
+        } @else if (heatmapResource.error()) {
+          <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+            Failed to load heatmap data
+          </div>
+        } @else if (heatmapResource.hasValue()) {
+          <feature-voice-stats-heatmap
+            [heatmap]="heatmapResource.value()!"
+            [loading]="heatmapResource.isLoading()"
+          />
+        }
+      </section>
+
+      <!-- Your activity -->
+      @if (currentUser()?.id) {
+        <section id="you" class="scroll-mt-20">
+          <div class="mb-sm flex flex-wrap items-center justify-between gap-sm">
+            <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">
+              Your activity
+            </h2>
+            <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedUserHeatmapPeriod" />
+          </div>
+
+          @if (userHeatmapResource.isLoading()) {
+            <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+              <div class="h-96 rounded-lg bg-base-200"></div>
+            </div>
+          } @else if (userHeatmapResource.error()) {
+            <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+              Failed to load user heatmap data
+            </div>
+          } @else if (userHeatmapResource.hasValue()) {
+            <feature-voice-stats-user-heatmap
+              [heatmap]="userHeatmapResource.value()!"
+              [loading]="userHeatmapResource.isLoading()"
+            />
           }
-        </div>
-        <div class="h-96 rounded-xl bg-base-300"></div>
-      </div>
-    } @else if (overviewResource.error()) {
-      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-        Failed to load overview data
-      </div>
-    } @else if (overviewResource.hasValue()) {
-      <feature-voice-stats-server-overview [overview]="overviewResource.value()!" />
-    }
-  </section>
-
-  <!-- Leaderboard + Channels -->
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg items-start">
-    <section>
-      <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-        <h2 class="text-lg font-semibold text-gray-100">Leaderboard</h2>
-        <lib-segmented-control [options]="periodOptions" [(value)]="selectedPeriod" />
-      </div>
-
-      @if (leaderboardResource.isLoading()) {
-        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-sm">
-          @for (i of [1, 2, 3, 4, 5]; track i) {
-            <div class="h-16 rounded-lg bg-base-200"></div>
-          }
-        </div>
-      } @else if (leaderboardResource.error()) {
-        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-          Failed to load leaderboard data
-        </div>
-      } @else if (leaderboardResource.hasValue()) {
-        <feature-voice-stats-leaderboard [leaderboard]="leaderboardResource.value()!" />
+        </section>
       }
-    </section>
-
-    <section>
-      <div class="mb-md flex items-center justify-between" style="min-height: 34px">
-        <h2 class="text-lg font-semibold text-gray-100">Channels</h2>
-      </div>
-
-      @if (channelsResource.isLoading()) {
-        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-md">
-          @for (i of [1, 2, 3, 4]; track i) {
-            <div class="h-20 rounded-lg bg-base-200"></div>
-          }
-        </div>
-      } @else if (channelsResource.error()) {
-        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-          Failed to load channels data
-        </div>
-      } @else if (channelsResource.hasValue()) {
-        <feature-voice-stats-channels [channels]="channelsResource.value()!" />
-      }
-    </section>
+    </div>
   </div>
-
-  <!-- Timeline -->
-  <section>
-    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-      <h2 class="text-lg font-semibold text-gray-100">Activity timeline</h2>
-      <div class="flex flex-wrap items-center gap-sm">
-        <lib-segmented-control [options]="timelinePeriodOptions" [(value)]="selectedTimelinePeriod" />
-        <lib-segmented-control [options]="granularityOptions" [(value)]="selectedGranularity" />
-      </div>
-    </div>
-
-    @if (timelineResource.isLoading()) {
-      <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
-        <div class="h-64 rounded-lg bg-base-200"></div>
-      </div>
-    } @else if (timelineResource.error()) {
-      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-        Failed to load timeline data
-      </div>
-    } @else if (timelineResource.hasValue()) {
-      <feature-voice-stats-timeline [timeline]="timelineResource.value()!" />
-    }
-  </section>
-
-  <!-- Heatmap -->
-  <section>
-    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-      <h2 class="text-lg font-semibold text-gray-100">Activity heatmap</h2>
-      <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedHeatmapPeriod" />
-    </div>
-
-    @if (heatmapResource.isLoading()) {
-      <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
-        <div class="h-[500px] rounded-lg bg-base-200"></div>
-      </div>
-    } @else if (heatmapResource.error()) {
-      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-        Failed to load heatmap data
-      </div>
-    } @else if (heatmapResource.hasValue()) {
-      <feature-voice-stats-heatmap
-        [heatmap]="heatmapResource.value()!"
-        [loading]="heatmapResource.isLoading()"
-      />
-    }
-  </section>
-
-  <!-- Your activity vs server -->
-  @if (currentUser()?.id) {
-    <section id="user-heatmap-section">
-      <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-        <h2 class="text-lg font-semibold text-gray-100">Your activity</h2>
-        <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedUserHeatmapPeriod" />
-      </div>
-
-      @if (userHeatmapResource.isLoading()) {
-        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
-          <div class="h-[500px] rounded-lg bg-base-200"></div>
-        </div>
-      } @else if (userHeatmapResource.error()) {
-        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-          Failed to load user heatmap data
-        </div>
-      } @else if (userHeatmapResource.hasValue()) {
-        <feature-voice-stats-user-heatmap
-          [heatmap]="userHeatmapResource.value()!"
-          [loading]="userHeatmapResource.isLoading()"
-        />
-      }
-    </section>
-  }
 </div>
