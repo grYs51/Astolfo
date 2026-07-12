@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
 import { VoiceStatsTimeline } from '@nx-stolfo/data-access-voice-stats';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -9,7 +10,7 @@ echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
 
 @Component({
   selector: 'feature-voice-stats-timeline',
-  imports: [NgxEchartsDirective],
+  imports: [NgxEchartsDirective, HumanizeDurationPipe],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-timeline.component.html',
   styleUrl: './voice-stats-timeline.component.scss',
@@ -19,6 +20,8 @@ export class VoiceStatsTimelineComponent {
   timeline = input.required<VoiceStatsTimeline>();
   loading = input<boolean>(false);
 
+  private readonly durationPipe = new HumanizeDurationPipe();
+
   maxValue = computed(() => {
     const data = this.timeline();
     return Math.max(...data.timeline.map(t => t.totalDuration), 1);
@@ -27,19 +30,19 @@ export class VoiceStatsTimelineComponent {
   stats = computed(() => {
     const data = this.timeline();
     if (data.timeline.length === 0) {
-      return { totalHours: 0, totalSessions: 0, avgUsers: 0, peakHours: 0 };
+      return { totalMs: 0, totalSessions: 0, avgUsers: 0, peakMs: 0 };
     }
 
-    const totalHours = data.timeline.reduce((sum, b) => sum + b.totalDurationHours, 0);
+    const totalMs = data.timeline.reduce((sum, b) => sum + b.totalDuration, 0);
     const totalSessions = data.timeline.reduce((sum, b) => sum + b.sessionCount, 0);
     const avgUsers = Math.round(data.timeline.reduce((sum, b) => sum + b.uniqueUsers, 0) / data.timeline.length);
     const peakBucket = data.timeline.reduce((max, b) => b.totalDuration > max.totalDuration ? b : max, data.timeline[0]);
 
     return {
-      totalHours,
+      totalMs,
       totalSessions,
       avgUsers,
-      peakHours: peakBucket.totalDurationHours,
+      peakMs: peakBucket.totalDuration,
     };
   });
 
@@ -66,7 +69,7 @@ export class VoiceStatsTimelineComponent {
           const bucket = data.timeline[index];
           return `
             <strong>${params[0].axisValue}</strong><br/>
-            Duration: ${bucket.totalDurationHours}h ${bucket.totalDurationMinutes}m<br/>
+            Duration: ${this.durationPipe.transform(bucket.totalDuration, true)}<br/>
             Sessions: ${bucket.sessionCount}<br/>
             Users: ${bucket.uniqueUsers}
           `;
@@ -101,7 +104,7 @@ export class VoiceStatsTimelineComponent {
         },
         axisLabel: {
           color: '#9ca3af',
-          formatter: (value: number) => `${value.toFixed(0)}h`,
+          formatter: (value: number) => `${value}h`,
         },
         axisLine: {
           lineStyle: {

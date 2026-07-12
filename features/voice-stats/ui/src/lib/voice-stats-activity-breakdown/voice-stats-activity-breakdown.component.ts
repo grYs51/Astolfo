@@ -6,6 +6,7 @@ import {
   input,
 } from '@angular/core';
 import { ActivityTypeBreakdown, VoiceActivityType } from '@nx-stolfo/data-access-voice-stats';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -17,7 +18,7 @@ echarts.use([CanvasRenderer, TooltipComponent, LegendComponent, GridComponent, P
 @Component({
   selector: 'feature-voice-stats-activity-breakdown',
   standalone: true,
-  imports: [CommonModule, NgxEchartsDirective],
+  imports: [CommonModule, NgxEchartsDirective, HumanizeDurationPipe],
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -29,28 +30,25 @@ echarts.use([CanvasRenderer, TooltipComponent, LegendComponent, GridComponent, P
           <p>No activity data available</p>
         </div>
       } @else {
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg items-center">
+        <div class="flex flex-col gap-sm">
           <!-- Donut -->
-          <div class="flex items-center justify-center">
-            <div echarts [options]="chartOption()" class="w-full h-64"></div>
-          </div>
+          <div echarts [options]="chartOption()" class="w-full h-48"></div>
 
           <!-- Stats list -->
           <div class="divide-y divide-white/5">
             @for (item of breakdown(); track item.type) {
-              <div class="flex items-center gap-md py-sm">
+              <div class="flex items-center gap-sm py-sm">
                 <span
                   class="h-3 w-3 shrink-0 rounded-sm"
                   [style.background-color]="getActivityColor(item.type)"
                 ></span>
-                <span class="flex-1 text-sm font-medium text-gray-200">
+                <span class="flex-1 truncate text-sm font-medium text-gray-200">
                   {{ getActivityLabel(item.type) }}
                 </span>
-                <span class="text-xs text-gray-500">{{ item.sessionCount }} sessions</span>
-                <span class="w-20 text-right text-sm font-semibold text-gray-100">
-                  {{ item.durationHours }}h {{ item.durationMinutes }}m
+                <span class="text-right text-sm font-semibold text-gray-100">
+                  {{ item.duration | humanizeDuration: true }}
                 </span>
-                <span class="w-12 text-right text-xs text-gray-400">{{ item.percentage }}%</span>
+                <span class="w-10 text-right text-xs text-gray-400">{{ item.percentage }}%</span>
               </div>
             }
           </div>
@@ -67,6 +65,8 @@ echarts.use([CanvasRenderer, TooltipComponent, LegendComponent, GridComponent, P
 export class VoiceStatsActivityBreakdownComponent {
   breakdown = input.required<ActivityTypeBreakdown[]>();
 
+  private readonly durationPipe = new HumanizeDurationPipe();
+
   chartOption = computed(() => {
     const data = this.breakdown();
 
@@ -79,10 +79,10 @@ export class VoiceStatsActivityBreakdownComponent {
         textStyle: {
           color: '#f3f4f6',
         },
-        formatter: (params: { value: [number, number, number]; name: string; percent: number; data: { hours: number; minutes: number; sessionCount: number } }) => {
+        formatter: (params: { value: number; name: string; percent: number; data: { sessionCount: number } }) => {
           return `
             <strong>${params.name}</strong><br/>
-            Duration: ${params.data.hours}h ${params.data.minutes}m<br/>
+            Duration: ${this.durationPipe.transform(params.value, true)}<br/>
             Sessions: ${params.data.sessionCount}<br/>
             Percentage: ${params.percent.toFixed(1)}%
           `;
@@ -118,8 +118,6 @@ export class VoiceStatsActivityBreakdownComponent {
           data: data.map(item => ({
             name: this.getActivityLabel(item.type),
             value: item.duration,
-            hours: item.durationHours,
-            minutes: item.durationMinutes,
             sessionCount: item.sessionCount,
             itemStyle: {
               color: this.getActivityColor(item.type),

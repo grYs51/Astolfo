@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { VoiceStatsChannels } from '@nx-stolfo/data-access-voice-stats';
 import { ProgressBarComponent } from '@nx-stolfo/components';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
 @Component({
   selector: 'feature-voice-stats-channels',
-  imports: [ProgressBarComponent],
+  imports: [ProgressBarComponent, HumanizeDurationPipe],
   templateUrl: './voice-stats-channels.component.html',
   styles: ``,
   changeDetection: ChangeDetectionStrategy.OnPush,

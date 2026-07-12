@@ -25,7 +25,7 @@
         <lib-leaderboard-item
           [rank]="idx + 1"
           [title]="entry.member.displayName || entry.member.username"
-          [value]="entry.totalDurationHours + 'h ' + entry.totalDurationMinutes + 'm'"
+          [value]="entry.totalDuration | humanizeDuration: true"
           [subtitle]="entry.sessionCount + ' sessions · ' + entry.uniqueChannels + ' channels'"
           [avatarUrl]="entry.member.avatar || undefined"
           (itemClick)="userClick.emit(entry.member.id)"
