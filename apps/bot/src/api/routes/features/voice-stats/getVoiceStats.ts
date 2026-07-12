@@ -1,7 +1,8 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { VoiceStatsItem, VoiceStatsResponse } from '@nx-stolfo/api-interfaces';
 
-export const getVoiceStats: RequestHandler<{ serverId: string }, unknown> =
+export const getVoiceStats: RequestHandler<{ serverId: string }, VoiceStatsResponse> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
@@ -25,5 +26,5 @@ export const getVoiceStats: RequestHandler<{ serverId: string }, unknown> =
     ]);
 
     // Return a stable DTO shape
-    res.send({ items, total, limit, offset });
+    res.send({ items: items as VoiceStatsItem[], total, limit, offset });
   });

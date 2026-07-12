@@ -2,73 +2,54 @@
   @if (loading()) {
     <div class="loading-state">
       <div class="animate-pulse space-y-4">
-        <div class="h-8 bg-neutral-700 rounded w-1/3"></div>
-        <div class="h-96 bg-neutral-700 rounded"></div>
+        <div class="h-8 w-1/3 rounded bg-base-200"></div>
+        <div class="h-96 rounded bg-base-200"></div>
       </div>
     </div>
   } @else {
-    <div class="heatmap-header mb-md">
-      <div class="flex items-center justify-between">
-        <div>
-          <h3 class="text-2xl font-semibold text-neutral-100 mb-xs">📅 Voice Activity Heatmap</h3>
-          <p class="text-sm text-neutral-400">Total voice duration by hour and day of week</p>
-        </div>
-        <div class="bg-primary-500/20 text-primary-400 px-md py-xs rounded-lg text-xs font-medium">
-          Shows: Duration (Minutes)
-        </div>
-      </div>
-    </div>
-
-    <!-- Stats Summary -->
+    <!-- Stats summary -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md">
       <lib-stat-card
         label="Total Duration"
-        [value]="totalHours()"
+        [value]="totalHours() + 'h'"
         icon="⏱️"
-        subtitle="hours of voice activity"
-        iconColor="text-blue-500"
+        subtitle="of voice activity"
       />
       <lib-stat-card
         label="Peak Time"
         [value]="peakTimeDisplay()"
         icon="🔥"
         subtitle="highest activity"
-        iconColor="text-primary-500"
+        valueSize="text-xl"
       />
       <lib-stat-card
         label="Avg per Cell"
         [value]="avgMinutes() + 'm'"
         icon="📊"
         subtitle="average duration"
-        iconColor="text-green-500"
       />
       <lib-stat-card
         label="Max Activity"
         [value]="Math.floor(heatmap().stats.maxValue / 60) + 'h'"
         icon="⚡"
         subtitle="peak cell duration"
-        iconColor="text-purple-500"
       />
     </div>
 
-    <!-- ECharts Heatmap -->
-    <div class="bg-base-200 rounded-2xl p-6 mt-lg">
-      <div class="text-xs text-gray-400 mb-sm text-center">
-        Darker colors = higher voice activity (in minutes)
+    <!-- Heatmap chart -->
+    <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+      <div class="mb-sm flex items-center justify-between">
+        <div>
+          <h3 class="text-base font-semibold text-gray-100">Activity by hour and weekday</h3>
+          <p class="text-xs text-gray-500">Darker cells mean more voice time (minutes)</p>
+        </div>
       </div>
       <div
         echarts
         [options]="chartOption()"
         [initOpts]="{ renderer: 'canvas' }"
-        class="heatmap-chart">
-      </div>
-    </div>
-
-    <!-- Legend Helper -->
-    <div class="legend-helper">
-      <p class="text-xs text-neutral-500">
-        💡 Hover over cells to see detailed statistics. Darker red indicates higher activity.
-      </p>
+        class="heatmap-chart"
+      ></div>
     </div>
   }
 </div>

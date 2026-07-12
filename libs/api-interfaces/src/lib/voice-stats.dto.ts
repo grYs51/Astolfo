@@ -1,3 +1,18 @@
+/**
+ * Wire types for the voice-stats endpoints
+ * (apps/bot/src/api/routes/features/voice-stats/*).
+ *
+ * Single source of truth imported by BOTH the Express handlers (which type
+ * their responses with these) and the Angular data-access libs — changing a
+ * response shape here breaks whichever side no longer matches, at build time.
+ */
+
+/**
+ * Timestamps are `Date` on the server when the response is built and ISO
+ * strings on the client after JSON serialization.
+ */
+export type DateLike = Date | string;
+
 // Discord Data Types
 export interface DiscordMember {
   id: string;
@@ -23,6 +38,10 @@ export enum VoiceActivityType {
   VIDEO = 'VIDEO',
 }
 
+export type VoiceStatsPeriod = 'day' | 'week' | 'month' | 'all';
+export type TimelinePeriod = 'day' | 'week' | 'month' | 'year';
+export type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
+
 // Activity Type Breakdown
 export interface ActivityTypeBreakdown {
   type: VoiceActivityType;
@@ -42,6 +61,7 @@ export interface VoiceStatsOverview {
     totalDurationMinutes: number;
     totalSessions: number;
     activeUsers: number;
+    /** Sessions with ended_on IS NULL — users currently in voice. */
     activeSessions: number;
     mostActiveChannel: DiscordChannel | null;
     mostActiveChannelDuration: number;
@@ -65,7 +85,7 @@ export interface VoiceStatsLeaderboardEntry {
 
 export interface VoiceStatsLeaderboard {
   leaderboard: VoiceStatsLeaderboardEntry[];
-  period: 'day' | 'week' | 'month' | 'all';
+  period: VoiceStatsPeriod;
   total: number;
 }
 
@@ -90,8 +110,9 @@ export interface VoiceStatsChannels {
 export interface VoiceSession {
   id: string;
   channel: DiscordChannel;
-  issuedOn: Date;
-  endedOn: Date;
+  issuedOn: DateLike;
+  /** null = session still open (user is currently in voice). */
+  endedOn: DateLike | null;
   duration: number;
   durationMinutes: number;
   type: VoiceActivityType;
@@ -108,7 +129,6 @@ export interface VoiceChannelBreakdown {
 
 export interface VoiceStatsUser {
   userId: string;
-  member: DiscordMember;
 
   // Overall statistics
   summary: {
@@ -122,9 +142,6 @@ export interface VoiceStatsUser {
     averageSessionDuration: number;
     averageSessionDurationMinutes: number;
   };
-
-  // Activity type breakdown
-  activityBreakdown: ActivityTypeBreakdown[];
 
   // Recent activity
   recentSessions: VoiceSession[];
@@ -148,10 +165,10 @@ export interface VoiceStatsTimelineBucket {
 
 export interface VoiceStatsTimeline {
   timeline: VoiceStatsTimelineBucket[];
-  period: 'day' | 'week' | 'month' | 'year';
+  period: TimelinePeriod;
   granularity: 'hour' | 'day' | 'week';
-  startDate: Date;
-  endDate: Date;
+  startDate: DateLike;
+  endDate: DateLike;
 }
 
 // Voice Stats Heatmap Response
@@ -191,7 +208,7 @@ export interface VoiceStatsUserHeatmapDataPoint {
 
 export interface VoiceStatsUserHeatmap {
   userId: string;
-  period: 'week' | 'month' | 'year' | 'all';
+  period: HeatmapPeriod;
   userHeatmap: VoiceStatsUserHeatmapDataPoint[];
   stats: {
     user: {
@@ -214,9 +231,20 @@ export interface VoiceStatsUserHeatmap {
   };
 }
 
-// Original response (for backward compatibility)
+// Paginated raw session list (GET /features/voice-stats/:serverId)
+export interface VoiceStatsItem {
+  id: string;
+  guild_id: string;
+  member_id: string;
+  channel_id: string;
+  type: VoiceActivityType;
+  issued_on: DateLike;
+  /** null = session still open. */
+  ended_on: DateLike | null;
+}
+
 export interface VoiceStatsResponse {
-  items: unknown[];
+  items: VoiceStatsItem[];
   total: number;
   limit: number;
   offset: number;

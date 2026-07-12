@@ -1,60 +1,48 @@
 @let data = timeline();
 
-<div class="bg-base-300 rounded-2xl p-lg">
-  <div class="flex justify-between items-center mb-lg">
+<div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+  <div class="mb-md flex items-center justify-between">
     <div>
-      <h2 class="text-2xl font-bold mb-xs">📈 Voice Activity Timeline</h2>
-      <p class="text-sm text-gray-400">Total voice duration over time</p>
+      <h3 class="text-base font-semibold text-gray-100">Voice activity over time</h3>
+      <p class="text-xs text-gray-500">Total voice duration per {{ data.granularity }}</p>
     </div>
-    <div class="flex gap-sm text-xs">
-      <span class="bg-primary-500/20 text-primary-400 px-md py-xs rounded-full font-medium">
-        {{ data.period | uppercase }}
-      </span>
-      <span class="bg-secondary-500/20 text-secondary-400 px-md py-xs rounded-full font-medium">
-        {{ data.granularity | uppercase }}
-      </span>
-    </div>
+    <span class="rounded-md bg-base-200 px-sm py-xs text-xs font-medium uppercase tracking-wide text-gray-400">
+      {{ data.period }}
+    </span>
   </div>
 
   @if (loading()) {
-    <div class="bg-base-200 h-64 rounded-xl animate-pulse"></div>
+    <div class="h-64 rounded-lg bg-base-200 animate-pulse"></div>
   } @else if (data.timeline.length === 0) {
-    <div class="text-center py-xl">
-      <p class="text-gray-400 text-lg">No timeline data available</p>
+    <div class="py-xl text-center">
+      <p class="text-sm text-gray-400">No timeline data available</p>
     </div>
   } @else {
-    <!-- ECharts Timeline -->
-    <div class="bg-base-200 rounded-xl p-md">
-      <div
-        echarts
-        [options]="chartOption()"
-        [initOpts]="{ renderer: 'canvas' }"
-        class="timeline-chart">
+    <div
+      echarts
+      [options]="chartOption()"
+      [initOpts]="{ renderer: 'canvas' }"
+      class="timeline-chart"
+    ></div>
+
+    <!-- Summary strip -->
+    <div class="mt-md grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-white/5 md:grid-cols-4">
+      <div class="bg-base-200 p-md text-center">
+        <p class="text-xs uppercase tracking-wider text-gray-500">Total</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalHours }}h</p>
       </div>
-    </div>
-
-    <!-- Stats Summary -->
-    <div class="grid grid-cols-2 md:grid-cols-4 gap-md mt-lg">
-            <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Total Duration</p>
-              <p class="text-xl font-bold text-primary-400">{{ stats().totalHours }}h</p>
-            </div>
-
-            <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Total Sessions</p>
-              <p class="text-xl font-bold text-green-400">{{ stats().totalSessions }}</p>
-            </div>
-
-            <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Avg Users</p>
-              <p class="text-xl font-bold text-blue-400">{{ stats().avgUsers }}</p>
-            </div>
-
-            <div class="bg-base-200 p-md rounded-xl text-center">
-              <p class="text-gray-400 text-sm">Peak</p>
-              <p class="text-xl font-bold text-purple-400">{{ stats().peakHours }}h</p>
-            </div>
-
+      <div class="bg-base-200 p-md text-center">
+        <p class="text-xs uppercase tracking-wider text-gray-500">Sessions</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalSessions }}</p>
+      </div>
+      <div class="bg-base-200 p-md text-center">
+        <p class="text-xs uppercase tracking-wider text-gray-500">Avg users</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().avgUsers }}</p>
+      </div>
+      <div class="bg-base-200 p-md text-center">
+        <p class="text-xs uppercase tracking-wider text-gray-500">Peak</p>
+        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().peakHours }}h</p>
+      </div>
     </div>
   }
 </div>

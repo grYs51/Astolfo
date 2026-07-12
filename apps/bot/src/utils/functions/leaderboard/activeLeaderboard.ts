@@ -34,6 +34,9 @@ export const getActiveVoiceStats: getVoiceStatsType = async (
         in: voiceTypesToCheck,
       },
       issued_on: fromTime ? { gte: fromTime.toISOString() } : undefined,
+      // Open rows are merged from the in-memory cache below — including them
+      // here would double-count live sessions
+      ended_on: { not: null },
     },
   });
 

@@ -88,45 +88,33 @@ export class VoiceStatsHeatmapComponent {
         },
       },
       grid: {
-        height: '70%',
-        top: '10%',
-        left: '80px',
-        right: '40px',
-        backgroundColor: 'transparent',
+        height: '72%',
+        top: '4%',
+        left: '48px',
+        right: '16px',
       },
       xAxis: {
         type: 'category',
         data: this.hours,
-        splitArea: {
-          show: true,
-          areaStyle: {
-            color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.05)'],
-          },
-        },
         axisLabel: {
           interval: 1,
-          rotate: 45,
           fontSize: 10,
-          color: '#9ca3af', // text-gray-400
+          color: '#9ca3af',
         },
+        axisTick: { show: false },
         axisLine: {
           lineStyle: {
-            color: '#374151', // border color
+            color: '#374151',
           },
         },
       },
       yAxis: {
         type: 'category',
         data: this.daysOfWeek,
-        splitArea: {
-          show: true,
-          areaStyle: {
-            color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.05)'],
-          },
-        },
         axisLabel: {
-          color: '#9ca3af', // text-gray-400
+          color: '#9ca3af',
         },
+        axisTick: { show: false },
         axisLine: {
           lineStyle: {
             color: '#374151',
@@ -139,25 +127,26 @@ export class VoiceStatsHeatmapComponent {
         calculable: true,
         orient: 'horizontal',
         left: 'center',
-        bottom: '5%',
+        bottom: '2%',
+        // Sequential single-hue ramp; zero-value cells stay close to the
+        // card surface so an empty grid reads as empty, not solid purple.
         inRange: {
           color: [
-            '#2d1b4e', // Dark purple (low activity) - more visible than previous
-            '#4a1f6f', // Purple
-            '#6b2f8a', // Medium purple
-            '#8b4fa6', // Light purple
-            '#a855f7', // Primary purple
-            '#c084fc', // Light primary
-            '#d8b4fe', // Lighter
-            '#e9d5ff', // Very light
-            '#f3e8ff', // Almost white (high activity)
+            '#1c2133',
+            '#2c2a4d',
+            '#433370',
+            '#5c3d94',
+            '#7a48bd',
+            '#9333ea',
+            '#a855f7',
+            '#c084fc',
+            '#e9d5ff',
           ],
         },
-        text: ['High Activity', 'Low Activity'],
+        text: ['High', 'Low'],
         textStyle: {
-          color: '#9ca3af', // text-gray-400
+          color: '#9ca3af',
         },
-        show: true, // Make sure visualMap is visible
       },
       series: [
         {
@@ -168,15 +157,15 @@ export class VoiceStatsHeatmapComponent {
             show: false,
           },
           itemStyle: {
-            borderColor: '#1a1a2e',
-            borderWidth: 1,
+            // 2px gap in the card surface color between cells
+            borderColor: '#141824',
+            borderWidth: 2,
+            borderRadius: 2,
           },
           emphasis: {
             itemStyle: {
-              shadowBlur: 10,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
-              borderColor: '#fff',
-              borderWidth: 2,
+              borderColor: '#e5e7eb',
+              borderWidth: 1,
             },
           },
         },

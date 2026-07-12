@@ -1,7 +1,6 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  computed,
   inject,
   input,
   signal,
@@ -16,6 +15,15 @@ import {
 } from '@nx-stolfo/ui-voice-stats';
 import { VoiceStatsApi } from '@nx-stolfo/data-access-voice-stats';
 import { USER } from '@nx-stolfo/auth';
+import {
+  SegmentedControlComponent,
+  SegmentedControlOption,
+} from '@nx-stolfo/components';
+
+type Period = 'day' | 'week' | 'month' | 'all';
+type TimelinePeriod = 'day' | 'week' | 'month' | 'year';
+type Granularity = 'hour' | 'day' | 'week';
+type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
 
 @Component({
   selector: 'pages-detail-overview',
@@ -26,6 +34,7 @@ import { USER } from '@nx-stolfo/auth';
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
     VoiceStatsUserHeatmapComponent,
+    SegmentedControlComponent,
   ],
   templateUrl: './detail-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -37,14 +46,40 @@ export class DetailOverviewComponent {
   private voiceStatsApi = inject(VoiceStatsApi);
   currentUser = inject(USER);
 
-  // State for filters (signals)
-  selectedPeriod = signal<'day' | 'week' | 'month' | 'all'>('week');
-  selectedTimelinePeriod = signal<'day' | 'week' | 'month' | 'year'>('month');
-  selectedGranularity = signal<'hour' | 'day' | 'week'>('day');
-  selectedHeatmapPeriod = signal<'week' | 'month' | 'year' | 'all'>('month');
-  selectedUserHeatmapPeriod = signal<'week' | 'month' | 'year' | 'all'>('month');
+  readonly periodOptions: SegmentedControlOption<Period>[] = [
+    { value: 'day', label: 'Day' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'all', label: 'All' },
+  ];
 
-  // Reactive resources - automatically refetch when signals change!
+  readonly timelinePeriodOptions: SegmentedControlOption<TimelinePeriod>[] = [
+    { value: 'day', label: '24h' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
+  ];
+
+  readonly granularityOptions: SegmentedControlOption<Granularity>[] = [
+    { value: 'hour', label: 'Hourly' },
+    { value: 'day', label: 'Daily' },
+    { value: 'week', label: 'Weekly' },
+  ];
+
+  readonly heatmapPeriodOptions: SegmentedControlOption<HeatmapPeriod>[] = [
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
+    { value: 'all', label: 'All time' },
+  ];
+
+  // Filter state — resources below refetch automatically on change
+  selectedPeriod = signal<Period>('week');
+  selectedTimelinePeriod = signal<TimelinePeriod>('month');
+  selectedGranularity = signal<Granularity>('day');
+  selectedHeatmapPeriod = signal<HeatmapPeriod>('month');
+  selectedUserHeatmapPeriod = signal<HeatmapPeriod>('month');
+
   overviewResource = this.voiceStatsApi.fetchVoiceStatsOverview(() => this.id());
 
   leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
@@ -72,39 +107,4 @@ export class DetailOverviewComponent {
     () => this.currentUser()?.id || '',
     () => this.selectedUserHeatmapPeriod()
   );
-
-  // Computed loading states
-  isLoading = computed(
-    () =>
-      this.overviewResource.isLoading() ||
-      this.leaderboardResource.isLoading() ||
-      this.channelsResource.isLoading() ||
-      this.timelineResource.isLoading() ||
-      this.heatmapResource.isLoading(),
-  );
-
-  setPeriod(period: 'day' | 'week' | 'month' | 'all') {
-    this.selectedPeriod.set(period);
-    // Resource automatically refetches!
-  }
-
-  setTimelinePeriod(period: 'day' | 'week' | 'month' | 'year') {
-    this.selectedTimelinePeriod.set(period);
-    // Resource automatically refetches!
-  }
-
-  setGranularity(granularity: 'hour' | 'day' | 'week') {
-    this.selectedGranularity.set(granularity);
-    // Resource automatically refetches!
-  }
-
-  setHeatmapPeriod(period: 'week' | 'month' | 'year' | 'all') {
-    this.selectedHeatmapPeriod.set(period);
-    // Resource automatically refetches!
-  }
-
-  setUserHeatmapPeriod(period: 'week' | 'month' | 'year' | 'all') {
-    this.selectedUserHeatmapPeriod.set(period);
-    // Resource automatically refetches!
-  }
 }
