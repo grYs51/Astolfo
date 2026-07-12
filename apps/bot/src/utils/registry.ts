@@ -50,28 +50,40 @@ const fileTypeHandlers: Record<FileType, HandlerFunction> = {
   [FileType.INTERACTIONS]: handleInteraction,
 };
 
+// Source modules only — no declaration files, no tests
+const isRegistrableFile = (name: string) =>
+  (name.endsWith('.js') || name.endsWith('.ts')) &&
+  !name.endsWith('.d.ts') &&
+  !name.includes('.test.') &&
+  !name.includes('.spec.');
+
 async function registerFiles(
   client: DiscordClient,
   dir: string,
   fileType: FileType
 ) {
-  const files = await fs.readdir(dir);
-  for (const file of files) {
-    const stat = await fs.lstat(path.join(dir, file));
-    if (stat.isDirectory())
-      await registerFiles(client, path.join(dir, file), fileType);
-    if (file.endsWith('.js') || file.endsWith('.ts')) {
-      const filePath = pathToFileURL(path.join(dir, file)).pathname;
+  const entries = await fs.readdir(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      await registerFiles(client, fullPath, fileType);
+      continue;
+    }
+    if (!isRegistrableFile(entry.name)) continue;
+
+    const filePath = pathToFileURL(fullPath).pathname;
+    try {
+      const mod = await import(filePath);
+      // Depending on the transpilation target the class sits on
+      // `default` or on `default.default`
+      const Ctor = mod.default?.default ?? mod.default;
       try {
-        const { default: instance } = await import(filePath);
-        try {
-          fileTypeHandlers[fileType](new instance.default(), client);
-        } catch (error) {
-          Logger.error('Failed to register file', error);
-        }
+        fileTypeHandlers[fileType](new Ctor(), client);
       } catch (error) {
-        Logger.error(`Failed to import file: ${filePath}`, error);
+        Logger.error(`Failed to register file: ${filePath}`, error);
       }
+    } catch (error) {
+      Logger.error(`Failed to import file: ${filePath}`, error);
     }
   }
 }

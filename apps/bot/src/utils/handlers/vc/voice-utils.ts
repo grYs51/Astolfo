@@ -1,5 +1,9 @@
 import { GuildMember, VoiceBasedChannel, VoiceState } from 'discord.js';
 
+/** Canonical key for the in-memory voice cache and voice-related job maps. */
+export const voiceKey = (guildId: string, memberId: string) =>
+  `${guildId}:${memberId}`;
+
 export enum VOICE_TYPE {
   VOICE = 'VOICE',
   MUTED = 'MUTED',

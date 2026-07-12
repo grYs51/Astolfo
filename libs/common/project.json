@@ -8,21 +8,6 @@
     "type:common"
   ],
   "targets": {
-    "build": {
-      "executor": "@nx/node:build",
-      "outputs": ["{workspaceRoot}/dist/libs/common"],
-      "options": {
-        "outputPath": "dist/libs/common",
-        "main": "libs/common/src/index.ts",
-        "tsConfig": "libs/common/tsconfig.lib.json"
-      },
-      "configurations": {
-        "production": {
-          "tsConfig": "libs/common/tsconfig.lib.prod.json"
-        }
-      },
-      "defaultConfiguration": "production"
-    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }

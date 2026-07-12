@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { client } from '../../../..';
-import { ChannelType } from 'discord.js';
+import { getChannelData, toDurationParts } from '../helpers';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -10,17 +10,8 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
   asyncHandler(async (req, res) => {
     const { serverId, userId } = req.params;
 
-    if (!serverId || !userId) {
-      res.status(400).send({ error: 'Missing serverId or userId' });
-      return;
-    }
-
-    const isMember = await req.db.voiceStats.findFirst({
-      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
-      select: { id: true },
-    });
-    if (!isMember) {
-      res.status(403).json({ error: 'Forbidden' });
+    if (!userId) {
+      res.status(400).send({ error: 'Missing userId' });
       return;
     }
 
@@ -71,33 +62,28 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
     }
 
     const guild = client.guilds.cache.get(serverId);
-    const getChannelData = (channelId: string) => {
-      const channel = guild?.channels.cache.get(channelId);
-      return channel
-        ? { id: channel.id, name: channel.name, type: ChannelType[channel.type] }
-        : { id: channelId, name: 'Unknown Channel', type: 'VOICE' };
-    };
 
     const channelBreakdown = channelRows.map((row) => {
       const duration = Number(row.total_duration);
+      const parts = toDurationParts(duration);
       return {
-        channel: getChannelData(row.channel_id),
+        channel: getChannelData(guild, row.channel_id),
         totalDuration: duration,
-        totalDurationHours: Math.floor(duration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60)),
+        totalDurationHours: parts.hours,
+        totalDurationMinutes: parts.minutes,
         sessionCount: Number(row.session_count),
         percentage: totalDuration > 0 ? Math.round((duration / totalDuration) * 100) : 0,
       };
     });
 
     const favoriteRow = channelRows[0];
-    const favoriteChannelData = favoriteRow ? getChannelData(favoriteRow.channel_id) : null;
+    const favoriteChannelData = favoriteRow ? getChannelData(guild, favoriteRow.channel_id) : null;
 
     const enrichedRecentSessions = recentSessions.map((session) => {
       const duration = session.ended_on.getTime() - session.issued_on.getTime();
       return {
         id: session.id,
-        channel: getChannelData(session.channel_id),
+        channel: getChannelData(guild, session.channel_id),
         issuedOn: session.issued_on,
         endedOn: session.ended_on,
         duration,
@@ -105,11 +91,13 @@ export const getVoiceStatsUser: RequestHandler<{ serverId: string; userId: strin
       };
     });
 
+    const totalParts = toDurationParts(totalDuration);
+
     res.send({
       userId,
       totalDuration,
-      totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
-      totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+      totalDurationHours: totalParts.hours,
+      totalDurationMinutes: totalParts.minutes,
       sessionCount,
       uniqueChannels: channelRows.length,
       favoriteChannel: favoriteChannelData,

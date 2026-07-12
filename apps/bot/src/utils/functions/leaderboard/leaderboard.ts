@@ -39,7 +39,7 @@ export type LeaderboardTypes = keyof typeof leaderboardTypesLabels;
 export type LeaderboardTimeRanges = keyof typeof leaderboardTimeRangeLabels;
 export type getVoiceStatsType = (
   client: DiscordClient,
-  guildId,
+  guildId: string,
   fromTime?: Date
 ) => Promise<voice_stats[]>;
 

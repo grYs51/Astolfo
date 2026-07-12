@@ -10,7 +10,10 @@ import { CommonModule } from '@angular/common';
         <!-- Header with toggle -->
         <div
           class="flex justify-between items-center cursor-pointer"
-          (click)="toggle()">
+          role="button"
+          tabindex="0"
+          (click)="toggle()"
+          (keyup.enter)="toggle()">
           <div class="flex items-center gap-md">
             @if (icon()) {
               <span [class]="'text-2xl ' + iconColor()">{{ icon() }}</span>

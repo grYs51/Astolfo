@@ -7,22 +7,23 @@ const gauge = new Gauge({
   labelNames: ['status'],
 });
 
-export const handleStatusMetrics = () => {
-  const online = client.userStatus.filter(
-    (status) => status.status === 'online'
-  ).size;
-  const idle = client.userStatus.filter(
-    (status) => status.status === 'idle'
-  ).size;
-  const dnd = client.userStatus.filter(
-    (status) => status.status === 'dnd'
-  ).size;
-  const offline = client.userStatus.filter(
-    (status) => status.status === 'offline'
-  ).size;
+const TRACKED_STATUSES = ['online', 'idle', 'dnd', 'offline'] as const;
 
-  gauge.set({ status: 'online' }, online);
-  gauge.set({ status: 'idle' }, idle);
-  gauge.set({ status: 'dnd' }, dnd);
-  gauge.set({ status: 'offline' }, offline);
+export const handleStatusMetrics = () => {
+  // Single pass — this runs on every presence change
+  const counts: Record<string, number> = {
+    online: 0,
+    idle: 0,
+    dnd: 0,
+    offline: 0,
+  };
+  for (const status of client.userStatus.values()) {
+    if (status.status && status.status in counts) {
+      counts[status.status]++;
+    }
+  }
+
+  for (const status of TRACKED_STATUSES) {
+    gauge.set({ status }, counts[status]);
+  }
 };

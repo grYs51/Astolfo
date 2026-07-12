@@ -3,24 +3,38 @@
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "apps/bot/src",
   "projectType": "application",
-  "tags": ["type:app", "platform:node"],
-  "implicitDependencies": ["libs/models"],
+  "tags": [
+    "type:app",
+    "platform:node"
+  ],
+  "implicitDependencies": [
+    "libs/models"
+  ],
   "namedInputs": {
-    "dockerFiles": ["{projectRoot}/Dockerfile", "{projectRoot}/package.json"]
+    "dockerFiles": [
+      "{projectRoot}/Dockerfile",
+      "{projectRoot}/package.json"
+    ]
   },
   "targets": {
     "build": {
       "executor": "@nx/esbuild:esbuild",
-      "outputs": ["{options.outputPath}"],
+      "outputs": [
+        "{options.outputPath}"
+      ],
       "defaultConfiguration": "production",
       "options": {
         "platform": "node",
         "outputPath": "dist/apps/bot",
-        "format": ["cjs"],
+        "format": [
+          "cjs"
+        ],
         "bundle": false,
         "main": "apps/bot/src/index.ts",
         "tsConfig": "apps/bot/tsconfig.app.json",
-        "assets": ["apps/bot/src/assets"],
+        "assets": [
+          "apps/bot/src/assets"
+        ],
         "generatePackageJson": true,
         "esbuildOptions": {
           "sourcemap": true,
@@ -44,7 +58,9 @@
     "serve": {
       "executor": "@nx/js:node",
       "defaultConfiguration": "development",
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "buildTarget": "bot:build",
         "runBuildTargetDependencies": false
@@ -62,30 +78,51 @@
       "executor": "@nx-tools/nx-container:build",
       "inputs": [
         "dockerFiles",
-        { "dependentTasksOutputFiles": "**/dist/**/*", "transitive": true }
+        {
+          "dependentTasksOutputFiles": "**/dist/**/*",
+          "transitive": true
+        }
       ],
       "cache": true,
-      "dependsOn": ["build"],
+      "dependsOn": [
+        "build"
+      ],
       "options": {
         "file": "apps/bot/Dockerfile.bot",
-        "platforms": ["linux/amd64", "linux/arm64"],
-        "tags": ["grace51/astolfo/bot:latest"],
-        "build-args": ["APP_NAME=astolfo-bot", "NODE_VERSION=23"]
+        "platforms": [
+          "linux/amd64",
+          "linux/arm64"
+        ],
+        "tags": [
+          "grace51/astolfo/bot:latest"
+        ],
+        "build-args": [
+          "APP_NAME=astolfo-bot",
+          "NODE_VERSION=23"
+        ]
       },
       "configurations": {
         "production": {
-          "tags": ["grace51/astolfo/bot:latest"],
+          "tags": [
+            "grace51/astolfo/bot:latest"
+          ],
           "push": false
         },
         "development": {
-          "tags": ["grace51/astolfo/bot:dev"],
+          "tags": [
+            "grace51/astolfo/bot:dev"
+          ],
           "push": false
         }
       }
     },
     "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
       "options": {
-        "passWithNoTests": true
+        "jestConfig": "apps/bot/jest.config.ts"
       }
     }
   }

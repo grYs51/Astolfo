@@ -5,6 +5,7 @@ import {
   VoiceTypeToVoiceStats,
   createVoiceStat,
   getActiveVoiceStates,
+  voiceKey,
 } from './voice-utils';
 import {
   cancelJob,
@@ -41,7 +42,7 @@ export const handleUserJoinedVoiceChannel = (
     )
   );
 
-  const joinKey = `${newState.guild.id}:${newState.member!.id}`;
+  const joinKey = voiceKey(newState.guild.id, newState.member!.id);
   const existing = client.voiceUsers.get(joinKey) ?? [];
   client.voiceUsers.set(joinKey, [...existing, voiceVoiceStat, ...otherVoiceStats]);
   schedule5hrVoiceChannelJob(newState.member!, newState.channel!.id, date);
@@ -76,7 +77,7 @@ export const handleUserChangeVoiceStates = async (
         type
       )
     );
-    const stateKey = `${newState.guild.id}:${newState.member!.id}`;
+    const stateKey = voiceKey(newState.guild.id, newState.member!.id);
     const existingStats = client.voiceUsers.get(stateKey) ?? [];
     client.voiceUsers.set(stateKey, [...existingStats, ...newVoiceStats]);
   }

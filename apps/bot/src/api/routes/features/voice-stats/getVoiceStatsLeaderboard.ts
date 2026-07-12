@@ -1,49 +1,23 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { GuildMember } from 'discord.js';
 import { client } from '../../../..';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
+import { Logger } from '../../../../utils/logger';
+import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unknown> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
-    if (!serverId) {
-      res.status(400).send({ error: 'Missing serverId' });
-      return;
-    }
-
-    const isMember = await req.db.voiceStats.findFirst({
-      where: { guild_id: serverId, member_id: req.user?.id ?? '' },
-      select: { id: true },
-    });
-    if (!isMember) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
     // Basic pagination params
     const rawLimit = Number(req.query.limit);
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 && rawLimit <= 100 ? rawLimit : 10;
 
-    // Time period filter (optional)
-    const period = req.query.period as string | undefined; // 'day', 'week', 'month', 'all'
-    let startDate: Date | undefined;
-
-    const now = new Date();
-    switch (period) {
-      case 'day':
-        startDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        break;
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
-      default:
-        startDate = undefined;
-    }
+    // Time period filter (optional): 'day', 'week', 'month', 'all'
+    const period = req.query.period as string | undefined;
+    const startDate = getStartDateForPeriod(period);
 
     // Aggregate per-user duration and session counts directly in the database
     // to avoid fetching thousands of rows into application memory.
@@ -77,55 +51,59 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
     const leaderboard = leaderboardRaw.map((row) => {
       const totalDuration = Number(row.total_duration);
       const sessionCount = Number(row.session_count);
+      const parts = toDurationParts(totalDuration);
       return {
         memberId: row.member_id,
         totalDuration,
-        totalDurationHours: Math.floor(totalDuration / (1000 * 60 * 60)),
-        totalDurationMinutes: Math.floor((totalDuration % (1000 * 60 * 60)) / (1000 * 60)),
+        totalDurationHours: parts.hours,
+        totalDurationMinutes: parts.minutes,
         sessionCount,
         uniqueChannels: Number(row.unique_channels),
         averageSessionDuration: sessionCount > 0 ? Math.floor(totalDuration / sessionCount) : 0,
       };
     });
 
-    // Fetch guild and member data from Discord
+    // One batched gateway request for all leaderboard entries instead of
+    // one fetch per member; missing guild/members fall back to "Unknown User".
     const guild = client.guilds.cache.get(serverId);
+    const membersById = new Map<string, GuildMember>();
+    if (guild && leaderboard.length > 0) {
+      try {
+        const fetched = await guild.members.fetch({
+          user: leaderboard.map((entry) => entry.memberId),
+        });
+        fetched.forEach((member) => membersById.set(member.id, member));
+      } catch (error) {
+        Logger.warn(`Failed to batch-fetch members for guild ${serverId}`, error);
+      }
+    }
 
-    // Enrich with Discord member data
-    const enrichedLeaderboard = await Promise.all(
-      leaderboard.map(async (entry) => {
-        let member = null;
-        try {
-          const guildMember = await guild?.members.fetch(entry.memberId);
-          if (guildMember) {
-            member = {
-              id: guildMember.id,
-              username: guildMember.user.username,
-              displayName: guildMember.displayName,
-              avatar: guildMember.user.displayAvatarURL(),
-            };
+    const enrichedLeaderboard = leaderboard.map((entry) => {
+      const guildMember = membersById.get(entry.memberId);
+      const member = guildMember
+        ? {
+            id: guildMember.id,
+            username: guildMember.user.username,
+            displayName: guildMember.displayName,
+            avatar: guildMember.user.displayAvatarURL(),
           }
-        } catch (_) {
-          // Member not found or left server
-          member = {
+        : {
             id: entry.memberId,
             username: 'Unknown User',
             displayName: null,
             avatar: null,
           };
-        }
 
-        return {
-          member,
-          totalDuration: entry.totalDuration,
-          totalDurationHours: entry.totalDurationHours,
-          totalDurationMinutes: entry.totalDurationMinutes,
-          sessionCount: entry.sessionCount,
-          uniqueChannels: entry.uniqueChannels,
-          averageSessionDuration: entry.averageSessionDuration,
-        };
-      })
-    );
+      return {
+        member,
+        totalDuration: entry.totalDuration,
+        totalDurationHours: entry.totalDurationHours,
+        totalDurationMinutes: entry.totalDurationMinutes,
+        sessionCount: entry.sessionCount,
+        uniqueChannels: entry.uniqueChannels,
+        averageSessionDuration: entry.averageSessionDuration,
+      };
+    });
 
     res.send({
       leaderboard: enrichedLeaderboard,

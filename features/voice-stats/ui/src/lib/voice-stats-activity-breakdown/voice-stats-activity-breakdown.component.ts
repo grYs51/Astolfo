@@ -1,5 +1,10 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
 import { ActivityTypeBreakdown, VoiceActivityType } from '@nx-stolfo/data-access-voice-stats';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
@@ -14,6 +19,7 @@ echarts.use([CanvasRenderer, TooltipComponent, LegendComponent, GridComponent, P
   standalone: true,
   imports: [CommonModule, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="activity-breakdown bg-base-300 rounded-2xl p-lg">
       <h3 class="text-xl font-semibold mb-md">Activity Type Breakdown</h3>

@@ -11,28 +11,26 @@ import {
   VoiceStatsUserHeatmap,
 } from './voice-stats.model';
 
+/**
+ * All params are reactive functions (`() => value`) — usually signals or
+ * computeds — so the underlying `httpResource` refetches when they change.
+ * Static values can be passed as `() => 'value'`.
+ */
 export class VoiceStatsApi extends ApiBase {
   protected override host = inject(COMMON_BOT_API_URL);
 
-  /**
-   * Fetch all voice stats with pagination
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param limit - Optional limit
-   * @param offset - Optional offset
-   */
+  /** Fetch all voice stats with pagination */
   fetchVoiceStats(
-    guildId: string | (() => string),
-    limit?: number | (() => number | undefined),
-    offset?: number | (() => number | undefined)
+    guildId: () => string,
+    limit?: () => number | undefined,
+    offset?: () => number | undefined
   ) {
     return this.get<VoiceStatsResponse>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}`
-        : `/features/voice-stats/${guildId}`,
+      () => `/features/voice-stats/${guildId()}`,
       () => {
         const params: Record<string, string> = {};
-        const limitVal = typeof limit === 'function' ? limit() : limit;
-        const offsetVal = typeof offset === 'function' ? offset() : offset;
+        const limitVal = limit?.();
+        const offsetVal = offset?.();
 
         if (limitVal !== undefined) params['limit'] = limitVal.toString();
         if (offsetVal !== undefined) params['offset'] = offsetVal.toString();
@@ -42,37 +40,25 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /**
-   * Fetch overview statistics
-   * @param guildId - Can be a static string or a signal/computed function
-   */
-  fetchVoiceStatsOverview(guildId: string | (() => string)) {
+  /** Fetch overview statistics */
+  fetchVoiceStatsOverview(guildId: () => string) {
     return this.get<VoiceStatsOverview>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}/overview`
-        : `/features/voice-stats/${guildId}/overview`
+      () => `/features/voice-stats/${guildId()}/overview`
     );
   }
 
-  /**
-   * Fetch leaderboard with optional period filter
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param period - Can be a static string or a signal/computed function
-   * @param limit - Optional limit
-   */
+  /** Fetch leaderboard with optional period filter */
   fetchVoiceStatsLeaderboard(
-    guildId: string | (() => string),
-    period?: ('day' | 'week' | 'month' | 'all') | (() => 'day' | 'week' | 'month' | 'all' | undefined),
-    limit?: number | (() => number | undefined)
+    guildId: () => string,
+    period?: () => 'day' | 'week' | 'month' | 'all' | undefined,
+    limit?: () => number | undefined
   ) {
     return this.get<VoiceStatsLeaderboard>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}/leaderboard`
-        : `/features/voice-stats/${guildId}/leaderboard`,
+      () => `/features/voice-stats/${guildId()}/leaderboard`,
       () => {
         const params: Record<string, string> = {};
-        const periodVal = typeof period === 'function' ? period() : period;
-        const limitVal = typeof limit === 'function' ? limit() : limit;
+        const periodVal = period?.();
+        const limitVal = limit?.();
 
         if (periodVal) params['period'] = periodVal;
         if (limitVal !== undefined) params['limit'] = limitVal.toString();
@@ -82,57 +68,32 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /**
-   * Fetch channel statistics
-   * @param guildId - Can be a static string or a signal/computed function
-   */
-  fetchVoiceStatsChannels(guildId: string | (() => string)) {
+  /** Fetch channel statistics */
+  fetchVoiceStatsChannels(guildId: () => string) {
     return this.get<VoiceStatsChannels>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}/channels`
-        : `/features/voice-stats/${guildId}/channels`
+      () => `/features/voice-stats/${guildId()}/channels`
     );
   }
 
-  /**
-   * Fetch user-specific statistics
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param userId - Can be a static string or a signal/computed function
-   */
-  fetchVoiceStatsUser(
-    guildId: string | (() => string),
-    userId: string | (() => string)
-  ) {
+  /** Fetch user-specific statistics */
+  fetchVoiceStatsUser(guildId: () => string, userId: () => string) {
     return this.get<VoiceStatsUser>(
-      typeof guildId === 'function' || typeof userId === 'function'
-        ? () => {
-            const guild = typeof guildId === 'function' ? guildId() : guildId;
-            const user = typeof userId === 'function' ? userId() : userId;
-            return `/features/voice-stats/${guild}/users/${user}`;
-          }
-        : `/features/voice-stats/${guildId}/users/${userId}`
+      () => `/features/voice-stats/${guildId()}/users/${userId()}`
     );
   }
 
-  /**
-   * Fetch timeline statistics
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param period - Can be a static string or a signal/computed function
-   * @param granularity - Can be a static string or a signal/computed function
-   */
+  /** Fetch timeline statistics */
   fetchVoiceStatsTimeline(
-    guildId: string | (() => string),
-    period?: ('day' | 'week' | 'month' | 'year') | (() => 'day' | 'week' | 'month' | 'year' | undefined),
-    granularity?: ('hour' | 'day' | 'week') | (() => 'hour' | 'day' | 'week' | undefined)
+    guildId: () => string,
+    period?: () => 'day' | 'week' | 'month' | 'year' | undefined,
+    granularity?: () => 'hour' | 'day' | 'week' | undefined
   ) {
     return this.get<VoiceStatsTimeline>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}/timeline`
-        : `/features/voice-stats/${guildId}/timeline`,
+      () => `/features/voice-stats/${guildId()}/timeline`,
       () => {
         const params: Record<string, string> = {};
-        const periodVal = typeof period === 'function' ? period() : period;
-        const granularityVal = typeof granularity === 'function' ? granularity() : granularity;
+        const periodVal = period?.();
+        const granularityVal = granularity?.();
 
         if (periodVal) params['period'] = periodVal;
         if (granularityVal) params['granularity'] = granularityVal;
@@ -142,22 +103,16 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /**
-   * Fetch heatmap data showing activity by hour and day of week
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param period - Optional time period filter
-   */
+  /** Fetch heatmap data showing activity by hour and day of week */
   fetchVoiceStatsHeatmap(
-    guildId: string | (() => string),
-    period?: ('week' | 'month' | 'year' | 'all') | (() => 'week' | 'month' | 'year' | 'all' | undefined)
+    guildId: () => string,
+    period?: () => 'week' | 'month' | 'year' | 'all' | undefined
   ) {
     return this.get<VoiceStatsHeatmap>(
-      typeof guildId === 'function'
-        ? () => `/features/voice-stats/${guildId()}/heatmap`
-        : `/features/voice-stats/${guildId}/heatmap`,
+      () => `/features/voice-stats/${guildId()}/heatmap`,
       () => {
         const params: Record<string, string> = {};
-        const periodVal = typeof period === 'function' ? period() : period;
+        const periodVal = period?.();
 
         if (periodVal) params['period'] = periodVal;
 
@@ -166,27 +121,21 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /**
-   * Fetch user-specific heatmap data with server comparison
-   * @param guildId - Can be a static string or a signal/computed function
-   * @param userId - Can be a static string or a signal/computed function
-   * @param period - Optional time period filter
-   */
+  /** Fetch user-specific heatmap data with server comparison */
   fetchVoiceStatsUserHeatmap(
-    guildId: string | (() => string),
-    userId: string | (() => string | undefined | null),
-    period?: ('week' | 'month' | 'year' | 'all') | (() => 'week' | 'month' | 'year' | 'all' | undefined)
+    guildId: () => string,
+    userId: () => string | undefined | null,
+    period?: () => 'week' | 'month' | 'year' | 'all' | undefined
   ) {
     return this.get<VoiceStatsUserHeatmap>(
       () => {
-        const guild = typeof guildId === 'function' ? guildId() : guildId;
-        const user = typeof userId === 'function' ? userId() : userId;
+        const user = userId();
         if (!user) return undefined; // skip request until userId is available
-        return `/features/voice-stats/${guild}/users/${user}/heatmap`;
+        return `/features/voice-stats/${guildId()}/users/${user}/heatmap`;
       },
       () => {
         const params: Record<string, string> = {};
-        const periodVal = typeof period === 'function' ? period() : period;
+        const periodVal = period?.();
 
         if (periodVal) params['period'] = periodVal;
 

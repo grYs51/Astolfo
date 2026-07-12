@@ -10,8 +10,6 @@ export class HumanizeDurationPipe implements PipeTransform {
 
     value = Math.floor(value / 1000); // Convert milliseconds to seconds
 
-    console.log('value', value);
-
     const weeks = Math.floor(value / (7 * 24 * 60 * 60));
     const days = Math.floor((value % (7 * 24 * 60 * 60)) / (24 * 60 * 60));
     const hours = Math.floor((value % (24 * 60 * 60)) / (60 * 60));

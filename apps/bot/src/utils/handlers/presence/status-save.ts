@@ -24,3 +24,21 @@ export const saveStatus = async (oldStatus: Presence, date: Date) => {
   });
   client.userStatus.delete(oldStatus.userId);
 };
+
+/**
+ * Flushes every cached open status duration to the DB in one batch.
+ * Called on shutdown so deploys don't silently drop them.
+ */
+export const saveAllStatuses = async (date: Date) => {
+  const statuses = Array.from(client.userStatus.values())
+    .filter(
+      (status) =>
+        status.created_at && date.getTime() - status.created_at.getTime() >= 15_000
+    )
+    .map((status) => ({ ...status, ended_at: date }) as user_statuses);
+
+  client.userStatus.clear();
+
+  if (statuses.length === 0) return;
+  await client.dataSource.userStatus.createMany({ data: statuses });
+};

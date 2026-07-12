@@ -1,3 +1,4 @@
+import { voice_stats } from '@prisma/client';
 import {
   Leaderboard,
   getVoiceStatsType,
@@ -8,6 +9,13 @@ import { getCurrentVoiceStats } from './currentLeaderboard';
 
 const voiceTypesToCheck = [
   VOICE_TYPE.VOICE,
+  VOICE_TYPE.MUTED,
+  VOICE_TYPE.DEAF,
+  VOICE_TYPE.SERVER_DEAF,
+  VOICE_TYPE.SERVER_MUTED,
+];
+
+const deductedTypes = [
   VOICE_TYPE.MUTED,
   VOICE_TYPE.DEAF,
   VOICE_TYPE.SERVER_DEAF,
@@ -34,53 +42,88 @@ export const getActiveVoiceStats: getVoiceStatsType = async (
   return [...dbVoiceStatsOfGuild, ...inChannel];
 };
 
+/**
+ * Sums the merged (deduplicated) overlap of muted/deaf intervals with a
+ * voice span. Merging first prevents double-deducting when a user is
+ * simultaneously MUTED and DEAF (deafening also mutes).
+ */
+const deductedOverlap = (
+  voiceStart: number,
+  voiceEnd: number,
+  deductedStats: voice_stats[]
+): number => {
+  const intervals = deductedStats
+    .map((s) => ({
+      start: Math.max(s.issued_on.getTime(), voiceStart),
+      end: Math.min(s.ended_on.getTime(), voiceEnd),
+    }))
+    .filter((interval) => interval.end > interval.start)
+    .sort((a, b) => a.start - b.start);
+
+  let total = 0;
+  let currentStart: number | null = null;
+  let currentEnd = 0;
+
+  for (const interval of intervals) {
+    if (currentStart === null) {
+      currentStart = interval.start;
+      currentEnd = interval.end;
+    } else if (interval.start <= currentEnd) {
+      currentEnd = Math.max(currentEnd, interval.end);
+    } else {
+      total += currentEnd - currentStart;
+      currentStart = interval.start;
+      currentEnd = interval.end;
+    }
+  }
+  if (currentStart !== null) {
+    total += currentEnd - currentStart;
+  }
+
+  return total;
+};
+
 export const getActiveLeaderboard: getLeaderboardType = (members, stats) => {
-  const leaderboard = stats.reduce((acc, stat) => {
-    if (stat.type !== VOICE_TYPE.VOICE) return acc;
+  // Pre-group deducted stats by member so each VOICE stat doesn't re-scan
+  // the whole array (previously O(n²))
+  const deductedByMember = new Map<string, voice_stats[]>();
+  for (const stat of stats) {
+    if (!deductedTypes.includes(stat.type as VOICE_TYPE)) continue;
+    const list = deductedByMember.get(stat.member_id);
+    if (list) {
+      list.push(stat);
+    } else {
+      deductedByMember.set(stat.member_id, [stat]);
+    }
+  }
 
-    let activeTime = stat.ended_on.getTime() - stat.issued_on.getTime();
-    const deductedTypes = [
-      VOICE_TYPE.MUTED,
-      VOICE_TYPE.DEAF,
-      VOICE_TYPE.SERVER_DEAF,
-      VOICE_TYPE.SERVER_MUTED,
-    ];
-    const mutedOrDeafenedStats = stats.filter(
-      (s) =>
-        s.member_id === stat.member_id &&
-        deductedTypes.includes(s.type as VOICE_TYPE) &&
-        s.issued_on <= stat.ended_on &&
-        s.ended_on >= stat.issued_on
-    );
+  const membersById = new Map(members.map((member) => [member.id, member]));
+  const leaderboard = new Map<string, Leaderboard>();
 
-    mutedOrDeafenedStats.forEach((s) => {
-      const overlapStart = Math.max(
-        s.issued_on.getTime(),
-        stat.issued_on.getTime()
-      );
-      const overlapEnd = Math.min(
-        s.ended_on.getTime(),
-        stat.ended_on.getTime()
-      );
-      activeTime -= Math.max(0, overlapEnd - overlapStart);
-    });
+  for (const stat of stats) {
+    if (stat.type !== VOICE_TYPE.VOICE) continue;
 
-    const memberStat = acc.find((x) => x.id === stat.member_id);
+    const start = stat.issued_on.getTime();
+    const end = stat.ended_on.getTime();
+    const activeTime =
+      end -
+      start -
+      deductedOverlap(start, end, deductedByMember.get(stat.member_id) ?? []);
+
+    const memberStat = leaderboard.get(stat.member_id);
     if (memberStat) {
       memberStat.count += activeTime;
     } else {
-      const member = members.find((m) => m.id === stat.member_id);
+      const member = membersById.get(stat.member_id);
       if (member) {
-        acc.push({
+        leaderboard.set(stat.member_id, {
           id: stat.member_id,
           count: activeTime,
           name: member.displayName ?? member.user.username,
         });
       }
     }
+  }
 
-    return acc;
-  }, [] as Leaderboard[]);
-
-  return leaderboard;
+  return Array.from(leaderboard.values());
 };
