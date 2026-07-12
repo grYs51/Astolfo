@@ -1,6 +1,10 @@
 {
   "name": "@nx-stolfo/ui",
   "version": "0.0.1",
-  "peerDependencies": {},
+  "peerDependencies": {
+    "@angular/core": "21.0.6",
+    "@nx-stolfo/data-access": "0.0.1",
+    "@nx/angular": "22.3.3"
+  },
   "sideEffects": false
 }

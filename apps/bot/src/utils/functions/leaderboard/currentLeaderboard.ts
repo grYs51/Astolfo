@@ -17,27 +17,26 @@ export const getCurrentVoiceStats: getVoiceStatsType = (client, guildId) => {
 };
 
 export const getCurrentLeaderboard: getLeaderboardType = (members, stats) => {
-  const leaderboard = stats.reduce((acc, stat) => {
+  const membersById = new Map(members.map((member) => [member.id, member]));
+  const leaderboard = new Map<string, Leaderboard>();
 
+  for (const stat of stats) {
     const activeTime = stat.ended_on.getTime() - stat.issued_on.getTime();
 
-    const memberStat = acc.find((x) => x.id === stat.member_id);
-
+    const memberStat = leaderboard.get(stat.member_id);
     if (memberStat) {
       memberStat.count += activeTime;
     } else {
-      const member = members.find((m) => m.id === stat.member_id);
+      const member = membersById.get(stat.member_id);
       if (member) {
-        acc.push({
+        leaderboard.set(stat.member_id, {
           id: stat.member_id,
           count: activeTime,
           name: member.displayName ?? member.user.username,
         });
       }
     }
+  }
 
-    return acc;
-  }, [] as Leaderboard[]);
-
-  return leaderboard;
+  return Array.from(leaderboard.values());
 };

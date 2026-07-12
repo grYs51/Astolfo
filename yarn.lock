@@ -5548,6 +5548,7 @@ __metadata:
     eslint-plugin-storybook: "npm:10.1.11"
     express: "npm:4.21.2"
     express-async-handler: "npm:^1.2.0"
+    express-rate-limit: "npm:^8.5.2"
     express-session: "npm:^1.18.1"
     humanize-duration: "npm:^3.32.1"
     jest: "npm:30.0.5"
@@ -12819,6 +12820,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"express-rate-limit@npm:^8.5.2":
+  version: 8.5.2
+  resolution: "express-rate-limit@npm:8.5.2"
+  dependencies:
+    ip-address: "npm:^10.2.0"
+  peerDependencies:
+    express: ">= 4.11"
+  checksum: 10c0/c98c49b93e94627940cf5e7c2578718b94d77163357161c3343d148e46257136c988933a96d6e1e728a010683133a58f68cad46928b063cf8d99521c8772578d
+  languageName: node
+  linkType: hard
+
 "express-session@npm:^1.18.1":
   version: 1.18.1
   resolution: "express-session@npm:1.18.1"
@@ -14377,6 +14389,13 @@ __metadata:
     hasown: "npm:^2.0.2"
     side-channel: "npm:^1.1.0"
   checksum: 10c0/03966f5e259b009a9bf1a78d60da920df198af4318ec004f57b8aef1dd3fe377fbc8cce63a96e8c810010302654de89f9e19de1cd8ad0061d15be28a695465c7
+  languageName: node
+  linkType: hard
+
+"ip-address@npm:^10.2.0":
+  version: 10.2.0
+  resolution: "ip-address@npm:10.2.0"
+  checksum: 10c0/5a00aada6e922c9c69dfc800ed5d0fa3348675ebdeed0e1575f503f27ca385b5f534363c9af7ad1daf64c1f1409388cdd3cc2e9b9b0fe1c924a431378d55075a
   languageName: node
   linkType: hard
 

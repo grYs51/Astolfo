@@ -2,7 +2,8 @@
   "name": "@nx-stolfo/data-access-voice-stats",
   "version": "0.0.1",
   "peerDependencies": {
-    "@nx/angular": "22.3.3"
+    "@nx/angular": "22.3.3",
+    "@angular/core": "21.0.6"
   },
   "sideEffects": false
 }

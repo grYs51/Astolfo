@@ -4,23 +4,10 @@
   "sourceRoot": "features/active-servers/ui/src",
   "prefix": "lib",
   "projectType": "library",
-  "tags": ["type:ui"],
+  "tags": [
+    "type:ui"
+  ],
   "targets": {
-    "build": {
-      "executor": "@nx/angular:ng-packagr-lite",
-      "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
-      "options": {
-        "project": "features/active-servers/ui/ng-package.json",
-        "tsConfig": "features/active-servers/ui/tsconfig.lib.json"
-      },
-      "configurations": {
-        "production": {
-          "tsConfig": "features/active-servers/ui/tsconfig.lib.prod.json"
-        },
-        "development": {}
-      },
-      "defaultConfiguration": "production"
-    },
     "lint": {
       "executor": "@nx/eslint:lint"
     }

@@ -3,7 +3,7 @@ import { client } from '../..';
 import { GuildMember, VoiceBasedChannel } from 'discord.js';
 import { Logger } from '../logger';
 import { schedule5hrVoiceChannelJob } from '../schedulers/voice-channel.scheduler';
-import { createVoiceStat, getActiveVoiceStates } from '../handlers/vc';
+import { createVoiceStat, getActiveVoiceStates, voiceKey } from '../handlers/vc';
 
 const processMember = async (
   channel: VoiceBasedChannel,
@@ -21,7 +21,7 @@ const processMember = async (
     createVoiceStat(channel.guild.id, channel.id, member.id, date, type)
   );
 
-  const k = `${channel.guild.id}:${member.id}`;
+  const k = voiceKey(channel.guild.id, member.id);
   const existing = client.voiceUsers.get(k) ?? [];
   client.voiceUsers.set(k, [...existing, voiceVoiceStat, ...otherVoiceStats]);
   schedule5hrVoiceChannelJob(member, channel.id, date);
@@ -61,12 +61,13 @@ export const saveVc = async () => {
   const date = new Date();
 
   const allStats = Array.from(client.voiceUsers.values()).flat();
-  return Promise.all(
-    allStats.map(async (voiceStat) => {
-      voiceStat.ended_on = date;
-      await client.dataSource.voiceStats.create({
-        data: voiceStat as voice_stats,
-      });
-    })
-  );
+  if (allStats.length === 0) return;
+
+  // Single atomic createMany — matters most on shutdown, where per-row
+  // inserts race against the process exiting
+  await client.dataSource.voiceStats.createMany({
+    data: allStats.map(
+      (voiceStat) => ({ ...voiceStat, ended_on: date }) as voice_stats
+    ),
+  });
 };

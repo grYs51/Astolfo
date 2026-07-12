@@ -23,27 +23,28 @@ export const setConfigs = async () => {
 
 export const checkForNewGuilds = async () => {
   const prismaClient = getDb();
-  const guilds = client.guilds.cache;
-  guilds.forEach(async (guild) => {
-    if (!client.guildConfigs.has(guild.id)) {
-      Logger.info(`I found a new guild! ${guild.id}, adding...`);
-      client.guildConfigs.set(guild.id, {
+  // for…of so the caller can await completion and errors aren't swallowed
+  // (forEach(async …) fires and forgets)
+  for (const guild of client.guilds.cache.values()) {
+    if (client.guildConfigs.has(guild.id)) continue;
+
+    Logger.info(`I found a new guild! ${guild.id}, adding...`);
+    client.guildConfigs.set(guild.id, {
+      guild_id: guild.id,
+      prefix: process.env.DEFAULT_PREFIX ?? ',',
+      welcome_channel_id: null,
+      welcome_message: '',
+      goodbye_message: '',
+      toggles: 0,
+    });
+    await prismaClient.guildConfigurations.create({
+      data: {
         guild_id: guild.id,
         prefix: process.env.DEFAULT_PREFIX ?? ',',
         welcome_channel_id: null,
         welcome_message: '',
         goodbye_message: '',
-        toggles: 0,
-      });
-      await prismaClient.guildConfigurations.create({
-        data: {
-          guild_id: guild.id,
-          prefix: process.env.DEFAULT_PREFIX ?? ',',
-          welcome_channel_id: null,
-          welcome_message: '',
-          goodbye_message: '',
-        },
-      });
-    }
-  });
+      },
+    });
+  }
 };

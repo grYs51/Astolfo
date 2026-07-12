@@ -53,6 +53,7 @@ Thumbs.db
 
 storybook-static
 __screenshots__/
+debug-storybook.log
 
 
 # APM dependencies

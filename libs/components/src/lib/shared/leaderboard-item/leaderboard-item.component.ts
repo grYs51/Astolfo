@@ -7,7 +7,10 @@ import { CommonModule } from '@angular/common';
   template: `
     <div
       [class]="'bg-base-300 p-md rounded-xl flex items-center gap-md hover:bg-base-200 transition-colors cursor-pointer border-2 border-transparent hover:border-primary-500/30 ' + containerClass()"
-      (click)="itemClick.emit()">
+      role="button"
+      tabindex="0"
+      (click)="itemClick.emit()"
+      (keyup.enter)="itemClick.emit()">
 
       <!-- Rank Badge -->
       <div [class]="getRankClass()">

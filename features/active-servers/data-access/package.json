@@ -2,7 +2,6 @@
   "name": "@nx-stolfo/data-access",
   "version": "0.0.1",
   "peerDependencies": {
-    "@nx-stolfo/common": "0.0.1",
     "@ngrx/signals": "^19.0.0",
     "@angular/core": "21.0.6",
     "@nx/angular": "22.3.3"

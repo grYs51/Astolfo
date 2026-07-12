@@ -1,12 +1,26 @@
 import { CommonModule } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
-import { VoiceStatsHeatmap } from '@nx-stolfo/data-access-voice-stats';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+} from '@angular/core';
+import {
+  VoiceStatsHeatmap,
+  VoiceStatsHeatmapDataPoint,
+} from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent } from '@nx-stolfo/components';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
 import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import { HeatmapChart } from 'echarts/charts';
+import {
+  HEATMAP_DAYS_OF_WEEK,
+  HEATMAP_HOURS,
+  buildHeatmapGrid,
+  heatmapKey,
+} from '../heatmap-grid';
 echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
 
 @Component({
@@ -15,6 +29,7 @@ echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-heatmap.component.html',
   styleUrls: ['./voice-stats-heatmap.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VoiceStatsHeatmapComponent {
   heatmap = input.required<VoiceStatsHeatmap>();
@@ -23,55 +38,26 @@ export class VoiceStatsHeatmapComponent {
   // Expose Math for template
   protected readonly Math = Math;
 
-  // Days of week labels
-  private readonly daysOfWeek = [
-    'Sun',
-    'Mon',
-    'Tue',
-    'Wed',
-    'Thu',
-    'Fri',
-    'Sat',
-  ];
-
-  // Hours of day (0-23)
-  private readonly hours = Array.from({ length: 24 }, (_, i) => {
-    const hour = i % 12 || 12;
-    const period = i < 12 ? 'AM' : 'PM';
-    return `${hour}${period}`;
-  });
+  private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
+  private readonly hours = HEATMAP_HOURS;
 
   chartOption = computed(() => {
     const data = this.heatmap();
 
-    // Create a complete grid with all cells (24 hours × 7 days)
-    const dataMap = new Map<string, number>();
-
-    // Populate map with actual data
+    // Keep the full point per cell so the tooltip doesn't have to
+    // re-scan the payload on every hover
+    const dataMap = new Map<string, VoiceStatsHeatmapDataPoint>();
     data.heatmap.forEach((point) => {
-      const key = `${point.hour}-${point.dayOfWeek}`;
-      dataMap.set(key, point.value || 0);
+      dataMap.set(heatmapKey(point.hour, point.dayOfWeek), point);
     });
 
-    // Transform data for ECharts: [hour, dayOfWeek, value]
-    // Generate all 168 cells (24 hours × 7 days)
-    const chartData: [number, number, number][] = [];
-    for (let hour = 0; hour < 24; hour++) {
-      for (let day = 0; day < 7; day++) {
-        const key = `${hour}-${day}`;
-        const value = dataMap.get(key) || 0;
-        chartData.push([hour, day, value]);
-      }
-    }
+    // Transform data for ECharts: all 168 [hour, dayOfWeek, value] cells
+    const chartData = buildHeatmapGrid(
+      (hour, day) => dataMap.get(heatmapKey(hour, day))?.value ?? 0
+    );
 
-    // Find max value for color scale
-    const maxValue = Math.max(data.stats.maxValue || 1, 1); // Ensure at least 1 for color scale
-
-    console.log('Heatmap data points:', chartData.length);
-    console.log('Non-zero points:', chartData.filter(d => d[2] > 0).length);
-    console.log('Max value:', maxValue);
-    console.log('First 5 data points [hour, day, value]:', chartData.slice(0, 5));
-    console.log('Raw backend data:', data.heatmap);
+    // Find max value for color scale (at least 1)
+    const maxValue = Math.max(data.stats.maxValue || 1, 1);
 
     return {
       tooltip: {
@@ -90,10 +76,7 @@ export class VoiceStatsHeatmapComponent {
           const hours = Math.floor(minutes / 60);
           const mins = minutes % 60;
 
-          // Find the data point for additional info
-          const dataPoint = data.heatmap.find(
-            (p) => p.hour === value[0] && p.dayOfWeek === value[1],
-          );
+          const dataPoint = dataMap.get(heatmapKey(value[0], value[1]));
 
           let tooltip = `<strong>${day} at ${hour}</strong><br/>`;
           tooltip += `Duration: ${hours}h ${mins}m<br/>`;

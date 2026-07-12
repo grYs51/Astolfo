@@ -1,8 +1,6 @@
 import { client } from '../../..';
 import { voice_stats } from '@prisma/client';
-import { VOICE_TYPE } from './voice-utils';
-
-const voiceKey = (guildId: string, memberId: string) => `${guildId}:${memberId}`;
+import { VOICE_TYPE, voiceKey } from './voice-utils';
 
 export const saveAllUserVoiceStatsToDb = async (
   memberId: string,
@@ -14,14 +12,12 @@ export const saveAllUserVoiceStatsToDb = async (
 
   if (voiceUsersStats.length === 0) return;
 
-  const savePromises = voiceUsersStats.map(async (voiceUser) => {
-    voiceUser.ended_on = date;
-    await client.dataSource.voiceStats.create({
-      data: voiceUser as voice_stats,
-    });
+  // One atomic round trip instead of N inserts
+  await client.dataSource.voiceStats.createMany({
+    data: voiceUsersStats.map(
+      (voiceUser) => ({ ...voiceUser, ended_on: date }) as voice_stats
+    ),
   });
-
-  await Promise.all(savePromises);
   client.voiceUsers.delete(k);
 };
 

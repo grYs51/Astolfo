@@ -2,7 +2,9 @@
 
 ## Overview
 
-The `ApiBase` class now supports **reactive signal tracking** with Angular's `httpResource`. This means your HTTP requests automatically refetch when signals change!
+The `ApiBase` class supports **reactive signal tracking** with Angular's `httpResource`. HTTP requests automatically refetch when signals change.
+
+`VoiceStatsApi` methods accept **only reactive function parameters** (`() => value`). Static values are passed as constant closures, e.g. `() => 'guildId'` — since `httpResource` re-evaluates the closure anyway, there is no separate static form.
 
 ## How It Works
 
@@ -11,34 +13,28 @@ The `ApiBase` class now supports **reactive signal tracking** with Angular's `ht
 // You had to manually create resources with request/loader pattern
 leaderboardResource = resource({
   request: () => ({ id: this.id(), period: this.selectedPeriod() }),
-  loader: ({ request }) => 
+  loader: ({ request }) =>
     this.voiceStatsApi.fetchVoiceStatsLeaderboard(request.id, request.period, 10),
 });
 ```
 
 ### After (Automatic Signal Tracking)
 ```typescript
-// The API automatically tracks signals when you pass functions!
+// The API automatically tracks signals inside the functions you pass
 leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
-  () => this.id(),           // Tracks id signal
+  () => this.id(),             // Tracks id signal
   () => this.selectedPeriod(), // Tracks period signal
-  () => 10
+  () => 10                     // Constant closure for a static value
 );
 ```
 
 ## Usage Examples
 
-### Example 1: Static Values (No Reactivity)
-```typescript
-// Pass static values directly
-resource = api.fetchVoiceStatsOverview('123456789');
-```
-
-### Example 2: Reactive with Signals
+### Example 1: Reactive with Signals
 ```typescript
 export class MyComponent {
   id = input.required<string>();
-  period = signal('week');
+  period = signal<'day' | 'week' | 'month' | 'all'>('week');
 
   // Resource automatically refetches when id or period changes!
   resource = api.fetchVoiceStatsLeaderboard(
@@ -46,23 +42,20 @@ export class MyComponent {
     () => this.period()
   );
 
-  changePeriod(newPeriod: string) {
+  changePeriod(newPeriod: 'day' | 'week' | 'month' | 'all') {
     this.period.set(newPeriod); // ✨ Auto-refetches!
   }
 }
 ```
 
-### Example 3: Mixed Static and Reactive
+### Example 2: Static Values
+
 ```typescript
-// You can mix static and reactive params
-resource = api.fetchVoiceStatsLeaderboard(
-  '123456789',           // Static guild ID
-  () => this.period(),  // Reactive period
-  10                     // Static limit
-);
+// Static values are just constant closures
+resource = api.fetchVoiceStatsOverview(() => '123456789');
 ```
 
-### Example 4: Complex Path with Signals
+### Example 3: Complex Path with Signals
 ```typescript
 guildId = signal('123');
 userId = signal('456');
@@ -74,36 +67,30 @@ resource = api.fetchVoiceStatsUser(
 );
 ```
 
-## API Methods
+### Example 4: Skipping a Request Until Data Is Ready
 
-All `VoiceStatsApi` methods now support both patterns:
+```typescript
+// Returning undefined/null from the userId function skips the request
+resource = api.fetchVoiceStatsUserHeatmap(
+  () => this.guildId(),
+  () => this.currentUser()?.id, // request skipped while undefined
+  () => this.period()
+);
+```
+
+## API Methods
 
 ### fetchVoiceStatsOverview
 ```typescript
-// Static
-api.fetchVoiceStatsOverview('guildId')
-
-// Reactive
 api.fetchVoiceStatsOverview(() => this.guildId())
 ```
 
 ### fetchVoiceStatsLeaderboard
 ```typescript
-// Static
-api.fetchVoiceStatsLeaderboard('guildId', 'week', 10)
-
-// Reactive
 api.fetchVoiceStatsLeaderboard(
   () => this.guildId(),
-  () => this.period(),
+  () => this.period(), // 'day' | 'week' | 'month' | 'all'
   () => this.limit()
-)
-
-// Mixed
-api.fetchVoiceStatsLeaderboard(
-  'guildId',
-  () => this.period(), // Only period is reactive
-  10
 )
 ```
 
@@ -123,20 +110,14 @@ api.fetchVoiceStatsTimeline(
 export class MyApi extends ApiBase {
   protected override host = inject(MY_API_URL);
 
-  // Support both static and reactive parameters
-  fetchData(
-    id: string | (() => string),
-    filter?: string | (() => string | undefined)
-  ) {
+  // Accept only the reactive form — it keeps signatures simple and
+  // httpResource re-evaluates the closures anyway
+  fetchData(id: () => string, filter?: () => string | undefined) {
     return this.get<MyData>(
-      // Path can be reactive
-      typeof id === 'function'
-        ? () => `/api/data/${id()}`
-        : `/api/data/${id}`,
-      // Query params can be reactive
+      () => `/api/data/${id()}`,
       () => {
         const params: Record<string, string> = {};
-        const filterVal = typeof filter === 'function' ? filter() : filter;
+        const filterVal = filter?.();
         if (filterVal) params['filter'] = filterVal;
         return params;
       }
@@ -149,7 +130,6 @@ export class MyApi extends ApiBase {
 
 ✅ **Automatic reactivity** - No manual resource creation needed
 ✅ **Type-safe** - Full TypeScript support
-✅ **Flexible** - Mix static and reactive params as needed
 ✅ **Clean code** - One-liner resource creation
 ✅ **Performance** - Only refetches when tracked signals change
 
@@ -158,9 +138,9 @@ export class MyApi extends ApiBase {
 ### Old Pattern
 ```typescript
 const resource = resource({
-  request: () => ({ 
-    id: this.id(), 
-    filter: this.filter() 
+  request: () => ({
+    id: this.id(),
+    filter: this.filter()
   }),
   loader: ({ request }) => api.fetch(request.id, request.filter)
 });
