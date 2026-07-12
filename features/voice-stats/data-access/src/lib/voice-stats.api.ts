@@ -9,7 +9,7 @@ import {
   VoiceStatsTimeline,
   VoiceStatsHeatmap,
   VoiceStatsUserHeatmap,
-} from './voice-stats.model';
+} from '@nx-stolfo/api-interfaces';
 
 /**
  * All params are reactive functions (`() => value`) — usually signals or

@@ -1,33 +1,32 @@
 @let data = leaderboard();
 
-<div class="bg-base-300 rounded-2xl p-lg">
-  <div class="flex justify-between items-center mb-lg">
-    <h2 class="text-2xl font-bold">🏆 Voice Time Leaderboard</h2>
-    <span class="text-sm text-gray-400 bg-base-100 px-md py-xs rounded-full">
-      {{ data.period | uppercase }}
+<div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+  <div class="mb-md flex items-center justify-between">
+    <h3 class="text-base font-semibold text-gray-100">Voice time leaderboard</h3>
+    <span class="rounded-md bg-base-200 px-sm py-xs text-xs font-medium uppercase tracking-wide text-gray-400">
+      {{ data.period }}
     </span>
   </div>
 
   @if (loading()) {
-    <div class="space-y-md">
-      @for (i of [1,2,3,4,5]; track i) {
-        <div class="bg-base-200 h-20 rounded-xl animate-pulse"></div>
+    <div class="space-y-sm">
+      @for (i of [1, 2, 3, 4, 5]; track i) {
+        <div class="h-14 rounded-lg bg-base-200 animate-pulse"></div>
       }
     </div>
   } @else if (data.leaderboard.length === 0) {
-    <div class="text-center py-xl">
-      <p class="text-gray-400 text-lg">No voice activity yet</p>
-      <p class="text-gray-500 text-sm mt-xs">Be the first to join a voice channel!</p>
+    <div class="py-xl text-center">
+      <p class="text-sm text-gray-400">No voice activity yet</p>
+      <p class="mt-xs text-xs text-gray-500">Be the first to join a voice channel!</p>
     </div>
   } @else {
-    <div class="space-y-sm">
+    <div class="space-y-xs">
       @for (entry of data.leaderboard; track entry.member.id; let idx = $index) {
         <lib-leaderboard-item
           [rank]="idx + 1"
           [title]="entry.member.displayName || entry.member.username"
           [value]="entry.totalDurationHours + 'h ' + entry.totalDurationMinutes + 'm'"
-          [subtitle]="entry.sessionCount + ' sessions'"
-          [secondaryValue]="entry.uniqueChannels + ' channels'"
+          [subtitle]="entry.sessionCount + ' sessions · ' + entry.uniqueChannels + ' channels'"
           [avatarUrl]="entry.member.avatar || undefined"
           (itemClick)="userClick.emit(entry.member.id)"
           icon="🎤"

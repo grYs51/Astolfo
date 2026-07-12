@@ -16,6 +16,7 @@
     "baseUrl": ".",
     "paths": {
       "@models/*": ["libs/models/src/*"],
+      "@nx-stolfo/api-interfaces": ["libs/api-interfaces/src/index.ts"],
       "@nx-stolfo/active-servers/data-access": [
         "features/active-servers/data-access/src/index.ts"
       ],

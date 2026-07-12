@@ -57,6 +57,8 @@ export default class ProfileSlash extends BaseSlash {
         where: {
           guild_id: guildId,
           member_id: userId,
+          // The footer promises the current (still open) session is excluded
+          ended_on: { not: null },
         },
       });
 

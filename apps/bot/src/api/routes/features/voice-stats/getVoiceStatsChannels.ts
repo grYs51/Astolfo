@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { VoiceStatsChannels } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
 import { getChannelData, toDurationParts } from '../helpers';
 
@@ -10,7 +11,7 @@ type ChannelAggRow = {
   unique_users: bigint;
 };
 
-export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, unknown> =
+export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, VoiceStatsChannels> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
@@ -18,7 +19,7 @@ export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, unknown
     const channelRows = await req.db.$queryRaw<ChannelAggRow[]>`
       SELECT
         channel_id,
-        SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+        SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
         COUNT(*)::bigint AS session_count,
         COUNT(DISTINCT member_id)::bigint AS unique_users
       FROM voice_stats

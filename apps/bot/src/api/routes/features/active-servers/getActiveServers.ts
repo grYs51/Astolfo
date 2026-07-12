@@ -1,10 +1,14 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { guilds } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
 
 type ServerDurationRow = { guild_id: string; duration: number };
 
-export const getActiveServers: RequestHandler<unknown, unknown> = asyncHandler(
+export const getActiveServers: RequestHandler<
+  unknown,
+  guilds | { error: string }
+> = asyncHandler(
   async (req, res) => {
     const memberId = req.user?.id;
     if (!memberId) {
@@ -16,7 +20,7 @@ export const getActiveServers: RequestHandler<unknown, unknown> = asyncHandler(
     const rows = await req.db.$queryRaw<ServerDurationRow[]>`
       SELECT
         guild_id,
-        SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)))::float AS duration
+        SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)))::float AS duration
       FROM voice_stats
       WHERE member_id = ${memberId} AND type = 'VOICE'
       GROUP BY guild_id

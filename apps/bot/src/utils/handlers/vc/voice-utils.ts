@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import { GuildMember, VoiceBasedChannel, VoiceState } from 'discord.js';
 
 /** Canonical key for the in-memory voice cache and voice-related job maps. */
@@ -92,11 +93,15 @@ export const createVoiceStat = (
   date: Date,
   type: VOICE_TYPE = VOICE_TYPE.VOICE
 ) => {
+  // id is generated client-side so the open row (ended_on = null) can be
+  // inserted immediately and closed later by id
   return {
+    id: randomUUID(),
     guild_id: guildId,
     channel_id: channelId,
     member_id: memberId,
     issued_on: date,
+    ended_on: null,
     type,
   };
 };
