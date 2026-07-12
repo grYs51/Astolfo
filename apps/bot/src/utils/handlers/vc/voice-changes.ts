@@ -21,7 +21,7 @@ export const handleUserLeftVoiceChannel = async (
   cancelJob(oldState.guild.id, oldState.member!.id);
 };
 
-export const handleUserJoinedVoiceChannel = (
+export const handleUserJoinedVoiceChannel = async (
   newState: VoiceState,
   date: Date
 ) => {
@@ -42,9 +42,14 @@ export const handleUserJoinedVoiceChannel = (
     )
   );
 
+  // Persist on open: rows go to the DB immediately with ended_on = null, so
+  // a crash can't lose the session (recovered by closeDanglingVoiceSessions)
+  const newStats = [voiceVoiceStat, ...otherVoiceStats];
+  await client.dataSource.voiceStats.createMany({ data: newStats });
+
   const joinKey = voiceKey(newState.guild.id, newState.member!.id);
   const existing = client.voiceUsers.get(joinKey) ?? [];
-  client.voiceUsers.set(joinKey, [...existing, voiceVoiceStat, ...otherVoiceStats]);
+  client.voiceUsers.set(joinKey, [...existing, ...newStats]);
   schedule5hrVoiceChannelJob(newState.member!, newState.channel!.id, date);
 };
 
@@ -54,7 +59,7 @@ export const handleUserChangeVoiceChannel = async (
   date: Date
 ) => {
   await handleUserLeftVoiceChannel(oldState, date);
-  handleUserJoinedVoiceChannel(newState, date);
+  await handleUserJoinedVoiceChannel(newState, date);
 };
 
 export const handleUserChangeVoiceStates = async (
@@ -77,6 +82,7 @@ export const handleUserChangeVoiceStates = async (
         type
       )
     );
+    await client.dataSource.voiceStats.createMany({ data: newVoiceStats });
     const stateKey = voiceKey(newState.guild.id, newState.member!.id);
     const existingStats = client.voiceUsers.get(stateKey) ?? [];
     client.voiceUsers.set(stateKey, [...existingStats, ...newVoiceStats]);

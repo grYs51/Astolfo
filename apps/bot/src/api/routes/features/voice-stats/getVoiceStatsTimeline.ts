@@ -1,5 +1,9 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import {
+  TimelinePeriod,
+  VoiceStatsTimeline,
+} from '@nx-stolfo/api-interfaces';
 import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
 type TimelineRow = {
@@ -10,33 +14,32 @@ type TimelineRow = {
   unique_channels: bigint;
 };
 
-// DATE_TRUNC unit must be validated against this whitelist before use in SQL
-const VALID_GRANULARITIES: Record<string, string> = {
-  hour: 'hour',
-  day: 'day',
-  week: 'week',
-};
-
-export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, unknown> =
+export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceStatsTimeline> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
-    // Get granularity from query (hour, day, week)
-    const granularity = (req.query.granularity as string) || 'day';
-    const period = (req.query.period as string) || 'month'; // day, week, month, year
+    // Narrow query params to the DTO unions (also whitelists the DATE_TRUNC
+    // unit before it reaches SQL)
+    const rawGranularity = req.query.granularity as string | undefined;
+    const granularity: VoiceStatsTimeline['granularity'] =
+      rawGranularity === 'hour' || rawGranularity === 'week' ? rawGranularity : 'day';
+    const rawPeriod = req.query.period as string | undefined;
+    const period: TimelinePeriod =
+      rawPeriod === 'day' || rawPeriod === 'week' || rawPeriod === 'year'
+        ? rawPeriod
+        : 'month';
 
     const now = new Date();
     const startDate =
       getStartDateForPeriod(period) ?? getStartDateForPeriod('month')!;
 
-    // Validate granularity against whitelist to prevent SQL injection
-    const pgGranularity = VALID_GRANULARITIES[granularity] ?? 'day';
+    const pgGranularity = granularity;
 
     // Single SQL query with DATE_TRUNC bucketing — no full table scan into memory
     const rows = await req.db.$queryRaw<TimelineRow[]>`
       SELECT
         DATE_TRUNC(${pgGranularity}, issued_on) AS bucket,
-        SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+        SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
         COUNT(*)::bigint AS session_count,
         COUNT(DISTINCT member_id)::bigint AS unique_users,
         COUNT(DISTINCT channel_id)::bigint AS unique_channels

@@ -2,10 +2,10 @@
   <lib-navbar [name]="user()?.username" [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
     [loginUrl]="backendUrl + '/auth/login'" [logoutUrl]="backendUrl + '/auth/logout'" [loading]="!sessionChecked()" />
 
-  <div class="container p-sm md:p-lg m-auto">
+  <div class="mx-auto max-w-7xl px-md lg:px-lg pt-md">
     <lib-breadcrumbs [breadCrumbs]="breadcrumbs$ | async" />
-
-    <router-outlet />
   </div>
+
+  <router-outlet />
 
 </lib-page>

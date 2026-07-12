@@ -1,5 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
+import { VoiceActivityType, VoiceStatsOverview } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
@@ -8,32 +9,25 @@ type TotalsRow = {
   total_duration: bigint;
   session_count: bigint;
   unique_users: bigint;
+  active_sessions: bigint;
 };
 type ChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
-type TypeRow = { type: string; duration: bigint; session_count: bigint };
-
-/** Sessions currently open live only in the in-memory voice cache. */
-const countActiveSessions = (serverId: string) => {
-  let active = 0;
-  for (const [key, stats] of client.voiceUsers) {
-    if (!key.startsWith(`${serverId}:`)) continue;
-    active += stats.filter((s) => s.type === VOICE_TYPE.VOICE).length;
-  }
-  return active;
-};
+type TypeRow = { type: VoiceActivityType; duration: bigint; session_count: bigint };
 
 export const getVoiceStatsOverview: RequestHandler<
   { serverId: string },
-  unknown
+  VoiceStatsOverview
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
 
-  // Server totals in a single SQL query
+  // Server totals in a single SQL query. Open sessions (ended_on IS NULL)
+  // count their live duration via COALESCE and are the active-session count.
   const [totals] = await req.db.$queryRaw<TotalsRow[]>`
     SELECT
-      COALESCE(SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint, 0) AS total_duration,
+      COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
       COUNT(*)::bigint AS session_count,
-      COUNT(DISTINCT member_id)::bigint AS unique_users
+      COUNT(DISTINCT member_id)::bigint AS unique_users,
+      COUNT(*) FILTER (WHERE ended_on IS NULL AND type = ${VOICE_TYPE.VOICE})::bigint AS active_sessions
     FROM voice_stats
     WHERE guild_id = ${serverId}
   `;
@@ -42,7 +36,7 @@ export const getVoiceStatsOverview: RequestHandler<
   const [topChannel] = await req.db.$queryRaw<ChannelRow[]>`
     SELECT
       channel_id,
-      SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+      SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
       COUNT(*)::bigint AS session_count
     FROM voice_stats
     WHERE guild_id = ${serverId}
@@ -55,7 +49,7 @@ export const getVoiceStatsOverview: RequestHandler<
   const typeRows = await req.db.$queryRaw<TypeRow[]>`
     SELECT
       type,
-      SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS duration,
+      SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS duration,
       COUNT(*)::bigint AS session_count
     FROM voice_stats
     WHERE guild_id = ${serverId}
@@ -93,8 +87,7 @@ export const getVoiceStatsOverview: RequestHandler<
       totalDurationMinutes: totalParts.minutes,
       totalSessions: Number(totals.session_count),
       activeUsers: Number(totals.unique_users),
-      // Truly active sessions exist only in memory, never in the DB
-      activeSessions: countActiveSessions(serverId),
+      activeSessions: Number(totals.active_sessions),
       mostActiveChannel: mostActiveChannelData,
       mostActiveChannelDuration: topChannel ? Number(topChannel.total_duration) : 0,
       mostActiveChannelSessions: topChannel ? Number(topChannel.session_count) : 0,

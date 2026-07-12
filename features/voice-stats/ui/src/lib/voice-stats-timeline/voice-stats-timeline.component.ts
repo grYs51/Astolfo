@@ -1,7 +1,5 @@
-import { UpperCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
 import { VoiceStatsTimeline } from '@nx-stolfo/data-access-voice-stats';
-import { StatCardComponent } from '@nx-stolfo/components';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -11,7 +9,7 @@ echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
 
 @Component({
   selector: 'feature-voice-stats-timeline',
-  imports: [UpperCasePipe, NgxEchartsDirective],
+  imports: [NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-timeline.component.html',
   styleUrl: './voice-stats-timeline.component.scss',
@@ -49,7 +47,8 @@ export class VoiceStatsTimelineComponent {
     const data = this.timeline();
 
     const labels = data.timeline.map(bucket => this.formatTimestamp(bucket.timestamp));
-    const values = data.timeline.map(bucket => bucket.totalDuration / 1000 / 60);
+    // Chart values are hours (durations are stored in milliseconds)
+    const values = data.timeline.map(bucket => +(bucket.totalDuration / 3_600_000).toFixed(2));
     const sessions = data.timeline.map(bucket => bucket.sessionCount);
     const users = data.timeline.map(bucket => bucket.uniqueUsers);
 

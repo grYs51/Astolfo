@@ -23,8 +23,10 @@ model voice_stats {
   member_id  String   @db.VarChar
   channel_id String   @db.VarChar
   type       String   @db.VarChar
-  issued_on  DateTime @db.Timestamp(6)
-  ended_on   DateTime @db.Timestamp(6)
+  issued_on  DateTime  @db.Timestamp(6)
+  // NULL = session still open (persist-on-open); closed with the leave
+  // timestamp, or by crash recovery at startup
+  ended_on   DateTime? @db.Timestamp(6)
 
   // No standalone [guild_id] index: it's the leftmost prefix of the
   // composite indexes below

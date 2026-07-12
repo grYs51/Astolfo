@@ -1,10 +1,20 @@
 @let server = guild();
 
 <div
-  class="bg-base-300 p-md rounded-2xl flex items-center gap-md min-w-[200px] w-80 cursor-pointer border-2 border-transparent">
-  <img width="48" [src]="server.icon" [alt]="server.name" class="w-16 h-16 rounded-full object-cover" />
-  <div>
-    <h2 class="text-md font-semibold">{{ server.name }}</h2>
-    <p class="text-gray-400">{{ server.totalDuration * 1000 | humanizeDuration: true }}</p>
+  class="group flex cursor-pointer items-center gap-md rounded-xl bg-base-300 border border-white/5 p-md transition-colors hover:border-primary-500/40 hover:bg-base-200"
+>
+  <img
+    width="48"
+    height="48"
+    [src]="server.icon"
+    [alt]="server.name"
+    class="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+  />
+  <div class="min-w-0 flex-1">
+    <h2 class="truncate text-sm font-semibold text-gray-100">{{ server.name }}</h2>
+    <p class="text-xs text-gray-500">
+      {{ server.totalDuration * 1000 | humanizeDuration: true }} in voice
+    </p>
   </div>
+  <span class="text-gray-600 transition-colors group-hover:text-primary-400">›</span>
 </div>

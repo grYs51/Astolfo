@@ -42,8 +42,8 @@ A Discord bot ("Astolfo") that tracks server activity (voice sessions, presence/
 ### Bot internals (`apps/bot/src`)
 
 - **Auto-registration**: `utils/registry.ts` scans `commands/`, `events/`, `slashs/`, `interactions/` at startup. Files must default-export a class extending the matching base class in `utils/structures/` (`BaseCommand`, `BaseEvent`, `BaseSlash`, `BaseInteraction`). Dropping a file in the right folder is all that's needed to register it.
-- **In-memory state on the client** (`client/client.ts`): `guildConfigs`, `userConfigs`, `userStatus` (presence cache), `voiceUsers` (open voice sessions, key `` `${guildId}:${memberId}` ``). Open sessions exist **only in memory** until the user leaves / shutdown flush (`utils/handlers/shutdown-handler.ts`).
-- **Voice tracking flow**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/*`. One `voice_stats` row per state type (VOICE, MUTED, DEAF, VIDEO, STREAMING…) per session, written when the state ends. Durations are `ended_on - issued_on` in **milliseconds**.
+- **In-memory state on the client** (`client/client.ts`): `guildConfigs`, `userConfigs`, `userStatus` (presence cache), `voiceUsers` (open voice sessions, key `` `${guildId}:${memberId}` ``). Voice sessions are **persisted on open**: a row with `ended_on = NULL` is inserted on join and closed on leave / shutdown flush; `voiceUsers` is a pure cache of the open rows. Rows left dangling by a crash are closed at startup (`closeDanglingVoiceSessions`).
+- **Voice tracking flow**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/*`. One `voice_stats` row per state type (VOICE, MUTED, DEAF, VIDEO, STREAMING…) per session, inserted open when the state starts and closed when it ends. Durations are `ended_on - issued_on` in **milliseconds**; SQL aggregations use `COALESCE(ended_on, NOW())` so open sessions count live time.
 - **API**: `api/index.ts` (express + session + passport-discord), routes in `api/routes/`, feature routes registered in `api/routes/features/index.ts`. `req.db` is injected by `api/utils.ts/middleware/db.ts`. ⚠️ `api/utils.ts/` is a **directory** literally named `utils.ts`.
 - **Metrics**: prom-client counters (`api/utils.ts/counter.ts`), exposed at `/api/metrics`, snapshotted to the `metrics` DB table every 30s, restored on boot (`load-on-start.ts`).
 
@@ -52,7 +52,7 @@ A Discord bot ("Astolfo") that tracks server activity (voice sessions, presence/
 - Data access: extend `ApiBase`, pass **functions** (`() => this.id()`) for reactive params so `httpResource` refetches on signal change. See `features/voice-stats/data-access/src/lib/voice-stats.api.ts`.
 - Stores: `@ngrx/signals` `signalStore` + `withFetchOnInit` (`libs/common/store`).
 - Charts: ngx-echarts with tree-shaken `echarts/core` imports per component.
-- API response DTOs are hand-mirrored in `features/*/data-access/**/*.model.ts` — when changing an Express response shape, update the matching model.
+- API response DTOs live in `libs/api-interfaces` (`@nx-stolfo/api-interfaces`), imported by **both** the Express handlers (which type their responses with them) and the Angular data-access libs — changing a response shape breaks the build of whichever side no longer matches.
 
 ## Commands
 

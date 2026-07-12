@@ -1,5 +1,6 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
+import { HeatmapPeriod, VoiceStatsUserHeatmap } from '@nx-stolfo/api-interfaces';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { getStartDateForPeriod } from '../helpers';
@@ -22,12 +23,16 @@ interface HeatmapDataPointWithTracking extends HeatmapDataPoint {
 }
 
 export const getVoiceStatsUserHeatmap = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response<VoiceStatsUserHeatmap>) => {
     const { serverId, userId } = req.params;
-    const { period = 'month' } = req.query;
+    const rawPeriod = req.query.period;
+    const period: HeatmapPeriod =
+      rawPeriod === 'week' || rawPeriod === 'year' || rawPeriod === 'all'
+        ? rawPeriod
+        : 'month';
 
-    // 'all' (or unknown) means from the beginning of time
-    const startDate = getStartDateForPeriod(period as string) ?? new Date(0);
+    // 'all' means from the beginning of time
+    const startDate = getStartDateForPeriod(period) ?? new Date(0);
 
     // Fetch user's sessions in the period
     const userSessions = await req.db.voiceStats.findMany({

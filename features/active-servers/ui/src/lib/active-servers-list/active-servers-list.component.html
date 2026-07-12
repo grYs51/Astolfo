@@ -1,17 +1,18 @@
-<h2 class="text-xl font-semibold pb-sm">Active Servers</h2>
-<div class="flex flex-row flex-nowrap gap-md overflow-auto pb-5">
-  @if(error()) {
-    <feature-active-servers-card-skeleton [title]="'something went wrong'" [description]="'Try again later'" />
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
+  @if (error()) {
+    <feature-active-servers-card-skeleton [title]="'Something went wrong'" [description]="'Try again later'" />
   } @else if (isLoading()) {
-    <div class="bg-base-300 p-md rounded-2xl shadow-lg flex items-center gap-md w-80">
-      <div class="animate-pulse w-[48px] h-[48px] bg-base-400 rounded-full"></div>
-      <div>
-        <div class="animate-pulse bg-base-400 h-4 w-24 rounded"></div>
-        <div class="animate-pulse bg-base-400 h-4 w-24 rounded"></div>
+    @for (i of [1, 2, 3]; track i) {
+      <div class="flex items-center gap-md rounded-xl bg-base-300 border border-white/5 p-md">
+        <div class="h-12 w-12 shrink-0 animate-pulse rounded-full bg-base-200"></div>
+        <div class="space-y-sm">
+          <div class="h-4 w-28 animate-pulse rounded bg-base-200"></div>
+          <div class="h-3 w-20 animate-pulse rounded bg-base-200"></div>
+        </div>
       </div>
-    </div>
+    }
   } @else {
-    @for (guild of guilds(); track guild.id ) {
+    @for (guild of guilds(); track guild.id) {
       <feature-active-servers-card [guild]="guild" (click)="selectedGuild.emit(guild.id)" />
     } @empty {
       <feature-active-servers-card-skeleton [title]="'No active servers'" />

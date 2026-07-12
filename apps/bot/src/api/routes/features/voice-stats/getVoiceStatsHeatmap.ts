@@ -1,19 +1,15 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
+import {
+  VoiceStatsHeatmap,
+  VoiceStatsHeatmapDataPoint,
+} from '@nx-stolfo/api-interfaces';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { getStartDateForPeriod } from '../helpers';
 
-interface HeatmapDataPoint {
-  hour: number; // 0-23
-  dayOfWeek: number; // 0-6 (Sunday-Saturday)
-  value: number; // total minutes
-  sessionCount: number;
-  uniqueUsers: number;
-}
-
 export const getVoiceStatsHeatmap = asyncHandler(
-  async (req: Request, res: Response) => {
+  async (req: Request, res: Response<VoiceStatsHeatmap>) => {
     const { serverId } = req.params;
     const { period = 'month' } = req.query;
 
@@ -51,7 +47,7 @@ export const getVoiceStatsHeatmap = asyncHandler(
       `
     );
 
-    const heatmapData: HeatmapDataPoint[] = rows.map((row) => ({
+    const heatmapData: VoiceStatsHeatmapDataPoint[] = rows.map((row) => ({
       hour: row.hour,
       dayOfWeek: row.day_of_week,
       value: row.total_minutes,

@@ -1,37 +1,41 @@
 @let data = channels();
 
-<div class="bg-base-300 rounded-2xl p-lg">
-  <div class="flex justify-between items-center mb-lg">
-    <h2 class="text-2xl font-bold">📊 Channel Insights</h2>
-    <span class="text-sm text-gray-400">{{ data.total }} channels</span>
+<div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+  <div class="mb-md flex items-center justify-between">
+    <h3 class="text-base font-semibold text-gray-100">Channel activity</h3>
+    <span class="text-xs text-gray-500">{{ data.total }} channels</span>
   </div>
 
   @if (loading()) {
     <div class="space-y-md">
-      @for (i of [1,2,3,4]; track i) {
-        <div class="bg-base-200 h-24 rounded-xl animate-pulse"></div>
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="h-20 rounded-lg bg-base-200 animate-pulse"></div>
       }
     </div>
   } @else if (data.channels.length === 0) {
-    <div class="text-center py-xl">
-      <p class="text-gray-400 text-lg">No channel data available</p>
+    <div class="py-xl text-center">
+      <p class="text-sm text-gray-400">No channel data available</p>
     </div>
   } @else {
-    <div class="space-y-md">
+    <div class="space-y-sm">
       @for (channel of data.channels; track channel.channel.id) {
-        <div class="bg-base-200 p-md rounded-xl hover:bg-base-100 transition-colors">
-          <div class="flex items-center justify-between mb-sm">
-            <div class="flex items-center gap-sm">
-              <span class="text-2xl">{{ getChannelIcon(channel.channel.type) }}</span>
-              <div>
-                <h3 class="font-semibold text-gray-100">
+        <div class="rounded-lg bg-base-200/60 p-md transition-colors hover:bg-base-200">
+          <div class="mb-sm flex items-center justify-between gap-md">
+            <div class="flex min-w-0 items-center gap-sm">
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-base-100 text-sm">
+                {{ getChannelIcon(channel.channel.type) }}
+              </span>
+              <div class="min-w-0">
+                <h4 class="truncate text-sm font-semibold text-gray-100">
                   {{ channel.channel.name }}
-                </h3>
-                <p class="text-xs text-gray-400">{{ channel.channel.type }}</p>
+                </h4>
+                <p class="text-xs text-gray-500">
+                  {{ channel.uniqueUsers }} users · avg {{ channel.averageSessionDurationMinutes }}m / session
+                </p>
               </div>
             </div>
-            <div class="text-right">
-              <p class="font-bold text-primary-400">
+            <div class="shrink-0 text-right">
+              <p class="text-sm font-bold text-primary-300">
                 {{ channel.totalDurationHours }}h {{ channel.totalDurationMinutes }}m
               </p>
               <p class="text-xs text-gray-500">{{ channel.sessionCount }} sessions</p>
@@ -40,10 +44,9 @@
 
           <lib-progress-bar
             [percentage]="getChannelPercentage(channel.totalDuration)"
-            [label]="channel.uniqueUsers + ' unique users'"
-            [subtitle]="'Avg: ' + channel.averageSessionDurationMinutes + 'm per session'"
-            [showPercentage]="true"
-            barColor="bg-gradient-to-r from-primary-500 to-purple-500"
+            [showLabel]="false"
+            barColor="bg-primary-500"
+            height="h-1.5 bg-base-100"
           />
         </div>
       }

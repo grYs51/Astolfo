@@ -1,305 +1,152 @@
-<div class="container mx-auto px-md py-lg space-y-xl">
-  <!-- Header -->
-  <div class="mb-xl">
-    <h1 class="text-4xl font-bold mb-sm">Voice Statistics Dashboard</h1>
-    <p class="text-gray-400">Comprehensive voice activity analytics for Server ID: {{ id() }}</p>
-  </div>
+<div class="mx-auto max-w-7xl px-md lg:px-lg py-lg space-y-10">
+  <!-- Page header -->
+  <header class="flex flex-wrap items-end justify-between gap-md border-b border-white/5 pb-lg">
+    <div>
+      <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-100">Voice Statistics</h1>
+      <p class="mt-xs text-sm text-gray-500">Voice activity analytics for this server</p>
+    </div>
+    <span class="inline-flex items-center gap-sm rounded-lg border border-white/10 bg-base-300 px-sm py-xs text-xs font-medium text-gray-400">
+      <span class="h-2 w-2 rounded-full bg-primary-500"></span>
+      Server {{ id() }}
+    </span>
+  </header>
 
-  <!-- Server Overview Section -->
+  <!-- Overview -->
   <section>
     <div class="mb-md">
-      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-primary-500/20 to-purple-500/20 px-lg py-sm rounded-full border border-primary-500/30">
-        <span class="text-lg">🌐</span>
-        <span class="font-semibold text-primary-300">Server Statistics</span>
-      </div>
+      <h2 class="text-lg font-semibold text-gray-100">Server overview</h2>
+      <p class="text-sm text-gray-500">Totals across all tracked voice activity</p>
     </div>
 
     @if (overviewResource.isLoading()) {
       <div class="animate-pulse">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-md mb-lg">
-          @for (i of [1,2,3,4]; track i) {
-            <div class="h-32 rounded-2xl bg-base-200"></div>
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="h-32 rounded-xl bg-base-300"></div>
           }
         </div>
-        <div class="h-96 rounded-2xl bg-base-200"></div>
+        <div class="h-96 rounded-xl bg-base-300"></div>
+      </div>
+    } @else if (overviewResource.error()) {
+      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+        Failed to load overview data
       </div>
     } @else if (overviewResource.hasValue()) {
-      <feature-voice-stats-server-overview
-        [overview]="overviewResource.value()!"
-      />
-    } @else if (overviewResource.error()) {
-      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-        <p class="text-red-400">Failed to load overview data</p>
-      </div>
+      <feature-voice-stats-server-overview [overview]="overviewResource.value()!" />
     }
   </section>
 
-  <!-- User Activity Section -->
-  <section>
-    <div class="mb-md">
-      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-green-500/20 to-blue-500/20 px-lg py-sm rounded-full border border-green-500/30">
-        <span class="text-lg">👥</span>
-        <span class="font-semibold text-green-300">User Activity</span>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-    <!-- Leaderboard -->
-    <div>
-      <div class="mb-md flex justify-between items-center">
-        <h2 class="text-2xl font-bold">Leaderboard</h2>
-        <div class="flex gap-xs">
-          <button
-            (click)="setPeriod('day')"
-            [class]="selectedPeriod() === 'day' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Day
-          </button>
-          <button
-            (click)="setPeriod('week')"
-            [class]="selectedPeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Week
-          </button>
-          <button
-            (click)="setPeriod('month')"
-            [class]="selectedPeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Month
-          </button>
-          <button
-            (click)="setPeriod('all')"
-            [class]="selectedPeriod() === 'all' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            All
-          </button>
-        </div>
+  <!-- Leaderboard + Channels -->
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg items-start">
+    <section>
+      <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+        <h2 class="text-lg font-semibold text-gray-100">Leaderboard</h2>
+        <lib-segmented-control [options]="periodOptions" [(value)]="selectedPeriod" />
       </div>
 
       @if (leaderboardResource.isLoading()) {
-        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
-          <div class="space-y-sm">
-            @for (i of [1,2,3,4,5]; track i) {
-              <div class="h-20 rounded-xl bg-base-200"></div>
-            }
-          </div>
+        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-sm">
+          @for (i of [1, 2, 3, 4, 5]; track i) {
+            <div class="h-16 rounded-lg bg-base-200"></div>
+          }
+        </div>
+      } @else if (leaderboardResource.error()) {
+        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          Failed to load leaderboard data
         </div>
       } @else if (leaderboardResource.hasValue()) {
-        <feature-voice-stats-leaderboard
-          [leaderboard]="leaderboardResource.value()!"
-        />
-      } @else if (leaderboardResource.error()) {
-        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-          <p class="text-red-400">Failed to load leaderboard data</p>
-        </div>
+        <feature-voice-stats-leaderboard [leaderboard]="leaderboardResource.value()!" />
       }
-    </div>
+    </section>
 
-    <!-- Channels -->
-    <div>
-      <h2 class="text-2xl font-bold mb-md">Channel Insights</h2>
+    <section>
+      <div class="mb-md flex items-center justify-between" style="min-height: 34px">
+        <h2 class="text-lg font-semibold text-gray-100">Channels</h2>
+      </div>
 
       @if (channelsResource.isLoading()) {
-        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
-          <div class="space-y-md">
-            @for (i of [1,2,3,4]; track i) {
-              <div class="h-24 rounded-xl bg-base-200"></div>
-            }
-          </div>
+        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse space-y-md">
+          @for (i of [1, 2, 3, 4]; track i) {
+            <div class="h-20 rounded-lg bg-base-200"></div>
+          }
+        </div>
+      } @else if (channelsResource.error()) {
+        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          Failed to load channels data
         </div>
       } @else if (channelsResource.hasValue()) {
-        <feature-voice-stats-channels
-          [channels]="channelsResource.value()!"
-        />
-      } @else if (channelsResource.error()) {
-        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-          <p class="text-red-400">Failed to load channels data</p>
-        </div>
+        <feature-voice-stats-channels [channels]="channelsResource.value()!" />
       }
-    </div>
-    </div>
-  </section>
-
-  <!-- Analytics & Insights Section -->
-  <section>
-    <div class="mb-md">
-      <div class="inline-flex items-center gap-sm bg-gradient-to-r from-purple-500/20 to-pink-500/20 px-lg py-sm rounded-full border border-purple-500/30">
-        <span class="text-lg">📊</span>
-        <span class="font-semibold text-purple-300">Analytics & Trends</span>
-      </div>
-    </div>
+    </section>
+  </div>
 
   <!-- Timeline -->
-  <div>
-    <div class="mb-md flex justify-between items-center">
-      <h2 class="text-2xl font-bold">Activity Timeline</h2>
-      <div class="flex gap-md">
-        <!-- Period Selection -->
-        <div class="flex gap-xs">
-          <button
-            (click)="setTimelinePeriod('day')"
-            [class]="selectedTimelinePeriod() === 'day' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            24h
-          </button>
-          <button
-            (click)="setTimelinePeriod('week')"
-            [class]="selectedTimelinePeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Week
-          </button>
-          <button
-            (click)="setTimelinePeriod('month')"
-            [class]="selectedTimelinePeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Month
-          </button>
-          <button
-            (click)="setTimelinePeriod('year')"
-            [class]="selectedTimelinePeriod() === 'year' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-            Year
-          </button>
-        </div>
-
-        <!-- Granularity Selection -->
-        <div class="flex gap-xs border-l border-gray-600 pl-md">
-          <button
-            (click)="setGranularity('hour')"
-            [class]="selectedGranularity() === 'hour' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
-            Hourly
-          </button>
-          <button
-            (click)="setGranularity('day')"
-            [class]="selectedGranularity() === 'day' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
-            Daily
-          </button>
-          <button
-            (click)="setGranularity('week')"
-            [class]="selectedGranularity() === 'week' ? 'bg-secondary-500 text-white' : 'bg-base-200 text-gray-400'"
-            class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-secondary-400">
-            Weekly
-          </button>
-        </div>
+  <section>
+    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+      <h2 class="text-lg font-semibold text-gray-100">Activity timeline</h2>
+      <div class="flex flex-wrap items-center gap-sm">
+        <lib-segmented-control [options]="timelinePeriodOptions" [(value)]="selectedTimelinePeriod" />
+        <lib-segmented-control [options]="granularityOptions" [(value)]="selectedGranularity" />
       </div>
     </div>
 
     @if (timelineResource.isLoading()) {
-      <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
-        <div class="h-64 rounded-xl bg-base-200"></div>
+      <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+        <div class="h-64 rounded-lg bg-base-200"></div>
+      </div>
+    } @else if (timelineResource.error()) {
+      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+        Failed to load timeline data
       </div>
     } @else if (timelineResource.hasValue()) {
-      <feature-voice-stats-timeline
-        [timeline]="timelineResource.value()!"
-      />
-    } @else if (timelineResource.error()) {
-      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-        <p class="text-red-400">Failed to load timeline data</p>
-      </div>
+      <feature-voice-stats-timeline [timeline]="timelineResource.value()!" />
     }
-  </div>
+  </section>
 
   <!-- Heatmap -->
-  <div>
-    <div class="mb-md flex justify-between items-center">
-      <h2 class="text-2xl font-bold">Activity Heatmap</h2>
-      <div class="flex gap-xs">
-        <button
-          (click)="setHeatmapPeriod('week')"
-          [class]="selectedHeatmapPeriod() === 'week' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-          Week
-        </button>
-        <button
-          (click)="setHeatmapPeriod('month')"
-          [class]="selectedHeatmapPeriod() === 'month' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-          Month
-        </button>
-        <button
-          (click)="setHeatmapPeriod('year')"
-          [class]="selectedHeatmapPeriod() === 'year' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-          Year
-        </button>
-        <button
-          (click)="setHeatmapPeriod('all')"
-          [class]="selectedHeatmapPeriod() === 'all' ? 'bg-primary-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-primary-400">
-          All Time
-        </button>
-      </div>
+  <section>
+    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+      <h2 class="text-lg font-semibold text-gray-100">Activity heatmap</h2>
+      <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedHeatmapPeriod" />
     </div>
 
     @if (heatmapResource.isLoading()) {
-      <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
-        <div class="h-[500px] rounded-xl bg-base-200"></div>
+      <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+        <div class="h-[500px] rounded-lg bg-base-200"></div>
+      </div>
+    } @else if (heatmapResource.error()) {
+      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+        Failed to load heatmap data
       </div>
     } @else if (heatmapResource.hasValue()) {
       <feature-voice-stats-heatmap
         [heatmap]="heatmapResource.value()!"
         [loading]="heatmapResource.isLoading()"
       />
-    } @else if (heatmapResource.error()) {
-      <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-        <p class="text-red-400">Failed to load heatmap data</p>
-      </div>
     }
-  </div>
   </section>
 
-  <!-- User Comparison Heatmap Section -->
+  <!-- Your activity vs server -->
   @if (currentUser()?.id) {
     <section id="user-heatmap-section">
-      <div class="mb-md">
-        <div class="inline-flex items-center gap-sm bg-gradient-to-r from-cyan-500/20 to-blue-500/20 px-lg py-sm rounded-full border border-cyan-500/30">
-          <span class="text-lg">👤</span>
-          <span class="font-semibold text-cyan-300">Your Activity Comparison</span>
-        </div>
-      </div>
-
-      <div class="mb-md flex justify-end gap-xs">
-        <button
-          (click)="setUserHeatmapPeriod('week')"
-          [class]="selectedUserHeatmapPeriod() === 'week' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
-          Week
-        </button>
-        <button
-          (click)="setUserHeatmapPeriod('month')"
-          [class]="selectedUserHeatmapPeriod() === 'month' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
-          Month
-        </button>
-        <button
-          (click)="setUserHeatmapPeriod('year')"
-          [class]="selectedUserHeatmapPeriod() === 'year' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
-          Year
-        </button>
-        <button
-          (click)="setUserHeatmapPeriod('all')"
-          [class]="selectedUserHeatmapPeriod() === 'all' ? 'bg-cyan-500 text-white' : 'bg-base-200 text-gray-400'"
-          class="px-sm py-xs rounded-lg text-xs font-medium transition-colors hover:bg-cyan-400">
-          All Time
-        </button>
+      <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+        <h2 class="text-lg font-semibold text-gray-100">Your activity</h2>
+        <lib-segmented-control [options]="heatmapPeriodOptions" [(value)]="selectedUserHeatmapPeriod" />
       </div>
 
       @if (userHeatmapResource.isLoading()) {
-        <div class="bg-base-300 rounded-2xl p-lg animate-pulse">
-          <div class="h-[500px] rounded-xl bg-base-200"></div>
+        <div class="rounded-xl bg-base-300 border border-white/5 p-lg animate-pulse">
+          <div class="h-[500px] rounded-lg bg-base-200"></div>
+        </div>
+      } @else if (userHeatmapResource.error()) {
+        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          Failed to load user heatmap data
         </div>
       } @else if (userHeatmapResource.hasValue()) {
         <feature-voice-stats-user-heatmap
           [heatmap]="userHeatmapResource.value()!"
           [loading]="userHeatmapResource.isLoading()"
         />
-      } @else if (userHeatmapResource.error()) {
-        <div class="bg-red-500/10 border border-red-500 rounded-xl p-md">
-          <p class="text-red-400">Failed to load user heatmap data</p>
-        </div>
       }
     </section>
   }

@@ -133,27 +133,20 @@ export class VoiceStatsUserHeatmapComponent {
         },
       },
       grid: {
-        height: '70%',
-        top: '10%',
-        left: '80px',
-        right: '40px',
-        backgroundColor: 'transparent',
+        height: '72%',
+        top: '4%',
+        left: '48px',
+        right: '16px',
       },
       xAxis: {
         type: 'category',
         data: this.hours,
-        splitArea: {
-          show: true,
-          areaStyle: {
-            color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.05)'],
-          },
-        },
         axisLabel: {
           interval: 1,
-          rotate: 45,
           fontSize: 10,
           color: '#9ca3af',
         },
+        axisTick: { show: false },
         axisLine: {
           lineStyle: {
             color: '#374151',
@@ -163,15 +156,10 @@ export class VoiceStatsUserHeatmapComponent {
       yAxis: {
         type: 'category',
         data: this.daysOfWeek,
-        splitArea: {
-          show: true,
-          areaStyle: {
-            color: ['rgba(255, 255, 255, 0.02)', 'rgba(255, 255, 255, 0.05)'],
-          },
-        },
         axisLabel: {
           color: '#9ca3af',
         },
+        axisTick: { show: false },
         axisLine: {
           lineStyle: {
             color: '#374151',
@@ -184,13 +172,13 @@ export class VoiceStatsUserHeatmapComponent {
         calculable: true,
         orient: 'horizontal',
         left: 'center',
-        bottom: '5%',
+        bottom: '2%',
         textStyle: {
           color: '#9ca3af',
         },
+        // Diverging: red pole (below avg) -> neutral gray midpoint -> blue pole (above avg)
         inRange: {
-          // Red (below avg) -> Gray (at avg) -> Blue/Green (above avg)
-          color: ['#ef4444', '#f97316', '#64748b', '#3b82f6', '#10b981'],
+          color: ['#dc2626', '#f87171', '#4b5563', '#60a5fa', '#2563eb'],
         },
       },
       series: [
@@ -201,10 +189,15 @@ export class VoiceStatsUserHeatmapComponent {
           label: {
             show: false,
           },
+          itemStyle: {
+            borderColor: '#141824',
+            borderWidth: 2,
+            borderRadius: 2,
+          },
           emphasis: {
             itemStyle: {
-              shadowBlur: 10,
-              shadowColor: 'rgba(0, 0, 0, 0.5)',
+              borderColor: '#e5e7eb',
+              borderWidth: 1,
             },
           },
         },

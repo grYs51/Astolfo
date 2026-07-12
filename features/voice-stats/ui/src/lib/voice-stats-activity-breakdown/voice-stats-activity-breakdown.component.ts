@@ -21,42 +21,36 @@ echarts.use([CanvasRenderer, TooltipComponent, LegendComponent, GridComponent, P
   providers: [provideEchartsCore({ echarts })],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="activity-breakdown bg-base-300 rounded-2xl p-lg">
-      <h3 class="text-xl font-semibold mb-md">Activity Type Breakdown</h3>
+    <div class="activity-breakdown rounded-xl bg-base-300 border border-white/5 p-lg">
+      <h3 class="text-base font-semibold text-gray-100 mb-md">Activity type breakdown</h3>
 
       @if (breakdown().length === 0) {
-        <div class="text-center text-gray-400 py-xl">
+        <div class="text-center text-gray-500 py-xl">
           <p>No activity data available</p>
         </div>
       } @else {
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg">
-          <!-- Pie Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-lg items-center">
+          <!-- Donut -->
           <div class="flex items-center justify-center">
-            <div echarts [options]="chartOption()" class="w-full h-80"></div>
+            <div echarts [options]="chartOption()" class="w-full h-64"></div>
           </div>
 
-          <!-- Stats List -->
-          <div class="space-y-md">
+          <!-- Stats list -->
+          <div class="divide-y divide-white/5">
             @for (item of breakdown(); track item.type) {
-              <div class="bg-base-200 rounded-xl p-md">
-                <div class="flex items-center justify-between mb-sm">
-                  <div class="flex items-center gap-sm">
-                    <span class="text-2xl">{{ getActivityIcon(item.type) }}</span>
-                    <span class="font-semibold">{{ getActivityLabel(item.type) }}</span>
-                  </div>
-                  <span class="text-sm text-gray-400">{{ item.percentage }}%</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-sm text-sm">
-                  <div>
-                    <span class="text-gray-400">Duration:</span>
-                    <span class="ml-xs font-medium">{{ item.durationHours }}h {{ item.durationMinutes }}m</span>
-                  </div>
-                  <div>
-                    <span class="text-gray-400">Sessions:</span>
-                    <span class="ml-xs font-medium">{{ item.sessionCount }}</span>
-                  </div>
-                </div>
+              <div class="flex items-center gap-md py-sm">
+                <span
+                  class="h-3 w-3 shrink-0 rounded-sm"
+                  [style.background-color]="getActivityColor(item.type)"
+                ></span>
+                <span class="flex-1 text-sm font-medium text-gray-200">
+                  {{ getActivityLabel(item.type) }}
+                </span>
+                <span class="text-xs text-gray-500">{{ item.sessionCount }} sessions</span>
+                <span class="w-20 text-right text-sm font-semibold text-gray-100">
+                  {{ item.durationHours }}h {{ item.durationMinutes }}m
+                </span>
+                <span class="w-12 text-right text-xs text-gray-400">{{ item.percentage }}%</span>
               </div>
             }
           </div>
@@ -97,6 +91,9 @@ export class VoiceStatsActivityBreakdownComponent {
       legend: {
         orient: 'horizontal',
         bottom: '0',
+        icon: 'circle',
+        itemWidth: 8,
+        itemHeight: 8,
         textStyle: {
           color: '#9ca3af',
         },
@@ -105,24 +102,18 @@ export class VoiceStatsActivityBreakdownComponent {
         {
           name: 'Activity Type',
           type: 'pie',
-          radius: ['40%', '70%'],
+          radius: ['55%', '80%'],
           avoidLabelOverlap: true,
           itemStyle: {
-            borderRadius: 8,
-            borderColor: '#111827',
+            borderRadius: 4,
+            borderColor: '#141824',
             borderWidth: 2,
           },
           label: {
-            show: true,
-            color: '#f3f4f6',
-            formatter: '{b}: {d}%',
+            show: false,
           },
           emphasis: {
-            label: {
-              show: true,
-              fontSize: 16,
-              fontWeight: 'bold',
-            },
+            scaleSize: 4,
           },
           data: data.map(item => ({
             name: this.getActivityLabel(item.type),

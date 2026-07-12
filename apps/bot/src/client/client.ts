@@ -19,8 +19,9 @@ export default class DiscordClient extends Client {
   public readonly guildConfigs = new Collection<string, guild_configs>();
   public readonly userConfigs = new Collection<string, user_configs>();
   public readonly userStatus = new Collection<string, Partial<user_statuses>>();
-  // key: `${guildId}:${memberId}` — O(1) lookup by user+guild
-  public voiceUsers: Map<string, Partial<voice_stats>[]> = new Map();
+  // key: `${guildId}:${memberId}` — O(1) lookup by user+guild.
+  // Pure cache of the open rows (ended_on = null) already persisted in the DB.
+  public voiceUsers: Map<string, voice_stats[]> = new Map();
   public dataSource: Db;
 
   constructor(options: ClientOptions) {

@@ -1,13 +1,14 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { GuildMember } from 'discord.js';
+import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { Logger } from '../../../../utils/logger';
 import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
-export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unknown> =
+export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, VoiceStatsLeaderboard> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
 
@@ -16,7 +17,9 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 && rawLimit <= 100 ? rawLimit : 10;
 
     // Time period filter (optional): 'day', 'week', 'month', 'all'
-    const period = req.query.period as string | undefined;
+    const rawPeriod = req.query.period as string | undefined;
+    const period: VoiceStatsPeriod =
+      rawPeriod === 'day' || rawPeriod === 'week' || rawPeriod === 'month' ? rawPeriod : 'all';
     const startDate = getStartDateForPeriod(period);
 
     // Aggregate per-user duration and session counts directly in the database
@@ -36,7 +39,7 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
       Prisma.sql`
         SELECT
           member_id,
-          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000)::bigint AS total_duration,
+          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
           COUNT(*)::bigint AS session_count,
           COUNT(DISTINCT channel_id)::bigint AS unique_channels
         FROM voice_stats
@@ -107,7 +110,7 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, unkn
 
     res.send({
       leaderboard: enrichedLeaderboard,
-      period: period || 'all',
+      period,
       total: enrichedLeaderboard.length,
     });
   });
