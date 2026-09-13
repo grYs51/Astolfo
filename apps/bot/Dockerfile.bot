@@ -15,7 +15,7 @@ RUN yarn install
 
 COPY . .
 
-RUN npx prisma generate \
+RUN yarn prisma generate \
   && npx nx build bot \
   && rm -rf /usr/src/app/apps/bot/src
 
@@ -45,4 +45,8 @@ COPY --chown=node:node --from=build /usr/src/app/node_modules/.prisma/client ./n
 EXPOSE 3000
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
+# `yarn prisma`, not `npx prisma`: the CLI is a real dependency now, so it is
+# in this image and runs pinned and offline. npx resolved nothing locally and
+# downloaded whatever npm tags `latest` on every boot — currently the 8.0.0 RC,
+# driving migrations against a 6.x client.
+CMD ["sh", "-c", "yarn prisma migrate deploy && node dist/index.js"]
