@@ -1,28 +1,26 @@
-import { Presence } from 'discord.js';
 import { client } from '../../..';
 import { user_statuses } from '@prisma/client';
-import { Logger } from '../../logger';
 
-export const saveStatus = async (oldStatus: Presence, date: Date) => {
-  const status = client.userStatus.get(oldStatus.userId);
-  if (!status) {
-    Logger.warn(`saveStatus: no cached entry found for user ${oldStatus.userId} — status duration lost`);
-    return;
-  }
+/** Status changes shorter than this are noise (client reconnects, idle flaps). */
+const MIN_DURATION_MS = 15_000;
 
-  const timeDiff = (date.getTime() - status.created_at!.getTime()) / 1000;
-
-  if (timeDiff < 15) {
-    client.userStatus.delete(oldStatus.userId);
-    return;
-  }
-
-  status.ended_at = date;
+/**
+ * Persists one closed status interval.
+ *
+ * Takes the cache entry itself rather than looking it up: the caller must
+ * detach it from `client.userStatus` *synchronously*, before awaiting this —
+ * see `handleStatusUpdate` for why.
+ */
+export const saveStatus = async (
+  status: Partial<user_statuses>,
+  date: Date
+) => {
+  if (!status.created_at) return;
+  if (date.getTime() - status.created_at.getTime() < MIN_DURATION_MS) return;
 
   await client.dataSource.userStatus.create({
-    data: status as user_statuses,
+    data: { ...status, ended_at: date } as user_statuses,
   });
-  client.userStatus.delete(oldStatus.userId);
 };
 
 /**
@@ -33,7 +31,8 @@ export const saveAllStatuses = async (date: Date) => {
   const statuses = Array.from(client.userStatus.values())
     .filter(
       (status) =>
-        status.created_at && date.getTime() - status.created_at.getTime() >= 15_000
+        status.created_at &&
+        date.getTime() - status.created_at.getTime() >= MIN_DURATION_MS
     )
     .map((status) => ({ ...status, ended_at: date }) as user_statuses);
 
