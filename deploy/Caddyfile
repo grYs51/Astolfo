@@ -1,0 +1,44 @@
+# Production Caddyfile for Astolfo, running BEHIND Nginx Proxy Manager.
+# NPM terminates TLS and forwards plain HTTP to this container's port 80, so
+# this file has no domain and no certificates — install it verbatim
+# (server-setup.sh does this): copy to /etc/caddy/Caddyfile, then
+# sudo systemctl reload caddy.
+#
+# Unlike a static-SPA deploy, the dashboard here is Angular SSR, so BOTH the
+# API and the frontend are reverse-proxied to Node processes:
+#   /api/*  -> bot   (Express API + Discord client) on :3000
+#   /*      -> web   (Angular SSR server)            on :4000
+#
+# IMPORTANT: keep /api/* in its own handle block, matched before the catch-all
+# below — otherwise API requests would be sent to the SSR renderer instead of
+# the Express API.
+
+:80 {
+	encode gzip zstd
+
+	handle /api/* {
+		reverse_proxy localhost:3000
+	}
+
+	handle {
+		# Inert hardening headers (the SSR server sets none of these itself).
+		header {
+			X-Content-Type-Options "nosniff"
+			X-Frame-Options "DENY"
+			Referrer-Policy "strict-origin-when-cross-origin"
+			Permissions-Policy "camera=(), microphone=(), geolocation=()"
+			# Don't advertise the server software.
+			-Server
+
+			# CSP is intentionally NOT enforced by default. Angular's SSR
+			# hydration (withEventReplay) injects an inline bootstrap script, so
+			# a strict `script-src 'self'` will break hydration. Roll it out as
+			# Report-Only first, watch the browser console for violations, then
+			# switch the header name to `Content-Security-Policy`:
+			#
+			# Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.discordapp.com; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+		}
+
+		reverse_proxy localhost:4000
+	}
+}

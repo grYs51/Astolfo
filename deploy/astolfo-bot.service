@@ -1,0 +1,31 @@
+# systemd unit for the Astolfo bot + API (one Node process: discord.js gateway
+# client AND the Express API on PORT, default 3000).
+# Install: sudo cp deploy/astolfo-bot.service /etc/systemd/system/
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable --now astolfo-bot
+#
+# WorkingDirectory is the repo root because the bot is built with bundle:false
+# (dist/apps/bot/index.js require()s @prisma/client and friends from the repo's
+# node_modules) and the registry loader scans compiled command/event folders
+# relative to the bundle. EnvironmentFile supplies every var the bot needs;
+# it must contain literal values (systemd does NOT expand ${...}).
+
+[Unit]
+Description=Astolfo Discord bot + API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/astolfo/app
+EnvironmentFile=/opt/astolfo/app/.env
+ExecStart=/usr/bin/node dist/apps/bot/index.js
+Restart=always
+RestartSec=3
+# The in-process shutdown watchdog force-exits at 20s; give it a little room
+# and SIGKILL well before systemd stops postgresql underneath us.
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,28 @@
+# systemd unit for the Astolfo dashboard — Angular SSR (outputMode: "server").
+# This is a SECOND Node process, separate from the bot/API. It listens on
+# PORT_WEB (default 4000); the app's server.ts reads PORT_WEB, NOT PORT, so it
+# never collides with the bot's PORT=3000.
+# Install: sudo cp deploy/astolfo-web.service /etc/systemd/system/
+#          sudo systemctl daemon-reload
+#          sudo systemctl enable --now astolfo-web
+#
+# server.mjs is a self-contained bundle (it resolves ../browser via
+# import.meta.url), so cwd is irrelevant and it needs no node_modules at
+# runtime. The public API base URL (BACKEND_URL) is baked in at BUILD time,
+# not read here.
+
+[Unit]
+Description=Astolfo dashboard (Angular SSR)
+After=network.target astolfo-bot.service
+
+[Service]
+Type=simple
+User=deploy
+WorkingDirectory=/opt/astolfo/app
+EnvironmentFile=/opt/astolfo/app/.env
+ExecStart=/usr/bin/node dist/apps/web/server/server.mjs
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target
