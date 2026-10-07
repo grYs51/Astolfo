@@ -42,5 +42,6 @@ jobs:
           CLIENT_URL: ${{ secrets.CLIENT_URL }}
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           PORT_WEB: ${{ secrets.PORT_WEB }}
+          METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
       - name: clean up docker images
         run: docker image prune -f
