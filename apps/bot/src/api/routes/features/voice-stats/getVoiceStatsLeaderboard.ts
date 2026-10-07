@@ -6,6 +6,7 @@ import { client } from '../../../..';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { Logger } from '../../../../utils/logger';
+import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, VoiceStatsLeaderboard> =
@@ -44,6 +45,7 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
           COUNT(DISTINCT channel_id)::bigint AS unique_channels
         FROM voice_stats
         WHERE guild_id = ${serverId}
+          AND type = ${VOICE_TYPE.VOICE}
         ${dateFilter}
         GROUP BY member_id
         ORDER BY total_duration DESC

@@ -20,16 +20,18 @@ export const getVoiceStatsOverview: RequestHandler<
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
 
-  // Server totals in a single SQL query. Open sessions (ended_on IS NULL)
-  // count their live duration via COALESCE and are the active-session count.
+  // Server totals in a single SQL query. Only VOICE rows count: MUTED/DEAF/...
+  // rows overlap their VOICE row and would double-count time. Open sessions
+  // (ended_on IS NULL) count their live duration via COALESCE.
   const [totals] = await req.db.$queryRaw<TotalsRow[]>`
     SELECT
       COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
       COUNT(*)::bigint AS session_count,
       COUNT(DISTINCT member_id)::bigint AS unique_users,
-      COUNT(*) FILTER (WHERE ended_on IS NULL AND type = ${VOICE_TYPE.VOICE})::bigint AS active_sessions
+      COUNT(*) FILTER (WHERE ended_on IS NULL)::bigint AS active_sessions
     FROM voice_stats
     WHERE guild_id = ${serverId}
+      AND type = ${VOICE_TYPE.VOICE}
   `;
 
   // Most active channel by cumulative duration
@@ -40,6 +42,7 @@ export const getVoiceStatsOverview: RequestHandler<
       COUNT(*)::bigint AS session_count
     FROM voice_stats
     WHERE guild_id = ${serverId}
+      AND type = ${VOICE_TYPE.VOICE}
     GROUP BY channel_id
     ORDER BY total_duration DESC
     LIMIT 1

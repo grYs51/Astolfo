@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceStatsChannels } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
+import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 
 type ChannelAggRow = {
@@ -24,6 +25,7 @@ export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, VoiceSt
         COUNT(DISTINCT member_id)::bigint AS unique_users
       FROM voice_stats
       WHERE guild_id = ${serverId}
+        AND type = ${VOICE_TYPE.VOICE}
       GROUP BY channel_id
       ORDER BY total_duration DESC
     `;

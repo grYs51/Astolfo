@@ -20,8 +20,8 @@ export const getVoiceStatsHeatmap = asyncHandler(
       : Prisma.empty;
 
     // Aggregate in the database — bounded 168-row result instead of loading
-    // every session of the period into memory. EXTRACT uses the DB timezone,
-    // matching the user-heatmap endpoint's server-side aggregation.
+    // every session of the period into memory. issued_on is a UTC wall-clock
+    // timestamp, so EXTRACT yields UTC hours/days (same as the user heatmap).
     type HeatmapRow = {
       hour: number;
       day_of_week: number;
@@ -35,13 +35,12 @@ export const getVoiceStatsHeatmap = asyncHandler(
         SELECT
           EXTRACT(HOUR FROM issued_on)::int AS hour,
           EXTRACT(DOW  FROM issued_on)::int AS day_of_week,
-          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) / 60)::int AS total_minutes,
+          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
           COUNT(*)::bigint AS session_count,
           COUNT(DISTINCT member_id)::bigint AS unique_users
         FROM voice_stats
         WHERE guild_id = ${serverId}
           AND type = 'VOICE'
-          AND ended_on IS NOT NULL
           ${dateFilter}
         GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
       `

@@ -1,26 +1,17 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
 import { HeatmapPeriod, VoiceStatsUserHeatmap } from '@nx-stolfo/api-interfaces';
-import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
+import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getStartDateForPeriod } from '../helpers';
 
-interface VoiceSession {
-  member_id: string;
-  issued_on: Date;
-  ended_on: Date | null;
-}
-
-interface HeatmapDataPoint {
+type HeatmapCellRow = {
   hour: number; // 0-23
-  dayOfWeek: number; // 0-6 (Sunday-Saturday)
-  value: number; // total minutes
-  sessionCount: number;
-}
-
-interface HeatmapDataPointWithTracking extends HeatmapDataPoint {
-  _duration: number;
-}
+  day_of_week: number; // 0-6 (Sunday-Saturday)
+  total_minutes: number;
+  session_count: bigint;
+  unique_users: bigint;
+};
 
 export const getVoiceStatsUserHeatmap = asyncHandler(
   async (req: Request, res: Response<VoiceStatsUserHeatmap>) => {
@@ -34,40 +25,31 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
     // 'all' means from the beginning of time
     const startDate = getStartDateForPeriod(period) ?? new Date(0);
 
-    // Fetch user's sessions in the period
-    const userSessions = await req.db.voiceStats.findMany({
-      where: {
-        guild_id: serverId,
-        member_id: userId,
-        issued_on: {
-          gte: startDate,
-        },
-      },
-    });
+    // User and server cells come from the same SQL aggregation, so both sides
+    // bucket by the same (UTC) hour/day and round the same way. Only VOICE
+    // rows count (MUTED/DEAF/... overlap them); open sessions count live.
+    const heatmapCells = (memberFilter: Prisma.Sql) =>
+      req.db.$queryRaw<HeatmapCellRow[]>(
+        Prisma.sql`
+          SELECT
+            EXTRACT(HOUR FROM issued_on)::int        AS hour,
+            EXTRACT(DOW  FROM issued_on)::int        AS day_of_week,
+            SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
+            COUNT(*)::bigint                          AS session_count,
+            COUNT(DISTINCT member_id)::bigint         AS unique_users
+          FROM voice_stats
+          WHERE guild_id = ${serverId}
+            AND type = ${VOICE_TYPE.VOICE}
+            AND issued_on >= ${startDate}
+            ${memberFilter}
+          GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
+        `
+      );
 
-    // Aggregate server-wide heatmap directly in the DB to avoid an
-    // unbounded full-table scan into application memory.
-    type ServerAggRow = {
-      hour: number;
-      day_of_week: number;
-      total_minutes: number;
-      unique_users: bigint;
-    };
-
-    const serverAggRaw = await currentClient.$queryRaw<ServerAggRow[]>(
-      Prisma.sql`
-        SELECT
-          EXTRACT(HOUR FROM issued_on)::int        AS hour,
-          EXTRACT(DOW  FROM issued_on)::int        AS day_of_week,
-          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) / 60)::int AS total_minutes,
-          COUNT(DISTINCT member_id)::bigint         AS unique_users
-        FROM voice_stats
-        WHERE guild_id = ${serverId}
-          AND issued_on >= ${startDate}
-          AND ended_on IS NOT NULL
-        GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
-      `
-    );
+    const [userRows, serverAggRaw] = await Promise.all([
+      heatmapCells(Prisma.sql`AND member_id = ${userId}`),
+      heatmapCells(Prisma.empty),
+    ]);
 
     // Build a lookup map for the server aggregation
     const serverMap = new Map<string, { totalMinutes: number; uniqueUsers: number }>();
@@ -82,49 +64,12 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
       serverTotalUsers = Math.max(serverTotalUsers, Number(row.unique_users));
     });
 
-    // Helper function to process sessions into heatmap
-    const processSessionsToHeatmap = (sessions: VoiceSession[]) => {
-      const heatmapMap = new Map<string, HeatmapDataPointWithTracking>();
-
-      sessions.forEach((session) => {
-        if (!session.ended_on) return; // Skip active sessions
-
-        const startTime = new Date(session.issued_on);
-        const endTime = new Date(session.ended_on);
-        const durationMs = endTime.getTime() - startTime.getTime();
-        const durationMinutes = Math.floor(durationMs / 1000 / 60);
-
-        // Get hour and day of week from start time
-        const hour = startTime.getHours(); // 0-23
-        const dayOfWeek = startTime.getDay(); // 0-6 (Sunday-Saturday)
-        const key = `${hour}-${dayOfWeek}`;
-
-        const existing = heatmapMap.get(key);
-        if (existing) {
-          existing.value += durationMinutes;
-          existing.sessionCount += 1;
-          existing._duration += durationMs;
-        } else {
-          heatmapMap.set(key, {
-            hour,
-            dayOfWeek,
-            value: durationMinutes,
-            sessionCount: 1,
-            _duration: durationMs,
-          });
-        }
-      });
-
-      return Array.from(heatmapMap.values()).map((point) => ({
-        hour: point.hour,
-        dayOfWeek: point.dayOfWeek,
-        value: point.value,
-        sessionCount: point.sessionCount,
-      }));
-    };
-
-    // Process both datasets
-    const userHeatmap = processSessionsToHeatmap(userSessions);
+    const userHeatmap = userRows.map((row) => ({
+      hour: row.hour,
+      dayOfWeek: row.day_of_week,
+      value: row.total_minutes,
+      sessionCount: Number(row.session_count),
+    }));
 
     // Build comparison data using the pre-aggregated server map
     const comparisonData = userHeatmap.map((userPoint) => {
