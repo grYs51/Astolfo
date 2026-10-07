@@ -23,7 +23,7 @@ else
 fi
 
 # .env is gitignored, so the reset above never touches it. Load it so the
-# db push step sees DATABASE_URL and the web build sees BACKEND_URL.
+# db push step sees DATABASE_URL.
 set -a
 # shellcheck disable=SC1091
 . ./.env
@@ -42,7 +42,7 @@ yarn prisma generate --schema "$SCHEMA"
 yarn prisma db push --schema "$SCHEMA"
 
 # Build sequentially (not run-many) to keep peak memory down — the Angular SSR
-# build alone can approach 2 GB. BACKEND_URL is baked into the web bundle here.
+# build alone can approach 2 GB.
 yarn nx build bot --configuration production
 yarn nx build web --configuration production
 

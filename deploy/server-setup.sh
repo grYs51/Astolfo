@@ -150,7 +150,7 @@ log "Prisma generate + db push (this repo syncs the schema with db push; the mig
 # fails loudly and the deploy aborts, rather than silently destroying rows.
 as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn prisma generate --schema $SCHEMA && yarn prisma db push --schema $SCHEMA"
 
-log "Build bot, then web (sequential to keep peak memory down; BACKEND_URL is baked into the web bundle)"
+log "Build bot, then web (sequential to keep peak memory down)"
 as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn nx build bot --configuration production"
 as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn nx build web --configuration production"
 
@@ -192,6 +192,9 @@ curl -fsS "http://localhost/" >/dev/null && echo "Caddy -> web SSR on :80 OK"
 log "Nightly database backups (03:15, keep 14 days)"
 install -d "$APP_BASE/bin"
 install -m 755 "$APP_DIR/deploy/pg-backup.sh" "$APP_BASE/bin/"
+# The cron job runs as postgres, which can't create directories under the
+# root-owned /var/backups — pre-create it with the right owner
+install -d -o postgres -g postgres -m 700 /var/backups/astolfo
 CRON_LINE="15 3 * * * $APP_BASE/bin/pg-backup.sh"
 ( crontab -l -u postgres 2>/dev/null | grep -vF pg-backup.sh; echo "$CRON_LINE" ) | crontab -u postgres -
 
