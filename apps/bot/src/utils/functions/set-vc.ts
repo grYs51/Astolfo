@@ -1,5 +1,5 @@
 import { voice_stats } from '@prisma/client';
-import { client } from '../..';
+import { client } from '../../client/instance';
 import { GuildMember, VoiceBasedChannel } from 'discord.js';
 import { Logger } from '../logger';
 import { schedule5hrVoiceChannelJob } from '../schedulers/voice-channel.scheduler';

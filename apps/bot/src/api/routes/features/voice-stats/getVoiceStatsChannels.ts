@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceStatsChannels } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../..';
+import { client } from '../../../../client/instance';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 

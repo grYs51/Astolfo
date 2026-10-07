@@ -1,5 +1,5 @@
 import { Message } from 'discord.js';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 
 export const saveMessage = async (message: Message) => {
   if (message.channel.isDMBased()) return;

@@ -1,5 +1,5 @@
 import { Gauge } from 'prom-client';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 
 const gauge = new Gauge({
   name: 'discord_bot_cached_status_total',

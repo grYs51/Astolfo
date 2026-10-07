@@ -4,8 +4,7 @@ import {
   registerInteractions,
   registerSlash,
 } from './utils/registry';
-import DiscordClient from './client/client';
-import { IntentsBitField } from 'discord.js';
+import { client } from './client/instance';
 import type { Server } from 'http';
 import { createPrismaClient } from './db';
 import { Logger } from './utils/logger';
@@ -18,17 +17,6 @@ import { saveGamesToDb } from './utils/handlers/games-handler';
 import { startMetricsScheduler } from './utils/schedulers/metrics.scheduler';
 import { closeDanglingVoiceSessions } from './utils/handlers/vc';
 
-export const client = new DiscordClient({
-  intents: [
-    IntentsBitField.Flags.Guilds,
-    IntentsBitField.Flags.GuildMessages,
-    IntentsBitField.Flags.GuildMessageReactions,
-    IntentsBitField.Flags.GuildMembers,
-    IntentsBitField.Flags.GuildVoiceStates,
-    IntentsBitField.Flags.GuildPresences,
-    IntentsBitField.Flags.MessageContent,
-  ],
-});
 
 process.on('uncaughtException', (err) => {
   Logger.error('Uncaught exception', err);

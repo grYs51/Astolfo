@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { guilds } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../..';
+import { client } from '../../../../client/instance';
 
 type ServerDurationRow = { guild_id: string; duration: number };
 

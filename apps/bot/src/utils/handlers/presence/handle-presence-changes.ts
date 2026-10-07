@@ -1,5 +1,5 @@
 import { Presence } from 'discord.js';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 import { handleStatusUpdate } from '.';
 
 export const handleUserPresenceChange = async (

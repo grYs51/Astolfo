@@ -1,5 +1,5 @@
 import { VoiceState } from 'discord.js';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 import {
   VOICE_TYPE,
   VoiceTypeToVoiceStats,

@@ -1,6 +1,6 @@
 import schedule, { Job } from 'node-schedule';
 import { GuildMember } from 'discord.js';
-import { client } from '../..';
+import { client } from '../../client/instance';
 import { isEnabled, SETTING_FLAGS } from '../handlers/settings-handler';
 import { voiceKey } from '../handlers/vc/voice-utils';
 

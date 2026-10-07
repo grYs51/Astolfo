@@ -1,4 +1,4 @@
-import { client } from '../..';
+import { client } from '../../client/instance';
 
 export enum GAME_TYPES {
   ROCK_PAPER_SCISSORS = 'rock-paper-scissors',
