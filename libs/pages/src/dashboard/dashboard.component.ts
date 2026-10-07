@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import {
+  ActiveServerApi,
+  ActiveServerStore,
+} from '@nx-stolfo/active-servers/data-access';
 import { ActiveServersListComponent } from '@nx-stolfo/active-servers/ui';
 
 @Component({
@@ -7,11 +10,11 @@ import { ActiveServersListComponent } from '@nx-stolfo/active-servers/ui';
   imports: [ActiveServersListComponent],
   templateUrl: './dashboard.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // The page owns data fetching; the feature UI lib stays presentational
+  providers: [ActiveServerStore, ActiveServerApi],
 })
 export class DashboardComponent {
-  router = inject(Router);
+  protected store = inject(ActiveServerStore);
 
-  selectedGuild(guildId: string) {
-    this.router.navigate(['overview', 'detail', guildId]);
-  }
+  protected detailLink = (guildId: string) => ['/overview/detail', guildId];
 }

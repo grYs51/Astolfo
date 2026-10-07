@@ -1,20 +1,31 @@
 @let server = guild();
+@let name = server.name ?? 'Unknown server';
 
 <div
   class="group flex cursor-pointer items-center gap-md rounded-xl bg-base-300 border border-white/5 p-md transition-colors hover:border-primary-500/40 hover:bg-base-200"
 >
-  <img
-    width="48"
-    height="48"
-    [src]="server.icon"
-    [alt]="server.name"
-    class="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-white/10"
-  />
+  <!-- icon/name are null for servers without an icon or the bot has left -->
+  @if (server.icon) {
+    <img
+      width="48"
+      height="48"
+      [src]="server.icon"
+      alt=""
+      class="h-12 w-12 shrink-0 rounded-full object-cover ring-1 ring-white/10"
+    />
+  } @else {
+    <div
+      aria-hidden="true"
+      class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-base-200 text-lg font-semibold text-gray-400 ring-1 ring-white/10"
+    >
+      {{ name.charAt(0).toUpperCase() }}
+    </div>
+  }
   <div class="min-w-0 flex-1">
-    <h2 class="truncate text-sm font-semibold text-gray-100">{{ server.name }}</h2>
+    <h2 class="truncate text-sm font-semibold text-gray-100">{{ name }}</h2>
     <p class="text-xs text-gray-500">
       {{ server.totalDuration * 1000 | humanizeDuration: true }} in voice
     </p>
   </div>
-  <span class="text-gray-600 transition-colors group-hover:text-primary-400">›</span>
+  <span aria-hidden="true" class="text-gray-600 transition-colors group-hover:text-primary-400">›</span>
 </div>

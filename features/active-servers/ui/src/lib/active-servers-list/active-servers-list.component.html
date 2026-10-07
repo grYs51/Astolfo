@@ -1,7 +1,7 @@
 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-md">
   @if (error()) {
     <feature-active-servers-card-skeleton [title]="'Something went wrong'" [description]="'Try again later'" />
-  } @else if (isLoading()) {
+  } @else if (loading()) {
     @for (i of [1, 2, 3]; track i) {
       <div class="flex items-center gap-md rounded-xl bg-base-300 border border-white/5 p-md">
         <div class="h-12 w-12 shrink-0 animate-pulse rounded-full bg-base-200"></div>
@@ -13,7 +13,12 @@
     }
   } @else {
     @for (guild of guilds(); track guild.id) {
-      <feature-active-servers-card [guild]="guild" (click)="selectedGuild.emit(guild.id)" />
+      <a
+        [routerLink]="linkFor()(guild.id)"
+        class="rounded-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+      >
+        <feature-active-servers-card [guild]="guild" />
+      </a>
     } @empty {
       <feature-active-servers-card-skeleton [title]="'No active servers'" />
     }

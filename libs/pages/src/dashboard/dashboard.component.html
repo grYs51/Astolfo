@@ -4,5 +4,10 @@
     <p class="mt-xs text-sm text-gray-500">Pick a server to explore its voice activity</p>
   </header>
 
-  <feature-active-servers-list (selectedGuild)="selectedGuild($event)" />
+  <feature-active-servers-list
+    [guilds]="store.value()"
+    [loading]="store.isLoading()"
+    [error]="store.error()"
+    [linkFor]="detailLink"
+  />
 </div>
