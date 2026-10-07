@@ -15,11 +15,12 @@ export class VoiceStatsChannelsComponent {
   loading = input<boolean>(false);
 
   getChannelIcon(type: string): string {
+    // The API sends discord.js ChannelType names ('GuildVoice', …), or
+    // 'VOICE' for channels that no longer exist
     const icons: Record<string, string> = {
+      guildvoice: '🎤',
+      guildstagevoice: '🎭',
       voice: '🎤',
-      stage: '🎭',
-      afk: '😴',
-      music: '🎵',
     };
     return icons[type.toLowerCase()] || '📢';
   }
