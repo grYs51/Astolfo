@@ -13,8 +13,8 @@ RUN yarn install
 
 COPY . .
 
-RUN echo "export const environment = { production: true, BACKEND_URL: '$BACKEND_URL' };" >> /usr/src/app/apps/web/src/environments/environment.prod.ts
-
+# The production API URL is a literal in apps/web/src/environments/environment.ts
+# (the bundle can't read env vars). The BACKEND_URL build arg is unused.
 RUN npx nx run web:build:production
 
 FROM node:${NODE_VERSION}-alpine
