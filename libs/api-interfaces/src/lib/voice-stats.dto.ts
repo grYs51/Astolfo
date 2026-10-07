@@ -165,6 +165,7 @@ export interface VoiceStatsTimelineBucket {
 }
 
 export interface VoiceStatsTimeline {
+  /** Every bucket from the period start to now, in order; quiet ones are zero */
   timeline: VoiceStatsTimelineBucket[];
   period: TimelinePeriod;
   granularity: 'hour' | 'day' | 'week';
