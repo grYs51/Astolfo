@@ -5,13 +5,14 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
   template: `
     <div
       [class]="
-        'flex items-center gap-md rounded-lg px-sm py-sm cursor-pointer transition-colors hover:bg-white/5 ' +
+        'flex items-center gap-md rounded-lg px-sm py-sm transition-colors hover:bg-white/5 ' +
+        (interactive() ? 'cursor-pointer ' : '') +
         containerClass()
       "
-      role="button"
-      tabindex="0"
-      (click)="itemClick.emit()"
-      (keyup.enter)="itemClick.emit()"
+      [attr.role]="interactive() ? 'button' : null"
+      [attr.tabindex]="interactive() ? 0 : null"
+      (click)="interactive() && itemClick.emit()"
+      (keyup.enter)="interactive() && itemClick.emit()"
     >
       <!-- Rank badge -->
       <div [class]="getRankClass()">
@@ -63,6 +64,11 @@ export class LeaderboardItemComponent {
   avatarUrl = input<string>();
   icon = input<string>();
   containerClass = input<string>('');
+  /**
+   * Render as a button (role, focus, pointer). Off by default so rows without
+   * an (itemClick) handler aren't announced as buttons that do nothing.
+   */
+  interactive = input(false);
 
   itemClick = output<void>();
 

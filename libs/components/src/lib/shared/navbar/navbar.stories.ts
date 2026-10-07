@@ -1,7 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
 
-import { fireEvent, within } from 'storybook/test';
-
 import { NavbarComponent } from './navbar.component';
 
 const meta: Meta<NavbarComponent> = {
@@ -15,19 +13,18 @@ const meta: Meta<NavbarComponent> = {
 export default meta;
 type Story = StoryObj<NavbarComponent>;
 
+// loginUrl is a required input; without it the LoggedOut story threw NG0950
 export const LoggedIn: Story = {
   args: {
     name: 'Test Task',
     image: 'https://cataas.com/cat',
+    loginUrl: '#',
+    logoutUrl: '#',
   },
-
-  // play: async ({ canvasElement }) => {
-  //   const canvas = within(canvasElement);
-
-  //   await fireEvent.click(canvas.getByText('Add Task'));
-  // }
 };
 
 export const LoggedOut: Story = {
-  args: {},
+  args: {
+    loginUrl: '#',
+  },
 };
