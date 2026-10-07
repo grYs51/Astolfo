@@ -9,7 +9,7 @@
     "docker:dev:down": "docker compose --profile dev -p astolfo --env-file .env down",
     "docker:dev:log": "docker compose --profile dev -p astolfo logs -f --tail=100",
     "docker:dev:clean": "docker compose --profile dev -p astolfo down -v --rmi all",
-    "docker:dev:database:up": "docker compose -f docker-compose.dev.yaml up -d && nx run models:prisma-migrate",
+    "docker:dev:database:up": "docker compose -f docker-compose.dev.yaml up -d && nx run models:prisma-deploy",
     "docker:dev:database:down": "docker compose -f docker-compose.dev.yaml down",
     "prisma:generate": "nx run models:prisma-generate",
     "prisma:migrate": "nx run models:prisma-migrate",
