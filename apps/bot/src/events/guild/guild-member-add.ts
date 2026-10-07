@@ -22,6 +22,6 @@ export default class GuildMemberAddEvent extends BaseEvent {
       return Logger.info('No welcome channel found');
     }
 
-    channel.send(`Welcome ${member}`);
+    await channel.send(`Welcome ${member}`);
   }
 }

@@ -3,6 +3,7 @@ import { GuildMember } from 'discord.js';
 import { client } from '../../client/instance';
 import { isEnabled, SETTING_FLAGS } from '../handlers/settings-handler';
 import { voiceKey } from '../handlers/vc/voice-utils';
+import { Logger } from '../logger';
 
 const scheduledJobs = new Map<string, Job>();
 
@@ -24,9 +25,15 @@ export const schedule5hrVoiceChannelJob = (
     if (channel?.isSendable()) {
       //member.toString() makes it a mention (pinging the user)
       const straightOrGay = Math.random() > 0.9 ? 'straight' : 'gay';
-      channel.send(
-        `${member} has been in the voice channel for 5 hours ${straightOrGay}!`
-      );
+      channel
+        .send(
+          `${member} has been in the voice channel for 5 hours ${straightOrGay}!`
+        )
+        // Runs from a node-schedule timer: nothing else would observe a
+        // rejection (e.g. missing send permission)
+        .catch((error) =>
+          Logger.error(`Failed to send 5h voice reminder in ${channel_id}`, error)
+        );
     }
   });
 };
