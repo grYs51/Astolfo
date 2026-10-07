@@ -1,6 +1,6 @@
 import { Events } from 'discord.js';
 import DiscordClient from '../../client/client';
-import { eventsCount } from '../../api/utils.ts/counter';
+import { eventsCount } from '../../api/utils/counter';
 import { Logger } from '../logger';
 
 export default abstract class BaseEvent {

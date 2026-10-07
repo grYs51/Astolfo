@@ -8,8 +8,8 @@ import rateLimit from 'express-rate-limit';
 import { PrismaSessionStore } from '@quixo3/prisma-session-store';
 import { currentClient } from '../db';
 import passport from 'passport';
-import { errorHandler } from './utils.ts/middleware/error-handler';
-import { registerDiscordStrategy } from './utils.ts/strategies/discordStrategy';
+import { errorHandler } from './utils/middleware/error-handler';
+import { registerDiscordStrategy } from './utils/strategies/discordStrategy';
 collectDefaultMetrics();
 
 const DEFAULT_CORS_ORIGINS = [

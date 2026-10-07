@@ -7,7 +7,7 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
   InteractionResponse,
 } from 'discord.js';
-import { slashCount } from '../../api/utils.ts/counter';
+import { slashCount } from '../../api/utils/counter';
 
 export abstract class BaseSlash {
   constructor(

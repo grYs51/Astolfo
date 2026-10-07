@@ -1,5 +1,5 @@
 import schedule from 'node-schedule';
-import { SaveMetrics } from '../../api/utils.ts/save-on-exit';
+import { SaveMetrics } from '../../api/utils/save-on-exit';
 import { Logger } from '../logger';
 
 /**

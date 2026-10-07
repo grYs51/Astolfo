@@ -43,9 +43,9 @@ A Discord bot ("Astolfo") that tracks server activity (voice sessions, presence/
 
 - **Auto-registration**: `utils/registry.ts` scans `commands/`, `events/`, `slashs/`, `interactions/` at startup. Files must default-export a class extending the matching base class in `utils/structures/` (`BaseCommand`, `BaseEvent`, `BaseSlash`, `BaseInteraction`). Dropping a file in the right folder is all that's needed to register it.
 - **In-memory state on the client** (`client/client.ts`): `guildConfigs`, `userConfigs`, `userStatus` (presence cache), `voiceUsers` (open voice sessions, key `` `${guildId}:${memberId}` ``). Voice sessions are **persisted on open**: a row with `ended_on = NULL` is inserted on join and closed on leave / shutdown flush; `voiceUsers` is a pure cache of the open rows. Rows left dangling by a crash are closed at startup (`closeDanglingVoiceSessions`).
-- **Voice tracking flow**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/*`. One `voice_stats` row per state type (VOICE, MUTED, DEAF, VIDEO, STREAMING…) per session, inserted open when the state starts and closed when it ends. Durations are `ended_on - issued_on` in **milliseconds**; SQL aggregations use `COALESCE(ended_on, NOW())` so open sessions count live time.
-- **API**: `api/index.ts` (express + session + passport-discord), routes in `api/routes/`, feature routes registered in `api/routes/features/index.ts`. `req.db` is injected by `api/utils.ts/middleware/db.ts`. ⚠️ `api/utils.ts/` is a **directory** literally named `utils.ts`.
-- **Metrics**: prom-client counters (`api/utils.ts/counter.ts`), exposed at `/api/metrics`, snapshotted to the `metrics` DB table every 30s, restored on boot (`load-on-start.ts`).
+- **Voice tracking flow**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/*`. One `voice_stats` row per state type (VOICE, MUTED, DEAF, VIDEO, STREAMING…) per session, inserted open when the state starts and closed when it ends. Durations are `ended_on - issued_on` in **milliseconds**; SQL aggregations use `COALESCE(ended_on, NOW())` so open sessions count live time, and voice totals must filter `type = 'VOICE'` (the other types overlap it). Handlers for one member run one at a time through `runSerialized(voiceKey(...))` — anything that opens/closes sessions outside `voiceStateUpdate` (startup `setVc`, `GuildDelete`) goes through the same queue, and closes always filter `ended_on: null`. Covered by `utils/handlers/vc/voice-lifecycle.test.ts`.
+- **API**: `api/index.ts` (express + session + passport-discord), routes in `api/routes/`, feature routes registered in `api/routes/features/index.ts`. `req.db` is injected by `api/utils/middleware/db.ts`.
+- **Metrics**: prom-client counters (`api/utils/counter.ts`), exposed at `/api/metrics` (requires `Authorization: Bearer $METRICS_TOKEN`; disabled when unset), snapshotted to the `metrics` DB table every 30s, restored on boot (`load-on-start.ts`).
 
 ### Frontend patterns
 
@@ -65,7 +65,7 @@ yarn nx run models:prisma-generate   # regenerate client
 yarn nx affected -t lint test build  # verify changes
 ```
 
-Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`.
+Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `CLIENT_URL`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`. Optional: `METRICS_TOKEN`, `CORS_ORIGINS`. The web app's production API URL is a literal in `apps/web/src/environments/environment.ts` (the browser bundle can't read env vars).
 
 ## Conventions & gotchas
 

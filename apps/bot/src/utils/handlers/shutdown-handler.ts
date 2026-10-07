@@ -3,7 +3,7 @@ import schedule from 'node-schedule';
 import { Logger } from '../logger';
 import { saveVc } from '../functions/set-vc';
 import { saveAllStatuses } from './presence/status-save';
-import { SaveMetrics } from '../../api/utils.ts/save-on-exit';
+import { SaveMetrics } from '../../api/utils/save-on-exit';
 import { client } from '../../client/instance';
 import { disconnect } from '../../db';
 
