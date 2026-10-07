@@ -9,7 +9,7 @@ import { PrismaSessionStore } from '@quixo3/prisma-session-store';
 import { currentClient } from '../db';
 import passport from 'passport';
 import { errorHandler } from './utils.ts/middleware/error-handler';
-import './utils.ts/strategies/discordStrategy';
+import { registerDiscordStrategy } from './utils.ts/strategies/discordStrategy';
 collectDefaultMetrics();
 
 const DEFAULT_CORS_ORIGINS = [
@@ -71,6 +71,7 @@ function createExpress() {
   );
 
   // Initialize passport
+  registerDiscordStrategy();
   app.use(passport.initialize());
   app.use(passport.session());
 
