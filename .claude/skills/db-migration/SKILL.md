@@ -10,7 +10,7 @@ Single schema file: `libs/models/prisma/schema.prisma`. Postgres. The Prisma cli
 ## Workflow
 
 1. Edit `libs/models/prisma/schema.prisma`.
-2. Make sure the dev database is up: `yarn docker:dev:database:up` (compose file `docker-compose.dev.yaml`; this script also runs migrate).
+2. Make sure the dev database is up: `yarn docker:dev:database:up` (compose file `docker-compose.dev.yaml`; it also applies the existing migrations with `models:prisma-deploy`).
 3. Create + apply the migration: `yarn nx run models:prisma-migrate` (prompts for a name).
 4. Regenerate the client: `yarn nx run models:prisma-generate`.
 5. **Update the `Db` facade**: new models must be added to both the `Db` interface and the `getDb()` object in `apps/bot/src/db/index.ts` (facade key is camelCase, e.g. `voiceStats: currentClient.voice_stats`).
