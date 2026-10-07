@@ -5,7 +5,6 @@ import {
   VoiceStatsHeatmap,
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/api-interfaces';
-import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { getStartDateForPeriod, getTimeZone, localIssuedOn } from '../helpers';
 
@@ -39,7 +38,7 @@ export const getVoiceStatsHeatmap = asyncHandler(
       unique_users: bigint;
     };
 
-    const rows = await currentClient.$queryRaw<HeatmapRow[]>(
+    const rows = await req.db.$queryRaw<HeatmapRow[]>(
       Prisma.sql`
         SELECT
           EXTRACT(HOUR FROM ${local})::int AS hour,

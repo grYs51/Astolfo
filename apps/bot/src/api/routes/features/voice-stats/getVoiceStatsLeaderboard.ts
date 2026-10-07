@@ -3,7 +3,6 @@ import asyncHandler from 'express-async-handler';
 import { GuildMember } from 'discord.js';
 import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
-import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { Logger } from '../../../../utils/logger';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
@@ -36,7 +35,7 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
       ? Prisma.sql`AND issued_on >= ${startDate}`
       : Prisma.empty;
 
-    const leaderboardRaw = await currentClient.$queryRaw<LeaderboardRow[]>(
+    const leaderboardRaw = await req.db.$queryRaw<LeaderboardRow[]>(
       Prisma.sql`
         SELECT
           member_id,

@@ -18,11 +18,13 @@ const DEFAULT_CORS_ORIGINS = [
 ];
 
 function corsOrigins(): string[] {
-  return (
-    process.env.CORS_ORIGINS?.split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean) ?? DEFAULT_CORS_ORIGINS
-  );
+  const configured = (process.env.CORS_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+  // An empty CORS_ORIGINS (e.g. an unset compose variable) used to yield []
+  // and block the dashboard entirely — fall back to the defaults instead
+  return configured.length > 0 ? configured : DEFAULT_CORS_ORIGINS;
 }
 
 function createExpress() {
