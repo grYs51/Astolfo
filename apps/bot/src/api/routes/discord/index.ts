@@ -15,9 +15,11 @@ export default (router: Router) => {
   authRouter
     .route('/redirect')
     .get(passport.authenticate('discord'), redirect);
+  // POST, not GET: with SameSite=lax a cross-site page can trigger a GET
+  // navigation with the cookie attached and log the user out
   authRouter
     .route('/logout')
-    .get(signOut);
+    .post(signOut);
 
   router.use('/auth', authRouter);
 };

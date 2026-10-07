@@ -5,7 +5,8 @@ export const signOut: RequestHandler<unknown, undefined> = asyncHandler(
   async (req, res) => {
     req.session.destroy(() => {
       res.clearCookie('connect.sid');
-      res.redirect(process.env.CLIENT_URL);
+      // 303 so the browser follows the POST with a GET
+      res.redirect(303, process.env.CLIENT_URL);
     });
   }
 );
