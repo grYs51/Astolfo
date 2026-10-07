@@ -28,7 +28,12 @@
               </a>
             </li>
             <li class="disabled"><a>Settings</a></li>
-            <li><a [href]="logoutUrl()">Logout</a></li>
+            <li>
+              <!-- Logout is POST-only (a GET could be triggered cross-site) -->
+              <form method="post" [action]="logoutUrl()">
+                <button type="submit" class="w-full text-left">Logout</button>
+              </form>
+            </li>
           </ul>
         </div>
       } @else if(!loading()) {
