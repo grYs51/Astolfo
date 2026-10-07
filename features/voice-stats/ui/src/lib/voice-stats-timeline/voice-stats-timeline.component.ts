@@ -162,14 +162,22 @@ export class VoiceStatsTimelineComponent {
   }
 
   formatTimestamp(timestamp: string): string {
-    const data = this.timeline();
-    if (data.granularity === 'hour') {
-      return timestamp.split('T')[1].slice(0, 5);
-    } else if (data.granularity === 'day') {
-      const date = new Date(timestamp);
-      return `${date.getMonth() + 1}/${date.getDate()}`;
-    } else {
-      return timestamp;
+    const { granularity } = this.timeline();
+    const pad = (n: number) => String(n).padStart(2, '0');
+
+    if (granularity === 'hour') {
+      // Hour buckets ('YYYY-MM-DDTHH:mm', UTC) are exact instants, so show
+      // them in the viewer's time zone — with the date, since a week of
+      // hourly buckets would otherwise repeat the same "14:00" labels
+      const date = new Date(`${timestamp}:00Z`);
+      return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
+
+    // Day/week buckets are UTC calendar days ('YYYY-MM-DD'). Format them in
+    // UTC: reading UTC midnight with local getters shows the previous day
+    // for anyone west of UTC.
+    const date = new Date(`${timestamp.slice(0, 10)}T00:00:00Z`);
+    const label = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
+    return granularity === 'week' ? `Week of ${label}` : label;
   }
 }
