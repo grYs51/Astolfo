@@ -163,21 +163,18 @@ export class VoiceStatsTimelineComponent {
 
   formatTimestamp(timestamp: string): string {
     const { granularity } = this.timeline();
-    const pad = (n: number) => String(n).padStart(2, '0');
+    // The API buckets in the viewer's time zone (`tz` param) and returns
+    // wall-clock strings ('YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm'), so format the
+    // parts directly — going through Date would shift them by the UTC offset
+    const [datePart, time] = timestamp.split('T');
+    const [, month, day] = datePart.split('-').map(Number);
+    const label = `${month}/${day}`;
 
     if (granularity === 'hour') {
-      // Hour buckets ('YYYY-MM-DDTHH:mm', UTC) are exact instants, so show
-      // them in the viewer's time zone — with the date, since a week of
-      // hourly buckets would otherwise repeat the same "14:00" labels
-      const date = new Date(`${timestamp}:00Z`);
-      return `${date.getMonth() + 1}/${date.getDate()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+      // With the date: a week of hourly buckets would otherwise repeat the
+      // same "14:00" labels
+      return `${label} ${time}`;
     }
-
-    // Day/week buckets are UTC calendar days ('YYYY-MM-DD'). Format them in
-    // UTC: reading UTC midnight with local getters shows the previous day
-    // for anyone west of UTC.
-    const date = new Date(`${timestamp.slice(0, 10)}T00:00:00Z`);
-    const label = `${date.getUTCMonth() + 1}/${date.getUTCDate()}`;
     return granularity === 'week' ? `Week of ${label}` : label;
   }
 }

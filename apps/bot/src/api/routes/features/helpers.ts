@@ -1,4 +1,30 @@
 import { ChannelType, Guild } from 'discord.js';
+import { Prisma } from '@prisma/client';
+
+/**
+ * The viewer's IANA time zone from `?tz=` (e.g. 'Europe/Brussels'), so hours
+ * and days are bucketed the way the viewer experiences them. Missing or
+ * unknown values fall back to UTC.
+ */
+export const getTimeZone = (tz: unknown): string => {
+  if (typeof tz !== 'string' || !tz) return 'UTC';
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz });
+    return tz;
+  } catch {
+    return 'UTC';
+  }
+};
+
+/**
+ * `issued_on` as wall-clock time in `tz`. The column is a timestamp without
+ * time zone holding UTC, so it's first marked as UTC, then converted.
+ * Repeated in SELECT, so queries GROUP BY column position: each embedding is
+ * a separate bind parameter, which Postgres won't match as the same
+ * expression.
+ */
+export const localIssuedOn = (tz: string) =>
+  Prisma.sql`((issued_on AT TIME ZONE 'UTC') AT TIME ZONE ${tz})`;
 
 /** Splits a millisecond duration into whole hours and remaining minutes. */
 export const toDurationParts = (ms: number) => ({

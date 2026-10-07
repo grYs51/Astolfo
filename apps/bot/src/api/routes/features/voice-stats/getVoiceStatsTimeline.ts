@@ -5,7 +5,12 @@ import {
   VoiceStatsTimeline,
 } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getStartDateForPeriod, toDurationParts } from '../helpers';
+import {
+  getStartDateForPeriod,
+  getTimeZone,
+  localIssuedOn,
+  toDurationParts,
+} from '../helpers';
 
 type TimelineRow = {
   bucket: Date;
@@ -35,11 +40,14 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
       getStartDateForPeriod(period) ?? getStartDateForPeriod('month')!;
 
     const pgGranularity = granularity;
+    // Buckets are hours/days/weeks of the viewer's time zone, not UTC
+    const local = localIssuedOn(getTimeZone(req.query.tz));
 
-    // Single SQL query with DATE_TRUNC bucketing — no full table scan into memory
+    // Single SQL query with DATE_TRUNC bucketing — no full table scan into
+    // memory. GROUP BY position: see localIssuedOn.
     const rows = await req.db.$queryRaw<TimelineRow[]>`
       SELECT
-        DATE_TRUNC(${pgGranularity}, issued_on) AS bucket,
+        DATE_TRUNC(${pgGranularity}, ${local}) AS bucket,
         SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
         COUNT(*)::bigint AS session_count,
         COUNT(DISTINCT member_id)::bigint AS unique_users,
@@ -48,14 +56,16 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
       WHERE guild_id = ${serverId}
         AND type = ${VOICE_TYPE.VOICE}
         AND issued_on >= ${startDate}
-      GROUP BY bucket
-      ORDER BY bucket ASC
+      GROUP BY 1
+      ORDER BY 1 ASC
     `;
 
     const timeline = rows.map((row) => {
       const totalDuration = Number(row.total_duration);
       const sessionCount = Number(row.session_count);
       const parts = toDurationParts(totalDuration);
+      // bucket is a zone-less wall-clock time, which Prisma reads as UTC — so
+      // the ISO string's date/time parts are the local wall-clock values
       const isoStr = row.bucket.toISOString();
       const timestamp = granularity === 'hour' ? isoStr.substring(0, 16) : isoStr.substring(0, 10);
       return {
