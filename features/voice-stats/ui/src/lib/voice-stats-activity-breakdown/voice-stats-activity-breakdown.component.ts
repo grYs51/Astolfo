@@ -128,19 +128,6 @@ export class VoiceStatsActivityBreakdownComponent {
     };
   });
 
-  getActivityIcon(type: VoiceActivityType | string): string {
-    const iconMap: Record<string, string> = {
-      [VoiceActivityType.VOICE]: '🎤',
-      [VoiceActivityType.DEAF]: '🔇',
-      [VoiceActivityType.SERVER_DEAF]: '🔕',
-      [VoiceActivityType.MUTED]: '🔈',
-      [VoiceActivityType.SERVER_MUTED]: '🔇',
-      [VoiceActivityType.STREAMING]: '📺',
-      [VoiceActivityType.VIDEO]: '📹',
-    };
-    return iconMap[type] || '🎙️';
-  }
-
   getActivityLabel(type: VoiceActivityType | string): string {
     const labelMap: Record<string, string> = {
       [VoiceActivityType.VOICE]: 'Voice',

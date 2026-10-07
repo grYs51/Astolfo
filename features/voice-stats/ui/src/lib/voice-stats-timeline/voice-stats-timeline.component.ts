@@ -28,11 +28,6 @@ export class VoiceStatsTimelineComponent {
     this.timeline().timeline.some((bucket) => bucket.sessionCount > 0)
   );
 
-  maxValue = computed(() => {
-    const data = this.timeline();
-    return Math.max(...data.timeline.map(t => t.totalDuration), 1);
-  });
-
   stats = computed(() => {
     const data = this.timeline();
     if (data.timeline.length === 0) {
@@ -162,10 +157,6 @@ export class VoiceStatsTimelineComponent {
       ],
     };
   });
-
-  getBarHeight(duration: number): number {
-    return (duration / this.maxValue()) * 100;
-  }
 
   formatTimestamp(timestamp: string): string {
     const { granularity } = this.timeline();
