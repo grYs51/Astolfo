@@ -3,7 +3,7 @@
 # Run as the `deploy` user:  /opt/astolfo/app/deploy/deploy.sh [<git-sha>]
 #
 # This is what the GitHub Actions self-hosted runner calls on every push to
-# main. It is deliberately small: fetch, install, generate, db push, build,
+# main. It is deliberately small: fetch, install, generate, migrate, build,
 # restart. The two systemctl restarts are the only things that need sudo, and
 # the sudoers rule installed by server-setup.sh permits exactly those.
 set -euo pipefail
@@ -23,7 +23,7 @@ else
 fi
 
 # .env is gitignored, so the reset above never touches it. Load it so the
-# db push step sees DATABASE_URL.
+# migrate step sees DATABASE_URL.
 set -a
 # shellcheck disable=SC1091
 . ./.env
@@ -36,10 +36,9 @@ yarn install --immutable
 # whatever is newest on the registry (it pulled the 8.0.0 RC against our 6.x
 # client), while yarn resolves the pinned devDependency.
 yarn prisma generate --schema "$SCHEMA"
-# This repo syncs the schema with db push (stale migrations/ dir). No
-# --accept-data-loss: a destructive change aborts the deploy instead of
-# dropping data.
-yarn prisma db push --schema "$SCHEMA"
+# Apply pending migrations from libs/models/prisma/migrations — the same
+# command the Docker image runs at startup, so both paths share one history.
+yarn prisma migrate deploy --schema "$SCHEMA"
 
 # Build sequentially (not run-many) to keep peak memory down — the Angular SSR
 # build alone can approach 2 GB.
@@ -48,5 +47,15 @@ yarn nx build web --configuration production
 
 sudo systemctl restart astolfo-bot astolfo-web
 
-echo "Deployed $(git rev-parse --short HEAD). Health:"
-curl -fsS http://localhost:3000/api/health && echo
+# The bot connects to the DB and registers handlers before it listens, so
+# poll instead of failing a healthy deploy on the first connection refused
+for _ in $(seq 1 20); do
+  sleep 2
+  if curl -fs http://localhost:3000/api/health; then
+    echo
+    echo "Deployed $(git rev-parse --short HEAD)."
+    exit 0
+  fi
+done
+echo "Health check FAILED after deploying $(git rev-parse --short HEAD) — inspect with: journalctl -u astolfo-bot -n 50" >&2
+exit 1

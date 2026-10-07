@@ -145,10 +145,8 @@ fi
 log "Install deps (full — the bot loads @prisma/client & co. from node_modules at runtime)"
 as_deploy "cd $APP_DIR && yarn install --immutable"
 
-log "Prisma generate + db push (this repo syncs the schema with db push; the migrations/ dir is stale)"
-# No --accept-data-loss on purpose: if a schema change would drop data, db push
-# fails loudly and the deploy aborts, rather than silently destroying rows.
-as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn prisma generate --schema $SCHEMA && yarn prisma db push --schema $SCHEMA"
+log "Prisma generate + migrate deploy (creates the schema from libs/models/prisma/migrations)"
+as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn prisma generate --schema $SCHEMA && yarn prisma migrate deploy --schema $SCHEMA"
 
 log "Build bot, then web (sequential to keep peak memory down)"
 as_deploy "cd $APP_DIR && set -a && . ./.env && set +a && yarn nx build bot --configuration production"

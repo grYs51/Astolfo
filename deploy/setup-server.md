@@ -1,5 +1,23 @@
 # Production server setup — Astolfo on Proxmox LXC
 
+> **Status: planned, not live yet.** Production currently runs the Docker
+> stack (`docker-compose.yaml`, deployed by `.github/workflows/image-build.yml`
+> on the self-hosted runner), with the dashboard at `astolfo.grys.dev` and the
+> API on its own host, `astolfo-api.grys.dev`. When moving to this setup:
+>
+> - **API URL:** here Caddy serves `/api/*` on the dashboard's domain, so set
+>   `BACKEND_URL` in `apps/web/src/environments/environment.ts` to `''`
+>   (same origin) — or keep a separate API host in NPM and leave it as is.
+> - **Proxy headers:** NPM → Caddy → Express is two proxies. Add
+>   `servers { trusted_proxies static private_ranges }` to the Caddyfile and
+>   set Express `trust proxy` to 2 (`apps/bot/src/api/index.ts`), or secure
+>   cookies won't be sent and every client shares one rate-limit bucket.
+> - **CI:** replace `image-build.yml` with a job that runs
+>   `deploy/deploy.sh` on this runner (Step 5) — the LXC can't run Docker.
+> - **Data:** restore a dump of the current Docker database (Step 6). It
+>   already contains the `_prisma_migrations` history, so `migrate deploy`
+>   picks up from there.
+
 Create the LXC by hand (Step 1), then `server-setup.sh` automates everything
 inside it (Step 2). The remaining steps are UI work: Nginx Proxy Manager, the
 Discord Developer Portal, and the GitHub runner. When you see
@@ -29,8 +47,8 @@ Two things that differ from a plain SPA deploy, and drive everything below:
    the API. There is no folder of static HTML to serve.
 
 - The app lives at `/opt/astolfo/app` (a git clone owned by `deploy`).
-- A deploy is just: `deploy/deploy.sh <git-sha>` — fetch, build, sync the
-  schema (`prisma db push`), restart both services.
+- A deploy is just: `deploy/deploy.sh <git-sha>` — fetch, build, apply
+  migrations (`prisma migrate deploy`), restart both services.
 - HTTPS lives entirely in Nginx Proxy Manager. Nothing in this container
   knows about certificates.
 
@@ -79,7 +97,7 @@ unattended except for one pause. It installs and verifies, in order: base
 packages, the `deploy` user, Node 22 + corepack/yarn 4, PostgreSQL 17 (PGDG
 repo), the database role with a generated password, the repo clone, `/opt/
 astolfo/app/.env` (secrets generated, `chmod 600`), `yarn install` + Prisma
-generate + `db push` + build of **both** apps, the two systemd services
+generate + `migrate deploy` + build of **both** apps, the two systemd services
 (waits for `/api/health`), the restart-only sudoers rule, Caddy on plain :80,
 and the nightly `pg_dump` cron.
 
@@ -142,7 +160,7 @@ back on the dashboard, and confirm your servers' stats load.
 The runner makes an _outbound_ connection to GitHub, so no extra ports or SSH
 keys are needed. On every push to `main`, GitHub runs your `checks` job on
 GitHub's servers, then a `deploy` job on this runner, which executes
-`deploy/deploy.sh` locally (fetch → install → generate → db push → build both
+`deploy/deploy.sh` locally (fetch → install → generate → migrate deploy → build both
 → restart both).
 
 1. GitHub repo → Settings → Actions → Runners → **New self-hosted runner**
@@ -220,11 +238,11 @@ sudo systemctl start astolfo-bot astolfo-web
 curl localhost:3000/api/health
 ```
 
-Ordering note: `server-setup.sh` already created the schema via `prisma db
-push`. Restoring with `--clean --if-exists` on top of that is fine — it drops
-and recreates each object from the dump. You can also restore *before* the first
-`db push` and let the push just confirm the schema matches. Either order works;
-don't run them concurrently.
+Ordering note: `server-setup.sh` already created the schema via `prisma
+migrate deploy`. Restoring with `--clean --if-exists` on top of that is fine —
+it drops and recreates each object from the dump, including the
+`_prisma_migrations` history table, so the next `migrate deploy` only applies
+migrations newer than the dump. Don't run them concurrently.
 
 ---
 
@@ -278,15 +296,13 @@ don't run them concurrently.
    DHCP reservation from Step 1, not an app problem.
 9. **Certificate errors** — always NPM's department. Nothing in this container
    touches TLS; don't debug Caddy for cert problems.
-10. **The schema is synced with `prisma db push`, not migrations.** The
-    `migrations/` directory is stale, so do **not** switch the deploy to
-    `prisma migrate deploy` (it would fail or fight the drift). `db push` has
-    no down-migrations and no history: a bad schema change means
-    restore-from-dump, not rollback. The scripts run `db push` **without**
-    `--accept-data-loss`, so a change that would drop data aborts the deploy —
-    if that happens, fix the schema, don't add the flag blindly. (Note:
-    `apps/bot/Dockerfile.bot` still runs `migrate deploy`; the LXC path
-    deliberately does not follow it.)
+10. **The schema is applied with `prisma migrate deploy`**, from
+    `libs/models/prisma/migrations/` — the same command the Docker image runs.
+    Schema changes are made in dev with `yarn nx run models:prisma-migrate`
+    (creates a migration) and committed; never `db push` against this
+    database, or its history drifts from the migrations and `migrate deploy`
+    fails. There are no down-migrations: a bad change means a new migration
+    or restore-from-dump.
 11. **`.env` uses literal values, not `${...}`.** systemd's `EnvironmentFile`
     does not expand shell variables, so `DATABASE_URL` is written fully
     expanded. Don't "tidy" it into interpolated form.
