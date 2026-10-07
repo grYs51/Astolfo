@@ -14,7 +14,7 @@ Registration is automatic: `apps/bot/src/utils/registry.ts` recursively scans th
 | Slash command | `apps/bot/src/slashs/<category>/` | `BaseSlash` | Application command via `interaction-create.ts` |
 | Interaction | `apps/bot/src/interactions/<kind>/` | `BaseInteraction` | Modal submit / message component, matched by `customId` |
 
-Base classes live in `apps/bot/src/utils/structures/`. Each `run()` wrapper also increments the matching prom-client counter (`api/utils.ts/counter.ts`) — you get metrics for free.
+Base classes live in `apps/bot/src/utils/structures/`. Each `run()` wrapper also increments the matching prom-client counter (`api/utils/counter.ts`) — you get metrics for free.
 
 ## Recipes
 

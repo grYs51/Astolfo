@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { isAuthenticated } from '../../utils.ts/middleware/isAuthenticated';
-import { isServerMember } from '../../utils.ts/middleware/isServerMember';
+import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
+import { isServerMember } from '../../utils/middleware/isServerMember';
 import { getActiveServers } from './active-servers';
 import {
   getVoiceStats,

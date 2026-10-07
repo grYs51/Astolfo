@@ -3,7 +3,7 @@ import registerMetrics from './metrics';
 import registerUtils from './utils';
 import registerDiscord from './discord';
 import registerFeatures from './features';
-import db from '../utils.ts/middleware/db';
+import db from '../utils/middleware/db';
 
 const apiRouter = Router();
 

@@ -1,6 +1,6 @@
 import { Message, PermissionResolvable } from 'discord.js';
 import DiscordClient from '../../client/client';
-import { commandsCount } from '../../api/utils.ts/counter';
+import { commandsCount } from '../../api/utils/counter';
 import { MessageUtils } from '../message-utils';
 
 export default abstract class BaseCommand {

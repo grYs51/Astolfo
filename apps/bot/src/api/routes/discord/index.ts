@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { discordAuth, getStatus, redirect, signOut } from './handlers';
-import { isAuthenticated } from '../../utils.ts/middleware/isAuthenticated';
+import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import passport from 'passport';
 
 export default (router: Router) => {
