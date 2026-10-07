@@ -3,6 +3,7 @@ const REQUIRED_ENV_VARS = [
   'DISCORD_CLIENT_ID',
   'DISCORD_CLIENT_SECRET',
   'REDIRECT_URI',
+  'CLIENT_URL', // login/logout redirect back to the dashboard
   'COOKIE_SECRET',
   'OWNER',
   'DATABASE_URL',
