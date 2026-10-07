@@ -12,8 +12,7 @@
   ],
   "namedInputs": {
     "dockerFiles": [
-      "{projectRoot}/Dockerfile",
-      "{projectRoot}/package.json"
+      "{projectRoot}/Dockerfile.bot"
     ]
   },
   "targets": {
@@ -124,6 +123,9 @@
       "options": {
         "jestConfig": "apps/bot/jest.config.ts"
       }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
     }
   }
 }
