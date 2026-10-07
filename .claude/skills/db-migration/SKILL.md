@@ -14,7 +14,24 @@ Single schema file: `libs/models/prisma/schema.prisma`. Postgres. The Prisma cli
 3. Create + apply the migration: `yarn nx run models:prisma-migrate` (prompts for a name).
 4. Regenerate the client: `yarn nx run models:prisma-generate`.
 5. **Update the `Db` facade**: new models must be added to both the `Db` interface and the `getDb()` object in `apps/bot/src/db/index.ts` (facade key is camelCase, e.g. `voiceStats: currentClient.voice_stats`).
-6. Production applies migrations via `yarn prisma:deploy` (`nx run models:prisma-deploy`).
+6. Production applies migrations with `prisma migrate deploy` — the bot's Docker image runs it at startup, and `deploy/deploy.sh` (planned LXC setup) runs it before building. Commit the generated folder under `libs/models/prisma/migrations/`.
+
+**Migrations are the only workflow** (dev and prod). Don't use `models:prisma-push` / `prisma db push`: it changes the DB without a migration, so the history drifts and `migrate deploy` fails later.
+
+### One-time: baseline a dev DB created with `db push`
+
+A DB synced with `db push` has no `_prisma_migrations` table, so `migrate dev` reports drift and offers a reset. If the DB already matches the schema, mark every existing migration as applied instead:
+
+```bash
+# 1. Must print an empty migration (DB == schema); otherwise fix that first
+yarn prisma migrate diff --from-url "$DATABASE_URL" --to-schema-datamodel libs/models/prisma/schema.prisma --script
+# 2. Record the existing migrations as applied
+for m in libs/models/prisma/migrations/*/; do
+  yarn prisma migrate resolve --applied "$(basename "$m")" --schema libs/models/prisma/schema.prisma
+done
+```
+
+Or, if the dev data is disposable: `yarn nx run models:prisma-reset`.
 
 ## Conventions
 
@@ -28,7 +45,6 @@ Single schema file: `libs/models/prisma/schema.prisma`. Postgres. The Prisma cli
 Every query path needs index support — `voice_stats` queries are always guild-scoped (`guild_id` leading column), so composite indexes start with `guild_id`. Remember:
 
 - A composite index covers its leftmost prefix — don't add `@@index([a])` next to `@@index([a, b])`.
-- `message_stats` currently has **no indexes** and `user_statuses` lacks one on `user_id` (CODE_REVIEW.md §1.1) — if you touch those tables, add them.
 
 ## Consumers to keep in sync
 
