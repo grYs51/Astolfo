@@ -41,23 +41,43 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
 
     const pgGranularity = granularity;
     // Buckets are hours/days/weeks of the viewer's time zone, not UTC
-    const local = localIssuedOn(getTimeZone(req.query.tz));
+    const tz = getTimeZone(req.query.tz);
+    const local = localIssuedOn(tz);
 
-    // Single SQL query with DATE_TRUNC bucketing — no full table scan into
-    // memory. GROUP BY position: see localIssuedOn.
+    // DATE_TRUNC bucketing in SQL — no full table scan into memory. Every
+    // bucket from the period start to now is returned (generate_series), so
+    // quiet days show up as zero instead of the chart silently skipping them.
+    // GROUP BY position: see localIssuedOn.
     const rows = await req.db.$queryRaw<TimelineRow[]>`
+      WITH agg AS (
+        SELECT
+          DATE_TRUNC(${pgGranularity}, ${local}) AS bucket,
+          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
+          COUNT(*)::bigint AS session_count,
+          COUNT(DISTINCT member_id)::bigint AS unique_users,
+          COUNT(DISTINCT channel_id)::bigint AS unique_channels
+        FROM voice_stats
+        WHERE guild_id = ${serverId}
+          AND type = ${VOICE_TYPE.VOICE}
+          AND issued_on >= ${startDate}
+        GROUP BY 1
+      ),
+      buckets AS (
+        SELECT generate_series(
+          DATE_TRUNC(${pgGranularity}, ${startDate}::timestamptz AT TIME ZONE ${tz}),
+          DATE_TRUNC(${pgGranularity}, NOW() AT TIME ZONE ${tz}),
+          ${`1 ${pgGranularity}`}::interval
+        ) AS bucket
+      )
       SELECT
-        DATE_TRUNC(${pgGranularity}, ${local}) AS bucket,
-        SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
-        COUNT(*)::bigint AS session_count,
-        COUNT(DISTINCT member_id)::bigint AS unique_users,
-        COUNT(DISTINCT channel_id)::bigint AS unique_channels
-      FROM voice_stats
-      WHERE guild_id = ${serverId}
-        AND type = ${VOICE_TYPE.VOICE}
-        AND issued_on >= ${startDate}
-      GROUP BY 1
-      ORDER BY 1 ASC
+        buckets.bucket,
+        COALESCE(agg.total_duration, 0)::bigint AS total_duration,
+        COALESCE(agg.session_count, 0)::bigint AS session_count,
+        COALESCE(agg.unique_users, 0)::bigint AS unique_users,
+        COALESCE(agg.unique_channels, 0)::bigint AS unique_channels
+      FROM buckets
+      LEFT JOIN agg ON agg.bucket = buckets.bucket
+      ORDER BY buckets.bucket ASC
     `;
 
     const timeline = rows.map((row) => {

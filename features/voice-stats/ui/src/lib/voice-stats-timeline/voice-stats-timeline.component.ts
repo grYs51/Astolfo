@@ -22,6 +22,12 @@ export class VoiceStatsTimelineComponent {
 
   private readonly durationPipe = new HumanizeDurationPipe();
 
+  // The API returns every bucket of the period (empty ones as zero), so
+  // "no data" means no sessions at all rather than an empty list
+  hasActivity = computed(() =>
+    this.timeline().timeline.some((bucket) => bucket.sessionCount > 0)
+  );
+
   maxValue = computed(() => {
     const data = this.timeline();
     return Math.max(...data.timeline.map(t => t.totalDuration), 1);
