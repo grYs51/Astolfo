@@ -6,3 +6,6 @@ export * from './profile/profile.store';
 
 // guard
 export * from './guards/is-logged-in.guard';
+
+// interceptors
+export * from './interceptors/session-expired.interceptor';
