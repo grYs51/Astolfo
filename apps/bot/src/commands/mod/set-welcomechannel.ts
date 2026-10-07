@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, PermissionFlagsBits } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
@@ -6,7 +6,9 @@ import { MessageUtils } from '../../utils/message-utils';
 
 export default class SetWelcomeChannelCommand extends BaseCommand {
   constructor() {
-    super('setwelcomechannel', 'mod', ['swc']);
+    super('setwelcomechannel', 'mod', ['swc'], [
+      PermissionFlagsBits.ManageGuild,
+    ]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

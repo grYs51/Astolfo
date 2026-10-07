@@ -16,6 +16,7 @@ import { initPrometheusData } from './api/utils.ts/load-on-start';
 import { setupShutdownHandler } from './utils/handlers/shutdown-handler';
 import { saveGamesToDb } from './utils/handlers/games-handler';
 import { startMetricsScheduler } from './utils/schedulers/metrics.scheduler';
+import { closeDanglingVoiceSessions } from './utils/handlers/vc';
 
 export const client = new DiscordClient({
   intents: [
@@ -40,11 +41,23 @@ process.on('unhandledRejection', (reason) => {
 
 let httpServer: Server | undefined;
 
+// Close sessions a previous crash left open. Must run before the metrics
+// scheduler starts: the cutoff is the last metrics snapshot of the previous
+// run, and the first tick would overwrite it with "now" (recording the whole
+// downtime as voice time). Also runs before the API serves those rows live.
+const recoverDanglingVoiceSessions = async () => {
+  const recovered = await closeDanglingVoiceSessions();
+  if (recovered > 0) {
+    Logger.info(`Closed ${recovered} dangling voice sessions from a previous run`);
+  }
+};
+
 const main = () =>
   Promise.resolve()
     .then(() => validateEnv())
     .then(() => createPrismaClient())
     .then(() => setConfigs())
+    .then(() => recoverDanglingVoiceSessions())
     .then(() => saveGamesToDb())
     .then(() => registerCommands())
     .then(() => registerEvents())

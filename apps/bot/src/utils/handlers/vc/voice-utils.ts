@@ -5,6 +5,30 @@ import { GuildMember, VoiceBasedChannel, VoiceState } from 'discord.js';
 export const voiceKey = (guildId: string, memberId: string) =>
   `${guildId}:${memberId}`;
 
+const voiceQueues = new Map<string, Promise<void>>();
+
+/**
+ * Runs voice handlers for one key strictly one after another. Gateway events
+ * are dispatched concurrently and every handler reads the voiceUsers cache
+ * before awaiting the DB, so overlapping handlers for the same member (leave +
+ * quick rejoin, join + quick unmute) would otherwise interleave and leave open
+ * rows behind. A failed task doesn't block the ones queued after it.
+ */
+export const runSerialized = (
+  key: string,
+  task: () => Promise<unknown>
+): Promise<void> => {
+  const run = (voiceQueues.get(key) ?? Promise.resolve())
+    .then(task)
+    .then(() => undefined);
+  const tail = run.catch(() => undefined);
+  voiceQueues.set(key, tail);
+  void tail.then(() => {
+    if (voiceQueues.get(key) === tail) voiceQueues.delete(key);
+  });
+  return run;
+};
+
 export enum VOICE_TYPE {
   VOICE = 'VOICE',
   MUTED = 'MUTED',
