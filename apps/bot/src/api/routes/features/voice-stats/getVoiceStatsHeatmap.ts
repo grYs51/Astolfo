@@ -1,27 +1,36 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
 import {
+  HeatmapPeriod,
   VoiceStatsHeatmap,
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/api-interfaces';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
-import { getStartDateForPeriod } from '../helpers';
+import { getStartDateForPeriod, getTimeZone, localIssuedOn } from '../helpers';
 
 export const getVoiceStatsHeatmap = asyncHandler(
   async (req: Request, res: Response<VoiceStatsHeatmap>) => {
     const { serverId } = req.params;
-    const { period = 'month' } = req.query;
+    // Whitelisted: an unknown value used to mean "no lower bound" (a scan of
+    // the guild's entire history)
+    const rawPeriod = req.query.period;
+    const period: HeatmapPeriod =
+      rawPeriod === 'week' || rawPeriod === 'year' || rawPeriod === 'all'
+        ? rawPeriod
+        : 'month';
+    const tz = getTimeZone(req.query.tz);
+    const local = localIssuedOn(tz);
 
-    // 'all' (or unknown) means no lower bound
-    const startDate = getStartDateForPeriod(period as string);
+    // 'all' means no lower bound
+    const startDate = getStartDateForPeriod(period);
     const dateFilter = startDate
       ? Prisma.sql`AND issued_on >= ${startDate}`
       : Prisma.empty;
 
     // Aggregate in the database — bounded 168-row result instead of loading
-    // every session of the period into memory. issued_on is a UTC wall-clock
-    // timestamp, so EXTRACT yields UTC hours/days (same as the user heatmap).
+    // every session of the period into memory. Hours/days are in the
+    // viewer's time zone (same as the user heatmap).
     type HeatmapRow = {
       hour: number;
       day_of_week: number;
@@ -33,8 +42,8 @@ export const getVoiceStatsHeatmap = asyncHandler(
     const rows = await currentClient.$queryRaw<HeatmapRow[]>(
       Prisma.sql`
         SELECT
-          EXTRACT(HOUR FROM issued_on)::int AS hour,
-          EXTRACT(DOW  FROM issued_on)::int AS day_of_week,
+          EXTRACT(HOUR FROM ${local})::int AS hour,
+          EXTRACT(DOW  FROM ${local})::int AS day_of_week,
           SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
           COUNT(*)::bigint AS session_count,
           COUNT(DISTINCT member_id)::bigint AS unique_users
@@ -42,7 +51,7 @@ export const getVoiceStatsHeatmap = asyncHandler(
         WHERE guild_id = ${serverId}
           AND type = 'VOICE'
           ${dateFilter}
-        GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
+        GROUP BY 1, 2
       `
     );
 

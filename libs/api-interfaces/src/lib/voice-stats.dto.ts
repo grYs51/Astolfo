@@ -150,6 +150,7 @@ export interface VoiceStatsUser {
 
 // Voice Stats Timeline Response
 export interface VoiceStatsTimelineBucket {
+  /** Bucket start as wall-clock time in the requested `tz` (default UTC): 'YYYY-MM-DDTHH:mm' for hourly, 'YYYY-MM-DD' otherwise */
   timestamp: string;
   totalDuration: number;
   totalDurationHours: number;
@@ -173,8 +174,8 @@ export interface VoiceStatsTimeline {
 
 // Voice Stats Heatmap Response
 export interface VoiceStatsHeatmapDataPoint {
-  hour: number; // 0-23
-  dayOfWeek: number; // 0-6 (Sunday-Saturday)
+  hour: number; // 0-23, in the requested `tz` (default UTC)
+  dayOfWeek: number; // 0-6 (Sunday-Saturday), in the requested `tz`
   value: number; // total minutes
   sessionCount: number;
   uniqueUsers: number;
@@ -197,8 +198,8 @@ export interface VoiceStatsHeatmap {
 
 // Voice Stats User Heatmap (Comparison with Server)
 export interface VoiceStatsUserHeatmapDataPoint {
-  hour: number; // 0-23
-  dayOfWeek: number; // 0-6 (Sunday-Saturday)
+  hour: number; // 0-23, in the requested `tz` (default UTC)
+  dayOfWeek: number; // 0-6 (Sunday-Saturday), in the requested `tz`
   userValue: number; // user's total minutes
   serverAverage: number; // server average minutes for this time slot
   difference: number; // user value - server average

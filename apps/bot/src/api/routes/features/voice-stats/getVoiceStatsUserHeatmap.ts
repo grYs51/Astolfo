@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { HeatmapPeriod, VoiceStatsUserHeatmap } from '@nx-stolfo/api-interfaces';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getStartDateForPeriod } from '../helpers';
+import { getStartDateForPeriod, getTimeZone, localIssuedOn } from '../helpers';
 
 type HeatmapCellRow = {
   hour: number; // 0-23
@@ -24,16 +24,18 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
 
     // 'all' means from the beginning of time
     const startDate = getStartDateForPeriod(period) ?? new Date(0);
+    const local = localIssuedOn(getTimeZone(req.query.tz));
 
     // User and server cells come from the same SQL aggregation, so both sides
-    // bucket by the same (UTC) hour/day and round the same way. Only VOICE
-    // rows count (MUTED/DEAF/... overlap them); open sessions count live.
+    // bucket by the same hour/day (in the viewer's time zone) and round the
+    // same way. Only VOICE rows count (MUTED/DEAF/... overlap them); open
+    // sessions count live.
     const heatmapCells = (memberFilter: Prisma.Sql) =>
       req.db.$queryRaw<HeatmapCellRow[]>(
         Prisma.sql`
           SELECT
-            EXTRACT(HOUR FROM issued_on)::int        AS hour,
-            EXTRACT(DOW  FROM issued_on)::int        AS day_of_week,
+            EXTRACT(HOUR FROM ${local})::int         AS hour,
+            EXTRACT(DOW  FROM ${local})::int         AS day_of_week,
             SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
             COUNT(*)::bigint                          AS session_count,
             COUNT(DISTINCT member_id)::bigint         AS unique_users
@@ -42,7 +44,7 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
             AND type = ${VOICE_TYPE.VOICE}
             AND issued_on >= ${startDate}
             ${memberFilter}
-          GROUP BY EXTRACT(HOUR FROM issued_on), EXTRACT(DOW FROM issued_on)
+          GROUP BY 1, 2
         `
       );
 

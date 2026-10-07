@@ -12,6 +12,12 @@ import {
 } from '@nx-stolfo/api-interfaces';
 
 /**
+ * The viewer's IANA time zone. Sent as `tz` so the API buckets hours/days
+ * (heatmaps, timeline) the way the viewer experiences them instead of UTC.
+ */
+const viewerTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+/**
  * All params are reactive functions (`() => value`) — usually signals or
  * computeds — so the underlying `httpResource` refetches when they change.
  * Static values can be passed as `() => 'value'`.
@@ -91,7 +97,7 @@ export class VoiceStatsApi extends ApiBase {
     return this.get<VoiceStatsTimeline>(
       () => `/features/voice-stats/${guildId()}/timeline`,
       () => {
-        const params: Record<string, string> = {};
+        const params: Record<string, string> = { tz: viewerTimeZone() };
         const periodVal = period?.();
         const granularityVal = granularity?.();
 
@@ -111,7 +117,7 @@ export class VoiceStatsApi extends ApiBase {
     return this.get<VoiceStatsHeatmap>(
       () => `/features/voice-stats/${guildId()}/heatmap`,
       () => {
-        const params: Record<string, string> = {};
+        const params: Record<string, string> = { tz: viewerTimeZone() };
         const periodVal = period?.();
 
         if (periodVal) params['period'] = periodVal;
@@ -134,7 +140,7 @@ export class VoiceStatsApi extends ApiBase {
         return `/features/voice-stats/${guildId()}/users/${user}/heatmap`;
       },
       () => {
-        const params: Record<string, string> = {};
+        const params: Record<string, string> = { tz: viewerTimeZone() };
         const periodVal = period?.();
 
         if (periodVal) params['period'] = periodVal;
