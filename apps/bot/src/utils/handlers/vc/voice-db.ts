@@ -1,4 +1,4 @@
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE, voiceKey } from './voice-utils';
 

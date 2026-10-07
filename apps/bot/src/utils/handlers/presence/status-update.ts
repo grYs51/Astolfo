@@ -1,7 +1,7 @@
 import { Presence } from 'discord.js';
 import { cacheStatus, saveStatus } from '.';
 import { handleStatusMetrics } from './status-metrics';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 
 export const handleStatusUpdate = async (
   oldPresence: Presence | null,

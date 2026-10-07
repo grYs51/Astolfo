@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 
 /**
  * Verifies that the authenticated user is currently a member of the guild

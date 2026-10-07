@@ -1,4 +1,4 @@
-import { client } from '../..';
+import { client } from '../../client/instance';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 

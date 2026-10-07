@@ -1,4 +1,4 @@
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 import { user_statuses } from '@prisma/client';
 
 /** Status changes shorter than this are noise (client reconnects, idle flaps). */

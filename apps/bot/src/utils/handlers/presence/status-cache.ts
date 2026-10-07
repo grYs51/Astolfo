@@ -1,5 +1,5 @@
 import { Presence } from 'discord.js';
-import { client } from '../../..';
+import { client } from '../../../client/instance';
 import { user_statuses } from '@prisma/client';
 
 export const cacheStatus = (newPresence: Presence, date: Date) => {

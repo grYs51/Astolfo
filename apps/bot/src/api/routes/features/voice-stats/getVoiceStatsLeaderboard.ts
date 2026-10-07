@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { GuildMember } from 'discord.js';
 import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../..';
+import { client } from '../../../../client/instance';
 import { currentClient } from '../../../../db';
 import { Prisma } from '@prisma/client';
 import { Logger } from '../../../../utils/logger';

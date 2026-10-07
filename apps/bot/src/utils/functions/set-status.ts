@@ -1,5 +1,5 @@
 import { user_statuses } from '@prisma/client';
-import { client } from '../..';
+import { client } from '../../client/instance';
 
 export const setStatusCache = async () => {
   const date = new Date();
