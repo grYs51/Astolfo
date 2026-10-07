@@ -48,6 +48,6 @@ export default class Modal extends BaseSlash {
     // Add inputs to the modal
     modal.addComponents(firstActionRow as any, secondActionRow);
 
-    interaction.showModal(modal);
+    await interaction.showModal(modal);
   }
 }

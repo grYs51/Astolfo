@@ -12,7 +12,8 @@ export default class MessageEvent extends BaseEvent {
   async event(client: DiscordClient, message: Message) {
     if (!message || message.author.bot) return;
 
-    saveMessage(message);
-    runCommand(client, message);
+    // Awaited so failures reach BaseEvent's handler (with the event name)
+    // instead of becoming context-free unhandled rejections
+    await Promise.all([saveMessage(message), runCommand(client, message)]);
   }
 }
