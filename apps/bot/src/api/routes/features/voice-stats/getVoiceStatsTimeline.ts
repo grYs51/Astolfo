@@ -4,6 +4,7 @@ import {
   TimelinePeriod,
   VoiceStatsTimeline,
 } from '@nx-stolfo/api-interfaces';
+import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
 type TimelineRow = {
@@ -45,6 +46,7 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
         COUNT(DISTINCT channel_id)::bigint AS unique_channels
       FROM voice_stats
       WHERE guild_id = ${serverId}
+        AND type = ${VOICE_TYPE.VOICE}
         AND issued_on >= ${startDate}
       GROUP BY bucket
       ORDER BY bucket ASC

@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceActivityType, VoiceStatsUser } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../..';
+import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
@@ -26,6 +27,7 @@ export const getVoiceStatsUser: RequestHandler<
           COUNT(*)::bigint AS session_count
         FROM voice_stats
         WHERE guild_id = ${serverId} AND member_id = ${userId}
+          AND type = ${VOICE_TYPE.VOICE}
       `,
       req.db.$queryRaw<UserChannelRow[]>`
         SELECT
@@ -34,6 +36,7 @@ export const getVoiceStatsUser: RequestHandler<
           COUNT(*)::bigint AS session_count
         FROM voice_stats
         WHERE guild_id = ${serverId} AND member_id = ${userId}
+          AND type = ${VOICE_TYPE.VOICE}
         GROUP BY channel_id
         ORDER BY total_duration DESC
       `,
