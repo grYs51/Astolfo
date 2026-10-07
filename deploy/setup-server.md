@@ -130,8 +130,9 @@ sudo nano /opt/astolfo/app/.env     # DISCORD_* / OWNER / etc.
 sudo systemctl restart astolfo-bot
 ```
 
-Changing `BACKEND_URL`/`CLIENT_URL`/the domain also requires a **web rebuild**
-(BACKEND_URL is compiled into the SSR bundle) — run `deploy/deploy.sh`.
+Changing the API domain also means editing the literal `BACKEND_URL` in
+`apps/web/src/environments/environment.ts` (the browser bundle can't read
+`.env`) and rebuilding web — run `deploy/deploy.sh`.
 
 **Verify:** open `https://astolfo.example.com`, complete a Discord login, land
 back on the dashboard, and confirm your servers' stats load.
@@ -256,9 +257,9 @@ don't run them concurrently.
 1. **The bot and the API are one process.** Restarting `astolfo-bot` briefly
    takes the Discord bot offline too. There's no way to bounce the API without
    bouncing the bot — that's by design (`apps/bot` is a single Node process).
-2. **`BACKEND_URL` is baked into the web bundle at build time**, not read at
-   runtime. Changing the public domain means rebuilding `web` (run
-   `deploy/deploy.sh`), not just editing `.env` and restarting.
+2. **The production API URL is a literal in
+   `apps/web/src/environments/environment.ts`**, not read from `.env`.
+   Changing the API domain means editing it and rebuilding `web`.
 3. **The Discord redirect URI must exactly equal `REDIRECT_URI`** — https, no
    trailing slash, path `/api/auth/redirect`. #1 cause of login failures.
 4. **Deploy dies with exit 137 at the build step** — the Angular SSR build was
