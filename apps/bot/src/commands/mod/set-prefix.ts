@@ -1,4 +1,4 @@
-import { Message } from 'discord.js';
+import { Message, PermissionFlagsBits } from 'discord.js';
 import BaseCommand from '../../utils/structures/base-command';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
@@ -6,7 +6,7 @@ import { MessageUtils } from '../../utils/message-utils';
 
 export default class SetPrefixCommand extends BaseCommand {
   constructor() {
-    super('setprefix', 'mod', ['sp']);
+    super('setprefix', 'mod', ['sp'], [PermissionFlagsBits.ManageGuild]);
   }
 
   async command(client: DiscordClient, message: Message, args: Array<string>) {

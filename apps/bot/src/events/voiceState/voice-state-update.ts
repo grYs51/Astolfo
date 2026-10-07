@@ -7,9 +7,11 @@ import {
   handleUserChangeVoiceStates,
   handleUserJoinedVoiceChannel,
   handleUserLeftVoiceChannel,
+  runSerialized,
   userChangedVoiceChannel,
   userJoinedVoiceChannel,
   userLeftVoiceChannel,
+  voiceKey,
 } from '../../utils/handlers/vc';
 
 export default class VoiceDurationUpdateEvent extends BaseEvent {
@@ -22,8 +24,20 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     oldState: VoiceState,
     newState: VoiceState
   ) {
+    // Timestamp at receipt, not when the queued handler eventually runs
     const date = new Date();
 
+    // One member's events must not interleave (see runSerialized)
+    return runSerialized(voiceKey(newState.guild.id, newState.id), () =>
+      this.handleVoiceStateUpdate(oldState, newState, date)
+    );
+  }
+
+  private async handleVoiceStateUpdate(
+    oldState: VoiceState,
+    newState: VoiceState,
+    date: Date
+  ) {
     if (userJoinedVoiceChannel(oldState, newState)) {
       return handleUserJoinedVoiceChannel(newState, date);
     }

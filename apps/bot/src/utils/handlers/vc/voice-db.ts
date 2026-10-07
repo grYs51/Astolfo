@@ -2,6 +2,28 @@ import { client } from '../../..';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE, voiceKey } from './voice-utils';
 
+/**
+ * Closes the given open rows in one update and drops them from the cache by
+ * id (never by index, so it's safe against the cache changing meanwhile).
+ */
+const closeVoiceStats = async (k: string, ids: string[], date: Date) => {
+  // ended_on: null — never overwrite an end time that is already set (e.g. a
+  // stale cache entry for a row that was closed earlier)
+  await client.dataSource.voiceStats.updateMany({
+    where: { id: { in: ids }, ended_on: null },
+    data: { ended_on: date },
+  });
+
+  const remaining = (client.voiceUsers.get(k) ?? []).filter(
+    (stat) => !ids.includes(stat.id)
+  );
+  if (remaining.length > 0) {
+    client.voiceUsers.set(k, remaining);
+  } else {
+    client.voiceUsers.delete(k);
+  }
+};
+
 export const saveAllUserVoiceStatsToDb = async (
   memberId: string,
   guildId: string,
@@ -13,40 +35,32 @@ export const saveAllUserVoiceStatsToDb = async (
   if (voiceUsersStats.length === 0) return;
 
   // Rows were inserted open (ended_on = null) on join; closing is one update
-  await client.dataSource.voiceStats.updateMany({
-    where: { id: { in: voiceUsersStats.map((stat) => stat.id) } },
-    data: { ended_on: date },
-  });
-  client.voiceUsers.delete(k);
+  await closeVoiceStats(
+    k,
+    voiceUsersStats.map((stat) => stat.id),
+    date
+  );
 };
 
 export const saveTypeUserVoiceStats = async (
   memberId: string,
   guildId: string,
   date: Date,
-  type: VOICE_TYPE
+  types: VOICE_TYPE[]
 ) => {
   const k = voiceKey(guildId, memberId);
-  const stats = client.voiceUsers.get(k);
+  const closing = (client.voiceUsers.get(k) ?? []).filter((stat) =>
+    types.includes(stat.type as VOICE_TYPE)
+  );
 
-  if (!stats) return;
+  if (closing.length === 0) return;
 
-  const idx = stats.findIndex((v) => v.type === type);
-  if (idx === -1) return;
-
-  const voiceUser = stats[idx];
-
-  // updateMany instead of update: a missing row (open insert failed) is a
-  // no-op rather than a thrown P2025
-  await client.dataSource.voiceStats.updateMany({
-    where: { id: voiceUser.id },
-    data: { ended_on: date },
-  });
-
-  stats.splice(idx, 1);
-  if (stats.length === 0) {
-    client.voiceUsers.delete(k);
-  }
+  // All ended types (e.g. DEAF + MUTED on undeafen) close in one update
+  await closeVoiceStats(
+    k,
+    closing.map((stat) => stat.id),
+    date
+  );
 };
 
 /**

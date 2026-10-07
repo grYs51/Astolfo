@@ -12,19 +12,32 @@ import {
   schedule5hrVoiceChannelJob,
 } from '../../schedulers/voice-channel.scheduler';
 import { saveAllUserVoiceStatsToDb, saveTypeUserVoiceStats } from './voice-db';
+import { Logger } from '../../logger';
 
 export const handleUserLeftVoiceChannel = async (
   oldState: VoiceState,
   date: Date
 ) => {
-  await saveAllUserVoiceStatsToDb(oldState.member!.id, oldState.guild.id, date);
-  cancelJob(oldState.guild.id, oldState.member!.id);
+  try {
+    await saveAllUserVoiceStatsToDb(oldState.member!.id, oldState.guild.id, date);
+  } finally {
+    cancelJob(oldState.guild.id, oldState.member!.id);
+  }
 };
 
 export const handleUserJoinedVoiceChannel = async (
   newState: VoiceState,
   date: Date
 ) => {
+  const joinKey = voiceKey(newState.guild.id, newState.member!.id);
+
+  // Anything still cached on join belongs to a session whose leave was never
+  // seen (e.g. missed gateway event) — close it rather than append to it
+  if (client.voiceUsers.has(joinKey)) {
+    Logger.warn(`Closing stale voice session for ${joinKey} on join`);
+    await saveAllUserVoiceStatsToDb(newState.member!.id, newState.guild.id, date);
+  }
+
   const voiceVoiceStat = createVoiceStat(
     newState.guild.id,
     newState.channelId!,
@@ -47,9 +60,7 @@ export const handleUserJoinedVoiceChannel = async (
   const newStats = [voiceVoiceStat, ...otherVoiceStats];
   await client.dataSource.voiceStats.createMany({ data: newStats });
 
-  const joinKey = voiceKey(newState.guild.id, newState.member!.id);
-  const existing = client.voiceUsers.get(joinKey) ?? [];
-  client.voiceUsers.set(joinKey, [...existing, ...newStats]);
+  client.voiceUsers.set(joinKey, newStats);
   schedule5hrVoiceChannelJob(newState.member!, newState.channel!.id, date);
 };
 
@@ -68,8 +79,14 @@ export const handleUserChangeVoiceStates = async (
   date: Date,
   statesChanged: VoiceTypeToVoiceStats
 ) => {
+  const stateKey = voiceKey(newState.guild.id, newState.member!.id);
+  const openTypes = new Set(
+    (client.voiceUsers.get(stateKey) ?? []).map((stat) => stat.type)
+  );
+
+  // Skip types that already have an open row (e.g. captured by setVc at startup)
   const statesToAdd = Object.entries(statesChanged)
-    .filter(([, state]) => newState[state])
+    .filter(([key, state]) => newState[state] && !openTypes.has(key))
     .map(([key]) => key as VOICE_TYPE);
 
   if (statesToAdd.length > 0) {
@@ -83,7 +100,6 @@ export const handleUserChangeVoiceStates = async (
       )
     );
     await client.dataSource.voiceStats.createMany({ data: newVoiceStats });
-    const stateKey = voiceKey(newState.guild.id, newState.member!.id);
     const existingStats = client.voiceUsers.get(stateKey) ?? [];
     client.voiceUsers.set(stateKey, [...existingStats, ...newVoiceStats]);
   }
@@ -93,9 +109,11 @@ export const handleUserChangeVoiceStates = async (
     .map(([key]) => key as VOICE_TYPE);
 
   if (statesToSave.length > 0) {
-    const voiceStatSavePromises = statesToSave.map((type) =>
-      saveTypeUserVoiceStats(oldState.member!.id, oldState.guild.id, date, type)
+    await saveTypeUserVoiceStats(
+      oldState.member!.id,
+      oldState.guild.id,
+      date,
+      statesToSave
     );
-    await Promise.all(voiceStatSavePromises);
   }
 };
