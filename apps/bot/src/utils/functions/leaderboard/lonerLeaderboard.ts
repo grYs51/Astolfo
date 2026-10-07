@@ -5,6 +5,7 @@ import {
   getVoiceStatsType,
 } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
+import { getOpenVoiceStats } from './intervals';
 
 export const getLonerVoiceStats: getVoiceStatsType = async (
   client,
@@ -22,11 +23,7 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
     },
   });
 
-  const inChannel = Array.from(client.voiceUsers.entries())
-    .filter(([key]) => key.startsWith(`${guildId}:`))
-    .flatMap(([, s]) => s)
-    .filter((x) => x.type === VOICE_TYPE.VOICE && x.ended_on === null)
-    .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
+  const inChannel = getOpenVoiceStats(client, guildId, [VOICE_TYPE.VOICE], fromTime);
 
   return [...dbVoiceStats, ...inChannel];
 };
@@ -35,14 +32,16 @@ export const getLonerLeaderboard = (
   members: SimpleGuildMember[],
   stats: voice_stats[]
 ): Leaderboard[] => {
-  // Store results
-  const exclusiveTimes: Record<string, number> = {};
+  const membersById = new Map(members.map((member) => [member.id, member]));
+  const exclusiveTimes = new Map<string, Leaderboard>();
+
   for (const stat of stats) {
     const { member_id, channel_id, issued_on, ended_on } = stat;
 
-    const name = members.find((m) => m.id === member_id)!.user.username;
-
-    if (!name) continue;
+    // Members no longer in the guild (or not cached) are skipped rather than
+    // crashing the whole leaderboard
+    const member = membersById.get(member_id);
+    if (!member) continue;
     // Find all overlapping intervals in the same channel
     const overlaps = stats.filter(
       (other) =>
@@ -84,21 +83,17 @@ export const getLonerLeaderboard = (
     }
 
     // Add the time to the member's total
-    if (!exclusiveTimes[`${name}:${member_id}`]) {
-      exclusiveTimes[`${name}:${member_id}`] = 0;
+    const total = exclusiveTimes.get(member_id);
+    if (total) {
+      total.count += aloneTime;
+    } else {
+      exclusiveTimes.set(member_id, {
+        id: member_id,
+        name: member.displayName ?? member.user.username,
+        count: aloneTime,
+      });
     }
-    exclusiveTimes[`${name}:${member_id}`] += aloneTime;
   }
 
-  // Format results
-  return Object.entries(exclusiveTimes)
-    .filter(([, count]) => count)
-    .map(([key, count]) => {
-      const [name, id] = key.split(':');
-      return {
-        name,
-        id,
-        count,
-      };
-    });
+  return Array.from(exclusiveTimes.values()).filter(({ count }) => count);
 };

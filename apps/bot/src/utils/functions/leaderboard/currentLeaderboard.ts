@@ -1,20 +1,16 @@
-import { voice_stats } from '@prisma/client';
 import {
   Leaderboard,
   getLeaderboardType,
   getVoiceStatsType,
 } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
+import { getOpenVoiceStats } from './intervals';
 
-export const getCurrentVoiceStats: getVoiceStatsType = (client, guildId) => {
-  const stats = Array.from(client.voiceUsers.entries())
-    .filter(([key]) => key.startsWith(`${guildId}:`))
-    .flatMap(([, s]) => s)
-    .filter((x) => x.type === VOICE_TYPE.VOICE)
-    .map((x) => ({ ...x, ended_on: new Date() })) as voice_stats[];
-
-  return Promise.resolve(stats);
-};
+export const getCurrentVoiceStats: getVoiceStatsType = (
+  client,
+  guildId,
+  fromTime?
+) => Promise.resolve(getOpenVoiceStats(client, guildId, [VOICE_TYPE.VOICE], fromTime));
 
 export const getCurrentLeaderboard: getLeaderboardType = (members, stats) => {
   const membersById = new Map(members.map((member) => [member.id, member]));
