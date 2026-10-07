@@ -5,7 +5,7 @@ import {
   getLeaderboardType,
 } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
-import { getCurrentVoiceStats } from './currentLeaderboard';
+import { getOpenVoiceStats, unionDuration } from './intervals';
 
 const voiceTypesToCheck = [
   VOICE_TYPE.VOICE,
@@ -40,7 +40,9 @@ export const getActiveVoiceStats: getVoiceStatsType = async (
     },
   });
 
-  const inChannel = await getCurrentVoiceStats(client, guildId);
+  // Open MUTED/DEAF rows too, not just VOICE — otherwise live muted time in a
+  // still-open session is credited as active
+  const inChannel = getOpenVoiceStats(client, guildId, voiceTypesToCheck, fromTime);
 
   return [...dbVoiceStatsOfGuild, ...inChannel];
 };
@@ -54,37 +56,13 @@ const deductedOverlap = (
   voiceStart: number,
   voiceEnd: number,
   deductedStats: voice_stats[]
-): number => {
-  const intervals = deductedStats
-    .map((s) => ({
+): number =>
+  unionDuration(
+    deductedStats.map((s) => ({
       start: Math.max(s.issued_on.getTime(), voiceStart),
       end: Math.min(s.ended_on.getTime(), voiceEnd),
     }))
-    .filter((interval) => interval.end > interval.start)
-    .sort((a, b) => a.start - b.start);
-
-  let total = 0;
-  let currentStart: number | null = null;
-  let currentEnd = 0;
-
-  for (const interval of intervals) {
-    if (currentStart === null) {
-      currentStart = interval.start;
-      currentEnd = interval.end;
-    } else if (interval.start <= currentEnd) {
-      currentEnd = Math.max(currentEnd, interval.end);
-    } else {
-      total += currentEnd - currentStart;
-      currentStart = interval.start;
-      currentEnd = interval.end;
-    }
-  }
-  if (currentStart !== null) {
-    total += currentEnd - currentStart;
-  }
-
-  return total;
-};
+  );
 
 export const getActiveLeaderboard: getLeaderboardType = (members, stats) => {
   // Pre-group deducted stats by member so each VOICE stat doesn't re-scan
