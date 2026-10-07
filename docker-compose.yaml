@@ -50,6 +50,7 @@ services:
       - COOKIE_SECRET=${COOKIE_SECRET}
       - REDIRECT_URI=${REDIRECT_URI}
       - CLIENT_URL=${CLIENT_URL}
+      - METRICS_TOKEN=${METRICS_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
@@ -82,6 +83,14 @@ services:
   prometheus:
     image: prom/prometheus:latest
     container_name: Astolfo-prometheus
+    environment:
+      - METRICS_TOKEN=${METRICS_TOKEN}
+    # prometheus.yml can't read env vars, so hand it the bot's metrics token
+    # as a file (see credentials_file there)
+    entrypoint:
+      - /bin/sh
+      - -c
+      - printf '%s' "$$METRICS_TOKEN" > /tmp/metrics_token && exec /bin/prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus
     volumes:
       - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml

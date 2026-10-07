@@ -16,6 +16,12 @@ scrape_configs:
     scrape_timeout: 30s
     tls_config:
       insecure_skip_verify: true
+    # The bot serves metrics under /api and requires METRICS_TOKEN; the
+    # compose entrypoint writes that token to this file
+    metrics_path: /api/metrics
+    authorization:
+      type: Bearer
+      credentials_file: /tmp/metrics_token
 
     static_configs:
       - targets: ['astolfo:3000']
