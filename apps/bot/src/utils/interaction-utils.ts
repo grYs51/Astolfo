@@ -8,6 +8,7 @@ import {
   ApplicationCommandOptionChoiceData,
   AutocompleteInteraction,
   EmbedBuilder,
+  InteractionEditReplyOptions,
   InteractionReplyOptions,
   InteractionUpdateOptions,
   Message,
@@ -86,7 +87,7 @@ export class InterActionUtils {
   public static async send(
     intr: InteractionType,
     content: string | EmbedBuilder | InteractionReplyOptions,
-    hidden: boolean = false
+    hidden = false
   ): Promise<Message | void> {
     try {
       let options: InteractionReplyOptions;
@@ -97,7 +98,16 @@ export class InterActionUtils {
       } else {
         options = content;
       }
-      if (intr.deferred || intr.replied) {
+      if (intr.deferred && !intr.replied) {
+        // The deferred "thinking…" response's visibility was fixed when
+        // deferring. A hidden answer to a public deferral replaces it with an
+        // ephemeral follow-up instead of showing it to everyone.
+        if (hidden && !intr.ephemeral) {
+          await intr.deleteReply();
+          return await intr.followUp({ ...options, ephemeral: true });
+        }
+        return await intr.editReply(options as InteractionEditReplyOptions);
+      } else if (intr.replied) {
         return await intr.followUp({
           ...options,
           ephemeral: hidden,

@@ -13,7 +13,9 @@ export abstract class BaseSlash {
   constructor(
     private readonly _name: string,
     private readonly _description: string,
-    private readonly _deferType: SlashDeferTypes = SlashDeferTypes.PUBLIC
+    // Opt-in: a deferred command must answer through InterActionUtils.send /
+    // editReply (not interaction.reply) and can't show a modal
+    private readonly _deferType: SlashDeferTypes = SlashDeferTypes.NONE
   ) {}
 
   get name(): string {
@@ -41,8 +43,15 @@ export abstract class BaseSlash {
       .setDescription(this.description);
   }
 
-  run(client: DiscordClient, interaction: CommandInteraction<CacheType>) {
+  async run(client: DiscordClient, interaction: CommandInteraction<CacheType>) {
     slashCount(this.name);
+    // Acknowledge first so slow commands (DB queries) don't miss Discord's
+    // 3-second reply deadline ("The application did not respond")
+    if (this._deferType !== SlashDeferTypes.NONE) {
+      await interaction.deferReply({
+        ephemeral: this._deferType === SlashDeferTypes.HIDDEN,
+      });
+    }
     return this.slash(client, interaction);
   }
 
