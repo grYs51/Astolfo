@@ -41,6 +41,7 @@ export enum VoiceActivityType {
 export type VoiceStatsPeriod = 'day' | 'week' | 'month' | 'all';
 export type TimelinePeriod = 'day' | 'week' | 'month' | 'year';
 export type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
+export type TimelineGranularity = 'hour' | 'day' | 'week';
 
 // Activity Type Breakdown
 export interface ActivityTypeBreakdown {
@@ -168,7 +169,7 @@ export interface VoiceStatsTimeline {
   /** Every bucket from the period start to now, in order; quiet ones are zero */
   timeline: VoiceStatsTimelineBucket[];
   period: TimelinePeriod;
-  granularity: 'hour' | 'day' | 'week';
+  granularity: TimelineGranularity;
   startDate: DateLike;
   endDate: DateLike;
 }

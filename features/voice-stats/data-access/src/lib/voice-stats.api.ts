@@ -9,6 +9,10 @@ import {
   VoiceStatsTimeline,
   VoiceStatsHeatmap,
   VoiceStatsUserHeatmap,
+  VoiceStatsPeriod,
+  TimelinePeriod,
+  TimelineGranularity,
+  HeatmapPeriod,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -56,7 +60,7 @@ export class VoiceStatsApi extends ApiBase {
   /** Fetch leaderboard with optional period filter */
   fetchVoiceStatsLeaderboard(
     guildId: () => string,
-    period?: () => 'day' | 'week' | 'month' | 'all' | undefined,
+    period?: () => VoiceStatsPeriod | undefined,
     limit?: () => number | undefined
   ) {
     return this.get<VoiceStatsLeaderboard>(
@@ -91,8 +95,8 @@ export class VoiceStatsApi extends ApiBase {
   /** Fetch timeline statistics */
   fetchVoiceStatsTimeline(
     guildId: () => string,
-    period?: () => 'day' | 'week' | 'month' | 'year' | undefined,
-    granularity?: () => 'hour' | 'day' | 'week' | undefined
+    period?: () => TimelinePeriod | undefined,
+    granularity?: () => TimelineGranularity | undefined
   ) {
     return this.get<VoiceStatsTimeline>(
       () => `/features/voice-stats/${guildId()}/timeline`,
@@ -112,7 +116,7 @@ export class VoiceStatsApi extends ApiBase {
   /** Fetch heatmap data showing activity by hour and day of week */
   fetchVoiceStatsHeatmap(
     guildId: () => string,
-    period?: () => 'week' | 'month' | 'year' | 'all' | undefined
+    period?: () => HeatmapPeriod | undefined
   ) {
     return this.get<VoiceStatsHeatmap>(
       () => `/features/voice-stats/${guildId()}/heatmap`,
@@ -131,7 +135,7 @@ export class VoiceStatsApi extends ApiBase {
   fetchVoiceStatsUserHeatmap(
     guildId: () => string,
     userId: () => string | undefined | null,
-    period?: () => 'week' | 'month' | 'year' | 'all' | undefined
+    period?: () => HeatmapPeriod | undefined
   ) {
     return this.get<VoiceStatsUserHeatmap>(
       () => {
