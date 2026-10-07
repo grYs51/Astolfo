@@ -1,6 +1,9 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { VoiceActivityType, VoiceStatsOverview } from '@nx-stolfo/api-interfaces';
+import {
+  VoiceActivityType,
+  VoiceStatsOverview,
+} from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
@@ -11,8 +14,16 @@ type TotalsRow = {
   unique_users: bigint;
   active_sessions: bigint;
 };
-type ChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
-type TypeRow = { type: VoiceActivityType; duration: bigint; session_count: bigint };
+type ChannelRow = {
+  channel_id: string;
+  total_duration: bigint;
+  session_count: bigint;
+};
+type TypeRow = {
+  type: VoiceActivityType;
+  duration: bigint;
+  session_count: bigint;
+};
 
 export const getVoiceStatsOverview: RequestHandler<
   { serverId: string },
@@ -20,10 +31,12 @@ export const getVoiceStatsOverview: RequestHandler<
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
 
-  // Server totals in a single SQL query. Only VOICE rows count: MUTED/DEAF/...
-  // rows overlap their VOICE row and would double-count time. Open sessions
-  // (ended_on IS NULL) count their live duration via COALESCE.
-  const [totals] = await req.db.$queryRaw<TotalsRow[]>`
+  // The three aggregates are independent, so they run in parallel.
+  const [[totals], [topChannel], typeRows] = await Promise.all([
+    // Server totals in a single SQL query. Only VOICE rows count: MUTED/DEAF/...
+    // rows overlap their VOICE row and would double-count time. Open sessions
+    // (ended_on IS NULL) count their live duration via COALESCE.
+    req.db.$queryRaw<TotalsRow[]>`
     SELECT
       COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
       COUNT(*)::bigint AS session_count,
@@ -32,10 +45,10 @@ export const getVoiceStatsOverview: RequestHandler<
     FROM voice_stats
     WHERE guild_id = ${serverId}
       AND type = ${VOICE_TYPE.VOICE}
-  `;
+  `,
 
-  // Most active channel by cumulative duration
-  const [topChannel] = await req.db.$queryRaw<ChannelRow[]>`
+    // Most active channel by cumulative duration
+    req.db.$queryRaw<ChannelRow[]>`
     SELECT
       channel_id,
       SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
@@ -46,10 +59,10 @@ export const getVoiceStatsOverview: RequestHandler<
     GROUP BY channel_id
     ORDER BY total_duration DESC
     LIMIT 1
-  `;
+  `,
 
-  // Activity breakdown grouped by type
-  const typeRows = await req.db.$queryRaw<TypeRow[]>`
+    // Activity breakdown grouped by type
+    req.db.$queryRaw<TypeRow[]>`
     SELECT
       type,
       SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS duration,
@@ -57,10 +70,14 @@ export const getVoiceStatsOverview: RequestHandler<
     FROM voice_stats
     WHERE guild_id = ${serverId}
     GROUP BY type
-  `;
+  `,
+  ]);
 
   const totalDuration = Number(totals.total_duration);
-  const totalTypesDuration = typeRows.reduce((sum, r) => sum + Number(r.duration), 0);
+  const totalTypesDuration = typeRows.reduce(
+    (sum, r) => sum + Number(r.duration),
+    0,
+  );
 
   const activityBreakdown = typeRows.map((r) => {
     const duration = Number(r.duration);
@@ -71,7 +88,10 @@ export const getVoiceStatsOverview: RequestHandler<
       durationHours: parts.hours,
       durationMinutes: parts.minutes,
       sessionCount: Number(r.session_count),
-      percentage: totalTypesDuration > 0 ? Math.round((duration / totalTypesDuration) * 100) : 0,
+      percentage:
+        totalTypesDuration > 0
+          ? Math.round((duration / totalTypesDuration) * 100)
+          : 0,
     };
   });
 
@@ -92,8 +112,12 @@ export const getVoiceStatsOverview: RequestHandler<
       activeUsers: Number(totals.unique_users),
       activeSessions: Number(totals.active_sessions),
       mostActiveChannel: mostActiveChannelData,
-      mostActiveChannelDuration: topChannel ? Number(topChannel.total_duration) : 0,
-      mostActiveChannelSessions: topChannel ? Number(topChannel.session_count) : 0,
+      mostActiveChannelDuration: topChannel
+        ? Number(topChannel.total_duration)
+        : 0,
+      mostActiveChannelSessions: topChannel
+        ? Number(topChannel.session_count)
+        : 0,
     },
     activityBreakdown,
   });
