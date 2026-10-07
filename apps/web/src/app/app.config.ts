@@ -11,6 +11,7 @@ import {
 } from '@angular/router';
 import { provideBackendApi, provideBotApi } from '@nx-stolfo/common/api';
 import { credentialsInterceptor } from '@nx-stolfo/common/interceptors';
+import { sessionExpiredInterceptor } from '@nx-stolfo/auth';
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
 
@@ -23,7 +24,9 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withViewTransitions(),
     ),
-    provideHttpClient(withInterceptors([credentialsInterceptor])),
+    provideHttpClient(
+      withInterceptors([credentialsInterceptor, sessionExpiredInterceptor])
+    ),
 
 
     provideBackendApi({
