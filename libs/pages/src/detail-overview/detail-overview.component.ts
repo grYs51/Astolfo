@@ -14,17 +14,23 @@ import {
   VoiceStatsHeatmapComponent,
   VoiceStatsUserHeatmapComponent,
 } from '@nx-stolfo/ui-voice-stats';
-import { VoiceStatsApi } from '@nx-stolfo/data-access-voice-stats';
+import {
+  HeatmapPeriod,
+  TimelineGranularity,
+  TimelinePeriod,
+  VoiceStatsApi,
+  VoiceStatsPeriod,
+} from '@nx-stolfo/data-access-voice-stats';
 import { USER } from '@nx-stolfo/auth';
 import {
   SegmentedControlComponent,
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 
-type Period = 'day' | 'week' | 'month' | 'all';
-type TimelinePeriod = 'day' | 'week' | 'month' | 'year';
-type Granularity = 'hour' | 'day' | 'week';
-type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
+// Shared with the API, so a new period/granularity on one side breaks the
+// build of the other instead of silently drifting
+type Period = VoiceStatsPeriod;
+type Granularity = TimelineGranularity;
 
 @Component({
   selector: 'pages-detail-overview',
