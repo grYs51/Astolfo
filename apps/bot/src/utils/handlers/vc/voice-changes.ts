@@ -5,6 +5,7 @@ import {
   VoiceTypeToVoiceStats,
   createVoiceStat,
   getActiveVoiceStates,
+  runSerialized,
   voiceKey,
 } from './voice-utils';
 import {
@@ -23,6 +24,34 @@ export const handleUserLeftVoiceChannel = async (
   } finally {
     cancelJob(oldState.guild.id, oldState.member!.id);
   }
+};
+
+/**
+ * Closes every open session in a guild (e.g. the bot was removed from it, so
+ * no leave events will ever arrive) and cancels their reminder jobs.
+ */
+export const closeGuildVoiceSessions = async (guildId: string, date: Date) => {
+  const prefix = voiceKey(guildId, '');
+  const keys = [...client.voiceUsers.keys()].filter((key) =>
+    key.startsWith(prefix)
+  );
+
+  await Promise.all(
+    keys.map((key) => {
+      const memberId = key.slice(prefix.length);
+      // Same per-member queue as voiceStateUpdate, so an in-flight event for
+      // this member finishes first
+      return runSerialized(key, async () => {
+        try {
+          await saveAllUserVoiceStatsToDb(memberId, guildId, date);
+        } finally {
+          cancelJob(guildId, memberId);
+        }
+      });
+    })
+  );
+
+  return keys.length;
 };
 
 export const handleUserJoinedVoiceChannel = async (

@@ -4,7 +4,8 @@ import { client } from '../../../client/instance';
 import type { Db } from '../../../db';
 import VoiceDurationUpdateEvent from '../../../events/voiceState/voice-state-update';
 import { setVc } from '../../functions/set-vc';
-import { handleUserJoinedVoiceChannel } from './voice-changes';
+import { cancelJob } from '../../schedulers/voice-channel.scheduler';
+import { closeGuildVoiceSessions, handleUserJoinedVoiceChannel } from './voice-changes';
 import { runSerialized, voiceKey, VOICE_TYPE } from './voice-utils';
 
 jest.mock('../../schedulers/voice-channel.scheduler', () => ({
@@ -217,6 +218,32 @@ describe('voice session lifecycle', () => {
     const cached = client.voiceUsers.get(KEY) ?? [];
     expect(cached).toHaveLength(1);
     expect(cached[0].id).not.toBe('stale');
+  });
+});
+
+describe('closeGuildVoiceSessions (bot removed from a guild)', () => {
+  test("closes only that guild's sessions and cancels their reminder jobs", async () => {
+    await dispatch(out, inChannel);
+    await dispatch(state({ memberId: OTHER }), state({ channelId: CHANNEL, memberId: OTHER }));
+    const otherGuildRow: voice_stats = {
+      id: 'elsewhere',
+      guild_id: 'guild-2',
+      channel_id: 'channel-9',
+      member_id: MEMBER,
+      issued_on: new Date(),
+      ended_on: null,
+      type: VOICE_TYPE.VOICE,
+    };
+    db.rows.set(otherGuildRow.id, { ...otherGuildRow });
+    client.voiceUsers.set(voiceKey('guild-2', MEMBER), [otherGuildRow]);
+
+    const closed = await closeGuildVoiceSessions(GUILD, new Date());
+
+    expect(closed).toBe(2);
+    expect(db.open().map((row) => row.id)).toEqual(['elsewhere']);
+    expect([...client.voiceUsers.keys()]).toEqual([voiceKey('guild-2', MEMBER)]);
+    expect(cancelJob).toHaveBeenCalledWith(GUILD, MEMBER);
+    expect(cancelJob).toHaveBeenCalledWith(GUILD, OTHER);
   });
 });
 
