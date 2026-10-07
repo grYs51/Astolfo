@@ -1,10 +1,6 @@
 // shell
 export * from './shell/shell.component';
 
-// Details
-export * from './detail-overview/detail-overview.routes';
-
-
 // overview
 export * from './dashboard/dashboard.component';
 export * from './dashboard/dashboard.routes';
