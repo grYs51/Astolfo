@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceActivityType, VoiceStatsUser } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../../client/instance';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 
@@ -71,13 +70,11 @@ export const getVoiceStatsUser: RequestHandler<
       return;
     }
 
-    const guild = client.guilds.cache.get(serverId);
-
     const channelBreakdown = channelRows.map((row) => {
       const duration = Number(row.total_duration);
       const parts = toDurationParts(duration);
       return {
-        channel: getChannelData(guild, row.channel_id),
+        channel: getChannelData(serverId, row.channel_id),
         totalDuration: duration,
         totalDurationHours: parts.hours,
         totalDurationMinutes: parts.minutes,
@@ -87,7 +84,7 @@ export const getVoiceStatsUser: RequestHandler<
     });
 
     const favoriteRow = channelRows[0];
-    const favoriteChannelData = favoriteRow ? getChannelData(guild, favoriteRow.channel_id) : null;
+    const favoriteChannelData = favoriteRow ? getChannelData(serverId, favoriteRow.channel_id) : null;
 
     const enrichedRecentSessions = recentSessions.map((session) => {
       // Open session (still in voice): live duration, endedOn stays null
@@ -95,7 +92,7 @@ export const getVoiceStatsUser: RequestHandler<
       const duration = endedOn.getTime() - session.issued_on.getTime();
       return {
         id: session.id,
-        channel: getChannelData(guild, session.channel_id),
+        channel: getChannelData(serverId, session.channel_id),
         issuedOn: session.issued_on,
         endedOn: session.ended_on,
         duration,

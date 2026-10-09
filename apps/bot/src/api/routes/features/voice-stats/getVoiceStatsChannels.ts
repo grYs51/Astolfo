@@ -1,7 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceStatsChannels } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../../client/instance';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 
@@ -30,15 +29,13 @@ export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, VoiceSt
       ORDER BY total_duration DESC
     `;
 
-    const guild = client.guilds.cache.get(serverId);
-
     const enrichedChannels = channelRows.map((row) => {
       const totalDuration = Number(row.total_duration);
       const sessionCount = Number(row.session_count);
       const parts = toDurationParts(totalDuration);
 
       return {
-        channel: getChannelData(guild, row.channel_id),
+        channel: getChannelData(serverId, row.channel_id),
         totalDuration,
         totalDurationHours: parts.hours,
         totalDurationMinutes: parts.minutes,

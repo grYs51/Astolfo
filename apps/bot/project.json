@@ -126,6 +126,12 @@
     },
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ts-node --transpile-only apps/bot/src/dev/seed.ts"
+      }
     }
   }
 }

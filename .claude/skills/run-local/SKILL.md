@@ -14,6 +14,7 @@ Package manager is **yarn**. All tasks go through Nx.
 | Postgres only | `yarn docker:dev:database:up` | Docker; also applies migrations |
 | Bot + API (port 3000) | `yarn nx serve bot` | Postgres up, full `.env` incl. `DISCORD_BOT_TOKEN` |
 | Dashboard (port 4200) | `yarn nx serve web` | Bot API running for real data |
+| Demo data, no Discord | `MOCK_DISCORD=true` in `.env`, `yarn nx run bot:seed`, then serve bot + web | Postgres up; only `DATABASE_URL`, `COOKIE_SECRET`, `CLIENT_URL` |
 | Storybook (components) | `yarn nx run components:storybook` | Nothing else |
 | Full stack in Docker | `yarn docker:dev:up` / `:down` / `:log` | Docker, `.env` |
 
@@ -29,7 +30,8 @@ yarn nx run-many -t build            # full build check
 
 ## Debugging tips
 
+- **Mock mode** (`MOCK_DISCORD=true`): the bot skips the Discord login, the API answers server/channel/member lookups from `apps/bot/src/dev/mock-discord.ts` (via `api/utils/discord-directory.ts`) and `/api/auth/login` signs in as the mock user — the fastest way to see every dashboard feature. `bot:seed` (re)creates ~4 months of voice activity for the two mock servers only.
 - API is reachable without the frontend: `http://localhost:3000/api/health`, `/api/metrics`. Feature endpoints require an authenticated session cookie (login flow via `/api/auth/...` Discord OAuth) — for pure API work it's often faster to test the SQL in isolation or via a unit test with a mocked `req.db`.
 - Startup order in `apps/bot/src/index.ts`: prisma → configs → registries → metrics restore → express → scheduler → discord login. "Database client is not initialized" means something ran before `createPrismaClient()` resolved.
-- Bot logs are pino-pretty to stdout. Voice tracking can be exercised by joining/leaving a VC in a test guild; rows land in `voice_stats` only when the session **ends**.
+- Bot logs are pino-pretty to stdout. Voice tracking can be exercised by joining/leaving a VC in a test guild; rows are inserted open (`ended_on` NULL) on join and closed on leave.
 - Ctrl+C triggers the shutdown flush (`shutdown-handler.ts`) — killing the process hard loses open voice sessions and cached statuses.

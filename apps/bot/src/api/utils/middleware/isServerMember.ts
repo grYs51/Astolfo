@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { client } from '../../../client/instance';
+import { discordDirectory } from '../discord-directory';
 
 /**
  * Verifies that the authenticated user is currently a member of the guild
@@ -23,16 +23,7 @@ export const isServerMember: RequestHandler<{ serverId: string }> =
       return;
     }
 
-    const guild = client.guilds.cache.get(serverId);
-    if (!guild) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
-
-    const member =
-      guild.members.cache.get(userId) ??
-      (await guild.members.fetch(userId).catch(() => null));
-    if (!member) {
+    if (!(await discordDirectory().isMember(serverId, userId))) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }

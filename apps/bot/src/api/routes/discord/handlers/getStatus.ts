@@ -1,9 +1,14 @@
 import asyncHandler from 'express-async-handler';
 import { RequestHandler } from 'express';
 import { Logger } from '../../../../utils/logger';
+import { isMockDiscord, MOCK_USER } from '../../../../dev/mock-discord';
 
 export const getStatus: RequestHandler<unknown, unknown> = asyncHandler(
   async (req, res) => {
+    if (isMockDiscord()) {
+      res.send(MOCK_USER);
+      return;
+    }
     const accessToken = req.user?.access_token;
     if (!accessToken) {
       res.status(401).json({ error: 'Unauthorized' });

@@ -1,10 +1,8 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { GuildMember } from 'discord.js';
 import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../../client/instance';
 import { Prisma } from '@prisma/client';
-import { Logger } from '../../../../utils/logger';
+import { discordDirectory } from '../../../utils/discord-directory';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getStartDateForPeriod, toDurationParts } from '../helpers';
 
@@ -67,36 +65,20 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
       };
     });
 
-    // One batched gateway request for all leaderboard entries instead of
-    // one fetch per member; missing guild/members fall back to "Unknown User".
-    const guild = client.guilds.cache.get(serverId);
-    const membersById = new Map<string, GuildMember>();
-    if (guild && leaderboard.length > 0) {
-      try {
-        const fetched = await guild.members.fetch({
-          user: leaderboard.map((entry) => entry.memberId),
-        });
-        fetched.forEach((member) => membersById.set(member.id, member));
-      } catch (error) {
-        Logger.warn(`Failed to batch-fetch members for guild ${serverId}`, error);
-      }
-    }
+    // One batched lookup for all entries; missing guild/members fall back
+    // to "Unknown User".
+    const membersById = await discordDirectory().members(
+      serverId,
+      leaderboard.map((entry) => entry.memberId)
+    );
 
     const enrichedLeaderboard = leaderboard.map((entry) => {
-      const guildMember = membersById.get(entry.memberId);
-      const member = guildMember
-        ? {
-            id: guildMember.id,
-            username: guildMember.user.username,
-            displayName: guildMember.displayName,
-            avatar: guildMember.user.displayAvatarURL(),
-          }
-        : {
-            id: entry.memberId,
-            username: 'Unknown User',
-            displayName: null,
-            avatar: null,
-          };
+      const member = membersById.get(entry.memberId) ?? {
+        id: entry.memberId,
+        username: 'Unknown User',
+        displayName: null,
+        avatar: null,
+      };
 
       return {
         member,
