@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { DiscordMember } from '@nx-stolfo/api-interfaces';
 import { discordDirectory } from '../../utils/discord-directory';
 
 /**
@@ -67,6 +68,24 @@ export const periodFilter = (period: string) => {
   const start = getStartDateForPeriod(period);
   return start ? Prisma.sql`AND issued_on >= ${start}` : Prisma.empty;
 };
+
+/**
+ * `issued_on` range of the period right before `period`, with the same
+ * length (e.g. the 30 days before the last 30), or undefined for 'all'.
+ */
+export const previousPeriodFilter = (period: string) => {
+  const start = getStartDateForPeriod(period);
+  if (!start) return undefined;
+  const previousStart = new Date(start.getTime() - (Date.now() - start.getTime()));
+  return Prisma.sql`AND issued_on >= ${previousStart} AND issued_on < ${start}`;
+};
+
+/** Member display data from the Discord directory, with an "Unknown User" fallback. */
+export const memberOrUnknown = (
+  members: Map<string, DiscordMember>,
+  id: string
+): DiscordMember =>
+  members.get(id) ?? { id, username: 'Unknown User', displayName: null, avatar: null };
 
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>

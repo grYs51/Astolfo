@@ -7,9 +7,13 @@
       <p class="text-xs text-gray-500">Total voice duration per {{ data.granularity }}</p>
     </div>
     @if (hasActivity()) {
+      <div class="flex flex-wrap items-center gap-sm text-xs text-gray-400">
+        <span class="flex items-center gap-xs"><span class="h-2.5 w-2.5 rounded-sm bg-[#f0abfc]"></span>You</span>
+        <span class="flex items-center gap-xs"><span class="h-2.5 w-2.5 rounded-sm bg-[#a855f7]"></span>Everyone else</span>
       <span class="rounded-md bg-base-200 px-sm py-xs text-xs text-gray-300">
         Busiest {{ data.granularity }}: {{ stats().peakMs | humanizeDuration: true }} · avg {{ stats().avgUsers }} people
       </span>
+      </div>
     }
   </div>
 

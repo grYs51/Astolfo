@@ -32,6 +32,14 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
 type Tab = 'you' | 'server';
 
+/** The period just before the selected one; none for 'all' */
+const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
+  week: 'the week before',
+  month: 'the month before',
+  year: 'the year before',
+  all: undefined,
+};
+
 const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
   week: 'in the past week',
   month: 'in the past month',
@@ -101,6 +109,7 @@ export class DetailOverviewComponent {
   ];
   period = signal<DashboardPeriod>('month');
   periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
+  previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
   /** Daily bars for a week or month, weekly bars beyond that */
   private granularity = computed<TimelineGranularity>(() =>
     this.period() === 'week' || this.period() === 'month' ? 'day' : 'week'
@@ -163,6 +172,23 @@ export class DetailOverviewComponent {
     );
     return index >= 0 ? index + 1 : undefined;
   });
+
+  /** "↑ 2h 10m more than the month before" */
+  myChange = computed(() => {
+    const label = this.previousLabel();
+    if (!label || !this.userResource.hasValue()) return undefined;
+    const { totalDuration, previousTotalDuration } = this.userResource.value()!.summary;
+    if (previousTotalDuration === null) return undefined;
+    const diff = totalDuration - previousTotalDuration;
+    // Less than a minute either way reads as "the same"
+    if (Math.abs(diff) < 60_000) return { up: false, text: `About the same as ${label}` };
+    const amount = this.durationPipe.transform(Math.abs(diff), true);
+    return diff > 0
+      ? { up: true, text: `↑ ${amount} more than ${label}` }
+      : { up: false, text: `↓ ${amount} less than ${label}` };
+  });
+
+  private readonly durationPipe = new HumanizeDurationPipe();
 
   // ── "Server" fun facts (replaces the activity-type donut) ────────────────
   funFacts = computed(() => {

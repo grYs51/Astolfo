@@ -52,10 +52,11 @@ export class VoiceStatsTimelineComponent {
     const data = this.timeline();
 
     const labels = data.timeline.map(bucket => this.formatTimestamp(bucket.timestamp));
-    // Chart values are hours (durations are stored in milliseconds)
-    const values = data.timeline.map(bucket => +(bucket.totalDuration / 3_600_000).toFixed(2));
-    const sessions = data.timeline.map(bucket => bucket.sessionCount);
-    const users = data.timeline.map(bucket => bucket.uniqueUsers);
+    // Chart values are hours (durations are stored in milliseconds). Bars
+    // stack "everyone else" under the viewer's own share.
+    const hours = (ms: number) => +(ms / 3_600_000).toFixed(2);
+    const others = data.timeline.map((bucket) => hours(bucket.totalDuration - bucket.myDuration));
+    const mine = data.timeline.map((bucket) => hours(bucket.myDuration));
 
     return {
       tooltip: {
@@ -66,14 +67,16 @@ export class VoiceStatsTimelineComponent {
         textStyle: {
           color: '#f3f4f6',
         },
-        formatter: (params: any) => {
-          const index = params[0].dataIndex;
-          const bucket = data.timeline[index];
+        formatter: (params: { dataIndex: number; axisValue: string }[]) => {
+          const bucket = data.timeline[params[0].dataIndex];
+          const you = bucket.myDuration > 0
+            ? `You: ${this.durationPipe.transform(bucket.myDuration, true)}<br/>`
+            : '';
           return `
             <strong>${params[0].axisValue}</strong><br/>
-            Duration: ${this.durationPipe.transform(bucket.totalDuration, true)}<br/>
-            Sessions: ${bucket.sessionCount}<br/>
-            Users: ${bucket.uniqueUsers}
+            Everyone: ${this.durationPipe.transform(bucket.totalDuration, true)}<br/>
+            ${you}
+            ${bucket.uniqueUsers} people · ${bucket.sessionCount} sessions
           `;
         },
       },
@@ -122,9 +125,10 @@ export class VoiceStatsTimelineComponent {
       },
       series: [
         {
-          name: 'Voice Time',
+          name: 'Everyone else',
           type: 'bar',
-          data: values,
+          stack: 'voice',
+          data: others,
           itemStyle: {
             color: {
               type: 'linear',
@@ -154,6 +158,13 @@ export class VoiceStatsTimelineComponent {
               },
             },
           },
+        },
+        {
+          name: 'You',
+          type: 'bar',
+          stack: 'voice',
+          data: mine,
+          itemStyle: { color: '#f0abfc', borderRadius: [4, 4, 0, 0] },
         },
       ],
     };
