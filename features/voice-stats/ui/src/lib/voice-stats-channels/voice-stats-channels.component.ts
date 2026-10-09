@@ -5,13 +5,20 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { VoiceStatsChannels } from '@nx-stolfo/data-access-voice-stats';
-import { ProgressBarComponent } from '@nx-stolfo/components';
+import {
+  ChannelMessageCount,
+  VoiceStatsChannels,
+} from '@nx-stolfo/data-access-voice-stats';
+import {
+  ProgressBarComponent,
+  SegmentedControlComponent,
+  SegmentedControlOption,
+} from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
 @Component({
   selector: 'feature-voice-stats-channels',
-  imports: [ProgressBarComponent, HumanizeDurationPipe],
+  imports: [ProgressBarComponent, HumanizeDurationPipe, SegmentedControlComponent],
   templateUrl: './voice-stats-channels.component.html',
   styles: ``,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -21,6 +28,18 @@ export class VoiceStatsChannelsComponent {
   loading = input<boolean>(false);
   /** Show only the top N channels until "Show all" is clicked */
   limit = input<number | undefined>(undefined);
+
+  /** Top text channels by messages; adds a Voice/Text toggle when given */
+  textChannels = input<ChannelMessageCount[] | undefined>(undefined);
+
+  protected view = signal<'voice' | 'text'>('voice');
+  protected readonly viewOptions: SegmentedControlOption<'voice' | 'text'>[] = [
+    { value: 'voice', label: 'Voice' },
+    { value: 'text', label: 'Text' },
+  ];
+  protected maxMessages = computed(() =>
+    Math.max(1, ...(this.textChannels() ?? []).map((c) => c.count))
+  );
 
   protected expanded = signal(false);
   protected visibleChannels = computed(() => {

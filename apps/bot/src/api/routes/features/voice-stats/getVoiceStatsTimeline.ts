@@ -9,6 +9,7 @@ import {
   getStartDateForPeriod,
   getTimeZone,
   localIssuedOn,
+  localTime,
   parsePeriod,
   toDurationParts,
 } from '../helpers';
@@ -17,6 +18,8 @@ type TimelineRow = {
   bucket: Date;
   total_duration: bigint;
   my_duration: bigint;
+  message_count: bigint;
+  my_message_count: bigint;
   session_count: bigint;
   unique_users: bigint;
   unique_channels: bigint;
@@ -56,6 +59,7 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
     // The viewer's own share of each bucket, for the "you vs everyone" stack
     const viewerId: string = req.user?.id ?? '';
     const local = localIssuedOn(tz);
+    const localCreated = localTime('created_at', tz);
 
     // DATE_TRUNC bucketing in SQL — no full table scan into memory. Every
     // bucket from the period start to now is returned (generate_series), so
@@ -77,6 +81,16 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
           AND issued_on >= ${startDate}
         GROUP BY 1
       ),
+      msgs AS (
+        SELECT
+          DATE_TRUNC(${pgGranularity}, ${localCreated}) AS bucket,
+          COUNT(*)::bigint AS message_count,
+          COUNT(*) FILTER (WHERE user_id = ${viewerId})::bigint AS my_message_count
+        FROM message_stats
+        WHERE guild_id = ${serverId}
+          AND created_at >= ${startDate}
+        GROUP BY 1
+      ),
       buckets AS (
         SELECT generate_series(
           DATE_TRUNC(${pgGranularity}, ${startDate}::timestamptz AT TIME ZONE ${tz}),
@@ -90,9 +104,12 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
         COALESCE(agg.my_duration, 0)::bigint AS my_duration,
         COALESCE(agg.session_count, 0)::bigint AS session_count,
         COALESCE(agg.unique_users, 0)::bigint AS unique_users,
-        COALESCE(agg.unique_channels, 0)::bigint AS unique_channels
+        COALESCE(agg.unique_channels, 0)::bigint AS unique_channels,
+        COALESCE(msgs.message_count, 0)::bigint AS message_count,
+        COALESCE(msgs.my_message_count, 0)::bigint AS my_message_count
       FROM buckets
       LEFT JOIN agg ON agg.bucket = buckets.bucket
+      LEFT JOIN msgs ON msgs.bucket = buckets.bucket
       ORDER BY buckets.bucket ASC
     `;
 
@@ -108,6 +125,8 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
         timestamp,
         totalDuration,
         myDuration: Number(row.my_duration),
+        messageCount: Number(row.message_count),
+        myMessageCount: Number(row.my_message_count),
         totalDurationHours: parts.hours,
         totalDurationMinutes: parts.minutes,
         sessionCount,

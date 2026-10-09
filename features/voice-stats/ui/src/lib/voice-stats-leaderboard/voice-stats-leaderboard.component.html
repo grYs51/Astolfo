@@ -1,9 +1,7 @@
-@let data = leaderboard();
-
 <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-  <div class="mb-md flex items-center justify-between">
-    <h3 class="text-base font-semibold text-gray-100">Leaderboard</h3>
-    <span class="text-xs text-gray-500">{{ data.leaderboard.length }} members</span>
+  <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+    <h3 class="text-base font-semibold text-gray-100">{{ title() }}</h3>
+    <ng-content select="[leaderboard-actions]" />
   </div>
 
   @if (loading()) {
@@ -12,38 +10,34 @@
         <div class="h-14 rounded-lg bg-base-200 animate-pulse"></div>
       }
     </div>
-  } @else if (data.leaderboard.length === 0) {
-    <div class="py-xl text-center">
-      <p class="text-sm text-gray-400">No voice activity yet</p>
-      <p class="mt-xs text-xs text-gray-500">Be the first to join a voice channel!</p>
-    </div>
+  } @else if (rows().length === 0) {
+    <p class="py-xl text-center text-sm text-gray-400">{{ emptyText() }}</p>
   } @else {
     <ol class="space-y-xs">
-      @for (entry of top(); track entry.member.id) {
+      @for (row of top(); track row.member.id) {
         <li>
-          <ng-container
-            *ngTemplateOutlet="row; context: { $implicit: entry }"
-          ></ng-container>
+          <ng-container *ngTemplateOutlet="item; context: { $implicit: row }"></ng-container>
         </li>
       }
     </ol>
 
-    @if (pinned(); as entry) {
+    @if (pinned(); as row) {
       <div class="my-xs text-center text-xs text-gray-600" aria-hidden="true">⋯</div>
-      <ng-container *ngTemplateOutlet="row; context: { $implicit: entry }"></ng-container>
+      <ng-container *ngTemplateOutlet="item; context: { $implicit: row }"></ng-container>
     }
   }
 </div>
 
-<ng-template #row let-entry>
+<ng-template #item let-row>
   <lib-leaderboard-item
-    [rank]="entry.rank"
-    [title]="(entry.member.displayName || entry.member.username) + (isHighlighted(entry) ? ' (you)' : '')"
-    [value]="entry.totalDuration | humanizeDuration: true"
-    [subtitle]="plural(entry.sessionCount, 'session') + ' · ' + plural(entry.uniqueChannels, 'channel')"
-    [avatarUrl]="entry.member.avatar || undefined"
-    [containerClass]="isHighlighted(entry) ? highlightClass : ''"
-    (itemClick)="userClick.emit(entry.member.id)"
+    [rank]="row.rank"
+    [title]="(row.member.displayName || row.member.username) + (isHighlighted(row) ? ' (you)' : '')"
+    [value]="row.value"
+    [subtitle]="row.subtitle"
+    [avatarUrl]="row.member.avatar || undefined"
+    [containerClass]="isHighlighted(row) ? highlightClass : ''"
+    [interactive]="interactive()"
+    (itemClick)="userClick.emit(row.member.id)"
     icon="🎤"
   />
 </ng-template>

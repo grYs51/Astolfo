@@ -1,12 +1,37 @@
 @let data = channels();
 
 <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-  <div class="mb-md flex items-center justify-between">
-    <h3 class="text-base font-semibold text-gray-100">Channel activity</h3>
-    <span class="text-xs text-gray-500">{{ data.total }} channels</span>
+  <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+    <h3 class="text-base font-semibold text-gray-100">Channels</h3>
+    @if (textChannels()) {
+      <lib-segmented-control label="Channel type" [options]="viewOptions" [(value)]="view" />
+    } @else {
+      <span class="text-xs text-gray-500">{{ data.total }} channels</span>
+    }
   </div>
 
-  @if (loading()) {
+  @if (view() === 'text' && textChannels(); as text) {
+    @if (text.length === 0) {
+      <p class="py-xl text-center text-sm text-gray-400">No messages in this period</p>
+    } @else {
+      <ul class="space-y-sm">
+        @for (item of text; track item.channel.id) {
+          <li class="rounded-lg bg-base-200/60 p-md">
+            <div class="mb-sm flex items-center justify-between gap-md">
+              <span class="truncate text-sm font-semibold text-gray-100"># {{ item.channel.name }}</span>
+              <span class="shrink-0 text-sm font-bold text-primary-300">{{ item.count }} messages</span>
+            </div>
+            <lib-progress-bar
+              [percentage]="(item.count / maxMessages()) * 100"
+              [showLabel]="false"
+              barColor="bg-primary-500"
+              height="h-1.5 bg-base-100"
+            />
+          </li>
+        }
+      </ul>
+    }
+  } @else if (loading()) {
     <div class="space-y-md">
       @for (i of [1, 2, 3, 4]; track i) {
         <div class="h-20 rounded-lg bg-base-200 animate-pulse"></div>

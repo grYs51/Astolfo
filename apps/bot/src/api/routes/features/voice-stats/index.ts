@@ -6,3 +6,4 @@ export * from './getVoiceStatsUser';
 export * from './getVoiceStatsTimeline';
 export * from './getVoiceStatsHeatmap';
 export * from './getVoiceStatsUserHeatmap';
+export * from './getServerMessages';

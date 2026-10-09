@@ -13,7 +13,7 @@ export const isMockDiscord = () =>
 export type MockChannel = {
   id: string;
   name: string;
-  type: 'GuildVoice' | 'GuildStageVoice';
+  type: 'GuildVoice' | 'GuildStageVoice' | 'GuildText';
 };
 
 export type MockMember = {
@@ -25,7 +25,10 @@ export type MockMember = {
 export type MockGuild = {
   id: string;
   name: string;
+  /** Voice channels (the seed puts voice sessions here) */
   channels: MockChannel[];
+  /** Text channels (the seed puts messages here) */
+  textChannels: MockChannel[];
   members: MockMember[];
 };
 
@@ -76,6 +79,12 @@ export const MOCK_GUILDS: MockGuild[] = [
       { id: '300000000000000104', name: 'Music', type: 'GuildVoice' },
       { id: '300000000000000105', name: 'Friday Stage', type: 'GuildStageVoice' },
     ],
+    textChannels: [
+      { id: '300000000000000151', name: 'general', type: 'GuildText' },
+      { id: '300000000000000152', name: 'memes', type: 'GuildText' },
+      { id: '300000000000000153', name: 'gaming-chat', type: 'GuildText' },
+      { id: '300000000000000154', name: 'study-notes', type: 'GuildText' },
+    ],
     members: [
       me,
       members.luna,
@@ -96,6 +105,10 @@ export const MOCK_GUILDS: MockGuild[] = [
       { id: '300000000000000201', name: 'Late Night', type: 'GuildVoice' },
       { id: '300000000000000202', name: 'Raid Night', type: 'GuildVoice' },
       { id: '300000000000000203', name: 'AFK', type: 'GuildVoice' },
+    ],
+    textChannels: [
+      { id: '300000000000000251', name: 'late-night-chat', type: 'GuildText' },
+      { id: '300000000000000252', name: 'raid-planning', type: 'GuildText' },
     ],
     members: [me, members.rex, members.finn, members.zoe, members.milo, members.sage],
   },

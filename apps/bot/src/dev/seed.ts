@@ -2,7 +2,7 @@
  * Seeds the local DB with ~4 months of realistic voice activity for the
  * MOCK_DISCORD fixture servers, so every dashboard feature has data:
  * heatmaps, timeline, leaderboard, channels, activity breakdown, user
- * profiles and a few people "in voice right now".
+ * profiles and a few people "in voice right now" — plus text messages.
  *
  *   yarn nx run bot:seed        (then serve the bot with MOCK_DISCORD=true)
  *
@@ -10,7 +10,7 @@
  * Deterministic: the same seed produces the same activity patterns.
  */
 import { randomUUID } from 'crypto';
-import { PrismaClient, voice_stats } from '@prisma/client';
+import { message_stats, PrismaClient, voice_stats } from '@prisma/client';
 import { MOCK_GUILDS, MOCK_USER, MockGuild } from './mock-discord';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { Logger } from '../utils/logger';
@@ -47,15 +47,17 @@ type Persona = {
   deafen: number;
   stream: number;
   video: number;
+  /** Average messages on an active day */
+  messages: number;
 };
 
 const personas: Record<string, Persona> = {
-  regular: { weekday: 0.55, weekend: 0.6, hours: [17, 18, 19, 20], minutes: [45, 180], channels: ['Lobby', 'Gaming'], deafen: 0.1, stream: 0.15, video: 0.05 },
-  nightOwl: { weekday: 0.6, weekend: 0.7, hours: [21, 22, 23, 0, 1], minutes: [90, 300], channels: ['Late Night', 'Raid Night', 'Gaming'], deafen: 0.1, stream: 0.3, video: 0.02 },
-  weekend: { weekday: 0.08, weekend: 0.85, hours: [11, 13, 15, 17, 19], minutes: [120, 360], channels: ['Gaming', 'Raid Night', 'Friday Stage'], deafen: 0.05, stream: 0.25, video: 0.05 },
-  student: { weekday: 0.5, weekend: 0.15, hours: [12, 13, 14, 15], minutes: [45, 150], channels: ['Study Room'], deafen: 0.05, stream: 0.05, video: 0.25 },
-  lurker: { weekday: 0.15, weekend: 0.2, hours: [14, 16, 18, 20], minutes: [60, 300], channels: ['AFK', 'Music', 'Lobby'], deafen: 0.75, stream: 0, video: 0 },
-  music: { weekday: 0.35, weekend: 0.4, hours: [16, 18, 20], minutes: [30, 120], channels: ['Music', 'Lobby'], deafen: 0.05, stream: 0.1, video: 0 },
+  regular: { weekday: 0.55, weekend: 0.6, hours: [17, 18, 19, 20], minutes: [45, 180], channels: ['Lobby', 'Gaming'], deafen: 0.1, stream: 0.15, video: 0.05, messages: 6 },
+  nightOwl: { weekday: 0.6, weekend: 0.7, hours: [21, 22, 23, 0, 1], minutes: [90, 300], channels: ['Late Night', 'Raid Night', 'Gaming'], deafen: 0.1, stream: 0.3, video: 0.02, messages: 14 },
+  weekend: { weekday: 0.08, weekend: 0.85, hours: [11, 13, 15, 17, 19], minutes: [120, 360], channels: ['Gaming', 'Raid Night', 'Friday Stage'], deafen: 0.05, stream: 0.25, video: 0.05, messages: 9 },
+  student: { weekday: 0.5, weekend: 0.15, hours: [12, 13, 14, 15], minutes: [45, 150], channels: ['Study Room'], deafen: 0.05, stream: 0.05, video: 0.25, messages: 5 },
+  lurker: { weekday: 0.15, weekend: 0.2, hours: [14, 16, 18, 20], minutes: [60, 300], channels: ['AFK', 'Music', 'Lobby'], deafen: 0.75, stream: 0, video: 0, messages: 1 },
+  music: { weekday: 0.35, weekend: 0.4, hours: [16, 18, 20], minutes: [30, 120], channels: ['Music', 'Lobby'], deafen: 0.05, stream: 0.1, video: 0, messages: 10 },
 };
 
 const personaOf: Record<string, Persona> = {
@@ -192,6 +194,45 @@ const generate = (now: number): voice_stats[] => {
   return rows;
 };
 
+/** Text messages: on active days, spread around the persona's usual hours */
+const generateMessages = (now: number): message_stats[] => {
+  const rows: message_stats[] = [];
+  const today = Math.floor(now / DAY) * DAY;
+  const memberIds = [...new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))];
+  let messageId = BigInt('400000000000000000');
+
+  for (const memberId of memberIds) {
+    const persona = personaOf[memberId] ?? personas.regular;
+    const guilds = MOCK_GUILDS.filter((g) => g.members.some((m) => m.id === memberId));
+
+    for (let day = today - DAYS * DAY; day <= today; day += DAY) {
+      const weekday = new Date(day).getUTCDay();
+      const isWeekend = weekday === 0 || weekday === 6;
+      // People chat on more days than they join voice
+      if (!chance(Math.min(1, (isWeekend ? persona.weekend : persona.weekday) + 0.25))) continue;
+
+      const count = Math.round(persona.messages * between(0.3, 1.7));
+      for (let i = 0; i < count; i++) {
+        const at = day + (pick(persona.hours) + between(-2, 2)) * HOUR + between(0, 59) * MINUTE;
+        if (at > now || at < today - DAYS * DAY) continue;
+        const guild = pick(guilds);
+        // Half of the chatter happens in the first channel (#general-like)
+        const channel = chance(0.5) ? guild.textChannels[0] : pick(guild.textChannels);
+        messageId += BigInt(1);
+        rows.push({
+          id: randomUUID(),
+          guild_id: guild.id,
+          channel_id: channel.id,
+          user_id: memberId,
+          message_id: messageId.toString(),
+          created_at: new Date(at),
+        });
+      }
+    }
+  }
+  return rows;
+};
+
 async function main() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Refusing to seed mock data with NODE_ENV=production');
@@ -200,7 +241,9 @@ async function main() {
   const db = new PrismaClient();
   try {
     const guildIds = MOCK_GUILDS.map((g) => g.id);
-    const rows = generate(Date.now());
+    const now = Date.now();
+    const rows = generate(now);
+    const messages = generateMessages(now);
 
     const { count: removed } = await db.voice_stats.deleteMany({
       where: { guild_id: { in: guildIds } },
@@ -208,11 +251,15 @@ async function main() {
     for (let i = 0; i < rows.length; i += 1000) {
       await db.voice_stats.createMany({ data: rows.slice(i, i + 1000) });
     }
+    await db.message_stats.deleteMany({ where: { guild_id: { in: guildIds } } });
+    for (let i = 0; i < messages.length; i += 5000) {
+      await db.message_stats.createMany({ data: messages.slice(i, i + 5000) });
+    }
 
     const open = rows.filter((r) => r.ended_on === null && r.type === VOICE_TYPE.VOICE);
     Logger.info(
       `Seeded ${rows.length} voice_stats rows for ${MOCK_GUILDS.map((g) => g.name).join(' + ')} ` +
-        `(${DAYS} days, ${open.length} people in voice now; replaced ${removed} old mock rows).`
+        `and ${messages.length} messages (${DAYS} days, ${open.length} people in voice now; replaced ${removed} old voice rows).`
     );
     Logger.info('Serve the bot with MOCK_DISCORD=true and log in on the dashboard as the mock user.');
   } finally {

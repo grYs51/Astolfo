@@ -16,6 +16,7 @@ import {
   VoiceStatsHeatmapComponent,
   VoiceStatsUserHeatmapComponent,
   VoiceStatsUserProfileComponent,
+  LeaderboardRow,
 } from '@nx-stolfo/ui-voice-stats';
 import {
   DashboardPeriod,
@@ -128,6 +129,10 @@ export class DetailOverviewComponent {
     () => this.period(),
     () => 100
   );
+  messagesResource = this.voiceStatsApi.fetchServerMessages(
+    () => this.id(),
+    () => this.period()
+  );
   channelsResource = this.voiceStatsApi.fetchVoiceStatsChannels(
     () => this.id(),
     () => this.period()
@@ -189,6 +194,39 @@ export class DetailOverviewComponent {
   });
 
   private readonly durationPipe = new HumanizeDurationPipe();
+
+  /** Viewer's rank by messages, from the server message stats */
+  myMessageRank = computed(() => {
+    if (!this.messagesResource.hasValue()) return undefined;
+    const index = (this.messagesResource.value()?.topMembers ?? []).findIndex(
+      (entry) => entry.member.id === this.userId()
+    );
+    return index >= 0 ? index + 1 : undefined;
+  });
+
+  // ── Server leaderboard: rank by voice time or by messages ───────────────
+  readonly leaderboardMetricOptions: SegmentedControlOption<'voice' | 'messages'>[] = [
+    { value: 'voice', label: 'Voice' },
+    { value: 'messages', label: 'Messages' },
+  ];
+  leaderboardMetric = signal<'voice' | 'messages'>('voice');
+
+  leaderboardRows = computed<LeaderboardRow[]>(() => {
+    const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    if (this.leaderboardMetric() === 'messages') {
+      if (!this.messagesResource.hasValue()) return [];
+      return (this.messagesResource.value()?.topMembers ?? []).map((entry) => ({
+        member: entry.member,
+        value: plural(entry.count, 'message'),
+        subtitle: `in ${plural(entry.channels, 'channel')}`,
+      }));
+    }
+    return this.leaderboardEntries().map((entry) => ({
+      member: entry.member,
+      value: this.durationPipe.transform(entry.totalDuration, true),
+      subtitle: `${plural(entry.sessionCount, 'session')} · ${plural(entry.uniqueChannels, 'channel')}`,
+    }));
+  });
 
   // ── "Server" fun facts (replaces the activity-type donut) ────────────────
   funFacts = computed(() => {
