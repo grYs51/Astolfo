@@ -33,7 +33,7 @@ export type MockGuild = {
 export const MOCK_USER = {
   id: '200000000000000001',
   username: 'you',
-  global_name: 'You (mock)',
+  global_name: 'Mock User',
   discriminator: '0',
   avatar: null,
 } as const;

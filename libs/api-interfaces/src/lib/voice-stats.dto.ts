@@ -38,8 +38,10 @@ export enum VoiceActivityType {
   VIDEO = 'VIDEO',
 }
 
-export type VoiceStatsPeriod = 'day' | 'week' | 'month' | 'all';
-export type TimelinePeriod = 'day' | 'week' | 'month' | 'year';
+export type VoiceStatsPeriod = 'day' | 'week' | 'month' | 'year' | 'all';
+export type TimelinePeriod = 'day' | 'week' | 'month' | 'year' | 'all';
+/** The one period picker on the dashboard detail page */
+export type DashboardPeriod = 'week' | 'month' | 'year' | 'all';
 export type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
 export type TimelineGranularity = 'hour' | 'day' | 'week';
 

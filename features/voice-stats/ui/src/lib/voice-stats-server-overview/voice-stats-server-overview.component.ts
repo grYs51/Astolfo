@@ -14,34 +14,24 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
       @let serverData = overview().server;
 
       <!-- KPI strip -->
-      <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-sm">
+      <div class="grid grid-cols-2 xl:grid-cols-4 gap-sm">
         <lib-stat-card
-          label="Voice Time"
+          label="Voice time"
           [value]="serverData.totalDuration | humanizeDuration: true"
           [dense]="true"
         />
         <lib-stat-card
-          label="Sessions"
-          [value]="serverData.totalSessions"
-          [dense]="true"
-        />
-        <lib-stat-card
-          label="Active Users"
+          label="Active members"
           [value]="serverData.activeUsers"
           [dense]="true"
         />
         <lib-stat-card
-          label="Live Now"
+          label="In voice now"
           [value]="serverData.activeSessions"
           [dense]="true"
         />
         <lib-stat-card
-          label="Avg Session"
-          [value]="averageSessionMs(serverData.totalDuration, serverData.totalSessions) | humanizeDuration: true"
-          [dense]="true"
-        />
-        <lib-stat-card
-          label="Top Channel"
+          label="Top channel"
           [value]="serverData.mostActiveChannel?.name || 'N/A'"
           [dense]="true"
         />
@@ -60,9 +50,4 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 export class VoiceStatsServerOverviewComponent {
   overview = input.required<VoiceStatsOverview>();
   loading = input<boolean>(false);
-
-  averageSessionMs(totalDuration: number, totalSessions: number): number {
-    if (totalSessions === 0) return 0;
-    return totalDuration / totalSessions;
-  }
 }

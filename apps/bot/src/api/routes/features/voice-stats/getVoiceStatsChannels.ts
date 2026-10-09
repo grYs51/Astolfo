@@ -2,7 +2,12 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceStatsChannels } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getChannelData, toDurationParts } from '../helpers';
+import {
+  getChannelData,
+  parsePeriod,
+  periodFilter,
+  toDurationParts,
+} from '../helpers';
 
 type ChannelAggRow = {
   channel_id: string;
@@ -14,6 +19,7 @@ type ChannelAggRow = {
 export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, VoiceStatsChannels> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
+    const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
 
     // Aggregate channel stats via SQL — no full table scan into memory
     const channelRows = await req.db.$queryRaw<ChannelAggRow[]>`
@@ -25,6 +31,7 @@ export const getVoiceStatsChannels: RequestHandler<{ serverId: string }, VoiceSt
       FROM voice_stats
       WHERE guild_id = ${serverId}
         AND type = ${VOICE_TYPE.VOICE}
+        ${periodFilter(period)}
       GROUP BY channel_id
       ORDER BY total_duration DESC
     `;

@@ -1,97 +1,56 @@
-@let stats = userStats();
-
-<div class="space-y-lg">
-  <!-- User Overview Stats -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
-    <lib-stat-card
-      label="Total Voice Time"
-      [value]="stats.summary.totalDurationHours + 'h ' + stats.summary.totalDurationMinutes + 'm'"
-      icon="🎙️"
-      [subtitle]="stats.summary.sessionCount + ' sessions'"
-      iconColor="text-blue-500"
-    />
-
-    <lib-stat-card
-      label="Favorite Channel"
-      [value]="stats.summary.favoriteChannel ? stats.summary.favoriteChannel.name : 'N/A'"
-      icon="❤️"
-      subtitle="Most time spent"
-      iconColor="text-red-500"
-    />
-
-    <lib-stat-card
-      label="Avg Session"
-      [value]="stats.summary.averageSessionDurationMinutes + 'm'"
-      icon="⏱️"
-      [subtitle]="stats.summary.uniqueChannels + ' unique channels'"
-      iconColor="text-purple-500"
-    />
-  </div>
-
-  <!-- Channel Breakdown -->
-  <div class="bg-base-300 rounded-2xl p-lg">
-    <h3 class="text-xl font-bold mb-lg">Channel Distribution</h3>
-    @if (stats.channelBreakdown.length === 0) {
-      <p class="text-gray-400 text-center py-md">No channel data available</p>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
+  <!-- Your channels -->
+  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+    <h3 class="mb-md text-base font-semibold text-gray-100">Your channels</h3>
+    @if (topChannels().length === 0) {
+      <p class="py-md text-center text-sm text-gray-400">No voice activity in this period</p>
     } @else {
-      <div class="space-y-md">
-        @for (channel of stats.channelBreakdown; track channel.channel.id) {
-          <div class="bg-base-200 p-md rounded-xl">
-            <div class="flex justify-between items-center mb-sm">
-              <div>
-                <p class="font-medium text-gray-100">
-                  {{ channel.channel.name }}
-                </p>
-                <p class="text-xs text-gray-500">{{ channel.sessionCount }} sessions</p>
-              </div>
-              <div class="text-right">
-                <p class="font-semibold text-primary-400">
-                  {{ channel.totalDurationHours }}h {{ channel.totalDurationMinutes }}m
-                </p>
-                <p class="text-xs text-gray-500">{{ channel.percentage }}%</p>
-              </div>
+      <ul class="space-y-md">
+        @for (item of topChannels(); track item.channel.id) {
+          <li>
+            <div class="mb-xs flex items-baseline justify-between gap-md">
+              <span class="truncate text-sm font-medium text-gray-100">{{ item.channel.name }}</span>
+              <span class="shrink-0 text-sm text-primary-300">
+                {{ item.totalDuration | humanizeDuration: true }}
+                <span class="text-xs text-gray-500">· {{ item.percentage }}%</span>
+              </span>
             </div>
             <lib-progress-bar
-              [percentage]="channel.percentage"
+              [percentage]="item.percentage"
               [showLabel]="false"
               barColor="bg-primary-500"
+              height="h-1.5 bg-base-100"
             />
-          </div>
+          </li>
         }
-      </div>
+      </ul>
     }
   </div>
 
-
-  <!-- Recent Sessions -->
-  <div class="bg-base-300 rounded-2xl p-lg">
-    <h3 class="text-xl font-bold mb-lg">Recent Sessions</h3>
-    @if (stats.recentSessions.length === 0) {
-      <p class="text-gray-400 text-center py-md">No recent sessions</p>
+  <!-- Recent sessions -->
+  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+    <h3 class="mb-md text-base font-semibold text-gray-100">Recent sessions</h3>
+    @if (recentSessions().length === 0) {
+      <p class="py-md text-center text-sm text-gray-400">No sessions yet</p>
     } @else {
-      <div class="space-y-sm">
-        @for (session of stats.recentSessions; track session.id) {
-          <div class="bg-base-200 p-md rounded-xl flex items-center justify-between hover:bg-base-100 transition-colors">
-            <div class="flex items-center gap-md">
-              <div class="w-10 h-10 rounded-lg bg-base-300 flex items-center justify-center text-xl">
-                🎤
-              </div>
-              <div>
-                <p class="font-medium text-gray-100 text-sm">
-                 {{ session.channel.name }}
-                </p>
-                <p class="text-xs text-gray-500">
-                  {{ session.issuedOn | date: 'short' }}
-                </p>
-              </div>
+      <ul class="divide-y divide-white/5">
+        @for (session of recentSessions(); track session.id) {
+          <li class="flex items-center justify-between gap-md py-sm">
+            <div class="min-w-0">
+              <p class="truncate text-sm text-gray-100">{{ session.channel.name }}</p>
+              <p class="text-xs text-gray-500">{{ session.issuedOn | date: 'EEE d MMM, HH:mm' }}</p>
             </div>
-            <div class="text-right">
-              <p class="font-semibold text-primary-400">{{ session.durationMinutes }}m</p>
-              <p class="text-xs text-gray-500">{{ session.channel.type }}</p>
-            </div>
-          </div>
+            <span class="shrink-0 text-sm text-gray-300">
+              @if (!session.endedOn) {
+                <span class="mr-xs rounded bg-success/15 px-xs py-px text-[10px] font-semibold uppercase text-success">
+                  Live
+                </span>
+              }
+              {{ session.duration | humanizeDuration: true }}
+            </span>
+          </li>
         }
-      </div>
+      </ul>
     }
   </div>
 </div>

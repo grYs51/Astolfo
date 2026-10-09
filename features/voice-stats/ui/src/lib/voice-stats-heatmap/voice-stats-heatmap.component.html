@@ -7,41 +7,18 @@
       </div>
     </div>
   } @else {
-    <!-- Stats summary -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-sm">
-      <lib-stat-card
-        label="Total"
-        [value]="heatmap().stats.totalMinutes * 60000 | humanizeDuration: true"
-        subtitle="of voice activity"
-        [dense]="true"
-      />
-      <lib-stat-card
-        label="Peak Time"
-        [value]="peakTimeDisplay()"
-        subtitle="busiest hour of the week"
-        [dense]="true"
-      />
-      <lib-stat-card
-        label="Avg per Cell"
-        [value]="heatmap().stats.avgValue * 60000 | humanizeDuration: true"
-        subtitle="per hour slot"
-        [dense]="true"
-      />
-      <lib-stat-card
-        label="Busiest Cell"
-        [value]="heatmap().stats.maxValue * 60000 | humanizeDuration: true"
-        subtitle="most in a single slot"
-        [dense]="true"
-      />
-    </div>
-
     <!-- Heatmap chart -->
     <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
       <div class="mb-sm flex items-center justify-between">
         <div>
-          <h3 class="text-base font-semibold text-gray-100">Activity by hour and weekday</h3>
-          <p class="text-xs text-gray-500">Darker cells mean more voice time (minutes)</p>
+          <h3 class="text-base font-semibold text-gray-100">Busiest times</h3>
+          <p class="text-xs text-gray-500">Brighter cells mean more voice time, in your time zone</p>
         </div>
+        @if (heatmap().stats.totalMinutes > 0) {
+          <span class="rounded-md bg-base-200 px-sm py-xs text-xs text-gray-300">
+            Busiest: {{ peakTimeDisplay() }}
+          </span>
+        }
       </div>
       <div
         echarts

@@ -2,106 +2,146 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DOCUMENT,
   inject,
   input,
   signal,
 } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   VoiceStatsServerOverviewComponent,
-  VoiceStatsActivityBreakdownComponent,
   VoiceStatsLeaderboardComponent,
   VoiceStatsChannelsComponent,
   VoiceStatsTimelineComponent,
   VoiceStatsHeatmapComponent,
   VoiceStatsUserHeatmapComponent,
+  VoiceStatsUserProfileComponent,
 } from '@nx-stolfo/ui-voice-stats';
 import {
-  HeatmapPeriod,
+  DashboardPeriod,
   TimelineGranularity,
-  TimelinePeriod,
+  VoiceActivityType,
   VoiceStatsApi,
-  VoiceStatsPeriod,
 } from '@nx-stolfo/data-access-voice-stats';
 import { USER } from '@nx-stolfo/auth';
 import {
   SegmentedControlComponent,
   SegmentedControlOption,
 } from '@nx-stolfo/components';
+import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
-// Shared with the API, so a new period/granularity on one side breaks the
-// build of the other instead of silently drifting
-type Period = VoiceStatsPeriod;
-type Granularity = TimelineGranularity;
+type Tab = 'you' | 'server';
+
+const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
+  week: 'in the past week',
+  month: 'in the past month',
+  year: 'in the past year',
+  all: 'in total',
+};
 
 @Component({
   selector: 'pages-detail-overview',
   imports: [
     VoiceStatsServerOverviewComponent,
-    VoiceStatsActivityBreakdownComponent,
     VoiceStatsLeaderboardComponent,
     VoiceStatsChannelsComponent,
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
     VoiceStatsUserHeatmapComponent,
+    VoiceStatsUserProfileComponent,
     SegmentedControlComponent,
+    HumanizeDurationPipe,
   ],
   templateUrl: './detail-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [VoiceStatsApi],
 })
 export class DetailOverviewComponent {
+  /** Route param */
   id = input.required<string>();
+  /** `?tab=server` (query params are bound to inputs too) */
+  tab = input<string | undefined>();
 
   private voiceStatsApi = inject(VoiceStatsApi);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private document = inject(DOCUMENT);
   currentUser = inject(USER);
 
-  readonly sections = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'timeline', label: 'Timeline' },
-    { id: 'engagement', label: 'Engagement' },
-    { id: 'heatmap', label: 'Weekly pattern' },
-    { id: 'you', label: 'Your activity' },
+  // ── Tabs: you first, then the group ──────────────────────────────────────
+  readonly tabs: { id: Tab; label: string }[] = [
+    { id: 'you', label: 'You' },
+    { id: 'server', label: 'Server' },
   ];
+  activeTab = computed<Tab>(() => (this.tab() === 'server' ? 'server' : 'you'));
 
-  scrollTo(sectionId: string) {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  selectTab(tab: Tab) {
+    // In the URL so a refresh or a shared link keeps the tab
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { tab: tab === 'you' ? null : tab },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
-  readonly periodOptions: SegmentedControlOption<Period>[] = [
-    { value: 'day', label: 'Day' },
-    { value: 'week', label: 'Week' },
-    { value: 'month', label: 'Month' },
-    { value: 'all', label: 'All' },
-  ];
+  /** Arrow keys move between tabs (WAI-ARIA tabs pattern) */
+  switchTab() {
+    const next: Tab = this.activeTab() === 'you' ? 'server' : 'you';
+    this.selectTab(next);
+    this.document.getElementById(`tab-${next}`)?.focus();
+  }
 
-  readonly timelinePeriodOptions: SegmentedControlOption<TimelinePeriod>[] = [
-    { value: 'day', label: '24h' },
-    { value: 'week', label: 'Week' },
-    { value: 'month', label: 'Month' },
-    { value: 'year', label: 'Year' },
-  ];
-
-  readonly granularityOptions: SegmentedControlOption<Granularity>[] = [
-    { value: 'hour', label: 'Hourly' },
-    { value: 'day', label: 'Daily' },
-    { value: 'week', label: 'Weekly' },
-  ];
-
-  readonly heatmapPeriodOptions: SegmentedControlOption<HeatmapPeriod>[] = [
+  // ── One period for the whole page ────────────────────────────────────────
+  readonly periodOptions: SegmentedControlOption<DashboardPeriod>[] = [
     { value: 'week', label: 'Week' },
     { value: 'month', label: 'Month' },
     { value: 'year', label: 'Year' },
     { value: 'all', label: 'All time' },
   ];
+  period = signal<DashboardPeriod>('month');
+  periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
+  /** Daily bars for a week or month, weekly bars beyond that */
+  private granularity = computed<TimelineGranularity>(() =>
+    this.period() === 'week' || this.period() === 'month' ? 'day' : 'week'
+  );
 
-  // Filter state — resources below refetch automatically on change
-  selectedPeriod = signal<Period>('week');
-  selectedTimelinePeriod = signal<TimelinePeriod>('month');
-  selectedGranularity = signal<Granularity>('day');
-  selectedHeatmapPeriod = signal<HeatmapPeriod>('month');
-  selectedUserHeatmapPeriod = signal<HeatmapPeriod>('month');
+  private userId = computed(() => this.currentUser()?.id);
 
-  overviewResource = this.voiceStatsApi.fetchVoiceStatsOverview(() => this.id());
+  // ── Data (resources refetch when id/period/user change) ──────────────────
+  overviewResource = this.voiceStatsApi.fetchVoiceStatsOverview(
+    () => this.id(),
+    () => this.period()
+  );
+  // Enough rows to find the viewer's rank; the list shows the top 10
+  leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
+    () => this.id(),
+    () => this.period(),
+    () => 100
+  );
+  channelsResource = this.voiceStatsApi.fetchVoiceStatsChannels(
+    () => this.id(),
+    () => this.period()
+  );
+  timelineResource = this.voiceStatsApi.fetchVoiceStatsTimeline(
+    () => this.id(),
+    () => this.period(),
+    () => this.granularity()
+  );
+  heatmapResource = this.voiceStatsApi.fetchVoiceStatsHeatmap(
+    () => this.id(),
+    () => this.period()
+  );
+  userResource = this.voiceStatsApi.fetchVoiceStatsUser(
+    () => this.id(),
+    () => this.userId(),
+    () => this.period()
+  );
+  userHeatmapResource = this.voiceStatsApi.fetchVoiceStatsUserHeatmap(
+    () => this.id(),
+    () => this.userId(),
+    () => this.period()
+  );
 
   /** Server name from the overview response; falls back while loading or if the bot can't see the guild */
   serverName = computed(
@@ -110,29 +150,39 @@ export class DetailOverviewComponent {
       'Server'
   );
 
-  leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
-    () => this.id(),
-    () => this.selectedPeriod(),
-    () => 10
+  // ── "You" summary ────────────────────────────────────────────────────────
+  private leaderboardEntries = computed(() =>
+    this.leaderboardResource.hasValue()
+      ? this.leaderboardResource.value()?.leaderboard ?? []
+      : []
   );
+  memberCount = computed(() => this.leaderboardEntries().length);
+  myRank = computed(() => {
+    const index = this.leaderboardEntries().findIndex(
+      (entry) => entry.member.id === this.userId()
+    );
+    return index >= 0 ? index + 1 : undefined;
+  });
 
-  channelsResource = this.voiceStatsApi.fetchVoiceStatsChannels(() => this.id());
+  // ── "Server" fun facts (replaces the activity-type donut) ────────────────
+  funFacts = computed(() => {
+    if (!this.overviewResource.hasValue()) return [];
+    const breakdown = this.overviewResource.value()?.activityBreakdown ?? [];
+    const duration = (...types: VoiceActivityType[]) =>
+      breakdown
+        .filter((item) => types.includes(item.type))
+        .reduce((sum, item) => sum + item.duration, 0);
 
-  timelineResource = this.voiceStatsApi.fetchVoiceStatsTimeline(
-    () => this.id(),
-    () => this.selectedTimelinePeriod(),
-    () => this.selectedGranularity()
-  );
+    const voice = duration(VoiceActivityType.VOICE);
+    if (voice === 0) return [];
+    const share = (ms: number) => Math.round((ms / voice) * 100);
 
-  heatmapResource = this.voiceStatsApi.fetchVoiceStatsHeatmap(
-    () => this.id(),
-    () => this.selectedHeatmapPeriod()
-  );
-
-  // User heatmap - shows current user's activity vs server average
-  userHeatmapResource = this.voiceStatsApi.fetchVoiceStatsUserHeatmap(
-    () => this.id(),
-    () => this.currentUser()?.id || '',
-    () => this.selectedUserHeatmapPeriod()
-  );
+    // Deafening also mutes, so the muted share includes deafened time
+    return [
+      { pct: share(duration(VoiceActivityType.MUTED, VoiceActivityType.SERVER_MUTED)), text: 'of voice time with the mic muted' },
+      { pct: share(duration(VoiceActivityType.DEAF, VoiceActivityType.SERVER_DEAF)), text: 'deafened' },
+      { pct: share(duration(VoiceActivityType.STREAMING)), text: 'streaming' },
+      { pct: share(duration(VoiceActivityType.VIDEO)), text: 'with the camera on' },
+    ].filter((fact) => fact.pct > 0);
+  });
 }

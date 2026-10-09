@@ -9,7 +9,6 @@ import {
   VoiceStatsHeatmap,
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/data-access-voice-stats';
-import { StatCardComponent } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
@@ -21,16 +20,18 @@ import {
   HEATMAP_HOURS,
   buildHeatmapGrid,
   heatmapKey,
+  HEATMAP_SEQUENTIAL_COLORS,
 } from '../heatmap-grid';
 echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
 
 @Component({
   selector: 'feature-voice-stats-heatmap',
-  imports: [CommonModule, NgxEchartsDirective, StatCardComponent, HumanizeDurationPipe],
+  imports: [CommonModule, NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-heatmap.component.html',
   styleUrls: ['./voice-stats-heatmap.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
 })
 export class VoiceStatsHeatmapComponent {
   heatmap = input.required<VoiceStatsHeatmap>();
@@ -126,21 +127,7 @@ export class VoiceStatsHeatmapComponent {
         orient: 'horizontal',
         left: 'center',
         bottom: '2%',
-        // Sequential single-hue ramp; zero-value cells stay close to the
-        // card surface so an empty grid reads as empty, not solid purple.
-        inRange: {
-          color: [
-            '#1c2133',
-            '#2c2a4d',
-            '#433370',
-            '#5c3d94',
-            '#7a48bd',
-            '#9333ea',
-            '#a855f7',
-            '#c084fc',
-            '#e9d5ff',
-          ],
-        },
+        inRange: { color: HEATMAP_SEQUENTIAL_COLORS },
         text: ['High', 'Low'],
         textStyle: {
           color: '#9ca3af',
