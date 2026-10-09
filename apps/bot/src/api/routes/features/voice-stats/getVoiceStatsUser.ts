@@ -142,10 +142,12 @@ export const getVoiceStatsUser: RequestHandler<
     const previousTotalDuration = previousRows
       ? Number(previousRows[0]?.total_duration ?? 0)
       : null;
-    const companionMembers = await discordDirectory().members(
-      serverId,
-      companionRows.map((row) => row.member_id)
-    );
+    // One lookup for the member themselves and their companions
+    const companionMembers = await discordDirectory().members(serverId, [
+      userId,
+      ...companionRows.map((row) => row.member_id),
+    ]);
+    const member = memberOrUnknown(companionMembers, userId);
     const companions = companionRows.map((row) => ({
       member: memberOrUnknown(companionMembers, row.member_id),
       togetherDuration: Number(row.together),
@@ -158,6 +160,7 @@ export const getVoiceStatsUser: RequestHandler<
     if (sessionCount === 0) {
       res.send({
         userId,
+        member,
         summary: {
           totalDuration: 0,
           totalDurationHours: 0,
@@ -215,6 +218,7 @@ export const getVoiceStatsUser: RequestHandler<
     // user-profile component renders)
     res.send({
       userId,
+      member,
       summary: {
         totalDuration,
         totalDurationHours: totalParts.hours,

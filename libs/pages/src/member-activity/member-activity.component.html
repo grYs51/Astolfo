@@ -1,0 +1,96 @@
+@let user = userResource();
+@let heatmap = heatmapResource();
+@let subject = name() || 'You';
+
+@if (isPrivate()) {
+  <div class="rounded-xl border border-white/5 bg-base-300 p-lg text-center">
+    <p class="text-lg text-gray-300">{{ name() || 'This member' }} keeps their stats private.</p>
+    <p class="mt-xs text-sm text-gray-500">Their time still counts towards the server totals.</p>
+  </div>
+} @else {
+  <!-- Summary -->
+  <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
+    @if (user.isLoading() && !user.hasValue()) {
+      <div class="space-y-sm animate-pulse">
+        <div class="h-6 w-2/3 rounded bg-base-200"></div>
+        <div class="h-4 w-1/2 rounded bg-base-200"></div>
+      </div>
+    } @else if (user.error()) {
+      <p class="text-sm text-error">Failed to load activity</p>
+    } @else if (user.hasValue()) {
+      @let stats = user.value()!.summary;
+      @let sent = user.value()!.messages.count;
+      @if (stats.sessionCount > 0 || sent > 0) {
+        <p class="text-lg leading-relaxed text-gray-300">
+          @if (stats.sessionCount > 0) {
+            {{ subject }} spent
+            <strong class="font-semibold text-primary-300">{{ stats.totalDuration | humanizeDuration: true }}</strong>
+            in voice
+          } @else {
+            {{ subject }} {{ self() ? 'weren’t' : 'wasn’t' }} in voice
+          }
+          and sent
+          <strong class="font-semibold text-primary-300">{{ sent }} {{ sent === 1 ? 'message' : 'messages' }}</strong>
+          {{ periodPhrase() }}@if (voiceRank()) {<span>,
+            <strong class="font-semibold text-gray-100">#{{ voiceRank() }}</strong>
+            of {{ memberCount() }} in voice time</span>}.
+        </p>
+        @if (change(); as c) {
+          <p class="mt-xs text-sm" [class.text-success]="c.up" [class.text-gray-400]="!c.up">{{ c.text }}</p>
+        }
+        <dl class="mt-md grid grid-cols-2 gap-md text-sm sm:grid-cols-4">
+          <div>
+            <dt class="text-xs text-gray-500">Voice sessions</dt>
+            <dd class="font-medium text-gray-100">{{ stats.sessionCount }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Messages</dt>
+            <dd class="font-medium text-gray-100">
+              {{ sent }}
+              @if (messageRank()) {
+                <span class="text-xs font-normal text-gray-500">· #{{ messageRank() }}</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Favourite channel</dt>
+            <dd class="truncate font-medium text-gray-100">{{ stats.favoriteChannel?.name ?? '—' }}</dd>
+          </div>
+          <div>
+            <dt class="text-xs text-gray-500">Average session</dt>
+            <dd class="font-medium text-gray-100">{{ stats.averageSessionDuration | humanizeDuration: true }}</dd>
+          </div>
+        </dl>
+      } @else {
+        <p class="text-lg text-gray-300">
+          {{ subject }} {{ self() ? 'haven’t' : 'hasn’t' }} been in voice or sent messages {{ periodPhrase() }}.
+        </p>
+      }
+    }
+  </div>
+
+  <!-- When they're on -->
+  @if (heatmap.error()) {
+    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+      Failed to load the weekly pattern
+    </div>
+  } @else if (heatmap.hasValue()) {
+    <feature-voice-stats-user-heatmap
+      [heatmap]="heatmap.value()!"
+      [loading]="heatmap.isLoading()"
+      [name]="name()"
+    />
+  } @else {
+    <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+  }
+
+  <!-- Companions, channels (and recent sessions on your own page) -->
+  @if (user.hasValue()) {
+    <feature-voice-stats-user-profile
+      [userStats]="user.value()!"
+      [name]="name()"
+      [showRecent]="self()"
+      [memberLink]="memberLink()"
+    />
+  }
+}

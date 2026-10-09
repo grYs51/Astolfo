@@ -35,82 +35,15 @@
   @if (activeTab() === 'you') {
     <!-- ── YOU ─────────────────────────────────────────────────────────── -->
     <section role="tabpanel" id="panel-you" aria-labelledby="tab-you" class="space-y-md">
-      <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
-        @if (userResource.isLoading()) {
-          <div class="space-y-sm animate-pulse">
-            <div class="h-6 w-2/3 rounded bg-base-200"></div>
-            <div class="h-4 w-1/2 rounded bg-base-200"></div>
-          </div>
-        } @else if (userResource.error()) {
-          <p class="text-sm text-error">Failed to load your activity</p>
-        } @else if (userResource.hasValue()) {
-          @let you = userResource.value()!.summary;
-          @let sent = userResource.value()!.messages.count;
-          @if (you.sessionCount > 0 || sent > 0) {
-            <p class="text-lg leading-relaxed text-gray-300">
-              @if (you.sessionCount > 0) {
-                You spent
-                <strong class="font-semibold text-primary-300">{{ you.totalDuration | humanizeDuration: true }}</strong>
-                in voice
-              } @else {
-                You weren't in voice
-              }
-              and sent
-              <strong class="font-semibold text-primary-300">{{ sent }} {{ sent === 1 ? 'message' : 'messages' }}</strong>
-              {{ periodPhrase() }}@if (myRank()) {<span>,
-                <strong class="font-semibold text-gray-100">#{{ myRank() }}</strong>
-                of {{ memberCount() }} in voice time</span>}.
-            </p>
-            @if (myChange(); as change) {
-              <p class="mt-xs text-sm" [class.text-success]="change.up" [class.text-gray-400]="!change.up">
-                {{ change.text }}
-              </p>
-            }
-            <dl class="mt-md grid grid-cols-2 gap-md text-sm sm:grid-cols-4">
-              <div>
-                <dt class="text-xs text-gray-500">Voice sessions</dt>
-                <dd class="font-medium text-gray-100">{{ you.sessionCount }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs text-gray-500">Messages</dt>
-                <dd class="font-medium text-gray-100">
-                  {{ sent }}
-                  @if (myMessageRank()) {
-                    <span class="text-xs font-normal text-gray-500">· #{{ myMessageRank() }}</span>
-                  }
-                </dd>
-              </div>
-              <div>
-                <dt class="text-xs text-gray-500">Favourite channel</dt>
-                <dd class="truncate font-medium text-gray-100">{{ you.favoriteChannel?.name ?? '—' }}</dd>
-              </div>
-              <div>
-                <dt class="text-xs text-gray-500">Average session</dt>
-                <dd class="font-medium text-gray-100">{{ you.averageSessionDuration | humanizeDuration: true }}</dd>
-              </div>
-            </dl>
-          } @else {
-            <p class="text-lg text-gray-300">You haven't been in voice or sent messages {{ periodPhrase() }}.</p>
-          }
-        }
-      </div>
-
-      @if (userHeatmapResource.error()) {
-        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-          Failed to load your weekly pattern
-        </div>
-      } @else if (userHeatmapResource.hasValue()) {
-        <feature-voice-stats-user-heatmap
-          [heatmap]="userHeatmapResource.value()!"
-          [loading]="userHeatmapResource.isLoading()"
-        />
-      } @else {
-        <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
-      }
-
-      @if (userResource.hasValue()) {
-        <feature-voice-stats-user-profile [userStats]="userResource.value()!" />
-      }
+      <pages-member-activity
+        [userResource]="userResource"
+        [heatmapResource]="userHeatmapResource"
+        [period]="period()"
+        [voiceRank]="myRank()"
+        [messageRank]="myMessageRank()"
+        [memberCount]="memberCount()"
+        [memberLink]="memberLink"
+      />
 
       <!-- Privacy: hide yourself from other members -->
       @if (privacyResource.hasValue()) {
@@ -193,6 +126,8 @@
           <feature-voice-stats-leaderboard
             [rows]="leaderboardRows()"
             [highlightId]="currentUser()?.id"
+            [interactive]="true"
+            (userClick)="openMember($event)"
             [emptyText]="leaderboardMetric() === 'voice' ? 'No voice activity yet' : 'No messages yet'"
           >
             <lib-segmented-control

@@ -1,9 +1,9 @@
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-md items-start">
-  <!-- Who you hang out with: overlapping time in the same channel -->
+<div class="grid grid-cols-1 gap-md items-start" [class.lg:grid-cols-3]="showRecent()" [class.lg:grid-cols-2]="!showRecent()">
+  <!-- Who they hang out with: overlapping time in the same channel -->
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-    <h3 class="mb-md text-base font-semibold text-gray-100">You hang out most with</h3>
+    <h3 class="mb-md text-base font-semibold text-gray-100">{{ name() ? name() + ' hangs out most with' : 'You hang out most with' }}</h3>
     @if (userStats().companions.length === 0) {
-      <p class="py-md text-center text-sm text-gray-400">Nobody shared a channel with you in this period</p>
+      <p class="py-md text-center text-sm text-gray-400">Nobody shared a channel with {{ name() || 'you' }} in this period</p>
     } @else {
       <ul class="space-y-sm">
         @for (companion of userStats().companions; track companion.member.id) {
@@ -13,9 +13,18 @@
             } @else {
               <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-base-200 text-xs text-gray-400" aria-hidden="true">?</span>
             }
-            <span class="min-w-0 flex-1 truncate text-sm text-gray-100">
-              {{ companion.member.displayName || companion.member.username }}
-            </span>
+            @if (memberLink(); as link) {
+              <a
+                [routerLink]="link(companion.member.id)"
+                class="min-w-0 flex-1 truncate text-sm text-gray-100 hover:text-primary-300 hover:underline"
+              >
+                {{ companion.member.displayName || companion.member.username }}
+              </a>
+            } @else {
+              <span class="min-w-0 flex-1 truncate text-sm text-gray-100">
+                {{ companion.member.displayName || companion.member.username }}
+              </span>
+            }
             <span class="shrink-0 text-sm text-primary-300">{{ companion.togetherDuration | humanizeDuration: true }}</span>
           </li>
         }
@@ -24,10 +33,10 @@
     }
   </div>
 
-  <!-- Your channels -->
+  <!-- Their channels -->
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
     <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-      <h3 class="text-base font-semibold text-gray-100">Your channels</h3>
+      <h3 class="text-base font-semibold text-gray-100">{{ name() ? name() + '’s channels' : 'Your channels' }}</h3>
       <lib-segmented-control label="Channel type" [options]="channelViewOptions" [(value)]="channelView" />
     </div>
     @if (channelView() === 'text') {
@@ -79,7 +88,8 @@
     }
   </div>
 
-  <!-- Recent sessions -->
+  <!-- Recent sessions (exact times — only on your own page) -->
+  @if (showRecent()) {
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
     <h3 class="mb-md text-base font-semibold text-gray-100">Recent sessions</h3>
     @if (recentSessions().length === 0) {
@@ -105,4 +115,5 @@
       </ul>
     }
   </div>
+  }
 </div>

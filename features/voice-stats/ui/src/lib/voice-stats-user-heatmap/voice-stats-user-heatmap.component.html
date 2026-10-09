@@ -1,12 +1,12 @@
 <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
   <div class="mb-sm flex flex-wrap items-start justify-between gap-sm">
     <div>
-      <h3 class="text-base font-semibold text-gray-100">When you're on</h3>
+      <h3 class="text-base font-semibold text-gray-100">{{ name() ? 'When ' + name() + ' is on' : 'When you’re on' }}</h3>
       <p class="text-xs text-gray-500">
         @if (mode() === 'compare') {
-          Blue: more than the average member in voice at that hour · red: less · empty: you weren't on
+          Blue: more than the average member in voice at that hour · red: less · empty: {{ name() ? 'not on' : 'you weren’t on' }}
         } @else if (hasActivity()) {
-          You're usually on {{ peakTimeDisplay() }} · in your time zone
+          {{ name() ? name() + ' is' : 'You’re' }} usually on {{ peakTimeDisplay() }} · in your time zone
         } @else {
           No voice activity in this period
         }

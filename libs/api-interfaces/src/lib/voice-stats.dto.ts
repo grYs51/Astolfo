@@ -187,6 +187,8 @@ export interface VoiceChannelBreakdown {
 
 export interface VoiceStatsUser {
   userId: string;
+  /** Display data for the profile header */
+  member: DiscordMember;
 
   // Overall statistics
   summary: {
