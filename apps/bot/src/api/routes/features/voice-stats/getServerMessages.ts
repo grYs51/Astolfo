@@ -7,6 +7,7 @@ import {
   parsePeriod,
   periodFilter,
   previousPeriodFilter,
+  visibleMembersOnly,
 } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 
@@ -52,6 +53,7 @@ export const getServerMessages: RequestHandler<{ serverId: string }, ServerMessa
         FROM message_stats
         WHERE guild_id = ${serverId}
           ${dateFilter}
+          ${visibleMembersOnly('user_id', req.user?.id ?? '')}
         GROUP BY user_id
         ORDER BY count DESC
         LIMIT 100

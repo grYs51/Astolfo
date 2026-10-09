@@ -111,6 +111,47 @@
       @if (userResource.hasValue()) {
         <feature-voice-stats-user-profile [userStats]="userResource.value()!" />
       }
+
+      <!-- Privacy: hide yourself from other members -->
+      @if (privacyResource.hasValue()) {
+        @let shown = !privacyResource.value().hidden;
+        <div class="flex flex-wrap items-start justify-between gap-md rounded-xl border border-white/5 bg-base-300 p-lg">
+          <div class="min-w-0 max-w-2xl">
+            <h3 id="privacy-label" class="text-base font-semibold text-gray-100">Show me to other members</h3>
+            <p id="privacy-help" class="mt-xs text-sm text-gray-400">
+              @if (shown) {
+                Other members can see you on leaderboards (here and in /leaderboard), in their
+                “hang out most with” lists, under “In voice now” and on your profile.
+              } @else {
+                You’re hidden: other members don’t see you on leaderboards, in “hang out most with”,
+                under “In voice now” or on a profile. Only you can see your stats.
+              }
+              Your time always counts towards anonymous server totals.
+            </p>
+            @if (privacyError()) {
+              <p class="mt-xs text-sm text-error">{{ privacyError() }}</p>
+            }
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-labelledby="privacy-label"
+            aria-describedby="privacy-help"
+            [attr.aria-checked]="shown"
+            [disabled]="privacySaving()"
+            (click)="setVisibility(!shown)"
+            class="relative mt-xs inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400 disabled:opacity-60"
+            [class.bg-primary-500]="shown"
+            [class.bg-base-100]="!shown"
+          >
+            <span
+              class="inline-block h-5 w-5 rounded-full bg-white shadow transition-transform"
+              [class.translate-x-5]="shown"
+              [class.translate-x-0.5]="!shown"
+            ></span>
+          </button>
+        </div>
+      }
     </section>
   } @else {
     <!-- ── SERVER ──────────────────────────────────────────────────────── -->

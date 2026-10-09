@@ -113,7 +113,16 @@ export const getLeaderboard = async (
 
   const members =
     client.guilds.cache.get(guildId)?.members.cache.map((x) => x) ?? [];
-  const leaderboard = getLeaderboard(members, voiceStats);
+  // Members who hide from other members (dashboard privacy setting) stay
+  // off this public, in-channel leaderboard too
+  const hidden = new Set(
+    (
+      await client.dataSource.userConfigs.findMany({
+        where: { privacy_hidden: true },
+        select: { user_id: true },
+      })
+    ).map((config) => config.user_id)
+  );
 
-  return leaderboard;
+  return getLeaderboard(members, voiceStats).filter((entry) => !hidden.has(entry.id));
 };

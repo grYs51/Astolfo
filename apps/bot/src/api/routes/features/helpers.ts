@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { DiscordMember } from '@nx-stolfo/api-interfaces';
 import { discordDirectory } from '../../utils/discord-directory';
+import type { Db } from '../../../db';
 
 /**
  * The viewer's IANA time zone from `?tz=` (e.g. 'Europe/Brussels'), so hours
@@ -93,6 +94,27 @@ export const memberOrUnknown = (
   id: string
 ): DiscordMember =>
   members.get(id) ?? { id, username: 'Unknown User', displayName: null, avatar: null };
+
+/**
+ * Members who chose to hide from other members (user_configs.privacy_hidden)
+ * are left out of member-level lists — except for the viewer themselves.
+ * Anonymous server totals still include them.
+ */
+export const visibleMembersOnly = (
+  column: 'member_id' | 'user_id' | 'other.member_id',
+  viewerId: string
+) =>
+  Prisma.sql`AND ${Prisma.raw(column)} NOT IN (
+    SELECT user_id FROM user_configs WHERE privacy_hidden AND user_id <> ${viewerId}
+  )`;
+
+/** Whether `memberId` hides their stats from `viewerId` (never from themselves). */
+export const isHiddenFrom = async (db: Db, memberId: string, viewerId: string) =>
+  memberId !== viewerId &&
+  !!(await db.userConfigs.findFirst({
+    where: { user_id: memberId, privacy_hidden: true },
+    select: { user_id: true },
+  }));
 
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>
