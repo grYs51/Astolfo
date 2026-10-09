@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   input,
   signal,
@@ -101,6 +102,13 @@ export class DetailOverviewComponent {
   selectedUserHeatmapPeriod = signal<HeatmapPeriod>('month');
 
   overviewResource = this.voiceStatsApi.fetchVoiceStatsOverview(() => this.id());
+
+  /** Server name from the overview response; falls back while loading or if the bot can't see the guild */
+  serverName = computed(
+    () =>
+      (this.overviewResource.hasValue() && this.overviewResource.value()?.guild.name) ||
+      'Server'
+  );
 
   leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
     () => this.id(),

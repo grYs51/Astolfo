@@ -55,6 +55,9 @@ export interface ActivityTypeBreakdown {
 
 // Voice Stats Overview Response
 export interface VoiceStatsOverview {
+  /** Server display data; name/icon are null if the bot can't see the guild */
+  guild: { id: string; name: string | null; icon: string | null };
+
   // Server-wide statistics
   server: {
     totalDuration: number;

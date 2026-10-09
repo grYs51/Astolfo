@@ -88,16 +88,9 @@ export class VoiceStatsActivityBreakdownComponent {
           `;
         },
       },
-      legend: {
-        orient: 'horizontal',
-        bottom: '0',
-        icon: 'circle',
-        itemWidth: 8,
-        itemHeight: 8,
-        textStyle: {
-          color: '#9ca3af',
-        },
-      },
+      // No chart legend: it was drawn over the ring, and the table below
+      // already lists every type with its colour
+      legend: { show: false },
       series: [
         {
           name: 'Activity Type',
@@ -144,8 +137,8 @@ export class VoiceStatsActivityBreakdownComponent {
   getActivityColor(type: VoiceActivityType | string): string {
     const colorMap: Record<string, string> = {
       [VoiceActivityType.VOICE]: '#3b82f6', // blue
-      [VoiceActivityType.DEAF]: '#6b7280', // gray
-      [VoiceActivityType.SERVER_DEAF]: '#4b5563', // dark gray
+      [VoiceActivityType.DEAF]: '#14b8a6', // teal (gray read as "disabled")
+      [VoiceActivityType.SERVER_DEAF]: '#0d9488', // dark teal
       [VoiceActivityType.MUTED]: '#f59e0b', // amber
       [VoiceActivityType.SERVER_MUTED]: '#d97706', // dark amber
       [VoiceActivityType.STREAMING]: '#8b5cf6', // purple

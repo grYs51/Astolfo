@@ -22,12 +22,12 @@ export const heatmapKey = (hour: number, dayOfWeek: number) =>
 
 /**
  * Generates all 168 `[hour, dayOfWeek, value]` cells for an ECharts heatmap
- * series, filling missing cells with 0.
+ * series; `getValue` decides what a missing cell is (0, null, …).
  */
-export function buildHeatmapGrid(
-  getValue: (hour: number, dayOfWeek: number) => number
-): [number, number, number][] {
-  const cells: [number, number, number][] = [];
+export function buildHeatmapGrid<T = number>(
+  getValue: (hour: number, dayOfWeek: number) => T
+): [number, number, T][] {
+  const cells: [number, number, T][] = [];
   for (let hour = 0; hour < 24; hour++) {
     for (let day = 0; day < 7; day++) {
       cells.push([hour, day, getValue(hour, day)]);

@@ -10,7 +10,7 @@
           <div class="rounded-lg border border-white/5 bg-base-300 px-sm py-sm">
             <p class="flex items-center gap-sm text-xs font-medium text-gray-300">
               <span class="h-2 w-2 shrink-0 rounded-full bg-primary-500"></span>
-              <span class="truncate">{{ id() }}</span>
+              <span class="truncate" [title]="serverName()">{{ serverName() }}</span>
             </p>
           </div>
         </div>
@@ -39,8 +39,8 @@
       <!-- Page header -->
       <header class="flex flex-wrap items-center justify-between gap-sm">
         <div>
-          <h1 class="text-xl font-bold tracking-tight text-gray-100">Voice statistics</h1>
-          <p class="text-xs text-gray-500">Server-wide voice activity analytics</p>
+          <h1 class="text-xl font-bold tracking-tight text-gray-100">{{ serverName() }}</h1>
+          <p class="text-xs text-gray-500">Voice activity</p>
         </div>
       </header>
 
