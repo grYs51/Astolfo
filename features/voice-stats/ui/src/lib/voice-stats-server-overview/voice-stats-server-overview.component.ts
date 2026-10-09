@@ -1,5 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
-import { VoiceStatsOverview } from '@nx-stolfo/data-access-voice-stats';
+import {
+  ServerMessageStats,
+  VoiceStatsOverview,
+} from '@nx-stolfo/data-access-voice-stats';
 import { StatCardComponent, SkeletonLoaderComponent } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
@@ -55,8 +58,9 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
         </div>
 
         <lib-stat-card
-          label="Top channel"
-          [value]="serverData.mostActiveChannel?.name || 'N/A'"
+          label="Messages"
+          [value]="messages()?.total ?? '—'"
+          [subtitle]="messageChange()"
           [dense]="true"
           containerClass="h-full"
         />
@@ -75,19 +79,30 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 export class VoiceStatsServerOverviewComponent {
   overview = input.required<VoiceStatsOverview>();
   loading = input<boolean>(false);
+  /** Text activity for the same period (optional) */
+  messages = input<ServerMessageStats | undefined>(undefined);
   /** e.g. "the month before"; the change line is hidden without a previous period */
   previousLabel = input<string>();
 
   /** "↑ 17% vs the month before" */
   protected change = computed(() => {
     const { totalDuration, previousTotalDuration } = this.overview().server;
+    return this.describeChange(totalDuration, previousTotalDuration);
+  });
+
+  protected messageChange = computed(() => {
+    const messages = this.messages();
+    return messages ? this.describeChange(messages.total, messages.previousTotal) : undefined;
+  });
+
+  private describeChange(current: number, previous: number | null) {
     const label = this.previousLabel();
-    if (previousTotalDuration === null || !label) return undefined;
-    if (previousTotalDuration === 0) return totalDuration > 0 ? `New activity vs ${label}` : undefined;
-    const pct = Math.round(((totalDuration - previousTotalDuration) / previousTotalDuration) * 100);
+    if (previous === null || !label) return undefined;
+    if (previous === 0) return current > 0 ? `New activity vs ${label}` : undefined;
+    const pct = Math.round(((current - previous) / previous) * 100);
     if (pct === 0) return `Same as ${label}`;
     return `${pct > 0 ? '↑' : '↓'} ${Math.abs(pct)}% vs ${label}`;
-  });
+  }
 
   /** "Luna, Rex in Gaming · Otto in Lobby" */
   protected whoIsLive = computed(() => {

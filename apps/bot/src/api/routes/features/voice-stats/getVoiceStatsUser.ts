@@ -33,7 +33,15 @@ export const getVoiceStatsUser: RequestHandler<
     }
 
     // Independent queries, run in parallel
-    const [totalsResult, channelRows, recentSessions, previousRows, companionRows] = await Promise.all([
+    const [
+      totalsResult,
+      channelRows,
+      recentSessions,
+      previousRows,
+      companionRows,
+      messageChannelRows,
+      previousMessageRows,
+    ] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
           COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
@@ -96,7 +104,33 @@ export const getVoiceStatsUser: RequestHandler<
         ORDER BY together DESC
         LIMIT 5
       `,
+      // Text activity: messages per channel (the total is their sum)
+      req.db.$queryRaw<{ channel_id: string; count: bigint }[]>`
+        SELECT channel_id, COUNT(*)::bigint AS count
+        FROM message_stats
+        WHERE guild_id = ${serverId} AND user_id = ${userId}
+          ${periodFilter(period, 'created_at')}
+        GROUP BY channel_id
+        ORDER BY count DESC
+      `,
+      previousPeriodFilter(period, 'created_at')
+        ? req.db.$queryRaw<{ count: bigint }[]>`
+            SELECT COUNT(*)::bigint AS count
+            FROM message_stats
+            WHERE guild_id = ${serverId} AND user_id = ${userId}
+              ${previousPeriodFilter(period, 'created_at')!}
+          `
+        : Promise.resolve(null),
     ]);
+
+    const messages = {
+      count: messageChannelRows.reduce((sum, row) => sum + Number(row.count), 0),
+      previousCount: previousMessageRows ? Number(previousMessageRows[0]?.count ?? 0) : null,
+      topChannels: messageChannelRows.slice(0, 3).map((row) => ({
+        channel: getChannelData(serverId, row.channel_id),
+        count: Number(row.count),
+      })),
+    };
 
     const previousTotalDuration = previousRows
       ? Number(previousRows[0]?.total_duration ?? 0)
@@ -130,6 +164,7 @@ export const getVoiceStatsUser: RequestHandler<
           previousTotalDuration,
         },
         companions,
+        messages,
         recentSessions: [],
         channelBreakdown: [],
       });
@@ -186,6 +221,7 @@ export const getVoiceStatsUser: RequestHandler<
         previousTotalDuration,
       },
       companions,
+      messages,
       recentSessions: enrichedRecentSessions,
       channelBreakdown,
     });

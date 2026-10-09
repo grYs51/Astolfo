@@ -11,6 +11,7 @@ import {
   getVoiceStatsTimeline,
   getVoiceStatsHeatmap,
   getVoiceStatsUserHeatmap,
+  getServerMessages,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -65,5 +66,11 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getVoiceStatsHeatmap,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/messages',
+    isAuthenticated,
+    isServerMember,
+    getServerMessages,
   );
 };

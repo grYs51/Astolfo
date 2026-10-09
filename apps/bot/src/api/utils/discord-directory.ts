@@ -86,7 +86,10 @@ const mock: DiscordDirectory = {
   },
 
   channel(guildId, channelId) {
-    return findMockGuild(guildId)?.channels.find((c) => c.id === channelId);
+    const guild = findMockGuild(guildId);
+    return [...(guild?.channels ?? []), ...(guild?.textChannels ?? [])].find(
+      (c) => c.id === channelId
+    );
   },
 
   async members(guildId, userIds) {

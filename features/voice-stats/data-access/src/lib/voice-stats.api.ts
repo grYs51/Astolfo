@@ -14,6 +14,7 @@ import {
   TimelineGranularity,
   HeatmapPeriod,
   DashboardPeriod,
+  ServerMessageStats,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -82,6 +83,20 @@ export class VoiceStatsApi extends ApiBase {
         if (limitVal !== undefined) params['limit'] = limitVal.toString();
 
         return params;
+      }
+    );
+  }
+
+  /** Fetch text activity: totals, top channels, top members */
+  fetchServerMessages(
+    guildId: () => string,
+    period?: () => DashboardPeriod | undefined
+  ) {
+    return this.get<ServerMessageStats>(
+      () => `/features/voice-stats/${guildId()}/messages`,
+      (): Record<string, string> => {
+        const periodVal = period?.();
+        return periodVal ? { period: periodVal } : {};
       }
     );
   }

@@ -26,8 +26,35 @@
 
   <!-- Your channels -->
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-    <h3 class="mb-md text-base font-semibold text-gray-100">Your channels</h3>
-    @if (topChannels().length === 0) {
+    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+      <h3 class="text-base font-semibold text-gray-100">Your channels</h3>
+      <lib-segmented-control label="Channel type" [options]="channelViewOptions" [(value)]="channelView" />
+    </div>
+    @if (channelView() === 'text') {
+      @if (userStats().messages.topChannels.length === 0) {
+        <p class="py-md text-center text-sm text-gray-400">No messages in this period</p>
+      } @else {
+        <ul class="space-y-md">
+          @for (item of userStats().messages.topChannels; track item.channel.id) {
+            <li>
+              <div class="mb-xs flex items-baseline justify-between gap-md">
+                <span class="truncate text-sm font-medium text-gray-100"># {{ item.channel.name }}</span>
+                <span class="shrink-0 text-sm text-primary-300">
+                  {{ item.count }}
+                  <span class="text-xs text-gray-500">· {{ textShare(item.count) }}%</span>
+                </span>
+              </div>
+              <lib-progress-bar
+                [percentage]="textShare(item.count)"
+                [showLabel]="false"
+                barColor="bg-primary-500"
+                height="h-1.5 bg-base-100"
+              />
+            </li>
+          }
+        </ul>
+      }
+    } @else if (topChannels().length === 0) {
       <p class="py-md text-center text-sm text-gray-400">No voice activity in this period</p>
     } @else {
       <ul class="space-y-md">

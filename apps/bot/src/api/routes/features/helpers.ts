@@ -24,8 +24,14 @@ export const getTimeZone = (tz: unknown): string => {
  * a separate bind parameter, which Postgres won't match as the same
  * expression.
  */
-export const localIssuedOn = (tz: string) =>
-  Prisma.sql`((issued_on AT TIME ZONE 'UTC') AT TIME ZONE ${tz})`;
+export const localIssuedOn = (tz: string) => localTime('issued_on', tz);
+
+/** Timestamp columns the dashboard filters/buckets on (UTC wall-clock) */
+export type TimeColumn = 'issued_on' | 'created_at';
+
+/** `column` as wall-clock time in `tz` — see localIssuedOn */
+export const localTime = (column: TimeColumn, tz: string) =>
+  Prisma.sql`((${Prisma.raw(column)} AT TIME ZONE 'UTC') AT TIME ZONE ${tz})`;
 
 /** Splits a millisecond duration into whole hours and remaining minutes. */
 export const toDurationParts = (ms: number) => ({
@@ -63,21 +69,22 @@ export const parsePeriod = <T extends string>(
   fallback: T
 ): T => (allowed.includes(raw as T) ? (raw as T) : fallback);
 
-/** `AND issued_on >= <period start>`, or nothing for 'all'. */
-export const periodFilter = (period: string) => {
+/** `AND <column> >= <period start>`, or nothing for 'all'. */
+export const periodFilter = (period: string, column: TimeColumn = 'issued_on') => {
   const start = getStartDateForPeriod(period);
-  return start ? Prisma.sql`AND issued_on >= ${start}` : Prisma.empty;
+  return start ? Prisma.sql`AND ${Prisma.raw(column)} >= ${start}` : Prisma.empty;
 };
 
 /**
  * `issued_on` range of the period right before `period`, with the same
  * length (e.g. the 30 days before the last 30), or undefined for 'all'.
  */
-export const previousPeriodFilter = (period: string) => {
+export const previousPeriodFilter = (period: string, column: TimeColumn = 'issued_on') => {
   const start = getStartDateForPeriod(period);
   if (!start) return undefined;
   const previousStart = new Date(start.getTime() - (Date.now() - start.getTime()));
-  return Prisma.sql`AND issued_on >= ${previousStart} AND issued_on < ${start}`;
+  const col = Prisma.raw(column);
+  return Prisma.sql`AND ${col} >= ${previousStart} AND ${col} < ${start}`;
 };
 
 /** Member display data from the Discord directory, with an "Unknown User" fallback. */

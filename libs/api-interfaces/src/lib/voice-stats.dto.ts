@@ -34,6 +34,33 @@ export interface LiveVoiceMember {
   since: DateLike;
 }
 
+/** A channel with a message count */
+export interface ChannelMessageCount {
+  channel: DiscordChannel;
+  count: number;
+}
+
+/** A member with a message count (text "leaderboard") */
+export interface MemberMessageCount {
+  member: DiscordMember;
+  count: number;
+  /** Distinct channels they wrote in */
+  channels: number;
+}
+
+/** Text activity of a server for a period (GET …/:serverId/messages) */
+export interface ServerMessageStats {
+  period: DashboardPeriod;
+  total: number;
+  /** total of the period just before (same length); null for 'all' */
+  previousTotal: number | null;
+  activeMembers: number;
+  /** Top 5 text channels */
+  topChannels: ChannelMessageCount[];
+  /** Most messages first (up to 100, so the viewer's rank is known) */
+  topMembers: MemberMessageCount[];
+}
+
 /** A member the viewer shared voice channels with */
 export interface VoiceCompanion {
   member: DiscordMember;
@@ -173,6 +200,14 @@ export interface VoiceStatsUser {
   /** Who the user shared voice channels with most in the period (top 5) */
   companions: VoiceCompanion[];
 
+  /** Text activity in the period */
+  messages: {
+    count: number;
+    /** count of the period just before; null for 'all' */
+    previousCount: number | null;
+    topChannels: ChannelMessageCount[];
+  };
+
   // Recent activity
   recentSessions: VoiceSession[];
   channelBreakdown: VoiceChannelBreakdown[];
@@ -191,6 +226,9 @@ export interface VoiceStatsTimelineBucket {
   averageSessionDuration: number;
   /** The requesting user's part of totalDuration */
   myDuration: number;
+  /** Messages sent in this bucket, and the requesting user's part */
+  messageCount: number;
+  myMessageCount: number;
 
   // Activity breakdown for this time bucket
   activityBreakdown?: ActivityTypeBreakdown[];

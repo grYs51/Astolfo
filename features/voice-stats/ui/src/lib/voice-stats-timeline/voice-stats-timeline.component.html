@@ -3,25 +3,34 @@
 <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
   <div class="mb-md flex items-center justify-between">
     <div>
-      <h3 class="text-base font-semibold text-gray-100">Voice activity over time</h3>
-      <p class="text-xs text-gray-500">Total voice duration per {{ data.granularity }}</p>
+      <h3 class="text-base font-semibold text-gray-100">Activity over time</h3>
+      <p class="text-xs text-gray-500">
+        {{ metric() === 'voice' ? 'Voice time' : 'Messages' }} per {{ data.granularity }}
+      </p>
     </div>
+    <div class="flex flex-wrap items-center gap-sm">
+    <lib-segmented-control label="Timeline metric" [options]="metricOptions" [(value)]="metric" />
     @if (hasActivity()) {
       <div class="flex flex-wrap items-center gap-sm text-xs text-gray-400">
         <span class="flex items-center gap-xs"><span class="h-2.5 w-2.5 rounded-sm bg-[#f0abfc]"></span>You</span>
         <span class="flex items-center gap-xs"><span class="h-2.5 w-2.5 rounded-sm bg-[#a855f7]"></span>Everyone else</span>
       <span class="rounded-md bg-base-200 px-sm py-xs text-xs text-gray-300">
-        Busiest {{ data.granularity }}: {{ stats().peakMs | humanizeDuration: true }} · avg {{ stats().avgUsers }} people
+        @if (metric() === 'voice') {
+          Busiest {{ data.granularity }}: {{ stats().peakMs | humanizeDuration: true }} · avg {{ stats().avgUsers }} people
+        } @else {
+          Busiest {{ data.granularity }}: {{ peakMessages() }} messages
+        }
       </span>
       </div>
     }
+    </div>
   </div>
 
   @if (loading()) {
     <div class="h-64 rounded-lg bg-base-200 animate-pulse"></div>
   } @else if (!hasActivity()) {
     <div class="py-xl text-center">
-      <p class="text-sm text-gray-400">No timeline data available</p>
+      <p class="text-sm text-gray-400">No {{ metric() === 'voice' ? 'voice activity' : 'messages' }} in this period</p>
     </div>
   } @else {
     <div

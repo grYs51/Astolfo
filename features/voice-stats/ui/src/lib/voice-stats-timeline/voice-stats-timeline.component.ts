@@ -1,6 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, computed, signal } from '@angular/core';
 import { VoiceStatsTimeline } from '@nx-stolfo/data-access-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
+import {
+  SegmentedControlComponent,
+  SegmentedControlOption,
+} from '@nx-stolfo/components';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
@@ -10,7 +14,7 @@ echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
 
 @Component({
   selector: 'feature-voice-stats-timeline',
-  imports: [NgxEchartsDirective, HumanizeDurationPipe],
+  imports: [NgxEchartsDirective, HumanizeDurationPipe, SegmentedControlComponent],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-timeline.component.html',
   styleUrl: './voice-stats-timeline.component.scss',
@@ -23,10 +27,24 @@ export class VoiceStatsTimelineComponent {
 
   private readonly durationPipe = new HumanizeDurationPipe();
 
+  /** What the bars show */
+  metric = signal<'voice' | 'messages'>('voice');
+  protected readonly metricOptions: SegmentedControlOption<'voice' | 'messages'>[] = [
+    { value: 'voice', label: 'Voice' },
+    { value: 'messages', label: 'Messages' },
+  ];
+
   // The API returns every bucket of the period (empty ones as zero), so
-  // "no data" means no sessions at all rather than an empty list
+  // "no data" means nothing at all rather than an empty list
   hasActivity = computed(() =>
-    this.timeline().timeline.some((bucket) => bucket.sessionCount > 0)
+    this.timeline().timeline.some((bucket) =>
+      this.metric() === 'voice' ? bucket.sessionCount > 0 : bucket.messageCount > 0
+    )
+  );
+
+  /** Most messages in one bucket */
+  peakMessages = computed(() =>
+    Math.max(0, ...this.timeline().timeline.map((bucket) => bucket.messageCount))
   );
 
   stats = computed(() => {
@@ -52,11 +70,16 @@ export class VoiceStatsTimelineComponent {
     const data = this.timeline();
 
     const labels = data.timeline.map(bucket => this.formatTimestamp(bucket.timestamp));
-    // Chart values are hours (durations are stored in milliseconds). Bars
+    const messages = this.metric() === 'messages';
+    // Voice values are hours (durations are stored in milliseconds). Bars
     // stack "everyone else" under the viewer's own share.
     const hours = (ms: number) => +(ms / 3_600_000).toFixed(2);
-    const others = data.timeline.map((bucket) => hours(bucket.totalDuration - bucket.myDuration));
-    const mine = data.timeline.map((bucket) => hours(bucket.myDuration));
+    const others = data.timeline.map((bucket) =>
+      messages ? bucket.messageCount - bucket.myMessageCount : hours(bucket.totalDuration - bucket.myDuration)
+    );
+    const mine = data.timeline.map((bucket) =>
+      messages ? bucket.myMessageCount : hours(bucket.myDuration)
+    );
 
     return {
       tooltip: {
@@ -69,6 +92,10 @@ export class VoiceStatsTimelineComponent {
         },
         formatter: (params: { dataIndex: number; axisValue: string }[]) => {
           const bucket = data.timeline[params[0].dataIndex];
+          if (messages) {
+            const yours = bucket.myMessageCount > 0 ? `You: ${bucket.myMessageCount}<br/>` : '';
+            return `<strong>${params[0].axisValue}</strong><br/>Messages: ${bucket.messageCount}<br/>${yours}`;
+          }
           const you = bucket.myDuration > 0
             ? `You: ${this.durationPipe.transform(bucket.myDuration, true)}<br/>`
             : '';
@@ -103,13 +130,13 @@ export class VoiceStatsTimelineComponent {
       },
       yAxis: {
         type: 'value',
-        name: 'Hours',
+        name: messages ? 'Messages' : 'Hours',
         nameTextStyle: {
           color: '#9ca3af',
         },
         axisLabel: {
           color: '#9ca3af',
-          formatter: (value: number) => `${value}h`,
+          formatter: (value: number) => (messages ? `${value}` : `${value}h`),
         },
         axisLine: {
           lineStyle: {
