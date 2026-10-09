@@ -11,7 +11,11 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
-import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
+import {
+  GridComponent,
+  TooltipComponent,
+  VisualMapComponent,
+} from 'echarts/components';
 import { HeatmapChart } from 'echarts/charts';
 import {
   HEATMAP_DAYS_OF_WEEK,
@@ -19,12 +23,23 @@ import {
   buildHeatmapGrid,
   heatmapKey,
 } from '../heatmap-grid';
-echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
+echarts.use([
+  CanvasRenderer,
+  TooltipComponent,
+  VisualMapComponent,
+  GridComponent,
+  HeatmapChart,
+]);
 
 @Component({
   selector: 'feature-voice-stats-user-heatmap',
   standalone: true,
-  imports: [CommonModule, NgxEchartsDirective, StatCardComponent, HumanizeDurationPipe],
+  imports: [
+    CommonModule,
+    NgxEchartsDirective,
+    StatCardComponent,
+    HumanizeDurationPipe,
+  ],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-user-heatmap.component.html',
   styleUrls: ['./voice-stats-user-heatmap.component.scss'],
@@ -59,7 +74,10 @@ export class VoiceStatsUserHeatmapComponent {
     const data = this.heatmap();
 
     // Create a complete grid with all cells (24 hours × 7 days)
-    const dataMap = new Map<string, { userValue: number; serverAvg: number; diff: number }>();
+    const dataMap = new Map<
+      string,
+      { userValue: number; serverAvg: number; diff: number }
+    >();
 
     // Populate map with actual data
     data.userHeatmap.forEach((point) => {
@@ -71,17 +89,22 @@ export class VoiceStatsUserHeatmapComponent {
     });
 
     // Transform data for ECharts: [hour, dayOfWeek, difference]
-    // Positive difference = user above average (green/blue)
-    // Negative difference = user below average (red/orange)
-    const chartData = buildHeatmapGrid(
-      (hour, day) => dataMap.get(heatmapKey(hour, day))?.diff || 0
+    // Positive difference = user above average (blue)
+    // Negative difference = user below average (red)
+    // Hours without your activity go to a separate, uncoloured series —
+    // as a 0 difference they looked exactly like "at average"
+    const grid = buildHeatmapGrid(
+      (hour, day) => dataMap.get(heatmapKey(hour, day))?.diff ?? null,
     );
+    const chartData = grid.filter(
+      (d): d is [number, number, number] => d[2] !== null,
+    );
+    const emptyCells = grid
+      .filter((d) => d[2] === null)
+      .map(([hour, day]) => [hour, day, 0]);
 
     // Find min and max for color scale (centered at 0)
-    const maxAbsValue = Math.max(
-      ...chartData.map((d) => Math.abs(d[2])),
-      1
-    );
+    const maxAbsValue = Math.max(...chartData.map((d) => Math.abs(d[2])), 1);
 
     return {
       tooltip: {
@@ -148,21 +171,33 @@ export class VoiceStatsUserHeatmapComponent {
           },
         },
       },
-      visualMap: {
-        min: -maxAbsValue,
-        max: maxAbsValue,
-        calculable: true,
-        orient: 'horizontal',
-        left: 'center',
-        bottom: '2%',
-        textStyle: {
-          color: '#9ca3af',
+      visualMap: [
+        {
+          seriesIndex: 0, // only the comparison cells are colour-scaled
+          min: -maxAbsValue,
+          max: maxAbsValue,
+          calculable: true,
+          orient: 'horizontal',
+          left: 'center',
+          bottom: '2%',
+          textStyle: {
+            color: '#9ca3af',
+          },
+          // Diverging: red pole (below avg) -> neutral gray midpoint -> blue pole (above avg)
+          inRange: {
+            color: ['#dc2626', '#f87171', '#4b5563', '#60a5fa', '#2563eb'],
+          },
         },
-        // Diverging: red pole (below avg) -> neutral gray midpoint -> blue pole (above avg)
-        inRange: {
-          color: ['#dc2626', '#f87171', '#4b5563', '#60a5fa', '#2563eb'],
+        {
+          // ECharts requires a visualMap per heatmap series; this one just
+          // paints the "no activity" cells a flat background colour
+          show: false,
+          seriesIndex: 1,
+          min: 0,
+          max: 1,
+          inRange: { color: ['#1b2030', '#1b2030'] },
         },
-      },
+      ],
       series: [
         {
           name: 'User vs Server',
@@ -182,6 +217,18 @@ export class VoiceStatsUserHeatmapComponent {
               borderWidth: 1,
             },
           },
+        },
+        {
+          name: 'No activity',
+          type: 'heatmap',
+          data: emptyCells,
+          label: { show: false },
+          itemStyle: {
+            borderColor: '#141824',
+            borderWidth: 2,
+            borderRadius: 2,
+          },
+          emphasis: { disabled: true },
         },
       ],
     };

@@ -48,22 +48,30 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
         `
       );
 
-    const [userRows, serverAggRaw] = await Promise.all([
+    const [userRows, serverAggRaw, [periodUsers]] = await Promise.all([
       heatmapCells(Prisma.sql`AND member_id = ${userId}`),
       heatmapCells(Prisma.empty),
+      // Everyone active in the period: the denominator for "server average".
+      // Per-cell unique users can't be summed, and the busiest cell's count
+      // (used before) undercounted members and inflated the average.
+      req.db.$queryRaw<{ users: bigint }[]>`
+        SELECT COUNT(DISTINCT member_id)::bigint AS users
+        FROM voice_stats
+        WHERE guild_id = ${serverId}
+          AND type = ${VOICE_TYPE.VOICE}
+          AND issued_on >= ${startDate}
+      `,
     ]);
 
     // Build a lookup map for the server aggregation
     const serverMap = new Map<string, { totalMinutes: number; uniqueUsers: number }>();
     let serverTotalMinutes = 0;
-    let serverTotalUsers = 0;
+    const serverTotalUsers = Number(periodUsers?.users ?? 0);
 
     serverAggRaw.forEach((row) => {
       const key = `${row.hour}-${row.day_of_week}`;
       serverMap.set(key, { totalMinutes: row.total_minutes, uniqueUsers: Number(row.unique_users) });
       serverTotalMinutes += row.total_minutes;
-      // Unique users across cells isn't additive — use max as rough measure
-      serverTotalUsers = Math.max(serverTotalUsers, Number(row.unique_users));
     });
 
     const userHeatmap = userRows.map((row) => ({

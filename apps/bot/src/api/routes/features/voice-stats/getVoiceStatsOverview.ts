@@ -6,6 +6,7 @@ import {
 } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
+import { discordDirectory } from '../../../utils/discord-directory';
 
 type TotalsRow = {
   total_duration: bigint;
@@ -101,7 +102,10 @@ export const getVoiceStatsOverview: RequestHandler<
 
   const totalParts = toDurationParts(totalDuration);
 
+  const guild = discordDirectory().guild(serverId);
+
   res.send({
+    guild: { id: serverId, name: guild?.name ?? null, icon: guild?.icon ?? null },
     server: {
       totalDuration,
       totalDurationHours: totalParts.hours,
