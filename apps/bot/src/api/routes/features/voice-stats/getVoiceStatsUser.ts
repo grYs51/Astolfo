@@ -2,12 +2,17 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceActivityType, VoiceStatsUser } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
+import { Prisma } from '@prisma/client';
 import {
   getChannelData,
+  getStartDateForPeriod,
+  memberOrUnknown,
   parsePeriod,
   periodFilter,
+  previousPeriodFilter,
   toDurationParts,
 } from '../helpers';
+import { discordDirectory } from '../../../utils/discord-directory';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -19,14 +24,16 @@ export const getVoiceStatsUser: RequestHandler<
     const { serverId, userId } = req.params;
     const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
     const dateFilter = periodFilter(period);
+    const previousFilter = previousPeriodFilter(period);
+    const start = getStartDateForPeriod(period);
 
     if (!userId) {
       res.status(400).send({ error: 'Missing userId' });
       return;
     }
 
-    // Run all three queries in parallel: totals, channel breakdown, recent sessions
-    const [totalsResult, channelRows, recentSessions] = await Promise.all([
+    // Independent queries, run in parallel
+    const [totalsResult, channelRows, recentSessions, previousRows, companionRows] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
           COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
@@ -54,7 +61,54 @@ export const getVoiceStatsUser: RequestHandler<
         orderBy: { issued_on: 'desc' },
         take: 10,
       }),
+      // Same total for the period before, for the ↑/↓ comparison
+      previousFilter
+        ? req.db.$queryRaw<{ total_duration: bigint }[]>`
+            SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration
+            FROM voice_stats
+            WHERE guild_id = ${serverId} AND member_id = ${userId}
+              AND type = ${VOICE_TYPE.VOICE}
+              ${previousFilter}
+          `
+        : Promise.resolve(null),
+      // Who the user shared a channel with, and for how long: the overlap of
+      // each of their sessions with everyone else's in the same channel
+      req.db.$queryRaw<{ member_id: string; together: bigint }[]>`
+        SELECT
+          other.member_id,
+          SUM(EXTRACT(EPOCH FROM (
+            LEAST(COALESCE(me.ended_on, NOW()), COALESCE(other.ended_on, NOW()))
+            - GREATEST(me.issued_on, other.issued_on)
+          )) * 1000)::bigint AS together
+        FROM voice_stats me
+        JOIN voice_stats other
+          ON other.guild_id = me.guild_id
+         AND other.channel_id = me.channel_id
+         AND other.type = ${VOICE_TYPE.VOICE}
+         AND other.member_id <> me.member_id
+         AND other.issued_on < COALESCE(me.ended_on, NOW())
+         AND COALESCE(other.ended_on, NOW()) > me.issued_on
+        WHERE me.guild_id = ${serverId}
+          AND me.member_id = ${userId}
+          AND me.type = ${VOICE_TYPE.VOICE}
+          ${start ? Prisma.sql`AND me.issued_on >= ${start}` : Prisma.empty}
+        GROUP BY other.member_id
+        ORDER BY together DESC
+        LIMIT 5
+      `,
     ]);
+
+    const previousTotalDuration = previousRows
+      ? Number(previousRows[0]?.total_duration ?? 0)
+      : null;
+    const companionMembers = await discordDirectory().members(
+      serverId,
+      companionRows.map((row) => row.member_id)
+    );
+    const companions = companionRows.map((row) => ({
+      member: memberOrUnknown(companionMembers, row.member_id),
+      togetherDuration: Number(row.together),
+    }));
 
     const [totals] = totalsResult;
     const totalDuration = Number(totals.total_duration);
@@ -73,7 +127,9 @@ export const getVoiceStatsUser: RequestHandler<
           favoriteChannelDuration: 0,
           averageSessionDuration: 0,
           averageSessionDurationMinutes: 0,
+          previousTotalDuration,
         },
+        companions,
         recentSessions: [],
         channelBreakdown: [],
       });
@@ -127,7 +183,9 @@ export const getVoiceStatsUser: RequestHandler<
         favoriteChannelDuration: favoriteRow ? Number(favoriteRow.total_duration) : 0,
         averageSessionDuration: Math.floor(totalDuration / sessionCount),
         averageSessionDurationMinutes: Math.floor(totalDuration / sessionCount / (1000 * 60)),
+        previousTotalDuration,
       },
+      companions,
       recentSessions: enrichedRecentSessions,
       channelBreakdown,
     });

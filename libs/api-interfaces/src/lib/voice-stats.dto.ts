@@ -27,6 +27,20 @@ export interface DiscordChannel {
   type: string;
 }
 
+/** Someone in voice right now (an open session) */
+export interface LiveVoiceMember {
+  member: DiscordMember;
+  channel: DiscordChannel;
+  since: DateLike;
+}
+
+/** A member the viewer shared voice channels with */
+export interface VoiceCompanion {
+  member: DiscordMember;
+  /** Time spent in the same channel at the same time, in ms */
+  togetherDuration: number;
+}
+
 // Voice Activity Types — values match VOICE_TYPE stored in the DB (uppercase)
 export enum VoiceActivityType {
   VOICE = 'VOICE',
@@ -72,7 +86,12 @@ export interface VoiceStatsOverview {
     mostActiveChannel: DiscordChannel | null;
     mostActiveChannelDuration: number;
     mostActiveChannelSessions: number;
+    /** totalDuration of the period just before (same length); null for 'all' */
+    previousTotalDuration: number | null;
   };
+
+  /** Everyone in voice right now, longest-running first (not limited to the period) */
+  liveNow: LiveVoiceMember[];
 
   // Activity type breakdown
   activityBreakdown: ActivityTypeBreakdown[];
@@ -147,7 +166,12 @@ export interface VoiceStatsUser {
     favoriteChannelDuration: number;
     averageSessionDuration: number;
     averageSessionDurationMinutes: number;
+    /** totalDuration of the period just before (same length); null for 'all' */
+    previousTotalDuration: number | null;
   };
+
+  /** Who the user shared voice channels with most in the period (top 5) */
+  companions: VoiceCompanion[];
 
   // Recent activity
   recentSessions: VoiceSession[];
@@ -165,6 +189,8 @@ export interface VoiceStatsTimelineBucket {
   uniqueUsers: number;
   uniqueChannels: number;
   averageSessionDuration: number;
+  /** The requesting user's part of totalDuration */
+  myDuration: number;
 
   // Activity breakdown for this time bucket
   activityBreakdown?: ActivityTypeBreakdown[];

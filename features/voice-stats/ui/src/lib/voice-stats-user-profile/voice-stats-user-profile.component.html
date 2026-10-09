@@ -1,4 +1,29 @@
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-md items-start">
+  <!-- Who you hang out with: overlapping time in the same channel -->
+  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+    <h3 class="mb-md text-base font-semibold text-gray-100">You hang out most with</h3>
+    @if (userStats().companions.length === 0) {
+      <p class="py-md text-center text-sm text-gray-400">Nobody shared a channel with you in this period</p>
+    } @else {
+      <ul class="space-y-sm">
+        @for (companion of userStats().companions; track companion.member.id) {
+          <li class="flex items-center gap-sm">
+            @if (companion.member.avatar) {
+              <img [src]="companion.member.avatar" alt="" class="h-8 w-8 shrink-0 rounded-full ring-1 ring-white/10" />
+            } @else {
+              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-base-200 text-xs text-gray-400" aria-hidden="true">?</span>
+            }
+            <span class="min-w-0 flex-1 truncate text-sm text-gray-100">
+              {{ companion.member.displayName || companion.member.username }}
+            </span>
+            <span class="shrink-0 text-sm text-primary-300">{{ companion.togetherDuration | humanizeDuration: true }}</span>
+          </li>
+        }
+      </ul>
+      <p class="mt-md text-xs text-gray-500">Time in the same channel at the same time</p>
+    }
+  </div>
+
   <!-- Your channels -->
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
     <h3 class="mb-md text-base font-semibold text-gray-100">Your channels</h3>

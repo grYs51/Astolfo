@@ -7,8 +7,10 @@ import {
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import {
   getChannelData,
+  memberOrUnknown,
   parsePeriod,
   periodFilter,
+  previousPeriodFilter,
   toDurationParts,
 } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
@@ -37,9 +39,10 @@ export const getVoiceStatsOverview: RequestHandler<
   const { serverId } = req.params;
   const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
   const dateFilter = periodFilter(period);
+  const previousFilter = previousPeriodFilter(period);
 
-  // The three aggregates are independent, so they run in parallel.
-  const [[totals], [topChannel], typeRows] = await Promise.all([
+  // The aggregates are independent, so they run in parallel.
+  const [[totals], [topChannel], typeRows, previousRows, liveRows] = await Promise.all([
     // Server totals in a single SQL query. Only VOICE rows count: MUTED/DEAF/...
     // rows overlap their VOICE row and would double-count time. Open sessions
     // (ended_on IS NULL) count their live duration via COALESCE.
@@ -83,6 +86,27 @@ export const getVoiceStatsOverview: RequestHandler<
       ${dateFilter}
     GROUP BY type
   `,
+
+    // Same total for the period before, for the ↑/↓ comparison
+    previousFilter
+      ? req.db.$queryRaw<{ total_duration: bigint }[]>`
+    SELECT COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration
+    FROM voice_stats
+    WHERE guild_id = ${serverId}
+      AND type = ${VOICE_TYPE.VOICE}
+      ${previousFilter}
+  `
+      : Promise.resolve(null),
+
+    // Who is in voice right now (open sessions), longest-running first
+    req.db.$queryRaw<{ member_id: string; channel_id: string; issued_on: Date }[]>`
+    SELECT member_id, channel_id, issued_on
+    FROM voice_stats
+    WHERE guild_id = ${serverId}
+      AND type = ${VOICE_TYPE.VOICE}
+      AND ended_on IS NULL
+    ORDER BY issued_on ASC
+  `,
   ]);
 
   const totalDuration = Number(totals.total_duration);
@@ -114,7 +138,17 @@ export const getVoiceStatsOverview: RequestHandler<
 
   const totalParts = toDurationParts(totalDuration);
 
-  const guild = discordDirectory().guild(serverId);
+  const directory = discordDirectory();
+  const guild = directory.guild(serverId);
+  const liveMembers = await directory.members(
+    serverId,
+    liveRows.map((row) => row.member_id)
+  );
+  const liveNow = liveRows.map((row) => ({
+    member: memberOrUnknown(liveMembers, row.member_id),
+    channel: getChannelData(serverId, row.channel_id),
+    since: row.issued_on,
+  }));
 
   res.send({
     guild: { id: serverId, name: guild?.name ?? null, icon: guild?.icon ?? null },
@@ -132,7 +166,11 @@ export const getVoiceStatsOverview: RequestHandler<
       mostActiveChannelSessions: topChannel
         ? Number(topChannel.session_count)
         : 0,
+      previousTotalDuration: previousRows
+        ? Number(previousRows[0]?.total_duration ?? 0)
+        : null,
     },
+    liveNow,
     activityBreakdown,
   });
 });

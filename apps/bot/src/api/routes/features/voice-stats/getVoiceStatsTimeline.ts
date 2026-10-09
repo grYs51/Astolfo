@@ -16,6 +16,7 @@ import {
 type TimelineRow = {
   bucket: Date;
   total_duration: bigint;
+  my_duration: bigint;
   session_count: bigint;
   unique_users: bigint;
   unique_channels: bigint;
@@ -52,6 +53,8 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
     const pgGranularity = granularity;
     // Buckets are hours/days/weeks of the viewer's time zone, not UTC
     const tz = getTimeZone(req.query.tz);
+    // The viewer's own share of each bucket, for the "you vs everyone" stack
+    const viewerId: string = req.user?.id ?? '';
     const local = localIssuedOn(tz);
 
     // DATE_TRUNC bucketing in SQL — no full table scan into memory. Every
@@ -63,6 +66,8 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
         SELECT
           DATE_TRUNC(${pgGranularity}, ${local}) AS bucket,
           SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint AS total_duration,
+          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)
+            FILTER (WHERE member_id = ${viewerId})::bigint AS my_duration,
           COUNT(*)::bigint AS session_count,
           COUNT(DISTINCT member_id)::bigint AS unique_users,
           COUNT(DISTINCT channel_id)::bigint AS unique_channels
@@ -82,6 +87,7 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
       SELECT
         buckets.bucket,
         COALESCE(agg.total_duration, 0)::bigint AS total_duration,
+        COALESCE(agg.my_duration, 0)::bigint AS my_duration,
         COALESCE(agg.session_count, 0)::bigint AS session_count,
         COALESCE(agg.unique_users, 0)::bigint AS unique_users,
         COALESCE(agg.unique_channels, 0)::bigint AS unique_channels
@@ -101,6 +107,7 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
       return {
         timestamp,
         totalDuration,
+        myDuration: Number(row.my_duration),
         totalDurationHours: parts.hours,
         totalDurationMinutes: parts.minutes,
         sessionCount,

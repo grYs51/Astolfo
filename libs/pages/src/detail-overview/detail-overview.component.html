@@ -53,6 +53,11 @@
                 <strong class="font-semibold text-gray-100">#{{ myRank() }}</strong>
                 of {{ memberCount() }} members</span>}.
             </p>
+            @if (myChange(); as change) {
+              <p class="mt-xs text-sm" [class.text-success]="change.up" [class.text-gray-400]="!change.up">
+                {{ change.text }}
+              </p>
+            }
             <dl class="mt-md grid grid-cols-1 gap-md text-sm sm:grid-cols-3">
               <div>
                 <dt class="text-xs text-gray-500">Sessions</dt>
@@ -98,7 +103,10 @@
           Failed to load overview data
         </div>
       } @else if (overviewResource.hasValue()) {
-        <feature-voice-stats-server-overview [overview]="overviewResource.value()!" />
+        <feature-voice-stats-server-overview
+          [overview]="overviewResource.value()!"
+          [previousLabel]="previousLabel()"
+        />
       } @else {
         <div class="grid grid-cols-2 xl:grid-cols-4 gap-sm animate-pulse">
           @for (i of [1, 2, 3, 4]; track i) {
