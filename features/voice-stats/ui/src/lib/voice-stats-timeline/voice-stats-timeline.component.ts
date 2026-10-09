@@ -15,6 +15,7 @@ echarts.use([CanvasRenderer, TooltipComponent, GridComponent, BarChart]);
   templateUrl: './voice-stats-timeline.component.html',
   styleUrl: './voice-stats-timeline.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: { class: 'block' },
 })
 export class VoiceStatsTimelineComponent {
   timeline = input.required<VoiceStatsTimeline>();

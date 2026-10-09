@@ -17,6 +17,22 @@ export const HEATMAP_HOURS = Array.from({ length: 24 }, (_, i) => {
   return `${hour}${period}`;
 });
 
+/**
+ * Sequential single-hue ramp for "how much voice time" heatmaps; zero-value
+ * cells stay close to the card surface so an empty grid reads as empty.
+ */
+export const HEATMAP_SEQUENTIAL_COLORS = [
+  '#1c2133',
+  '#2c2a4d',
+  '#433370',
+  '#5c3d94',
+  '#7a48bd',
+  '#9333ea',
+  '#a855f7',
+  '#c084fc',
+  '#e9d5ff',
+];
+
 export const heatmapKey = (hour: number, dayOfWeek: number) =>
   `${hour}-${dayOfWeek}`;
 

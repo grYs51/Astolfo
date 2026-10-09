@@ -1,4 +1,10 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  input,
+  signal,
+} from '@angular/core';
 import { VoiceStatsChannels } from '@nx-stolfo/data-access-voice-stats';
 import { ProgressBarComponent } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
@@ -13,6 +19,18 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 export class VoiceStatsChannelsComponent {
   channels = input.required<VoiceStatsChannels>();
   loading = input<boolean>(false);
+  /** Show only the top N channels until "Show all" is clicked */
+  limit = input<number | undefined>(undefined);
+
+  protected expanded = signal(false);
+  protected visibleChannels = computed(() => {
+    const channels = this.channels().channels;
+    const limit = this.limit();
+    return limit && !this.expanded() ? channels.slice(0, limit) : channels;
+  });
+  protected hiddenCount = computed(
+    () => this.channels().channels.length - this.visibleChannels().length
+  );
 
   getChannelIcon(type: string): string {
     // The API sends discord.js ChannelType names ('GuildVoice', …), or

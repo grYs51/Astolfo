@@ -6,9 +6,11 @@
       <h3 class="text-base font-semibold text-gray-100">Voice activity over time</h3>
       <p class="text-xs text-gray-500">Total voice duration per {{ data.granularity }}</p>
     </div>
-    <span class="rounded-md bg-base-200 px-sm py-xs text-xs font-medium uppercase tracking-wide text-gray-400">
-      {{ data.period }}
-    </span>
+    @if (hasActivity()) {
+      <span class="rounded-md bg-base-200 px-sm py-xs text-xs text-gray-300">
+        Busiest {{ data.granularity }}: {{ stats().peakMs | humanizeDuration: true }} · avg {{ stats().avgUsers }} people
+      </span>
+    }
   </div>
 
   @if (loading()) {
@@ -24,25 +26,5 @@
       [initOpts]="{ renderer: 'canvas' }"
       class="timeline-chart"
     ></div>
-
-    <!-- Summary strip -->
-    <div class="mt-md grid grid-cols-2 gap-px overflow-hidden rounded-lg bg-white/5 md:grid-cols-4">
-      <div class="bg-base-200 p-md text-center">
-        <p class="text-xs uppercase tracking-wider text-gray-500">Total</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalMs | humanizeDuration: true }}</p>
-      </div>
-      <div class="bg-base-200 p-md text-center">
-        <p class="text-xs uppercase tracking-wider text-gray-500">Sessions</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().totalSessions }}</p>
-      </div>
-      <div class="bg-base-200 p-md text-center">
-        <p class="text-xs uppercase tracking-wider text-gray-500">Avg users</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().avgUsers }}</p>
-      </div>
-      <div class="bg-base-200 p-md text-center">
-        <p class="text-xs uppercase tracking-wider text-gray-500">Peak</p>
-        <p class="mt-xs text-lg font-bold text-gray-100">{{ stats().peakMs | humanizeDuration: true }}</p>
-      </div>
-    </div>
   }
 </div>

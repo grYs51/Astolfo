@@ -55,6 +55,19 @@ export const getStartDateForPeriod = (
   }
 };
 
+/** A whitelisted `?period=` value; anything else falls back to `fallback`. */
+export const parsePeriod = <T extends string>(
+  raw: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T => (allowed.includes(raw as T) ? (raw as T) : fallback);
+
+/** `AND issued_on >= <period start>`, or nothing for 'all'. */
+export const periodFilter = (period: string) => {
+  const start = getStartDateForPeriod(period);
+  return start ? Prisma.sql`AND issued_on >= ${start}` : Prisma.empty;
+};
+
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>
   discordDirectory().channel(guildId, channelId) ?? {

@@ -9,6 +9,7 @@ import {
   getStartDateForPeriod,
   getTimeZone,
   localIssuedOn,
+  parsePeriod,
   toDurationParts,
 } from '../helpers';
 
@@ -29,15 +30,24 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
     const rawGranularity = req.query.granularity as string | undefined;
     const granularity: VoiceStatsTimeline['granularity'] =
       rawGranularity === 'hour' || rawGranularity === 'week' ? rawGranularity : 'day';
-    const rawPeriod = req.query.period as string | undefined;
-    const period: TimelinePeriod =
-      rawPeriod === 'day' || rawPeriod === 'week' || rawPeriod === 'year'
-        ? rawPeriod
-        : 'month';
+    const period: TimelinePeriod = parsePeriod(
+      req.query.period,
+      ['day', 'week', 'month', 'year', 'all'],
+      'month'
+    );
 
     const now = new Date();
+    // 'all' starts at the guild's first voice session (not at the epoch, which
+    // would generate decades of empty buckets)
     const startDate =
-      getStartDateForPeriod(period) ?? getStartDateForPeriod('month')!;
+      period === 'all'
+        ? (
+            await req.db.$queryRaw<{ first: Date | null }[]>`
+              SELECT MIN(issued_on) AS first FROM voice_stats
+              WHERE guild_id = ${serverId} AND type = ${VOICE_TYPE.VOICE}
+            `
+          )[0]?.first ?? getStartDateForPeriod('month')!
+        : getStartDateForPeriod(period)!;
 
     const pgGranularity = granularity;
     // Buckets are hours/days/weeks of the viewer's time zone, not UTC

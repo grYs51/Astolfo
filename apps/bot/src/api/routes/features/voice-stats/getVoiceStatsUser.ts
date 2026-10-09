@@ -2,7 +2,12 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceActivityType, VoiceStatsUser } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getChannelData, toDurationParts } from '../helpers';
+import {
+  getChannelData,
+  parsePeriod,
+  periodFilter,
+  toDurationParts,
+} from '../helpers';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -12,6 +17,8 @@ export const getVoiceStatsUser: RequestHandler<
   VoiceStatsUser | { error: string }
 > = asyncHandler(async (req, res) => {
     const { serverId, userId } = req.params;
+    const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
+    const dateFilter = periodFilter(period);
 
     if (!userId) {
       res.status(400).send({ error: 'Missing userId' });
@@ -27,6 +34,7 @@ export const getVoiceStatsUser: RequestHandler<
         FROM voice_stats
         WHERE guild_id = ${serverId} AND member_id = ${userId}
           AND type = ${VOICE_TYPE.VOICE}
+          ${dateFilter}
       `,
       req.db.$queryRaw<UserChannelRow[]>`
         SELECT
@@ -36,11 +44,13 @@ export const getVoiceStatsUser: RequestHandler<
         FROM voice_stats
         WHERE guild_id = ${serverId} AND member_id = ${userId}
           AND type = ${VOICE_TYPE.VOICE}
+          ${dateFilter}
         GROUP BY channel_id
         ORDER BY total_duration DESC
       `,
       req.db.voiceStats.findMany({
-        where: { guild_id: serverId, member_id: userId },
+        // Whole sessions only (state rows would show up as extra "sessions")
+        where: { guild_id: serverId, member_id: userId, type: VOICE_TYPE.VOICE },
         orderBy: { issued_on: 'desc' },
         take: 10,
       }),

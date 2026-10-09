@@ -4,7 +4,7 @@ import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfac
 import { Prisma } from '@prisma/client';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getStartDateForPeriod, toDurationParts } from '../helpers';
+import { getStartDateForPeriod, parsePeriod, toDurationParts } from '../helpers';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, VoiceStatsLeaderboard> =
   asyncHandler(async (req, res) => {
@@ -14,10 +14,12 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
     const rawLimit = Number(req.query.limit);
     const limit = Number.isFinite(rawLimit) && rawLimit > 0 && rawLimit <= 100 ? rawLimit : 10;
 
-    // Time period filter (optional): 'day', 'week', 'month', 'all'
-    const rawPeriod = req.query.period as string | undefined;
-    const period: VoiceStatsPeriod =
-      rawPeriod === 'day' || rawPeriod === 'week' || rawPeriod === 'month' ? rawPeriod : 'all';
+    // Time period filter (optional): 'day', 'week', 'month', 'year', 'all'
+    const period: VoiceStatsPeriod = parsePeriod(
+      req.query.period,
+      ['day', 'week', 'month', 'year', 'all'],
+      'all'
+    );
     const startDate = getStartDateForPeriod(period);
 
     // Aggregate per-user duration and session counts directly in the database

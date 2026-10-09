@@ -18,7 +18,7 @@
     </div>
   } @else {
     <div class="space-y-sm">
-      @for (channel of data.channels; track channel.channel.id) {
+      @for (channel of visibleChannels(); track channel.channel.id) {
         <div class="rounded-lg bg-base-200/60 p-md transition-colors hover:bg-base-200">
           <div class="mb-sm flex items-center justify-between gap-md">
             <div class="flex min-w-0 items-center gap-sm">
@@ -51,5 +51,14 @@
         </div>
       }
     </div>
+    @if (hiddenCount() > 0 || expanded()) {
+      <button
+        type="button"
+        class="mt-sm w-full rounded-md py-xs text-xs text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-200"
+        (click)="expanded.set(!expanded())"
+      >
+        {{ expanded() ? 'Show less' : 'Show all ' + data.channels.length + ' channels' }}
+      </button>
+    }
   }
 </div>

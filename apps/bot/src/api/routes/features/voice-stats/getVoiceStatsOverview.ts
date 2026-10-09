@@ -5,7 +5,12 @@ import {
   VoiceStatsOverview,
 } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getChannelData, toDurationParts } from '../helpers';
+import {
+  getChannelData,
+  parsePeriod,
+  periodFilter,
+  toDurationParts,
+} from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 
 type TotalsRow = {
@@ -30,6 +35,8 @@ export const getVoiceStatsOverview: RequestHandler<
   VoiceStatsOverview
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
+  const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
+  const dateFilter = periodFilter(period);
 
   // The three aggregates are independent, so they run in parallel.
   const [[totals], [topChannel], typeRows] = await Promise.all([
@@ -41,10 +48,13 @@ export const getVoiceStatsOverview: RequestHandler<
       COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)::bigint, 0) AS total_duration,
       COUNT(*)::bigint AS session_count,
       COUNT(DISTINCT member_id)::bigint AS unique_users,
-      COUNT(*) FILTER (WHERE ended_on IS NULL)::bigint AS active_sessions
+      -- In voice right now, whenever they joined (not limited to the period)
+      (SELECT COUNT(*) FROM voice_stats
+        WHERE guild_id = ${serverId} AND type = ${VOICE_TYPE.VOICE} AND ended_on IS NULL)::bigint AS active_sessions
     FROM voice_stats
     WHERE guild_id = ${serverId}
       AND type = ${VOICE_TYPE.VOICE}
+      ${dateFilter}
   `,
 
     // Most active channel by cumulative duration
@@ -56,6 +66,7 @@ export const getVoiceStatsOverview: RequestHandler<
     FROM voice_stats
     WHERE guild_id = ${serverId}
       AND type = ${VOICE_TYPE.VOICE}
+      ${dateFilter}
     GROUP BY channel_id
     ORDER BY total_duration DESC
     LIMIT 1
@@ -69,6 +80,7 @@ export const getVoiceStatsOverview: RequestHandler<
       COUNT(*)::bigint AS session_count
     FROM voice_stats
     WHERE guild_id = ${serverId}
+      ${dateFilter}
     GROUP BY type
   `,
   ]);

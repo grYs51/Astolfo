@@ -2,10 +2,8 @@
 
 <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
   <div class="mb-md flex items-center justify-between">
-    <h3 class="text-base font-semibold text-gray-100">Voice time leaderboard</h3>
-    <span class="rounded-md bg-base-200 px-sm py-xs text-xs font-medium uppercase tracking-wide text-gray-400">
-      {{ data.period }}
-    </span>
+    <h3 class="text-base font-semibold text-gray-100">Leaderboard</h3>
+    <span class="text-xs text-gray-500">{{ data.leaderboard.length }} members</span>
   </div>
 
   @if (loading()) {
@@ -20,18 +18,32 @@
       <p class="mt-xs text-xs text-gray-500">Be the first to join a voice channel!</p>
     </div>
   } @else {
-    <div class="space-y-xs">
-      @for (entry of data.leaderboard; track entry.member.id; let idx = $index) {
-        <lib-leaderboard-item
-          [rank]="idx + 1"
-          [title]="entry.member.displayName || entry.member.username"
-          [value]="entry.totalDuration | humanizeDuration: true"
-          [subtitle]="entry.sessionCount + ' sessions · ' + entry.uniqueChannels + ' channels'"
-          [avatarUrl]="entry.member.avatar || undefined"
-          (itemClick)="userClick.emit(entry.member.id)"
-          icon="🎤"
-        />
+    <ol class="space-y-xs">
+      @for (entry of top(); track entry.member.id) {
+        <li>
+          <ng-container
+            *ngTemplateOutlet="row; context: { $implicit: entry }"
+          ></ng-container>
+        </li>
       }
-    </div>
+    </ol>
+
+    @if (pinned(); as entry) {
+      <div class="my-xs text-center text-xs text-gray-600" aria-hidden="true">⋯</div>
+      <ng-container *ngTemplateOutlet="row; context: { $implicit: entry }"></ng-container>
+    }
   }
 </div>
+
+<ng-template #row let-entry>
+  <lib-leaderboard-item
+    [rank]="entry.rank"
+    [title]="(entry.member.displayName || entry.member.username) + (isHighlighted(entry) ? ' (you)' : '')"
+    [value]="entry.totalDuration | humanizeDuration: true"
+    [subtitle]="plural(entry.sessionCount, 'session') + ' · ' + plural(entry.uniqueChannels, 'channel')"
+    [avatarUrl]="entry.member.avatar || undefined"
+    [containerClass]="isHighlighted(entry) ? highlightClass : ''"
+    (itemClick)="userClick.emit(entry.member.id)"
+    icon="🎤"
+  />
+</ng-template>

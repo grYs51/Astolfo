@@ -1,45 +1,42 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
   computed,
   input,
+  signal,
 } from '@angular/core';
 import { VoiceStatsUserHeatmap } from '@nx-stolfo/data-access-voice-stats';
-import { StatCardComponent } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
+import {
+  SegmentedControlComponent,
+  SegmentedControlOption,
+} from '@nx-stolfo/components';
 import * as echarts from 'echarts/core';
 import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
 import { CanvasRenderer } from 'echarts/renderers';
-import {
-  GridComponent,
-  TooltipComponent,
-  VisualMapComponent,
-} from 'echarts/components';
+import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
 import { HeatmapChart } from 'echarts/charts';
 import {
   HEATMAP_DAYS_OF_WEEK,
   HEATMAP_HOURS,
+  HEATMAP_SEQUENTIAL_COLORS,
   buildHeatmapGrid,
   heatmapKey,
 } from '../heatmap-grid';
-echarts.use([
-  CanvasRenderer,
-  TooltipComponent,
-  VisualMapComponent,
-  GridComponent,
-  HeatmapChart,
-]);
+echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
 
+type Mode = 'you' | 'compare';
+
+const EMPTY_CELL = '#1b2030';
+
+/**
+ * "When you're on": the viewer's own voice time by hour × weekday, with an
+ * optional comparison against the average member who was in voice then.
+ */
 @Component({
   selector: 'feature-voice-stats-user-heatmap',
   standalone: true,
-  imports: [
-    CommonModule,
-    NgxEchartsDirective,
-    StatCardComponent,
-    HumanizeDurationPipe,
-  ],
+  imports: [NgxEchartsDirective, SegmentedControlComponent],
   providers: [provideEchartsCore({ echarts })],
   templateUrl: './voice-stats-user-heatmap.component.html',
   styleUrls: ['./voice-stats-user-heatmap.component.scss'],
@@ -49,62 +46,54 @@ export class VoiceStatsUserHeatmapComponent {
   heatmap = input.required<VoiceStatsUserHeatmap>();
   loading = input<boolean>(false);
 
-  private readonly durationPipe = new HumanizeDurationPipe();
+  protected mode = signal<Mode>('you');
+  protected readonly modeOptions: SegmentedControlOption<Mode>[] = [
+    { value: 'you', label: 'Just me' },
+    { value: 'compare', label: 'vs server' },
+  ];
 
+  private readonly durationPipe = new HumanizeDurationPipe();
   private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
   private readonly hours = HEATMAP_HOURS;
 
+  protected hasActivity = computed(() => this.heatmap().stats.user.totalMinutes > 0);
+
   peakTimeDisplay = computed(() => {
-    const data = this.heatmap();
-    const day = this.daysOfWeek[data.stats.user.peakDay];
-    const hour = this.hours[data.stats.user.peakHour];
-    return `${day} at ${hour}`;
+    const { peakDay, peakHour } = this.heatmap().stats.user;
+    return `${this.daysOfWeek[peakDay]} at ${this.hours[peakHour]}`;
   });
 
-  comparisonText = computed(() => {
-    const data = this.heatmap();
-    const percentage = data.stats.comparison.userVsServerAvg;
-    if (percentage > 150) return 'very active';
-    if (percentage > 100) return 'above average';
-    if (percentage > 75) return 'about average';
-    return 'below average';
-  });
-
-  chartOption = computed(() => {
-    const data = this.heatmap();
-
-    // Create a complete grid with all cells (24 hours × 7 days)
-    const dataMap = new Map<
-      string,
-      { userValue: number; serverAvg: number; diff: number }
-    >();
-
-    // Populate map with actual data
-    data.userHeatmap.forEach((point) => {
-      dataMap.set(heatmapKey(point.hour, point.dayOfWeek), {
+  private cells = computed(() => {
+    const map = new Map<string, { userValue: number; serverAvg: number; diff: number }>();
+    for (const point of this.heatmap().userHeatmap) {
+      map.set(heatmapKey(point.hour, point.dayOfWeek), {
         userValue: point.userValue,
         serverAvg: point.serverAverage,
         diff: point.difference,
       });
-    });
+    }
+    return map;
+  });
 
-    // Transform data for ECharts: [hour, dayOfWeek, difference]
-    // Positive difference = user above average (blue)
-    // Negative difference = user below average (red)
-    // Hours without your activity go to a separate, uncoloured series —
-    // as a 0 difference they looked exactly like "at average"
-    const grid = buildHeatmapGrid(
-      (hour, day) => dataMap.get(heatmapKey(hour, day))?.diff ?? null,
-    );
+  chartOption = computed(() => {
+    const cells = this.cells();
+    const compare = this.mode() === 'compare';
+
+    // Hours without the viewer's activity are their own uncoloured series:
+    // as a 0 they'd look like "no difference" in compare mode
+    const grid = buildHeatmapGrid((hour, day) => {
+      const cell = cells.get(heatmapKey(hour, day));
+      if (!cell) return null;
+      return compare ? cell.diff : cell.userValue;
+    });
     const chartData = grid.filter(
-      (d): d is [number, number, number] => d[2] !== null,
+      (d): d is [number, number, number] => d[2] !== null
     );
     const emptyCells = grid
       .filter((d) => d[2] === null)
       .map(([hour, day]) => [hour, day, 0]);
 
-    // Find min and max for color scale (centered at 0)
-    const maxAbsValue = Math.max(...chartData.map((d) => Math.abs(d[2])), 1);
+    const maxAbs = Math.max(...chartData.map((d) => Math.abs(d[2])), 1);
 
     return {
       tooltip: {
@@ -112,82 +101,63 @@ export class VoiceStatsUserHeatmapComponent {
         backgroundColor: '#1f2937',
         borderColor: '#374151',
         borderWidth: 1,
-        textStyle: {
-          color: '#f3f4f6',
-        },
+        textStyle: { color: '#f3f4f6' },
         formatter: (params: { value: [number, number, number] }) => {
-          const value = params.value;
-          const hour = this.hours[value[0]];
-          const day = this.daysOfWeek[value[1]];
-          const difference = value[2];
+          const [hour, day] = params.value;
+          const title = `<strong>${this.daysOfWeek[day]} at ${this.hours[hour]}</strong><br/>`;
+          const cell = cells.get(heatmapKey(hour, day));
+          if (!cell || cell.userValue === 0) return `${title}No activity`;
 
-          const cellData = dataMap.get(heatmapKey(value[0], value[1]));
-
-          if (!cellData || cellData.userValue === 0) {
-            return `<strong>${day} at ${hour}</strong><br/>No activity`;
+          let text = `${title}You: ${this.durationPipe.transform(cell.userValue * 60000, true)}`;
+          if (compare) {
+            text += `<br/>Average member: ${this.durationPipe.transform(cell.serverAvg * 60000, true)}`;
+            text += `<br/><span style="color: ${cell.diff > 0 ? '#60a5fa' : '#f87171'}">`;
+            text += `${cell.diff > 0 ? '+' : ''}${cell.diff}m ${cell.diff > 0 ? 'more' : 'less'}</span>`;
           }
-
-          let tooltip = `<strong>${day} at ${hour}</strong><br/>`;
-          tooltip += `Your time: ${this.durationPipe.transform(cellData.userValue * 60000, true)}<br/>`;
-          tooltip += `Server avg: ${this.durationPipe.transform(cellData.serverAvg * 60000, true)}<br/>`;
-          tooltip += `<span style="color: ${difference > 0 ? '#10b981' : '#ef4444'}">`;
-          tooltip += difference > 0 ? '+' : '';
-          tooltip += `${difference}m ${difference > 0 ? 'above' : 'below'} avg</span>`;
-
-          return tooltip;
+          return text;
         },
       },
-      grid: {
-        height: '72%',
-        top: '4%',
-        left: '48px',
-        right: '16px',
-      },
+      grid: { height: '72%', top: '4%', left: '48px', right: '16px' },
       xAxis: {
         type: 'category',
         data: this.hours,
-        axisLabel: {
-          interval: 1,
-          fontSize: 10,
-          color: '#9ca3af',
-        },
+        axisLabel: { interval: 1, fontSize: 10, color: '#9ca3af' },
         axisTick: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: '#374151',
-          },
-        },
+        axisLine: { lineStyle: { color: '#374151' } },
       },
       yAxis: {
         type: 'category',
         data: this.daysOfWeek,
-        axisLabel: {
-          color: '#9ca3af',
-        },
+        axisLabel: { color: '#9ca3af' },
         axisTick: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: '#374151',
-          },
-        },
+        axisLine: { lineStyle: { color: '#374151' } },
       },
       visualMap: [
-        {
-          seriesIndex: 0, // only the comparison cells are colour-scaled
-          min: -maxAbsValue,
-          max: maxAbsValue,
-          calculable: true,
-          orient: 'horizontal',
-          left: 'center',
-          bottom: '2%',
-          textStyle: {
-            color: '#9ca3af',
-          },
-          // Diverging: red pole (below avg) -> neutral gray midpoint -> blue pole (above avg)
-          inRange: {
-            color: ['#dc2626', '#f87171', '#4b5563', '#60a5fa', '#2563eb'],
-          },
-        },
+        compare
+          ? {
+              seriesIndex: 0,
+              min: -maxAbs,
+              max: maxAbs,
+              calculable: true,
+              orient: 'horizontal',
+              left: 'center',
+              bottom: '2%',
+              textStyle: { color: '#9ca3af' },
+              // Diverging: red (less than the average member) -> gray -> blue (more)
+              inRange: { color: ['#dc2626', '#f87171', '#4b5563', '#60a5fa', '#2563eb'] },
+            }
+          : {
+              seriesIndex: 0,
+              min: 0,
+              max: maxAbs,
+              calculable: true,
+              orient: 'horizontal',
+              left: 'center',
+              bottom: '2%',
+              text: ['More', 'Less'],
+              textStyle: { color: '#9ca3af' },
+              inRange: { color: HEATMAP_SEQUENTIAL_COLORS },
+            },
         {
           // ECharts requires a visualMap per heatmap series; this one just
           // paints the "no activity" cells a flat background colour
@@ -195,39 +165,24 @@ export class VoiceStatsUserHeatmapComponent {
           seriesIndex: 1,
           min: 0,
           max: 1,
-          inRange: { color: ['#1b2030', '#1b2030'] },
+          inRange: { color: [EMPTY_CELL, EMPTY_CELL] },
         },
       ],
       series: [
         {
-          name: 'User vs Server',
+          name: compare ? 'You vs the average member' : 'Your voice time',
           type: 'heatmap',
           data: chartData,
-          label: {
-            show: false,
-          },
-          itemStyle: {
-            borderColor: '#141824',
-            borderWidth: 2,
-            borderRadius: 2,
-          },
-          emphasis: {
-            itemStyle: {
-              borderColor: '#e5e7eb',
-              borderWidth: 1,
-            },
-          },
+          label: { show: false },
+          itemStyle: { borderColor: '#141824', borderWidth: 2, borderRadius: 2 },
+          emphasis: { itemStyle: { borderColor: '#e5e7eb', borderWidth: 1 } },
         },
         {
           name: 'No activity',
           type: 'heatmap',
           data: emptyCells,
           label: { show: false },
-          itemStyle: {
-            borderColor: '#141824',
-            borderWidth: 2,
-            borderRadius: 2,
-          },
+          itemStyle: { borderColor: '#141824', borderWidth: 2, borderRadius: 2 },
           emphasis: { disabled: true },
         },
       ],

@@ -13,6 +13,7 @@ import {
   TimelinePeriod,
   TimelineGranularity,
   HeatmapPeriod,
+  DashboardPeriod,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -51,9 +52,16 @@ export class VoiceStatsApi extends ApiBase {
   }
 
   /** Fetch overview statistics */
-  fetchVoiceStatsOverview(guildId: () => string) {
+  fetchVoiceStatsOverview(
+    guildId: () => string,
+    period?: () => DashboardPeriod | undefined
+  ) {
     return this.get<VoiceStatsOverview>(
-      () => `/features/voice-stats/${guildId()}/overview`
+      () => `/features/voice-stats/${guildId()}/overview`,
+      (): Record<string, string> => {
+        const periodVal = period?.();
+        return periodVal ? { period: periodVal } : {};
+      }
     );
   }
 
@@ -79,16 +87,35 @@ export class VoiceStatsApi extends ApiBase {
   }
 
   /** Fetch channel statistics */
-  fetchVoiceStatsChannels(guildId: () => string) {
+  fetchVoiceStatsChannels(
+    guildId: () => string,
+    period?: () => DashboardPeriod | undefined
+  ) {
     return this.get<VoiceStatsChannels>(
-      () => `/features/voice-stats/${guildId()}/channels`
+      () => `/features/voice-stats/${guildId()}/channels`,
+      (): Record<string, string> => {
+        const periodVal = period?.();
+        return periodVal ? { period: periodVal } : {};
+      }
     );
   }
 
   /** Fetch user-specific statistics */
-  fetchVoiceStatsUser(guildId: () => string, userId: () => string) {
+  fetchVoiceStatsUser(
+    guildId: () => string,
+    userId: () => string | undefined | null,
+    period?: () => DashboardPeriod | undefined
+  ) {
     return this.get<VoiceStatsUser>(
-      () => `/features/voice-stats/${guildId()}/users/${userId()}`
+      () => {
+        const user = userId();
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guildId()}/users/${user}`;
+      },
+      (): Record<string, string> => {
+        const periodVal = period?.();
+        return periodVal ? { period: periodVal } : {};
+      }
     );
   }
 
