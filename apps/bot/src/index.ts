@@ -16,6 +16,7 @@ import { setupShutdownHandler } from './utils/handlers/shutdown-handler';
 import { saveGamesToDb } from './utils/handlers/games-handler';
 import { startMetricsScheduler } from './utils/schedulers/metrics.scheduler';
 import { closeDanglingVoiceSessions } from './utils/handlers/vc';
+import { isMockDiscord } from './dev/mock-discord';
 
 
 process.on('uncaughtException', (err) => {
@@ -34,6 +35,9 @@ let httpServer: Server | undefined;
 // run, and the first tick would overwrite it with "now" (recording the whole
 // downtime as voice time). Also runs before the API serves those rows live.
 const recoverDanglingVoiceSessions = async () => {
+  // Mock mode has no gateway, so every open row is "dangling" — keep the
+  // seeded in-voice sessions open instead
+  if (isMockDiscord()) return;
   const recovered = await closeDanglingVoiceSessions();
   if (recovered > 0) {
     Logger.info(`Closed ${recovered} dangling voice sessions from a previous run`);
@@ -56,7 +60,15 @@ const main = () =>
       httpServer = server();
     })
     .then(() => startMetricsScheduler())
-    .then(() => client.login(process.env.DISCORD_BOT_TOKEN))
+    .then(() => {
+      if (isMockDiscord()) {
+        Logger.warn(
+          'MOCK_DISCORD=true: not connecting to Discord. The API serves fixture servers/channels/members and /api/auth/login signs in as the mock user. Seed data with `yarn nx run bot:seed`.'
+        );
+        return;
+      }
+      return client.login(process.env.DISCORD_BOT_TOKEN);
+    })
     .then(() => setupShutdownHandler(() => httpServer))
     .catch((error) => {
       Logger.error('Failed to start bot');

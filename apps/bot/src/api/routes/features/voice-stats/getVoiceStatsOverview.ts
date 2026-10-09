@@ -4,7 +4,6 @@ import {
   VoiceActivityType,
   VoiceStatsOverview,
 } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../../client/instance';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getChannelData, toDurationParts } from '../helpers';
 
@@ -96,9 +95,8 @@ export const getVoiceStatsOverview: RequestHandler<
   });
 
   // Enrich most active channel with Discord metadata
-  const guild = client.guilds.cache.get(serverId);
   const mostActiveChannelData = topChannel
-    ? getChannelData(guild, topChannel.channel_id)
+    ? getChannelData(serverId, topChannel.channel_id)
     : null;
 
   const totalParts = toDurationParts(totalDuration);

@@ -1,5 +1,5 @@
-import { ChannelType, Guild } from 'discord.js';
 import { Prisma } from '@prisma/client';
+import { discordDirectory } from '../../utils/discord-directory';
 
 /**
  * The viewer's IANA time zone from `?tz=` (e.g. 'Europe/Brussels'), so hours
@@ -56,12 +56,9 @@ export const getStartDateForPeriod = (
 };
 
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
-export const getChannelData = (
-  guild: Guild | undefined,
-  channelId: string
-) => {
-  const channel = guild?.channels.cache.get(channelId);
-  return channel
-    ? { id: channel.id, name: channel.name, type: ChannelType[channel.type] }
-    : { id: channelId, name: 'Unknown Channel', type: 'VOICE' };
-};
+export const getChannelData = (guildId: string, channelId: string) =>
+  discordDirectory().channel(guildId, channelId) ?? {
+    id: channelId,
+    name: 'Unknown Channel',
+    type: 'VOICE',
+  };

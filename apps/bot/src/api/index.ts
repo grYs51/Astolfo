@@ -10,6 +10,7 @@ import { currentClient } from '../db';
 import passport from 'passport';
 import { errorHandler } from './utils/middleware/error-handler';
 import { registerDiscordStrategy } from './utils/strategies/discordStrategy';
+import { isMockDiscord } from '../dev/mock-discord';
 collectDefaultMetrics();
 
 const DEFAULT_CORS_ORIGINS = [
@@ -73,7 +74,8 @@ function createExpress() {
   );
 
   // Initialize passport
-  registerDiscordStrategy();
+  // No OAuth app in mock mode (and no DISCORD_CLIENT_ID to construct it with)
+  if (!isMockDiscord()) registerDiscordStrategy();
   app.use(passport.initialize());
   app.use(passport.session());
 

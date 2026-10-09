@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { guilds } from '@nx-stolfo/api-interfaces';
-import { client } from '../../../../client/instance';
+import { discordDirectory } from '../../../utils/discord-directory';
 
 type ServerDurationRow = { guild_id: string; duration: number };
 
@@ -27,13 +27,14 @@ export const getActiveServers: RequestHandler<
       ORDER BY duration DESC
     `;
 
-    // Enrich with guild details from the Discord cache
+    // Enrich with guild details from Discord (or the mock directory)
+    const directory = discordDirectory();
     const servers = rows.map(({ guild_id, duration }) => {
-      const guild = client.guilds.cache.get(guild_id);
+      const guild = directory.guild(guild_id);
       return {
         id: guild_id,
         name: guild?.name,
-        icon: guild?.iconURL(),
+        icon: guild?.icon,
         totalDuration: duration,
       };
     });

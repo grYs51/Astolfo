@@ -45,6 +45,7 @@ A Discord bot ("Astolfo") that tracks server activity (voice sessions, presence/
 - **In-memory state on the client** (`client/client.ts`): `guildConfigs`, `userConfigs`, `userStatus` (presence cache), `voiceUsers` (open voice sessions, key `` `${guildId}:${memberId}` ``). Voice sessions are **persisted on open**: a row with `ended_on = NULL` is inserted on join and closed on leave / shutdown flush; `voiceUsers` is a pure cache of the open rows. Rows left dangling by a crash are closed at startup (`closeDanglingVoiceSessions`).
 - **Voice tracking flow**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/*`. One `voice_stats` row per state type (VOICE, MUTED, DEAF, VIDEO, STREAMING…) per session, inserted open when the state starts and closed when it ends. Durations are `ended_on - issued_on` in **milliseconds**; SQL aggregations use `COALESCE(ended_on, NOW())` so open sessions count live time, and voice totals must filter `type = 'VOICE'` (the other types overlap it). Handlers for one member run one at a time through `runSerialized(voiceKey(...))` — anything that opens/closes sessions outside `voiceStateUpdate` (startup `setVc`, `GuildDelete`) goes through the same queue, and closes always filter `ended_on: null`. Covered by `utils/handlers/vc/voice-lifecycle.test.ts`.
 - **API**: `api/index.ts` (express + session + passport-discord), routes in `api/routes/`, feature routes registered in `api/routes/features/index.ts`. `req.db` is injected by `api/utils/middleware/db.ts`.
+- **Discord lookups in the API** (membership, server/channel names, member names/avatars) go through `api/utils/discord-directory.ts` — live gateway cache, or fixtures from `dev/mock-discord.ts` when `MOCK_DISCORD=true` (local demo mode: no Discord login, mock OAuth user, seed with `yarn nx run bot:seed`; refused when `NODE_ENV=production`). New handlers should use the directory, not `client.guilds` directly.
 - **Metrics**: prom-client counters (`api/utils/counter.ts`), exposed at `/api/metrics` (requires `Authorization: Bearer $METRICS_TOKEN`; disabled when unset), snapshotted to the `metrics` DB table every 30s, restored on boot (`load-on-start.ts`).
 
 ### Frontend patterns
@@ -65,11 +66,11 @@ yarn nx run models:prisma-generate   # regenerate client
 yarn nx affected -t lint test build  # verify changes
 ```
 
-Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `CLIENT_URL`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`. Optional: `METRICS_TOKEN`, `CORS_ORIGINS`. The web app's production API URL is a literal in `apps/web/src/environments/environment.ts` (the browser bundle can't read env vars).
+Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `CLIENT_URL`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`. Optional: `METRICS_TOKEN`, `CORS_ORIGINS`, `MOCK_DISCORD` (with it, only `DATABASE_URL`, `COOKIE_SECRET` and `CLIENT_URL` are required). The web app's production API URL is a literal in `apps/web/src/environments/environment.ts` (the browser bundle can't read env vars).
 
 ## Conventions & gotchas
 
-- API handlers use `express-async-handler`; every voice-stats handler starts with a membership check against `voice_stats` (see CODE_REVIEW.md §2.1 for its known flaws before copying it).
+- API handlers use `express-async-handler`; voice-stats routes are mounted behind `isAuthenticated` + `isServerMember` (real guild membership via the Discord directory), so handlers don't re-check access.
 - Heavy aggregation belongs in SQL (`$queryRaw` with `Prisma.sql`), not JS reduces — that refactor is done for most endpoints; don't regress it.
 - New feature routes must be mounted in `api/routes/features/index.ts` **with `isAuthenticated`**.
 - Guild feature toggles are a bitfield (`utils/handlers/settings-handler.ts` `SETTING_FLAGS`).
