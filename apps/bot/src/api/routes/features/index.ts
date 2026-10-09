@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { getActiveServers } from './active-servers';
+import { getPrivacy, setPrivacy } from './privacy';
 import {
   getVoiceStats,
   getVoiceStatsOverview,
@@ -17,6 +18,10 @@ import {
 export default (router: Router) => {
   // Features
   router.get('/features/active-servers', isAuthenticated, getActiveServers);
+
+  // The viewer's own privacy setting
+  router.get('/features/me/privacy', isAuthenticated, getPrivacy);
+  router.put('/features/me/privacy', isAuthenticated, setPrivacy);
 
   // Voice Stats endpoints — all require real guild membership
   router.get(

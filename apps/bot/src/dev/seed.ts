@@ -76,6 +76,9 @@ const personaOf: Record<string, Persona> = {
   '200000000000000112': personas.lurker, // Milo
 };
 
+/** Privacy demo: this member hides from other members (Otto) */
+const hiddenMember = '200000000000000108';
+
 /** Members shown as currently in voice (open sessions) */
 const inVoiceNow = new Set([
   MOCK_USER.id,
@@ -254,6 +257,14 @@ async function main() {
     await db.message_stats.deleteMany({ where: { guild_id: { in: guildIds } } });
     for (let i = 0; i < messages.length; i += 5000) {
       await db.message_stats.createMany({ data: messages.slice(i, i + 5000) });
+    }
+    // Privacy demo: one hidden member, everyone else visible
+    for (const id of new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))) {
+      await db.user_configs.upsert({
+        where: { user_id: id },
+        create: { user_id: id, privacy_hidden: id === hiddenMember },
+        update: { privacy_hidden: id === hiddenMember },
+      });
     }
 
     const open = rows.filter((r) => r.ended_on === null && r.type === VOICE_TYPE.VOICE);

@@ -1,3 +1,4 @@
+import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
 import {
@@ -15,6 +16,7 @@ import {
   HeatmapPeriod,
   DashboardPeriod,
   ServerMessageStats,
+  MemberPrivacy,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -30,6 +32,17 @@ const viewerTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
  */
 export class VoiceStatsApi extends ApiBase {
   protected override host = inject(COMMON_BOT_API_URL);
+  private http = inject(HttpClient);
+
+  /** The viewer's own privacy setting */
+  fetchPrivacy() {
+    return this.get<MemberPrivacy>('/features/me/privacy');
+  }
+
+  /** Change the viewer's privacy setting (one-off request, not a resource) */
+  setPrivacy(hidden: boolean) {
+    return this.http.put<MemberPrivacy>(`${this.host}/features/me/privacy`, { hidden });
+  }
 
   /** Fetch all voice stats with pagination */
   fetchVoiceStats(

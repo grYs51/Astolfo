@@ -35,7 +35,7 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
         <!-- In voice now: who and where, not just a count -->
         <div class="h-full rounded-xl border border-white/5 bg-base-300 p-sm px-md">
           <p class="text-[10px] font-medium uppercase tracking-wider text-gray-500">In voice now</p>
-          @if (overview().liveNow.length === 0) {
+          @if (overview().server.activeSessions === 0) {
             <p class="mt-xs text-sm text-gray-400">Nobody right now</p>
           } @else {
             <div class="mt-xs flex items-center gap-sm">
@@ -51,7 +51,7 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
                   }
                 }
               </div>
-              <span class="text-lg font-bold leading-tight text-gray-100">{{ overview().liveNow.length }}</span>
+              <span class="text-lg font-bold leading-tight text-gray-100">{{ overview().server.activeSessions }}</span>
             </div>
             <p class="mt-xs truncate text-xs text-gray-500" [title]="whoIsLive()">{{ whoIsLive() }}</p>
           }
@@ -112,8 +112,12 @@ export class VoiceStatsServerOverviewComponent {
       names.push(live.member.displayName || live.member.username);
       byChannel.set(live.channel.name, names);
     }
-    return [...byChannel]
-      .map(([channel, names]) => `${names.join(', ')} in ${channel}`)
-      .join(' · ');
+    const named = [...byChannel].map(
+      ([channel, names]) => `${names.join(', ')} in ${channel}`
+    );
+    // Members who hide from others are counted but not named
+    const unnamed = this.overview().server.activeSessions - this.overview().liveNow.length;
+    if (unnamed > 0) named.push(`+${unnamed} more`);
+    return named.join(' · ');
   });
 }

@@ -228,6 +228,26 @@ export class DetailOverviewComponent {
     }));
   });
 
+  // ── Privacy ──────────────────────────────────────────────────────────────
+  privacyResource = this.voiceStatsApi.fetchPrivacy();
+  privacySaving = signal(false);
+  privacyError = signal<string | null>(null);
+
+  setVisibility(shown: boolean) {
+    this.privacySaving.set(true);
+    this.privacyError.set(null);
+    this.voiceStatsApi.setPrivacy(!shown).subscribe({
+      next: (privacy) => {
+        this.privacyResource.set(privacy);
+        this.privacySaving.set(false);
+      },
+      error: () => {
+        this.privacyError.set('Could not save your privacy setting. Try again.');
+        this.privacySaving.set(false);
+      },
+    });
+  }
+
   // ── "Server" fun facts (replaces the activity-type donut) ────────────────
   funFacts = computed(() => {
     if (!this.overviewResource.hasValue()) return [];

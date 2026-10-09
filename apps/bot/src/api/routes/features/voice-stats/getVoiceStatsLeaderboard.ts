@@ -4,7 +4,12 @@ import { VoiceStatsLeaderboard, VoiceStatsPeriod } from '@nx-stolfo/api-interfac
 import { Prisma } from '@prisma/client';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getStartDateForPeriod, parsePeriod, toDurationParts } from '../helpers';
+import {
+  getStartDateForPeriod,
+  parsePeriod,
+  toDurationParts,
+  visibleMembersOnly,
+} from '../helpers';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, VoiceStatsLeaderboard> =
   asyncHandler(async (req, res) => {
@@ -45,6 +50,7 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
         FROM voice_stats
         WHERE guild_id = ${serverId}
           AND type = ${VOICE_TYPE.VOICE}
+          ${visibleMembersOnly('member_id', req.user?.id ?? '')}
         ${dateFilter}
         GROUP BY member_id
         ORDER BY total_duration DESC

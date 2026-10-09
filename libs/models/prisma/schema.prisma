@@ -67,8 +67,11 @@ model message_stats {
 }
 
 model user_configs {
-  user_id String  @id @db.VarChar
-  mw_id   String? @unique @db.VarChar
+  user_id        String  @id @db.VarChar
+  mw_id          String? @unique @db.VarChar
+  /// Hide this member from other members' views (leaderboards, companions,
+  /// live list, profile page). Still counted in anonymous server totals.
+  privacy_hidden Boolean @default(false)
 }
 
 model metrics {
