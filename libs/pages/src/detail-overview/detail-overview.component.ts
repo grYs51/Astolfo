@@ -14,8 +14,6 @@ import {
   VoiceStatsChannelsComponent,
   VoiceStatsTimelineComponent,
   VoiceStatsHeatmapComponent,
-  VoiceStatsUserHeatmapComponent,
-  VoiceStatsUserProfileComponent,
   LeaderboardRow,
 } from '@nx-stolfo/ui-voice-stats';
 import {
@@ -30,6 +28,7 @@ import {
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
+import { MemberActivityComponent } from '../member-activity/member-activity.component';
 
 type Tab = 'you' | 'server';
 
@@ -41,13 +40,6 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
   all: undefined,
 };
 
-const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
-  week: 'in the past week',
-  month: 'in the past month',
-  year: 'in the past year',
-  all: 'in total',
-};
-
 @Component({
   selector: 'pages-detail-overview',
   imports: [
@@ -56,10 +48,8 @@ const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
     VoiceStatsChannelsComponent,
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
-    VoiceStatsUserHeatmapComponent,
-    VoiceStatsUserProfileComponent,
     SegmentedControlComponent,
-    HumanizeDurationPipe,
+    MemberActivityComponent,
   ],
   templateUrl: './detail-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -109,7 +99,6 @@ export class DetailOverviewComponent {
     { value: 'all', label: 'All time' },
   ];
   period = signal<DashboardPeriod>('month');
-  periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
   previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
   /** Daily bars for a week or month, weekly bars beyond that */
   private granularity = computed<TimelineGranularity>(() =>
@@ -178,20 +167,15 @@ export class DetailOverviewComponent {
     return index >= 0 ? index + 1 : undefined;
   });
 
-  /** "↑ 2h 10m more than the month before" */
-  myChange = computed(() => {
-    const label = this.previousLabel();
-    if (!label || !this.userResource.hasValue()) return undefined;
-    const { totalDuration, previousTotalDuration } = this.userResource.value()!.summary;
-    if (previousTotalDuration === null) return undefined;
-    const diff = totalDuration - previousTotalDuration;
-    // Less than a minute either way reads as "the same"
-    if (Math.abs(diff) < 60_000) return { up: false, text: `About the same as ${label}` };
-    const amount = this.durationPipe.transform(Math.abs(diff), true);
-    return diff > 0
-      ? { up: true, text: `↑ ${amount} more than ${label}` }
-      : { up: false, text: `↓ ${amount} less than ${label}` };
-  });
+  /** Profile page of a member; your own row/name leads to the You tab */
+  memberLink = (memberId: string) =>
+    memberId === this.userId()
+      ? ['/overview/detail', this.id()]
+      : ['/overview/detail', this.id(), 'members', memberId];
+
+  openMember(memberId: string) {
+    this.router.navigate(this.memberLink(memberId));
+  }
 
   private readonly durationPipe = new HumanizeDurationPipe();
 

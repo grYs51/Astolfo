@@ -73,6 +73,7 @@ Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_
 - API handlers use `express-async-handler`; voice-stats routes are mounted behind `isAuthenticated` + `isServerMember` (real guild membership via the Discord directory), so handlers don't re-check access.
 - Heavy aggregation belongs in SQL (`$queryRaw` with `Prisma.sql`), not JS reduces — that refactor is done for most endpoints; don't regress it.
 - New feature routes must be mounted in `api/routes/features/index.ts` **with `isAuthenticated`**.
+- **Member privacy:** members can hide from other members (`user_configs.privacy_hidden`, set via `/features/me/privacy`). Any query that lists or names members (leaderboards, companions, live list, rankings) must add `visibleMembersOnly(column, viewerId)`; endpoints about one member must return 403 when `isHiddenFrom(db, memberId, viewerId)` (both in `routes/features/helpers.ts`). Anonymous totals may include hidden members; viewers always see themselves.
 - Guild feature toggles are a bitfield (`utils/handlers/settings-handler.ts` `SETTING_FLAGS`).
 - Discord IDs are strings everywhere; never parse to number.
 - Logger: use `utils/logger.ts` `Logger`, never `console.*`.

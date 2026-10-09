@@ -45,6 +45,8 @@ const EMPTY_CELL = '#1b2030';
 export class VoiceStatsUserHeatmapComponent {
   heatmap = input.required<VoiceStatsUserHeatmap>();
   loading = input<boolean>(false);
+  /** Another member's display name; empty for the viewer themselves */
+  name = input<string | undefined>(undefined);
 
   protected mode = signal<Mode>('you');
   protected readonly modeOptions: SegmentedControlOption<Mode>[] = [

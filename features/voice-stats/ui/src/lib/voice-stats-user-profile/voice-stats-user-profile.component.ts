@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { VoiceStatsUser } from '@nx-stolfo/data-access-voice-stats';
 import {
   ProgressBarComponent,
@@ -8,10 +9,19 @@ import {
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
-/** The viewer's top channels and most recent sessions (the "You" tab). */
+/**
+ * A member's companions, top channels and (on their own page) recent
+ * sessions. `name` switches the headings from "you" to third person.
+ */
 @Component({
   selector: 'feature-voice-stats-user-profile',
-  imports: [ProgressBarComponent, DatePipe, HumanizeDurationPipe, SegmentedControlComponent],
+  imports: [
+    ProgressBarComponent,
+    DatePipe,
+    HumanizeDurationPipe,
+    SegmentedControlComponent,
+    RouterLink,
+  ],
   templateUrl: './voice-stats-user-profile.component.html',
   styles: `
     :host {
@@ -23,6 +33,12 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 export class VoiceStatsUserProfileComponent {
   userStats = input.required<VoiceStatsUser>();
   loading = input<boolean>(false);
+  /** Another member's display name; empty for the viewer themselves */
+  name = input<string | undefined>(undefined);
+  /** Recent sessions show exact times, so only on the viewer's own page */
+  showRecent = input(true);
+  /** Router commands for a member's profile; companions become links */
+  memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
 
   protected topChannels = computed(() => this.userStats().channelBreakdown.slice(0, 3));
   protected recentSessions = computed(() => this.userStats().recentSessions.slice(0, 5));

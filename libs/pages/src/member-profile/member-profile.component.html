@@ -1,0 +1,35 @@
+<div class="mx-auto max-w-6xl px-md lg:px-lg py-md space-y-lg">
+  <header class="space-y-sm">
+    <a
+      [routerLink]="['/overview/detail', id()]"
+      [queryParams]="{ tab: 'server' }"
+      class="inline-flex items-center gap-xs text-sm text-gray-400 hover:text-gray-200"
+    >
+      <span aria-hidden="true">←</span> {{ serverName() }}
+    </a>
+
+    <div class="flex flex-wrap items-end justify-between gap-md">
+      <div class="flex items-center gap-md">
+        @if (member()?.avatar) {
+          <img [src]="member()!.avatar" alt="" class="h-12 w-12 rounded-full ring-1 ring-white/10" />
+        }
+        <div>
+          <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Member</p>
+          <h1 class="text-2xl font-bold tracking-tight text-gray-100">{{ name() }}</h1>
+        </div>
+      </div>
+      <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
+    </div>
+  </header>
+
+  <pages-member-activity
+    [userResource]="userResource"
+    [heatmapResource]="heatmapResource"
+    [period]="period()"
+    [name]="isSelf() ? undefined : name()"
+    [voiceRank]="voiceRank()"
+    [messageRank]="messageRank()"
+    [memberCount]="memberCount()"
+    [memberLink]="memberLink"
+  />
+</div>
