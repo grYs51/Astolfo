@@ -1,4 +1,10 @@
-import { buildDigestMessage, buildStatsMessage, formatChange, formatDuration } from './messages';
+import {
+  buildDigestMessage,
+  buildStatsMessage,
+  dashboardUrlFor,
+  formatChange,
+  formatDuration,
+} from './messages';
 import type { APIEmbed } from 'discord.js';
 import type { MemberSummary, ServerDigest } from './queries';
 
@@ -115,5 +121,34 @@ describe('buildDigestMessage', () => {
     const quiet = digest({ topVoice: [], bestDuo: undefined, busiestDay: undefined, voiceMs: 0, previousVoiceMs: 0 });
     const embed = embedOf(buildDigestMessage({ digest: quiet, guildName: 'Test', dashboardUrl: URL, weekStart }));
     expect(embed.fields?.map((f) => f.name)).toEqual(['Most messages']);
+  });
+});
+
+describe('dashboard link', () => {
+  const original = process.env.CLIENT_URL;
+  afterEach(() => {
+    process.env.CLIENT_URL = original;
+  });
+
+  test('built from CLIENT_URL, without a double slash', () => {
+    process.env.CLIENT_URL = 'https://astolfo.example/';
+    expect(dashboardUrlFor('g')).toBe('https://astolfo.example/overview/detail/g');
+  });
+
+  test('left out when CLIENT_URL is missing or not absolute', () => {
+    delete process.env.CLIENT_URL;
+    expect(dashboardUrlFor('g')).toBeUndefined();
+    process.env.CLIENT_URL = 'astolfo.example';
+    expect(dashboardUrlFor('g')).toBeUndefined();
+  });
+
+  test('messages still build without a link (no button, no title URL)', () => {
+    const stats = buildStatsMessage({ summary: summary(), period: 'week', guildName: 'Test' });
+    expect(embedOf(stats).url).toBeUndefined();
+    expect(stats.components).toEqual([]);
+
+    const recap = buildDigestMessage({ digest: digest(), guildName: 'Test', weekStart: new Date('2026-09-28T00:00:00Z') });
+    expect(embedOf(recap).url).toBeUndefined();
+    expect(recap.components).toEqual([]);
   });
 });

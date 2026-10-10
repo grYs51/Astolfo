@@ -67,7 +67,8 @@ export const buildStatsMessage = (input: {
   summary: MemberSummary;
   period: StatsPeriod;
   guildName: string;
-  dashboardUrl: string;
+  /** No link or button when the dashboard URL isn't configured */
+  dashboardUrl?: string;
 }): InteractionReplyOptions => {
   const { summary: s, period, guildName, dashboardUrl } = input;
   const previousLabel = period === 'all' ? '' : PREVIOUS_LABEL[period];
@@ -75,7 +76,7 @@ export const buildStatsMessage = (input: {
   const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setTitle(`Your stats in ${guildName}`)
-    .setURL(dashboardUrl)
+    .setURL(dashboardUrl ?? null)
     .setFooter({ text: `Over ${PERIOD_LABEL[period]} · open sessions count live` });
 
   if (s.sessions === 0 && s.messages === 0) {
@@ -104,7 +105,10 @@ export const buildStatsMessage = (input: {
     embed.addFields(fields);
   }
 
-  return { embeds: [embed], components: [dashboardButton(dashboardUrl, 'Open your dashboard')] };
+  return {
+    embeds: [embed],
+    components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open your dashboard')] : [],
+  };
 };
 
 const medal = (index: number) => ['🥇', '🥈', '🥉'][index] ?? `${index + 1}.`;
@@ -113,7 +117,8 @@ const medal = (index: number) => ['🥇', '🥈', '🥉'][index] ?? `${index + 1
 export const buildDigestMessage = (input: {
   digest: ServerDigest;
   guildName: string;
-  dashboardUrl: string;
+  /** No link or button when the dashboard URL isn't configured */
+  dashboardUrl?: string;
   /** Monday (00:00 UTC) the digest's week starts */
   weekStart: Date;
 }) => {
@@ -127,7 +132,7 @@ export const buildDigestMessage = (input: {
   const embed = new EmbedBuilder()
     .setColor(COLOR)
     .setTitle(`Last week in ${guildName}`)
-    .setURL(dashboardUrl)
+    .setURL(dashboardUrl ?? null)
     .setDescription(
       `🎙️ **${formatDuration(d.voiceMs)}** in voice${voiceChange ? ` (${voiceChange})` : ''}\n` +
         `💬 **${plural(d.messages, 'message')}**${messageChange ? ` (${messageChange})` : ''}\n` +
@@ -166,7 +171,7 @@ export const buildDigestMessage = (input: {
 
   return {
     embeds: [embed],
-    components: [dashboardButton(dashboardUrl, 'Open the dashboard')],
+    components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open the dashboard')] : [],
     // Mentions inside embeds never ping, but be explicit for the content too
     allowedMentions: { parse: [] as [] },
   };
@@ -175,6 +180,11 @@ export const buildDigestMessage = (input: {
 /** True when a digest has nothing worth posting */
 export const isEmptyDigest = (d: ServerDigest) => d.voiceMs === 0 && d.messages === 0;
 
-/** Dashboard link for a server */
-export const dashboardUrlFor = (guildId: string) =>
-  `${(process.env.CLIENT_URL ?? '').replace(/\/+$/, '')}/overview/detail/${guildId}`;
+/**
+ * Dashboard link for a server; undefined when CLIENT_URL isn't an absolute
+ * http(s) URL (Discord rejects relative links, which would fail the reply)
+ */
+export const dashboardUrlFor = (guildId: string) => {
+  const base = (process.env.CLIENT_URL ?? '').replace(/\/+$/, '');
+  return /^https?:\/\//.test(base) ? `${base}/overview/detail/${guildId}` : undefined;
+};
