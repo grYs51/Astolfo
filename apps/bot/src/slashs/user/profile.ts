@@ -12,6 +12,7 @@ import { game_player, voice_stats } from '@prisma/client';
 import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
 import humanizeDuration from 'humanize-duration';
 import { createDetailedBar } from '../../utils/functions/create-bar';
+import { isHiddenFrom } from '../../utils/privacy';
 
 const getDuration = (voiceStat: voice_stats) =>
   new Date(voiceStat.ended_on!).getTime() -
@@ -41,6 +42,17 @@ export default class ProfileSlash extends BaseSlash {
     const guildId = interaction.guildId;
     const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
     const userId = memberToGetProfileFor.id
+
+    // Members can hide from other members (dashboard privacy setting); this
+    // reply is public, so don't post their stats — tell only the asker
+    if (await isHiddenFrom(client.dataSource, userId, interaction.user.id)) {
+      await InterActionUtils.send(
+        interaction,
+        'This member keeps their stats private.',
+        true
+      );
+      return;
+    }
 
     const { _min: firstVoiceStat } =
       await client.dataSource.voiceStats.aggregate({

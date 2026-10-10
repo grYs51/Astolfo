@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { DiscordMember } from '@nx-stolfo/api-interfaces';
 import { discordDirectory } from '../../utils/discord-directory';
-import type { Db } from '../../../db';
 
 /**
  * The viewer's IANA time zone from `?tz=` (e.g. 'Europe/Brussels'), so hours
@@ -108,13 +107,7 @@ export const visibleMembersOnly = (
     SELECT user_id FROM user_configs WHERE privacy_hidden AND user_id <> ${viewerId}
   )`;
 
-/** Whether `memberId` hides their stats from `viewerId` (never from themselves). */
-export const isHiddenFrom = async (db: Db, memberId: string, viewerId: string) =>
-  memberId !== viewerId &&
-  !!(await db.userConfigs.findFirst({
-    where: { user_id: memberId, privacy_hidden: true },
-    select: { user_id: true },
-  }));
+export { isHiddenFrom } from '../../../utils/privacy';
 
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>
