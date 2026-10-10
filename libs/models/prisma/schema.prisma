@@ -9,12 +9,15 @@ datasource db {
 }
 
 model guild_configs {
-  guild_id           String  @id @db.VarChar
-  prefix             String  @default("!") @db.VarChar
-  welcome_channel_id String? @db.VarChar
-  welcome_message    String  @default("Welcome @member") @db.VarChar(200)
-  goodbye_message    String  @default("Goodbye @member") @db.VarChar(200)
-  toggles            Int     @default(0)
+  guild_id            String    @id @db.VarChar
+  prefix              String    @default("!") @db.VarChar
+  welcome_channel_id  String?   @db.VarChar
+  welcome_message     String    @default("Welcome @member") @db.VarChar(200)
+  goodbye_message     String    @default("Goodbye @member") @db.VarChar(200)
+  toggles             Int       @default(0)
+  /// Weekly digest: channel to post in (null = off) and when it last posted
+  digest_channel_id   String?   @db.VarChar
+  digest_last_sent_at DateTime? @db.Timestamp(6)
 }
 
 model voice_stats {

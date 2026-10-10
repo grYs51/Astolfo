@@ -94,20 +94,7 @@ export const memberOrUnknown = (
 ): DiscordMember =>
   members.get(id) ?? { id, username: 'Unknown User', displayName: null, avatar: null };
 
-/**
- * Members who chose to hide from other members (user_configs.privacy_hidden)
- * are left out of member-level lists — except for the viewer themselves.
- * Anonymous server totals still include them.
- */
-export const visibleMembersOnly = (
-  column: 'member_id' | 'user_id' | 'other.member_id',
-  viewerId: string
-) =>
-  Prisma.sql`AND ${Prisma.raw(column)} NOT IN (
-    SELECT user_id FROM user_configs WHERE privacy_hidden AND user_id <> ${viewerId}
-  )`;
-
-export { isHiddenFrom } from '../../../utils/privacy';
+export { isHiddenFrom, visibleMembersOnly } from '../../../utils/privacy';
 
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>
