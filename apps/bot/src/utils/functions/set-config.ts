@@ -36,6 +36,8 @@ export const checkForNewGuilds = async () => {
       welcome_message: '',
       goodbye_message: '',
       toggles: 0,
+      digest_channel_id: null,
+      digest_last_sent_at: null,
     });
     await prismaClient.guildConfigurations.create({
       data: {

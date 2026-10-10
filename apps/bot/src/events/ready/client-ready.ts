@@ -5,6 +5,7 @@ import { setStatusCache } from '../../utils/functions/set-status';
 import { setVc } from '../../utils/functions/set-vc';
 import { checkForNewGuilds } from '../../utils/functions/set-config';
 import { Logger } from '../../utils/logger';
+import { startDigestScheduler } from '../../utils/schedulers/digest.scheduler';
 
 export default class ReadyEvent extends BaseEvent {
   constructor() {
@@ -18,5 +19,6 @@ export default class ReadyEvent extends BaseEvent {
     await setStatusCache();
     await setVc();
     await checkForNewGuilds();
+    startDigestScheduler(client);
   }
 }
