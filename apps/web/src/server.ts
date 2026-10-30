@@ -15,6 +15,21 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
+ * Baseline security headers. Framing is denied so settings like the privacy
+ * toggle can't be clickjacked.
+ */
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.set({
+    'Content-Security-Policy': "frame-ancestors 'none'",
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+  });
+  next();
+});
+
+/**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
  *

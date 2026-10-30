@@ -1,3 +1,5 @@
+import { Logger } from './logger';
+
 const REQUIRED_ENV_VARS = [
   'DISCORD_BOT_TOKEN',
   'DISCORD_CLIENT_ID',
@@ -28,6 +30,17 @@ export function validateEnv(): void {
   if (missing.length > 0) {
     throw new Error(
       `Missing required environment variables: ${missing.join(', ')}`
+    );
+  }
+
+  // The session cookie is signed with it; the .env.example value is public
+  const secret = process.env.COOKIE_SECRET ?? '';
+  if (
+    process.env.NODE_ENV === 'production' &&
+    (secret === 'SECRET_COOKIE' || secret.length < 32)
+  ) {
+    Logger.warn(
+      'COOKIE_SECRET is weak: use at least 32 random characters (openssl rand -hex 32)'
     );
   }
 }

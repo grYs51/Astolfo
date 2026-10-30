@@ -95,7 +95,7 @@ services:
       - prometheus-data:/prometheus
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
-      - '9090:9090'
+      - '127.0.0.1:9090:9090' # no auth on Prometheus; Grafana reaches it over the network
     networks:
       - astolfo-network
 
@@ -105,7 +105,7 @@ services:
     restart: unless-stopped
     environment:
       - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=grafana
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:?Set GRAFANA_ADMIN_PASSWORD in .env}
     volumes:
       - grafana-data:/var/lib/grafana
     ports:
