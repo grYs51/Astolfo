@@ -111,9 +111,8 @@ Make the pipeline reject what review would reject:
 
 1. `nx affected -t lint test build typecheck` on every PR — affected-only keeps it fast.
 2. **ESLint rules that encode this review:** `no-console` (would have caught §7.1 of the review), naming-convention for file names, `@typescript-eslint/no-floating-promises` (would have caught the unawaited `forEach(async …)` and un-caught event dispatches), `no-non-null-assertion` as a warning to shrink over time.
-3. **SonarQube is already configured** (`sonar-project.properties`) — add a quality gate on new-code coverage and duplication so the copy-paste pattern in the voice-stats handlers gets flagged at PR time instead of in a review like this one.
-4. **Coverage ratchet:** set the Jest threshold to today's number and raise it as tests land. Never lets coverage silently regress.
-5. Pre-commit hooks (husky + lint-staged) for format/lint — cheap, catches the trivial stuff before CI does.
+3. **Coverage ratchet:** set the Jest threshold to today's number and raise it as tests land. Never lets coverage silently regress.
+4. Pre-commit hooks (husky + lint-staged) for format/lint — cheap, catches the trivial stuff before CI does.
 
 ### 3.5 Small process habits that compound
 
