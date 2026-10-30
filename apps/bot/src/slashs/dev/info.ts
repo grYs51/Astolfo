@@ -1,7 +1,7 @@
 // shows info about the bot
 
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   InteractionResponse,
   EmbedBuilder,
@@ -18,7 +18,7 @@ export default class InfoSlash extends BaseSlash {
 
   protected slash(
     client: DiscordClient,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<InteractionResponse<boolean>> | Promise<void> {
     const nodeVersion = process.version;
     const discordVersion = require('discord.js').version;

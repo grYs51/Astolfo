@@ -1,6 +1,6 @@
 import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
-import { CommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
+import { ChatInputCommandInteraction, CacheType, EmbedBuilder } from 'discord.js';
 import { Logger } from '../../utils/logger';
 // import * as mc from 'minecraft-server-util';
 
@@ -16,7 +16,7 @@ export default class McStatusEvent extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     await interaction.deferReply().catch(Logger.error);
 

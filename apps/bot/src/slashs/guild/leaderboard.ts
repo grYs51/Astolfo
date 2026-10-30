@@ -1,6 +1,6 @@
 import humanizeDuration from 'humanize-duration';
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   EmbedBuilder,
   SlashCommandBuilder,
@@ -63,7 +63,7 @@ export default class LeaderboardEvent extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const guild = interaction.guild;
     if (!guild) {

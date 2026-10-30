@@ -1,5 +1,5 @@
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   SlashCommandBuilder,
   ButtonBuilder,
@@ -51,7 +51,7 @@ export default class RockPaperScissors extends BaseSlash {
 
   async slash(
     client: Client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const opponent = interaction.options.get('opponent')?.user;
     if (!opponent || opponent.id === interaction.user.id || opponent.bot) {
@@ -184,7 +184,7 @@ export default class RockPaperScissors extends BaseSlash {
 
   private async saveGameResult(
     client: Client,
-    interaction: CommandInteraction,
+    interaction: ChatInputCommandInteraction,
     outcome: GameOutcome
   ) {
     const players = outcome.isTie

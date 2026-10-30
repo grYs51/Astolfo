@@ -39,6 +39,12 @@ module.exports = [
       "@nx/enforce-module-boundaries": [
         "error",
         {
+          // config files require() these by relative path
+          allow: [
+            '^.*/eslint(\\.base)?\\.config\\.[cm]?js$',
+            '^(\\.\\./)+package\\.json$',
+            '^(\\.\\./)+libs/tailwind-preset/tailwind\\.config$',
+          ],
           "depConstraints": [
             {
               sourceTag: 'type:app',

@@ -1,7 +1,7 @@
 import {
   CacheType,
   ChannelType,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   InteractionContextType,
   PermissionFlagsBits,
   SlashCommandBuilder,
@@ -53,7 +53,7 @@ export default class DigestSlash extends BaseSlash {
       .setContexts(InteractionContextType.Guild);
   }
 
-  async slash(client: DiscordClient, interaction: CommandInteraction<CacheType>) {
+  async slash(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
     const guild = interaction.guild;
     if (!interaction.isChatInputCommand() || !guild) return;
 

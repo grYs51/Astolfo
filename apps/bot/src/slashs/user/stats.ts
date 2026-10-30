@@ -1,6 +1,6 @@
 import {
   CacheType,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   InteractionContextType,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -41,7 +41,7 @@ export default class StatsSlash extends BaseSlash {
       .setContexts(InteractionContextType.Guild);
   }
 
-  async slash(client: DiscordClient, interaction: CommandInteraction<CacheType>) {
+  async slash(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
     const guild = interaction.guild;
     if (!guild) {
       await InterActionUtils.send(interaction, 'Use /stats in a server.', true);

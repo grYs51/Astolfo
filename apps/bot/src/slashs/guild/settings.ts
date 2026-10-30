@@ -1,5 +1,5 @@
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   SlashCommandBuilder,
   PermissionFlagsBits,
@@ -48,7 +48,7 @@ export default class SettingsEvent extends BaseSlash {
       .setContexts(InteractionContextType.Guild);
   }
 
-  async slash(client: client, interaction: CommandInteraction<CacheType>) {
+  async slash(client: client, interaction: ChatInputCommandInteraction<CacheType>) {
     const config = client.guildConfigs.get(interaction.guildId!);
     const settings = config?.toggles;
 
