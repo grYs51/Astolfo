@@ -23,6 +23,9 @@ RUN yarn prisma generate \
 # runtime image
 FROM node:${NODE_VERSION}-alpine
 
+# Shared corepack cache so the unprivileged user can run the yarn baked in here
+ENV COREPACK_HOME=/usr/local/share/corepack
+
 RUN apk add --no-cache tini dumb-init \
   && corepack enable && corepack prepare yarn@1.22.22 --activate
 
@@ -43,6 +46,8 @@ COPY --chown=node:node --from=build /usr/src/app/prisma ./prisma
 COPY --chown=node:node --from=build /usr/src/app/node_modules/.prisma/client ./node_modules/.prisma/client
 
 EXPOSE 3000
+
+USER node
 
 ENTRYPOINT ["/sbin/tini", "--"]
 # `yarn prisma`, not `npx prisma`: the CLI is a real dependency now, so it is

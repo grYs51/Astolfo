@@ -43,5 +43,6 @@ jobs:
           BACKEND_URL: ${{ secrets.BACKEND_URL }}
           PORT_WEB: ${{ secrets.PORT_WEB }}
           METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
+          GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
       - name: clean up docker images
         run: docker image prune -f
