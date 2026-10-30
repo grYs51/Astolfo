@@ -1,6 +1,6 @@
 import DiscordClient from '../../client/client';
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   SlashCommandBuilder,
   SlashCommandOptionsOnlyBuilder,
@@ -43,7 +43,7 @@ export abstract class BaseSlash {
       .setDescription(this.description);
   }
 
-  async run(client: DiscordClient, interaction: CommandInteraction<CacheType>) {
+  async run(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
     slashCount(this.name);
     // Acknowledge first so slow commands (DB queries) don't miss Discord's
     // 3-second reply deadline ("The application did not respond")
@@ -57,7 +57,7 @@ export abstract class BaseSlash {
 
   protected abstract slash(
     client: DiscordClient,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<InteractionResponse<boolean>> | Promise<void>;
 }
 

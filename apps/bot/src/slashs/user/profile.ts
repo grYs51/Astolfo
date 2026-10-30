@@ -1,6 +1,6 @@
 import {
   CacheType,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   EmbedBuilder,
   Interaction,
   SlashCommandBuilder,
