@@ -1,5 +1,5 @@
 # Stage 1: Build the app
-ARG NODE_VERSION=23
+ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-alpine AS build
 
 WORKDIR /usr/src/app
