@@ -1,7 +1,7 @@
 import {
   APIEmbedField,
   CacheType,
-  CommandInteraction,
+  ChatInputCommandInteraction,
   EmbedBuilder,
 } from 'discord.js';
 import { BaseSlash } from '../../utils/structures/base-slash';
@@ -10,7 +10,7 @@ import client from '../../client/client';
 export default class HelpEvent extends BaseSlash {
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const fields: APIEmbedField[] = client.slashs.map((slash) => {
       return {

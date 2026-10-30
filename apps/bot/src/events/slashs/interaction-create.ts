@@ -32,6 +32,8 @@ export default class InteractionCreateEvent extends BaseEvent {
   protected event(client: DiscordClient, interaction: Interaction) {
     switch (interaction.type) {
       case InteractionType.ApplicationCommand: {
+        // Slash commands only — context-menu commands aren't registered
+        if (!interaction.isChatInputCommand()) return;
         const slash = client.slashs.get(interaction.commandName);
         if (!slash) return;
         // Catch here so a throwing slash command doesn't leave the

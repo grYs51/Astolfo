@@ -1,5 +1,5 @@
 import {
-  CommandInteraction,
+  ChatInputCommandInteraction,
   CacheType,
   ActionRowBuilder,
   TextInputBuilder,
@@ -16,7 +16,7 @@ export default class Modal extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const modal = new ModalBuilder()
       .setCustomId('myModal')

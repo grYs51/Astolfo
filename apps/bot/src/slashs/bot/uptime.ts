@@ -1,4 +1,4 @@
-import { CommandInteraction, CacheType } from 'discord.js';
+import { ChatInputCommandInteraction, CacheType } from 'discord.js';
 import { BaseSlash } from '../../utils/structures/base-slash';
 import client from '../../client/client';
 export default class UpTimeEvent extends BaseSlash {
@@ -8,7 +8,7 @@ export default class UpTimeEvent extends BaseSlash {
 
   async slash(
     client: client,
-    interaction: CommandInteraction<CacheType>
+    interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const uptime = client.uptime || 0;
     const days = Math.floor(uptime / 86400000);

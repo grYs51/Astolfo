@@ -23,4 +23,6 @@ COPY --from=build /usr/src/app/dist/apps/web /usr/src/app
 
 EXPOSE 4200
 
+USER node
+
 CMD ["node", "/usr/src/app/server/server.mjs"]

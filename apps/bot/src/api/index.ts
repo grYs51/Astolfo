@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { Logger } from '../utils/logger';
 import apiRouter from './routes/api-router';
 import { collectDefaultMetrics } from 'prom-client';
@@ -37,6 +37,22 @@ function createExpress() {
     // Required for secure cookies behind an HTTPS-terminating proxy
     app.set('trust proxy', 1);
   }
+
+  // JSON-only API: nothing here should be framed, sniffed or render scripts
+  app.disable('x-powered-by');
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    res.set({
+      'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+      'X-Content-Type-Options': 'nosniff',
+      'X-Frame-Options': 'DENY',
+      'Referrer-Policy': 'no-referrer',
+      'Cross-Origin-Resource-Policy': 'same-site',
+    });
+    if (isProduction) {
+      res.set('Strict-Transport-Security', 'max-age=31536000');
+    }
+    next();
+  });
 
   app.use(
     cors({
