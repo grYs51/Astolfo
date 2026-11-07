@@ -230,4 +230,33 @@ describe('lonerboard', () => {
     expect(lonerboard[0].count).toBe(2 * 60 * 60 * 1000);
     expect(lonerboard[0].id).toBe('1');
   });
+  test('other channels do not count as company; own overlapping rows count once', () => {
+    /*
+    ch1  1:  |-----------|        (two overlapping rows of member 1)
+    ch1  1:     |-----|
+    ch2  2:  |-----------|
+    */
+    const row = (member_id: string, channel_id: string, from: string, to: string): voice_stats => ({
+      id: `${member_id}-${from}`,
+      guild_id: '1',
+      member_id,
+      channel_id,
+      issued_on: new Date(`2024-12-25T${from}:00`),
+      ended_on: new Date(`2024-12-25T${to}:00`),
+      type: '1',
+    });
+    const lonerboard = getLonerLeaderboard(
+      [memberOne, memberTwo, memberThree],
+      [
+        row('1', '1', '10:00', '12:00'),
+        row('1', '1', '10:30', '11:30'),
+        row('2', '2', '10:00', '12:00'),
+      ]
+    ).toSorted((a, b) => Number(a.id) - Number(b.id));
+
+    expect(lonerboard.map(({ id, count }) => [id, count])).toEqual([
+      ['1', 2 * 60 * 60 * 1000],
+      ['2', 2 * 60 * 60 * 1000],
+    ]);
+  });
 });

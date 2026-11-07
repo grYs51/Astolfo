@@ -29,14 +29,12 @@ export const getActiveServers: RequestHandler<
 
     // Enrich with guild details from Discord (or the mock directory)
     const directory = discordDirectory();
-    const servers = rows.map(({ guild_id, duration }) => {
+    // Servers the bot has left would show as nameless cards that 403
+    const servers = rows.flatMap(({ guild_id, duration }) => {
       const guild = directory.guild(guild_id);
-      return {
-        id: guild_id,
-        name: guild?.name,
-        icon: guild?.icon,
-        totalDuration: duration,
-      };
+      return guild
+        ? [{ id: guild_id, name: guild.name, icon: guild.icon, totalDuration: duration }]
+        : [];
     });
 
     res.send(servers);

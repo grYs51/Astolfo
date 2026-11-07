@@ -28,72 +28,52 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
   return [...dbVoiceStats, ...inChannel];
 };
 
+/**
+ * Time each member spent alone in a channel. Per channel, session starts and
+ * ends are walked once in time order (O(n log n)); while exactly one member
+ * is present, the time is theirs. The old pairwise version compared every
+ * session with every other one and froze the process on large histories.
+ */
 export const getLonerLeaderboard = (
   members: SimpleGuildMember[],
   stats: voice_stats[]
 ): Leaderboard[] => {
-  const membersById = new Map(members.map((member) => [member.id, member]));
-  const exclusiveTimes = new Map<string, Leaderboard>();
-
+  const eventsByChannel = new Map<string, { time: number; memberId: string; delta: 1 | -1 }[]>();
   for (const stat of stats) {
-    const { member_id, channel_id, issued_on, ended_on } = stat;
-
-    // Members no longer in the guild (or not cached) are skipped rather than
-    // crashing the whole leaderboard
-    const member = membersById.get(member_id);
-    if (!member) continue;
-    // Find all overlapping intervals in the same channel
-    const overlaps = stats.filter(
-      (other) =>
-        other.member_id !== member_id && // Different member
-        other.channel_id === channel_id && // Same channel
-        !(
-          other.ended_on.getTime() <= issued_on.getTime() ||
-          other.issued_on.getTime() >= ended_on.getTime()
-        ) // Overlapping interval
+    const events = eventsByChannel.get(stat.channel_id) ?? [];
+    events.push(
+      { time: stat.issued_on.getTime(), memberId: stat.member_id, delta: 1 },
+      { time: stat.ended_on.getTime(), memberId: stat.member_id, delta: -1 }
     );
+    eventsByChannel.set(stat.channel_id, events);
+  }
 
-    // Break down the interval into sub-intervals
-
-    let aloneTime = 0;
-    let currentStart = issued_on.getTime();
-
-    // Sort overlaps by start time
-    const sortedOverlaps = overlaps
-      .map((o) => ({ start: o.issued_on, end: o.ended_on }))
-      .sort((a, b) => a.start.getTime() - b.start.getTime());
-
-    for (const overlap of sortedOverlaps) {
-      if (overlap.start.getTime() > currentStart) {
-        // Member is alone between currentStart and overlap.start
-        aloneTime +=
-          Math.min(ended_on?.getTime() || 0, overlap.start.getTime()) -
-          currentStart;
+  const aloneMs = new Map<string, number>();
+  for (const events of eventsByChannel.values()) {
+    // Ends before starts at the same instant: back-to-back sessions don't overlap
+    events.sort((a, b) => a.time - b.time || a.delta - b.delta);
+    // Open sessions per member in the channel (members not in the guild
+    // still keep others company)
+    const present = new Map<string, number>();
+    let since = 0;
+    for (const { time, memberId, delta } of events) {
+      if (present.size === 1) {
+        const [only] = present.keys();
+        aloneMs.set(only, (aloneMs.get(only) ?? 0) + time - since);
       }
-      // Update currentStart to the end of the overlap if it extends further
-      currentStart = Math.max(
-        currentStart,
-        overlap.end?.getTime() || currentStart
-      );
-    }
-
-    // Add any remaining alone time after the last overlap
-    if (currentStart < ended_on.getTime()) {
-      aloneTime += ended_on.getTime() - currentStart;
-    }
-
-    // Add the time to the member's total
-    const total = exclusiveTimes.get(member_id);
-    if (total) {
-      total.count += aloneTime;
-    } else {
-      exclusiveTimes.set(member_id, {
-        id: member_id,
-        name: member.displayName ?? member.user.username,
-        count: aloneTime,
-      });
+      since = time;
+      const open = (present.get(memberId) ?? 0) + delta;
+      if (open > 0) present.set(memberId, open);
+      else present.delete(memberId);
     }
   }
 
-  return Array.from(exclusiveTimes.values()).filter(({ count }) => count);
+  const membersById = new Map(members.map((member) => [member.id, member]));
+  return [...aloneMs].flatMap(([id, count]) => {
+    const member = membersById.get(id);
+    // Members no longer in the guild (or not cached) are skipped
+    return member && count > 0
+      ? [{ id, name: member.displayName ?? member.user.username, count }]
+      : [];
+  });
 };

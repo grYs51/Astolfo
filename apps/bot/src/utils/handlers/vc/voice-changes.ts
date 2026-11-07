@@ -32,16 +32,46 @@ export const handleUserLeftVoiceChannel = async (
  */
 export const closeGuildVoiceSessions = async (guildId: string, date: Date) => {
   const prefix = voiceKey(guildId, '');
-  const keys = [...client.voiceUsers.keys()].filter((key) =>
-    key.startsWith(prefix)
+  return closeSessions(
+    [...client.voiceUsers.keys()].filter((key) => key.startsWith(prefix)),
+    date
   );
+};
 
+/** Open session whose member is no longer in its channel per the gateway */
+const hasLeft = (key: string) => {
+  const [guildId, memberId] = key.split(':');
+  const guild = client.guilds.cache.get(guildId);
+  // An unavailable guild's voice states are stale: leave its sessions alone
+  if (!guild?.available) return false;
+  const channelId = guild.voiceStates.cache.get(memberId)?.channelId;
+  return channelId !== client.voiceUsers.get(key)?.[0]?.channel_id;
+};
+
+/**
+ * After a fresh gateway session (re-identify), events missed during the gap
+ * are never replayed: close sessions of members who left or switched channel
+ * meanwhile, or they'd count live until the member rejoins. setVc reopens the
+ * switched ones.
+ * shortcut: mute/deaf/stream changes during the gap aren't reconciled (they
+ * close with the session), upgrade if those rows matter more.
+ */
+export const closeLeftVoiceSessions = (date: Date) =>
+  closeSessions([...client.voiceUsers.keys()].filter(hasLeft), date, hasLeft);
+
+const closeSessions = async (
+  keys: string[],
+  date: Date,
+  stillApplies: (key: string) => boolean = () => true
+) => {
   await Promise.all(
     keys.map((key) => {
-      const memberId = key.slice(prefix.length);
+      const [guildId, memberId] = key.split(':');
       // Same per-member queue as voiceStateUpdate, so an in-flight event for
       // this member finishes first
       return runSerialized(key, async () => {
+        // A queued event may have handled it meanwhile
+        if (!stillApplies(key)) return;
         try {
           await saveAllUserVoiceStatsToDb(memberId, guildId, date);
         } finally {

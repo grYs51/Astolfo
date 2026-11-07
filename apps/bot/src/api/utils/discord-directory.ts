@@ -1,4 +1,4 @@
-import { ChannelType } from 'discord.js';
+import { ChannelType, GuildMember } from 'discord.js';
 import { client } from '../../client/instance';
 import { Logger } from '../../utils/logger';
 import {
@@ -56,18 +56,28 @@ const live: DiscordDirectory = {
   async members(guildId, userIds) {
     const result = new Map<string, MemberInfo>();
     const guild = client.guilds.cache.get(guildId);
-    if (!guild || userIds.length === 0) return result;
+    if (!guild) return result;
+    const add = (member: GuildMember) =>
+      result.set(member.id, {
+        id: member.id,
+        username: member.user.username,
+        displayName: member.displayName,
+        avatar: member.user.displayAvatarURL(),
+      });
+
+    // Cache first: the gateway request is rate limited by Discord, and a
+    // rate-limited fetch would turn every name into "Unknown User"
+    const missing: string[] = [];
+    for (const id of userIds) {
+      const cached = guild.members.cache.get(id);
+      if (cached) add(cached);
+      else missing.push(id);
+    }
+    if (missing.length === 0) return result;
+
     try {
       // One batched gateway request instead of one fetch per member
-      const fetched = await guild.members.fetch({ user: userIds });
-      fetched.forEach((member) =>
-        result.set(member.id, {
-          id: member.id,
-          username: member.user.username,
-          displayName: member.displayName,
-          avatar: member.user.displayAvatarURL(),
-        })
-      );
+      (await guild.members.fetch({ user: missing })).forEach(add);
     } catch (error) {
       Logger.warn(`Failed to batch-fetch members for guild ${guildId}`, error);
     }

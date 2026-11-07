@@ -200,17 +200,10 @@ export class VoiceStatsTimelineComponent {
   formatTimestamp(timestamp: string): string {
     const { granularity } = this.timeline();
     // The API buckets in the viewer's time zone (`tz` param) and returns
-    // wall-clock strings ('YYYY-MM-DD' or 'YYYY-MM-DDTHH:mm'), so format the
-    // parts directly — going through Date would shift them by the UTC offset
-    const [datePart, time] = timestamp.split('T');
-    const [, month, day] = datePart.split('-').map(Number);
+    // wall-clock dates ('YYYY-MM-DD'), so format the parts directly — going
+    // through Date would shift them by the UTC offset
+    const [, month, day] = timestamp.split('-').map(Number);
     const label = `${month}/${day}`;
-
-    if (granularity === 'hour') {
-      // With the date: a week of hourly buckets would otherwise repeat the
-      // same "14:00" labels
-      return `${label} ${time}`;
-    }
     return granularity === 'week' ? `Week of ${label}` : label;
   }
 }

@@ -31,9 +31,9 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
 
     // Narrow query params to the DTO unions (also whitelists the DATE_TRUNC
     // unit before it reaches SQL)
-    const rawGranularity = req.query.granularity as string | undefined;
+    // No hourly buckets: with period=all that's one row per hour of history
     const granularity: VoiceStatsTimeline['granularity'] =
-      rawGranularity === 'hour' || rawGranularity === 'week' ? rawGranularity : 'day';
+      req.query.granularity === 'week' ? 'week' : 'day';
     const period: TimelinePeriod = parsePeriod(
       req.query.period,
       ['day', 'week', 'month', 'year', 'all'],
@@ -119,8 +119,7 @@ export const getVoiceStatsTimeline: RequestHandler<{ serverId: string }, VoiceSt
       const parts = toDurationParts(totalDuration);
       // bucket is a zone-less wall-clock time, which Prisma reads as UTC — so
       // the ISO string's date/time parts are the local wall-clock values
-      const isoStr = row.bucket.toISOString();
-      const timestamp = granularity === 'hour' ? isoStr.substring(0, 16) : isoStr.substring(0, 10);
+      const timestamp = row.bucket.toISOString().substring(0, 10);
       return {
         timestamp,
         totalDuration,

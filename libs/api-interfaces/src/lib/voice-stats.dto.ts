@@ -90,7 +90,7 @@ export type TimelinePeriod = 'day' | 'week' | 'month' | 'year' | 'all';
 /** The one period picker on the dashboard detail page */
 export type DashboardPeriod = 'week' | 'month' | 'year' | 'all';
 export type HeatmapPeriod = 'week' | 'month' | 'year' | 'all';
-export type TimelineGranularity = 'hour' | 'day' | 'week';
+export type TimelineGranularity = 'day' | 'week';
 
 // Activity Type Breakdown
 export interface ActivityTypeBreakdown {
@@ -309,23 +309,4 @@ export interface VoiceStatsUserHeatmap {
       aboveAverage: boolean;
     };
   };
-}
-
-// Paginated raw session list (GET /features/voice-stats/:serverId)
-export interface VoiceStatsItem {
-  id: string;
-  guild_id: string;
-  member_id: string;
-  channel_id: string;
-  type: VoiceActivityType;
-  issued_on: DateLike;
-  /** null = session still open. */
-  ended_on: DateLike | null;
-}
-
-export interface VoiceStatsResponse {
-  items: VoiceStatsItem[];
-  total: number;
-  limit: number;
-  offset: number;
 }

@@ -1,4 +1,3 @@
-export * from './getVoiceStats';
 export * from './getVoiceStatsOverview';
 export * from './getVoiceStatsLeaderboard';
 export * from './getVoiceStatsChannels';
