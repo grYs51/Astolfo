@@ -3,6 +3,7 @@ import { Events, Guild } from 'discord.js';
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
+import { defaultPrefix } from '../../utils/functions/set-config';
 
 export default class GuildCreateEvent extends BaseEvent {
   constructor() {
@@ -17,7 +18,7 @@ export default class GuildCreateEvent extends BaseEvent {
       update: {},
       create: {
         guild_id: guild.id,
-        prefix: process.env.DEFAULT_PREFIX!,
+        prefix: defaultPrefix(),
       },
     });
 

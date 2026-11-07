@@ -2,6 +2,9 @@ import { client } from '../../client/instance';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 
+/** Prefix for new guilds; `||` because compose passes an unset variable as '' */
+export const defaultPrefix = () => process.env.DEFAULT_PREFIX || ',';
+
 export const setConfigs = async () => {
   const prismaClient = getDb();
   Logger.info('Setting configurations...');
@@ -31,7 +34,7 @@ export const checkForNewGuilds = async () => {
     Logger.info(`I found a new guild! ${guild.id}, adding...`);
     client.guildConfigs.set(guild.id, {
       guild_id: guild.id,
-      prefix: process.env.DEFAULT_PREFIX ?? ',',
+      prefix: defaultPrefix(),
       welcome_channel_id: null,
       welcome_message: '',
       goodbye_message: '',
@@ -42,7 +45,7 @@ export const checkForNewGuilds = async () => {
     await prismaClient.guildConfigurations.create({
       data: {
         guild_id: guild.id,
-        prefix: process.env.DEFAULT_PREFIX ?? ',',
+        prefix: defaultPrefix(),
         welcome_channel_id: null,
         welcome_message: '',
         goodbye_message: '',

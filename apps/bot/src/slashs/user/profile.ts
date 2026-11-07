@@ -110,7 +110,8 @@ export default class ProfileSlash extends BaseSlash {
       0
     );
 
-    const totalTimePerChannel = allVoiceStats.reduce((dict, curr) => {
+    // VOICE rows only: MUTED/DEAF/STREAMING rows overlap them and would count twice
+    const totalTimePerChannel = voiceSessions.reduce((dict, curr) => {
       dict[curr.channel_id] = (dict[curr.channel_id] || 0) + getDuration(curr);
       return dict;
     }, {} as Record<string, number>);

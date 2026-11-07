@@ -30,9 +30,10 @@ const handleEvent: HandlerFunction = (instance: BaseEvent, client) => {
   client.on(instance.name, instance.run.bind(instance, client));
 };
 
+// Slashes and interactions are dispatched by interaction-create.ts, not by
+// client events of the same name
 const handleSlash: HandlerFunction = (instance: BaseSlash, client) => {
   client.slashs.set(instance.name, instance);
-  client.on(instance.name, instance.run.bind(instance, client));
 };
 
 const handleInteraction: HandlerFunction = (
@@ -40,7 +41,6 @@ const handleInteraction: HandlerFunction = (
   client
 ) => {
   client.interactions.set(instance.name, instance);
-  client.on(instance.name, instance.run.bind(instance, client));
 };
 
 const fileTypeHandlers: Record<FileType, HandlerFunction> = {
@@ -62,7 +62,13 @@ async function registerFiles(
   dir: string,
   fileType: FileType
 ) {
-  const entries = await fs.readdir(dir, { withFileTypes: true });
+  // A folder with no handlers isn't emitted by the build at all
+  const entries = await fs
+    .readdir(dir, { withFileTypes: true })
+    .catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    });
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     if (entry.isDirectory()) {

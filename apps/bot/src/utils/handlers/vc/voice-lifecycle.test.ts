@@ -5,7 +5,11 @@ import type { Db } from '../../../db';
 import VoiceDurationUpdateEvent from '../../../events/voiceState/voice-state-update';
 import { setVc } from '../../functions/set-vc';
 import { cancelJob } from '../../schedulers/voice-channel.scheduler';
-import { closeGuildVoiceSessions, handleUserJoinedVoiceChannel } from './voice-changes';
+import {
+  closeGuildVoiceSessions,
+  closeLeftVoiceSessions,
+  handleUserJoinedVoiceChannel,
+} from './voice-changes';
 import { runSerialized, voiceKey, VOICE_TYPE } from './voice-utils';
 
 jest.mock('../../schedulers/voice-channel.scheduler', () => ({
@@ -244,6 +248,52 @@ describe('closeGuildVoiceSessions (bot removed from a guild)', () => {
     expect([...client.voiceUsers.keys()]).toEqual([voiceKey('guild-2', MEMBER)]);
     expect(cancelJob).toHaveBeenCalledWith(GUILD, MEMBER);
     expect(cancelJob).toHaveBeenCalledWith(GUILD, OTHER);
+  });
+});
+
+describe('closeLeftVoiceSessions (missed events after a re-identify)', () => {
+  const THIRD = 'member-3';
+  const setGuild = (voice: Record<string, string | null>, available = true) =>
+    Object.defineProperty(client, 'guilds', {
+      configurable: true,
+      value: {
+        cache: new Map([
+          [
+            GUILD,
+            {
+              available,
+              voiceStates: {
+                cache: new Map(Object.entries(voice).map(([id, channelId]) => [id, { channelId }])),
+              },
+            },
+          ],
+        ]),
+      },
+    });
+
+  beforeEach(async () => {
+    for (const memberId of [MEMBER, OTHER, THIRD]) {
+      await dispatch(state({ memberId }), state({ channelId: CHANNEL, memberId }));
+    }
+  });
+
+  test('closes sessions of members who left or switched channel, keeps the rest', async () => {
+    setGuild({ [MEMBER]: CHANNEL, [OTHER]: null, [THIRD]: 'channel-2' });
+
+    await closeLeftVoiceSessions(new Date());
+
+    expect(db.open().map((row) => row.member_id)).toEqual([MEMBER]);
+    expect([...client.voiceUsers.keys()]).toEqual([KEY]);
+    expect(cancelJob).toHaveBeenCalledWith(GUILD, OTHER);
+    expect(cancelJob).toHaveBeenCalledWith(GUILD, THIRD);
+  });
+
+  test("leaves an unavailable guild's sessions open (its voice states are stale)", async () => {
+    setGuild({}, false);
+
+    await closeLeftVoiceSessions(new Date());
+
+    expect(db.open()).toHaveLength(3);
   });
 });
 

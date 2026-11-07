@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
 import {
-  VoiceStatsResponse,
   VoiceStatsOverview,
   VoiceStatsLeaderboard,
   VoiceStatsChannels,
@@ -42,27 +41,6 @@ export class VoiceStatsApi extends ApiBase {
   /** Change the viewer's privacy setting (one-off request, not a resource) */
   setPrivacy(hidden: boolean) {
     return this.http.put<MemberPrivacy>(`${this.host}/features/me/privacy`, { hidden });
-  }
-
-  /** Fetch all voice stats with pagination */
-  fetchVoiceStats(
-    guildId: () => string,
-    limit?: () => number | undefined,
-    offset?: () => number | undefined
-  ) {
-    return this.get<VoiceStatsResponse>(
-      () => `/features/voice-stats/${guildId()}`,
-      () => {
-        const params: Record<string, string> = {};
-        const limitVal = limit?.();
-        const offsetVal = offset?.();
-
-        if (limitVal !== undefined) params['limit'] = limitVal.toString();
-        if (offsetVal !== undefined) params['offset'] = offsetVal.toString();
-
-        return params;
-      }
-    );
   }
 
   /** Fetch overview statistics */
