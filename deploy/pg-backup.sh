@@ -5,11 +5,22 @@
 # Schedule as the postgres user (peer auth, no password needed):
 #          sudo crontab -e -u postgres
 #          15 3 * * * /opt/astolfo/bin/pg-backup.sh
+# Docker deploy: set PG_DUMP, DB and DIR in the crontab line instead (see deploy/setup-server.md).
 # Restore (with both services stopped):
 #          pg_restore --clean --if-exists -d astolfo <file.dump>
 set -euo pipefail
+umask 077 # the dumps hold the whole database
 
-DIR=/var/backups/astolfo
+DIR=${DIR:-/var/backups/astolfo}
+DB=${DB:-astolfo}
+PG_DUMP=${PG_DUMP:-pg_dump}
+
 mkdir -p "$DIR"
-pg_dump -Fc -d astolfo -f "$DIR/astolfo_$(date +%F).dump"
+out="$DIR/astolfo_$(date +%F).dump"
+trap 'rm -f "$out.tmp"' EXIT
+# Write to stdout, not -f: with PG_DUMP="docker exec …" a -f path would be inside the container.
+# The .tmp file and mv mean a failed dump never looks like a good one.
+# shellcheck disable=SC2086 # PG_DUMP is a command with arguments, split on purpose
+$PG_DUMP -Fc -d "$DB" > "$out.tmp"
+mv "$out.tmp" "$out"
 find "$DIR" -name '*.dump' -mtime +14 -delete

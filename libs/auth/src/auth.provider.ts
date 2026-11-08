@@ -11,7 +11,7 @@ const isLoggedInFactory = (profileStore: StateSignals<ProfileState>) =>
   computed(() => {
     if (profileStore.isLoading()) return false;
     if (profileStore.value()) return true;
-    // Only a 401 means "no session". A Discord rate limit or server error on
+    // Only a 401 means "no session". A server or network error on
     // /auth/status shouldn't bounce a logged-in user to /login; the session
     // cookie is still valid for the stats endpoints.
     const error = profileStore.error();

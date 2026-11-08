@@ -116,11 +116,11 @@ model session {
   expiresAt DateTime
 }
 
+// The Discord profile saved at login, which /auth/status returns. The OAuth
+// tokens are not stored: nothing calls Discord on the user's behalf.
 model user_session {
-  id            String @id
-  // No @unique on the tokens: token collisions aren't a real scenario, and
-  // unique indexes on secrets cost a write per insert and copy the secret
-  // into index pages
-  access_token  String
-  refresh_token String
+  id          String  @id
+  username    String
+  global_name String?
+  avatar      String?
 }

@@ -61,6 +61,10 @@ module.exports = [
             {
               sourceTag: 'type:data-access',
               onlyDependOnLibsWithTags: ['type:data-access', 'type:common']
+            },
+            {
+              sourceTag: 'type:common',
+              onlyDependOnLibsWithTags: ['type:common']
             }
 
             // Domain-based rules
