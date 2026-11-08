@@ -131,8 +131,8 @@ export interface VoiceStatsOverview {
 }
 
 /**
- * A member's voice time by state, in ms. muted includes deafened time
- * (deafening also mutes); both are clamped to voice.
+ * A member's voice time by state, in ms, each capped to voice. muted and
+ * deafened include server mute/deafen; muted includes self-deafened time.
  */
 export interface VoiceHabits {
   voice: number;

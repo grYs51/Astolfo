@@ -317,10 +317,11 @@ export class DetailOverviewComponent {
     if (voice === 0) return [];
     const share = (ms: number) => Math.round((ms / voice) * 100);
 
-    // Deafening also mutes, so the muted share includes deafened time
+    // MUTED/DEAF already include server mute/deafen (SERVER_* rows overlap
+    // them); deafening also mutes, so the muted share includes deafened time
     return [
-      { pct: share(duration(VoiceActivityType.MUTED, VoiceActivityType.SERVER_MUTED)), text: 'of voice time with the mic muted' },
-      { pct: share(duration(VoiceActivityType.DEAF, VoiceActivityType.SERVER_DEAF)), text: 'deafened' },
+      { pct: share(duration(VoiceActivityType.MUTED)), text: 'of voice time with the mic muted' },
+      { pct: share(duration(VoiceActivityType.DEAF)), text: 'deafened' },
       { pct: share(duration(VoiceActivityType.STREAMING)), text: 'streaming' },
       { pct: share(duration(VoiceActivityType.VIDEO)), text: 'with the camera on' },
     ].filter((fact) => fact.pct > 0);
