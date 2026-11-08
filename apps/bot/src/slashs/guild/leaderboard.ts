@@ -9,6 +9,7 @@ import {
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
+  AttachmentBuilder,
 } from 'discord.js';
 import client from '../../client/client';
 import { BaseSlash } from '../../utils/structures/base-slash';
@@ -22,6 +23,11 @@ import {
 import { createBar } from '../../utils/functions/create-bar';
 import { Logger } from '../../utils/logger';
 import { InterActionUtils } from '../../utils/interaction-utils';
+import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
+import { leaderboardCard } from '../../cards/leaderboard.card';
+import { renderPng } from '../../cards/render';
+import { DEFAULT_THEME, THEMES } from '../../cards/themes';
+import { formatDuration } from '../../stats/messages';
 
 const PAGE_SIZE = 10;
 const COLLECTOR_TIMEOUT_MS = 60_000;
@@ -58,6 +64,12 @@ export default class LeaderboardEvent extends BaseSlash {
             )
           )
       )
+      .addBooleanOption((option) =>
+        option
+          .setName('image')
+          .setDescription('Show it as an image card')
+          .setRequired(false)
+      )
       .setContexts(InteractionContextType.Guild);
   }
 
@@ -80,6 +92,7 @@ export default class LeaderboardEvent extends BaseSlash {
     const timeRange =
       (interaction.options.get('time-range')?.value as LeaderboardTimeRanges) ??
       'allTime';
+    const image = interaction.options.getBoolean('image') ?? false;
 
     await InterActionUtils.deferReply(interaction);
 
@@ -144,6 +157,45 @@ export default class LeaderboardEvent extends BaseSlash {
         return embed;
       };
 
+      // Fetched once per member, so paging back and forth doesn't refetch
+      const avatars = new Map<string, Promise<string | undefined>>();
+      const avatarFor = (id: string) => {
+        if (!avatars.has(id)) {
+          avatars.set(id, fetchImage(guild.members.cache.get(id)?.displayAvatarURL(CARD_IMAGE)));
+        }
+        return avatars.get(id);
+      };
+      const serverIcon = image ? fetchImage(guild.iconURL(CARD_IMAGE)) : undefined;
+
+      const buildCard = async (page: number) => {
+        const start = page * PAGE_SIZE;
+        const pageItems = sortedLeaderboard.slice(start, start + PAGE_SIZE);
+        const svg = leaderboardCard(
+          {
+            serverName: guild.name,
+            serverIcon: await serverIcon,
+            title: leaderboardLabels[type].title,
+            subtitle: type === 'current' ? 'Right now' : leaderboardTimeRangeLabels[timeRange],
+            footer: `${leaderboardLabels[type].description.replace('\n', ' ')} · Page ${page + 1}/${totalPages}`,
+            empty: leaderboardLabels[type].empty ?? 'No data found',
+            rows: await Promise.all(
+              pageItems.map(async (x, i) => ({
+                rank: start + i + 1,
+                name: x.name,
+                value: formatDuration(x.count),
+                fraction: x.count / (longestInVc || 1),
+                avatar: await avatarFor(x.id),
+              }))
+            ),
+          },
+          THEMES[DEFAULT_THEME]
+        );
+        return new AttachmentBuilder(await renderPng(svg), { name: 'leaderboard.png' });
+      };
+
+      const buildPage = async (page: number) =>
+        image ? { embeds: [], files: [await buildCard(page)] } : { embeds: [buildEmbed(page)] };
+
       const prevId = `leaderboard_prev_${interaction.id}`;
       const nextId = `leaderboard_next_${interaction.id}`;
       const closeId = `leaderboard_close_${interaction.id}`;
@@ -167,10 +219,9 @@ export default class LeaderboardEvent extends BaseSlash {
         );
 
       let currentPage = 0;
-      const initialEmbed = buildEmbed(currentPage);
 
       const sent = await InterActionUtils.send(interaction, {
-        embeds: [initialEmbed],
+        ...(await buildPage(currentPage)),
         components: [makeRow(currentPage)],
         fetchReply: true,
       });
@@ -205,9 +256,12 @@ export default class LeaderboardEvent extends BaseSlash {
             return;
           }
 
-          const updated = buildEmbed(currentPage);
-          await InterActionUtils.update(btn, {
-            embeds: [updated],
+          // Acknowledge first: a new page of avatars plus the render can take longer than Discord's 3s
+          await btn.deferUpdate();
+          await btn.editReply({
+            ...(await buildPage(currentPage)),
+            // Drop the previous page's image instead of stacking them
+            attachments: [],
             components: [makeRow(currentPage)],
           });
         } catch (error) {
@@ -237,10 +291,7 @@ export default class LeaderboardEvent extends BaseSlash {
                 .setDisabled(true)
             );
 
-          await sent.edit({
-            embeds: [buildEmbed(currentPage)],
-            components: [disabledRow],
-          });
+          await sent.edit({ components: [disabledRow] });
         } catch (e) {
           void e;
         }
