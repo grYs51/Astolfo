@@ -20,7 +20,11 @@ export const getActivityCalendar = asyncHandler(
       return;
     }
     const tz = getTimeZone(req.query.tz);
-    const startDate = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    const localDate = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
+    const start = localDate(new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+    // Local midnight of the first day, as the UTC wall-clock time the columns hold,
+    // so the first square counts its whole day (and the indexes stay usable)
+    const since = Prisma.sql`((${start}::date::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC')`;
     const voiceMember = userId ? Prisma.sql`AND member_id = ${userId}` : Prisma.empty;
     const messageMember = userId ? Prisma.sql`AND user_id = ${userId}` : Prisma.empty;
 
@@ -32,7 +36,7 @@ export const getActivityCalendar = asyncHandler(
         FROM voice_stats
         WHERE guild_id = ${serverId}
           AND type = ${VOICE_TYPE.VOICE}
-          AND issued_on >= ${startDate}
+          AND issued_on >= ${since}
           ${voiceMember}
         GROUP BY 1
       ),
@@ -40,7 +44,7 @@ export const getActivityCalendar = asyncHandler(
         SELECT DATE_TRUNC('day', ${localTime('created_at', tz)}) AS day, COUNT(*)::int AS messages
         FROM message_stats
         WHERE guild_id = ${serverId}
-          AND created_at >= ${startDate}
+          AND created_at >= ${since}
           ${messageMember}
         GROUP BY 1
       )
@@ -48,15 +52,16 @@ export const getActivityCalendar = asyncHandler(
         COALESCE(voice.minutes, 0)::int AS minutes,
         COALESCE(msgs.messages, 0)::int AS messages
       FROM voice FULL JOIN msgs ON voice.day = msgs.day
+      -- under 30 s of voice rounds to 0 minutes: not an active day
+      WHERE COALESCE(voice.minutes, 0) > 0 OR COALESCE(msgs.messages, 0) > 0
       ORDER BY 1
     `;
 
     // `day` is zone-less wall-clock time read as UTC, so its ISO date is the local date
     const isoDate = (d: Date) => d.toISOString().substring(0, 10);
-    const localDate = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
     res.json({
       days: rows.map((row) => ({ date: isoDate(row.day), minutes: row.minutes, messages: row.messages })),
-      start: localDate(startDate),
+      start,
       end: localDate(new Date()),
     });
   }

@@ -160,11 +160,11 @@ export class DetailOverviewComponent {
     () => this.userId(),
     () => this.period()
   );
-  userCalendarResource = this.voiceStatsApi.fetchActivityCalendar(
+  userCalendarResource = this.voiceStatsApi.fetchUserActivityCalendar(
     () => this.id(),
     () => this.userId()
   );
-  calendarResource = this.voiceStatsApi.fetchActivityCalendar(() => this.id());
+  calendarResource = this.voiceStatsApi.fetchServerActivityCalendar(() => this.id());
   presenceResource = this.voiceStatsApi.fetchServerPresence(
     () => this.id(),
     () => this.period()

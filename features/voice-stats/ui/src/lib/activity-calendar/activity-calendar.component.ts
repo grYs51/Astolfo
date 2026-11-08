@@ -24,8 +24,9 @@ type Metric = 'minutes' | 'messages';
       <div class="mb-sm flex flex-wrap items-start justify-between gap-sm">
         <div>
           <h3 class="text-base font-semibold text-gray-100">Past year</h3>
+          <!-- Local days with any activity; the voice streak counts UTC days with 10+ min -->
           <p class="text-xs text-gray-500">
-            {{ activeDays() }} active {{ activeDays() === 1 ? 'day' : 'days' }} ·
+            Days in your time zone · {{ activeDays() }} active {{ activeDays() === 1 ? 'day' : 'days' }} ·
             {{ totals().minutes * 60000 | humanizeDuration: true }} in voice ·
             {{ totals().messages }} {{ totals().messages === 1 ? 'message' : 'messages' }}
           </p>
@@ -64,7 +65,10 @@ export class ActivityCalendarComponent {
     const byDate = new Map<string, ActivityCalendarDay>(days.map((day) => [day.date, day]));
     // Days without any of the metric keep the empty-square colour
     const data = days.filter((day) => day[metric] > 0).map((day) => [day.date, day[metric]]);
-    const max = Math.max(1, ...data.map(([, value]) => value as number));
+    // Quartiles of the active days, like GitHub, so one outlier day doesn't wash out the rest
+    const values = data.map(([, value]) => value as number).sort((a, b) => a - b);
+    const q = (p: number) => values[Math.floor(p * (values.length - 1))] ?? 1;
+    const colors = [2, 4, 6, 8].map((i) => HEATMAP_SEQUENTIAL_COLORS[i]);
 
     return {
       tooltip: {
@@ -88,9 +92,14 @@ export class ActivityCalendarComponent {
       },
       visualMap: {
         type: 'piecewise',
-        min: 0,
-        max,
-        splitNumber: 4,
+        pieces: [
+          { gt: 0, lte: q(0.25), color: colors[0] },
+          { gt: q(0.25), lte: q(0.5), color: colors[1] },
+          { gt: q(0.5), lte: q(0.75), color: colors[2] },
+          { gt: q(0.75), color: colors[3] },
+        ],
+        // A clickable legend would hide days from the calendar
+        selectedMode: false,
         orient: 'horizontal',
         left: 36,
         bottom: 0,
@@ -100,7 +109,6 @@ export class ActivityCalendarComponent {
         showLabel: false,
         text: ['More', 'Less'],
         textStyle: { color: '#9ca3af', fontSize: 11 },
-        inRange: { color: [2, 4, 6, 8].map((i) => HEATMAP_SEQUENTIAL_COLORS[i]) },
       },
       calendar: {
         range: [start, end],

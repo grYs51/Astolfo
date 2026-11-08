@@ -254,11 +254,18 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /** Daily activity over the last 12 months: the server's, or one member's when `userId` is given */
-  fetchActivityCalendar(guildId: () => string, userId?: () => string | undefined | null) {
+  /** The server's daily activity over the last 12 months */
+  fetchServerActivityCalendar(guildId: () => string) {
+    return this.get<ActivityCalendar>(
+      () => `/features/voice-stats/${guildId()}/calendar`,
+      () => ({ tz: viewerTimeZone() })
+    );
+  }
+
+  /** One member's daily activity over the last 12 months */
+  fetchUserActivityCalendar(guildId: () => string, userId: () => string | undefined | null) {
     return this.get<ActivityCalendar>(
       () => {
-        if (!userId) return `/features/voice-stats/${guildId()}/calendar`;
         const user = userId();
         if (!user) return undefined; // skip request until userId is available
         return `/features/voice-stats/${guildId()}/users/${user}/calendar`;
@@ -266,4 +273,5 @@ export class VoiceStatsApi extends ApiBase {
       () => ({ tz: viewerTimeZone() })
     );
   }
+
 }

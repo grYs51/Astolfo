@@ -60,7 +60,7 @@ export class MemberProfileComponent {
     () => this.memberId(),
     () => this.period()
   );
-  calendarResource = this.api.fetchActivityCalendar(
+  calendarResource = this.api.fetchUserActivityCalendar(
     () => this.id(),
     () => this.memberId()
   );
