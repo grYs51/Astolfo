@@ -15,6 +15,8 @@ import {
   visibleMembersOnly,
 } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
+import { getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
+import { nextMilestone } from '../../../../stats/milestones';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -47,6 +49,8 @@ export const getVoiceStatsUser: RequestHandler<
       companionRows,
       messageChannelRows,
       previousMessageRows,
+      streak,
+      lifetimeMs,
     ] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
@@ -128,7 +132,11 @@ export const getVoiceStatsUser: RequestHandler<
               ${previousPeriodFilter(period, 'created_at')!}
           `
         : Promise.resolve(null),
+      // All time, whatever the period: the profile's streak and milestone
+      getMemberStreak(req.db, serverId, userId),
+      lifetimeVoiceMs(req.db, serverId, userId),
     ]);
+    const allTime = { streak, lifetimeMs, nextMilestone: nextMilestone(lifetimeMs) ?? null };
 
     const messages = {
       count: messageChannelRows.reduce((sum, row) => sum + Number(row.count), 0),
@@ -177,6 +185,7 @@ export const getVoiceStatsUser: RequestHandler<
         messages,
         recentSessions: [],
         channelBreakdown: [],
+        ...allTime,
       });
       return;
     }
@@ -235,5 +244,6 @@ export const getVoiceStatsUser: RequestHandler<
       messages,
       recentSessions: enrichedRecentSessions,
       channelBreakdown,
+      ...allTime,
     });
   });

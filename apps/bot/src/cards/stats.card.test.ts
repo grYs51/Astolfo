@@ -18,6 +18,8 @@ const summary = (overrides: Partial<MemberSummary> = {}): MemberSummary => ({
     { memberId: '200', togetherMs: 2 * H },
     { memberId: '300', togetherMs: H },
   ],
+  streak: { current: 3, longest: 7 },
+  lifetimeMs: 88 * H,
   ...overrides,
 });
 
@@ -41,6 +43,18 @@ describe('statsCard', () => {
     expect(svg).toContain('>#1<');
     expect(svg).toContain('of 3 members');
     expect(svg).toContain('most in #general &amp; chill');
+  });
+
+  it('shows the voice streak and the next milestone', () => {
+    const svg = statsCard(data(), THEMES.dark);
+    expect(svg).toContain('Voice streak: 3 days · best 7');
+    expect(svg).toContain('Next milestone: 100h (12h to go)');
+  });
+
+  it('leaves out the streak line when there is no streak and no milestone left', () => {
+    const svg = statsCard(data({ summary: summary({ streak: { current: 0, longest: 0 }, lifetimeMs: 1000 * H }) }), THEMES.dark);
+    expect(svg).not.toContain('Voice streak');
+    expect(svg).not.toContain('Next milestone');
   });
 
   it('lists companions with escaped names', () => {

@@ -15,6 +15,7 @@ import {
   VoiceStatsUserProfileComponent,
 } from '@nx-stolfo/ui-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
+import { ProgressBarComponent } from '@nx-stolfo/components';
 
 const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
   week: 'in the past week',
@@ -43,6 +44,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     VoiceStatsUserHeatmapComponent,
     VoiceStatsUserProfileComponent,
     HumanizeDurationPipe,
+    ProgressBarComponent,
   ],
   templateUrl: './member-activity.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -69,6 +71,15 @@ export class MemberActivityComponent {
   protected isPrivate = computed(() => {
     const error = this.userResource().error();
     return error instanceof HttpErrorResponse && error.status === 403;
+  });
+
+  /** Next lifetime milestone with how far along it is (from 0h) */
+  protected milestone = computed(() => {
+    const resource = this.userResource();
+    const next = resource.hasValue() ? resource.value()?.nextMilestone : null;
+    if (!next) return undefined;
+    const target = next.hours * 3_600_000;
+    return { ...next, percentage: Math.floor(((target - next.remainingMs) / target) * 100) };
   });
 
   /** "↑ 2h 10m more than the month before" */

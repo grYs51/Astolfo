@@ -37,7 +37,7 @@ describe('runDueDigests', () => {
   const NOW = at('2026-10-05T08:05:00Z');
   const activeWeek = {
     voiceMs: 3 * H, previousVoiceMs: H, messages: 4, previousMessages: 2, activeMembers: 2,
-    topVoice: [], topMessages: [], bestDuo: undefined, busiestDay: undefined,
+    topVoice: [], topMessages: [], bestDuo: undefined, busiestDay: undefined, topStreaks: [], milestones: [],
   };
 
   const clientWith = (opts: { lastSent?: Date | null; inGuild?: boolean; sendable?: boolean } = {}) => {
