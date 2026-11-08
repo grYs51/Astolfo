@@ -32,7 +32,11 @@
         "main": "apps/bot/src/index.ts",
         "tsConfig": "apps/bot/tsconfig.app.json",
         "assets": [
-          "apps/bot/src/assets"
+          {
+            "input": "apps/bot/src/assets",
+            "glob": "**/*",
+            "output": "apps/bot/src/assets"
+          }
         ],
         "generatePackageJson": true,
         "esbuildOptions": {
