@@ -15,12 +15,14 @@ import {
   VoiceStatsTimelineComponent,
   VoiceStatsHeatmapComponent,
   ServerPulseComponent,
+  ActivityCalendarComponent,
   LeaderboardRow,
 } from '@nx-stolfo/ui-voice-stats';
 import {
   DashboardPeriod,
   TimelineGranularity,
   VoiceActivityType,
+  VoiceHabitMetric,
   VoiceStatsApi,
 } from '@nx-stolfo/data-access-voice-stats';
 import { USER } from '@nx-stolfo/auth';
@@ -50,6 +52,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
     ServerPulseComponent,
+    ActivityCalendarComponent,
     SegmentedControlComponent,
     MemberActivityComponent,
   ],
@@ -157,6 +160,11 @@ export class DetailOverviewComponent {
     () => this.userId(),
     () => this.period()
   );
+  userCalendarResource = this.voiceStatsApi.fetchUserActivityCalendar(
+    () => this.id(),
+    () => this.userId()
+  );
+  calendarResource = this.voiceStatsApi.fetchServerActivityCalendar(() => this.id());
   presenceResource = this.voiceStatsApi.fetchServerPresence(
     () => this.id(),
     () => this.period()
@@ -232,6 +240,35 @@ export class DetailOverviewComponent {
     }));
   });
 
+  // ── Voice habits leaderboard (ranked by the API) ────────────────────────
+  readonly habitMetricOptions: SegmentedControlOption<VoiceHabitMetric>[] = [
+    { value: 'camera', label: 'Camera' },
+    { value: 'streaming', label: 'Streaming' },
+  ];
+  readonly habitEmptyText: Record<VoiceHabitMetric, string> = {
+    camera: 'Nobody turned their camera on',
+    streaming: 'Nobody streamed',
+  };
+  habitMetric = signal<VoiceHabitMetric>('camera');
+  habitsResource = this.voiceStatsApi.fetchVoiceHabits(
+    () => this.id(),
+    () => this.period(),
+    () => this.habitMetric()
+  );
+
+  habitRows = computed<LeaderboardRow[]>(() => {
+    if (!this.habitsResource.hasValue()) return [];
+    const metric = this.habitsResource.value()?.metric;
+    return (this.habitsResource.value()?.leaderboard ?? []).map(({ member, habits }) => ({
+      member,
+      value: this.durationPipe.transform(
+        metric === 'streaming' ? habits.streaming : habits.video,
+        true
+      ),
+      subtitle: `${this.durationPipe.transform(habits.voice, true)} in voice`,
+    }));
+  });
+
   // ── Rock-paper-scissors leaderboard ──────────────────────────────────────
   gameRows = computed<LeaderboardRow[]>(() =>
     this.gamesResource.hasValue()
@@ -276,10 +313,11 @@ export class DetailOverviewComponent {
     if (voice === 0) return [];
     const share = (ms: number) => Math.round((ms / voice) * 100);
 
-    // Deafening also mutes, so the muted share includes deafened time
+    // MUTED/DEAF already include server mute/deafen (SERVER_* rows overlap
+    // them); deafening also mutes, so the muted share includes deafened time
     return [
-      { pct: share(duration(VoiceActivityType.MUTED, VoiceActivityType.SERVER_MUTED)), text: 'of voice time with the mic muted' },
-      { pct: share(duration(VoiceActivityType.DEAF, VoiceActivityType.SERVER_DEAF)), text: 'deafened' },
+      { pct: share(duration(VoiceActivityType.MUTED)), text: 'of voice time with the mic muted' },
+      { pct: share(duration(VoiceActivityType.DEAF)), text: 'deafened' },
       { pct: share(duration(VoiceActivityType.STREAMING)), text: 'streaming' },
       { pct: share(duration(VoiceActivityType.VIDEO)), text: 'with the camera on' },
     ].filter((fact) => fact.pct > 0);

@@ -67,6 +67,32 @@
         </p>
       }
 
+      <!-- Voice habits in the period; hidden without voice time -->
+      @let habits = user.value()!.habits;
+      @if (habits.voice > 0) {
+        <div class="mt-md border-t border-white/5 pt-md">
+          <h3 class="text-xs text-gray-500">Voice habits</h3>
+          <dl class="mt-xs grid grid-cols-2 gap-md text-sm sm:grid-cols-4">
+            <div>
+              <dt class="text-xs text-gray-500">Camera on</dt>
+              <dd class="font-medium text-gray-100">{{ habits.video | humanizeDuration: true }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Streaming</dt>
+              <dd class="font-medium text-gray-100">{{ habits.streaming | humanizeDuration: true }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Listening</dt>
+              <dd class="font-medium text-gray-100">{{ habits.voice - habits.deafened | humanizeDuration: true }}</dd>
+            </div>
+            <div>
+              <dt class="text-xs text-gray-500">Muted</dt>
+              <dd class="font-medium text-gray-100">{{ (habits.muted / habits.voice) * 100 | number: '1.0-0' }}% of voice</dd>
+            </div>
+          </dl>
+        </div>
+      }
+
       <!-- All time, whatever the period -->
       @let streak = user.value()!.streak;
       @if (streak.longest > 0 || milestone()) {
@@ -99,6 +125,18 @@
       }
     }
   </div>
+
+  <!-- Past year, day by day -->
+  @let calendar = calendarResource();
+  @if (calendar.error()) {
+    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+      Failed to load the past year
+    </div>
+  } @else if (calendar.hasValue()) {
+    <feature-voice-stats-activity-calendar [calendar]="calendar.value()!" />
+  } @else {
+    <div class="h-[260px] rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+  }
 
   <!-- When they're on -->
   @if (heatmap.error()) {

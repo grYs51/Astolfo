@@ -20,6 +20,9 @@ import {
   UserPresence,
   ServerGames,
   UserGames,
+  ActivityCalendar,
+  VoiceHabitMetric,
+  VoiceHabitsLeaderboard,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -223,6 +226,18 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
+  /** Members ranked by camera or streaming time */
+  fetchVoiceHabits(
+    guildId: () => string,
+    period: () => DashboardPeriod,
+    metric: () => VoiceHabitMetric
+  ) {
+    return this.get<VoiceHabitsLeaderboard>(
+      () => `/features/voice-stats/${guildId()}/voice-habits`,
+      () => ({ period: period(), metric: metric() })
+    );
+  }
+
   /** One member's rock-paper-scissors record (and head-to-head with the viewer) */
   fetchUserGames(
     guildId: () => string,
@@ -238,4 +253,25 @@ export class VoiceStatsApi extends ApiBase {
       () => ({ period: period() })
     );
   }
+
+  /** The server's daily activity over the last 12 months */
+  fetchServerActivityCalendar(guildId: () => string) {
+    return this.get<ActivityCalendar>(
+      () => `/features/voice-stats/${guildId()}/calendar`,
+      () => ({ tz: viewerTimeZone() })
+    );
+  }
+
+  /** One member's daily activity over the last 12 months */
+  fetchUserActivityCalendar(guildId: () => string, userId: () => string | undefined | null) {
+    return this.get<ActivityCalendar>(
+      () => {
+        const user = userId();
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guildId()}/users/${user}/calendar`;
+      },
+      () => ({ tz: viewerTimeZone() })
+    );
+  }
+
 }

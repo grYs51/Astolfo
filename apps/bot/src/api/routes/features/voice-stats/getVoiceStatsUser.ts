@@ -17,6 +17,7 @@ import {
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
 import { nextMilestone } from '../../../../stats/milestones';
+import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -51,6 +52,7 @@ export const getVoiceStatsUser: RequestHandler<
       previousMessageRows,
       streak,
       lifetimeMs,
+      habitRows,
     ] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
@@ -135,8 +137,15 @@ export const getVoiceStatsUser: RequestHandler<
       // All time, whatever the period: the profile's streak and milestone
       getMemberStreak(req.db, serverId, userId),
       lifetimeVoiceMs(req.db, serverId, userId),
+      req.db.$queryRaw<HabitRow[]>`
+        SELECT ${HABIT_SUMS}
+        FROM voice_stats
+        WHERE guild_id = ${serverId} AND member_id = ${userId}
+          ${dateFilter}
+      `,
     ]);
     const allTime = { streak, lifetimeMs, nextMilestone: nextMilestone(lifetimeMs) ?? null };
+    const habits = toHabits(habitRows[0]);
 
     const messages = {
       count: messageChannelRows.reduce((sum, row) => sum + Number(row.count), 0),
@@ -181,6 +190,7 @@ export const getVoiceStatsUser: RequestHandler<
           averageSessionDurationMinutes: 0,
           previousTotalDuration,
         },
+        habits,
         companions,
         messages,
         recentSessions: [],
@@ -240,6 +250,7 @@ export const getVoiceStatsUser: RequestHandler<
         averageSessionDurationMinutes: Math.floor(totalDuration / sessionCount / (1000 * 60)),
         previousTotalDuration,
       },
+      habits,
       companions,
       messages,
       recentSessions: enrichedRecentSessions,
