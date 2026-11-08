@@ -317,3 +317,21 @@ export interface VoiceStatsUserHeatmap {
     };
   };
 }
+
+// Activity calendar ("GitHub-style" graph): the last 12 months, one entry per day
+export interface ActivityCalendarDay {
+  /** Day in the requested `tz` (default UTC), 'YYYY-MM-DD' */
+  date: string;
+  /** Voice minutes (VOICE rows, bucketed by the day the session started) */
+  minutes: number;
+  messages: number;
+}
+
+export interface ActivityCalendar {
+  /** Only days with activity, oldest first */
+  days: ActivityCalendarDay[];
+  /** First day of the range, 'YYYY-MM-DD' in `tz` */
+  start: string;
+  /** Today, 'YYYY-MM-DD' in `tz` */
+  end: string;
+}

@@ -20,6 +20,7 @@ import {
   UserPresence,
   ServerGames,
   UserGames,
+  ActivityCalendar,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -236,6 +237,19 @@ export class VoiceStatsApi extends ApiBase {
         return `/features/voice-stats/${guildId()}/users/${user}/games`;
       },
       () => ({ period: period() })
+    );
+  }
+
+  /** Daily activity over the last 12 months: the server's, or one member's when `userId` is given */
+  fetchActivityCalendar(guildId: () => string, userId?: () => string | undefined | null) {
+    return this.get<ActivityCalendar>(
+      () => {
+        if (!userId) return `/features/voice-stats/${guildId()}/calendar`;
+        const user = userId();
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guildId()}/users/${user}/calendar`;
+      },
+      () => ({ tz: viewerTimeZone() })
     );
   }
 }

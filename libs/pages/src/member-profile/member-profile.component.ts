@@ -60,6 +60,10 @@ export class MemberProfileComponent {
     () => this.memberId(),
     () => this.period()
   );
+  calendarResource = this.api.fetchActivityCalendar(
+    () => this.id(),
+    () => this.memberId()
+  );
   // For the member's ranks and the server name in the back link
   private leaderboardResource = this.api.fetchVoiceStatsLeaderboard(
     () => this.id(),
