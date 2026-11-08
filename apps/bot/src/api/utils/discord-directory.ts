@@ -1,6 +1,12 @@
-import { ChannelType, GuildMember } from 'discord.js';
+import {
+  ChannelType,
+  DiscordAPIError,
+  GuildMember,
+  RESTJSONErrorCodes,
+} from 'discord.js';
 import { client } from '../../client/instance';
 import { Logger } from '../../utils/logger';
+import { ServiceUnavailable } from './http-errors';
 import {
   defaultAvatarUrl,
   findMockGuild,
@@ -28,6 +34,19 @@ export interface DiscordDirectory {
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
 }
 
+// Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
+// turn into a 403, so it becomes a 503 instead.
+const notAMember = (error: unknown): null => {
+  if (
+    error instanceof DiscordAPIError &&
+    error.code === RESTJSONErrorCodes.UnknownMember
+  ) {
+    return null;
+  }
+  Logger.warn('Discord member lookup failed', error);
+  throw new ServiceUnavailable('Discord member lookup failed');
+};
+
 const live: DiscordDirectory = {
   async isMember(guildId, userId) {
     const guild = client.guilds.cache.get(guildId);
@@ -35,7 +54,7 @@ const live: DiscordDirectory = {
     // Cache first, gateway fetch as fallback
     const member =
       guild.members.cache.get(userId) ??
-      (await guild.members.fetch(userId).catch(() => null));
+      (await guild.members.fetch(userId).catch(notAMember));
     return !!member;
   },
 
