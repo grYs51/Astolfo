@@ -3,7 +3,7 @@ import { Presence } from 'discord.js';
 import { client } from '../../../client/instance';
 import type { Db } from '../../../db';
 import { handleUserPresenceChange } from './handle-presence-changes';
-import { closeDanglingStatuses, saveAllStatuses } from './status-save';
+import { closeDanglingStatuses, openAllStatuses, saveAllStatuses } from './status-save';
 
 jest.mock('../../logger', () => ({
   Logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() },
@@ -23,6 +23,15 @@ const deferred = () => {
 class FakeStatuses {
   rows = new Map<string, user_statuses>();
   private createHolds: Promise<void>[] = [];
+  private createManyHolds: Promise<void>[] = [];
+  /** Makes the next close (update or delete) throw */
+  failNextClose = false;
+
+  holdCreateMany() {
+    const d = deferred();
+    this.createManyHolds.push(d.promise);
+    return d.resolve;
+  }
 
   holdCreate() {
     const d = deferred();
@@ -38,6 +47,8 @@ class FakeStatuses {
   };
 
   createMany = async ({ data }: { data: user_statuses[] }) => {
+    const held = this.createManyHolds.shift();
+    if (held) await held;
     for (const row of data) this.rows.set(row.id, { ...row });
     return { count: data.length };
   };
@@ -47,7 +58,14 @@ class FakeStatuses {
     return ids.includes(row.id) && !(where.ended_at === null && row.ended_at !== null);
   }
 
+  private maybeFail() {
+    if (!this.failNextClose) return;
+    this.failNextClose = false;
+    throw new Error('db blip');
+  }
+
   updateMany = async ({ where, data }: { where: { id: string | { in: string[] }; ended_at?: null }; data: Partial<user_statuses> }) => {
+    this.maybeFail();
     let count = 0;
     for (const row of this.rows.values()) {
       if (!this.matches(row, where)) continue;
@@ -58,6 +76,7 @@ class FakeStatuses {
   };
 
   deleteMany = async ({ where }: { where: { id: string | { in: string[] }; ended_at?: null } }) => {
+    this.maybeFail();
     let count = 0;
     for (const row of [...this.rows.values()]) {
       if (!this.matches(row, where)) continue;
@@ -123,6 +142,28 @@ describe('status lifecycle', () => {
 
     expect(db.open().map((row) => row.status)).toEqual(['dnd']);
     expect([...db.rows.values()].find((row) => row.status === 'online')?.ended_at).toEqual(at(60));
+  });
+
+  test('a change right after startup waits for the startup insert before closing', async () => {
+    const startup = { id: 'boot', user_id: USER, status: 'online', created_at: T0 };
+    client.userStatus.set(USER, startup);
+    const release = db.holdCreateMany();
+    const opening = openAllStatuses([startup]);
+    const change = handleUserPresenceChange(presence('online'), presence('idle'), at(60));
+    await flush();
+    release();
+    await Promise.all([opening, change]);
+
+    expect(db.rows.get('boot')?.ended_at).toEqual(at(60));
+    expect(db.open().map((row) => row.status)).toEqual(['idle']);
+  });
+
+  test('a failed close still opens the new status', async () => {
+    await handleUserPresenceChange(null, presence('online'), T0);
+    db.failNextClose = true;
+    await handleUserPresenceChange(presence('online'), presence('dnd'), at(600));
+    expect(db.open().map((row) => row.status).sort()).toEqual(['dnd', 'online']);
+    expect(client.userStatus.get(USER)?.status).toBe('dnd');
   });
 
   test('a repeated event for the same status (one per guild) writes nothing', async () => {

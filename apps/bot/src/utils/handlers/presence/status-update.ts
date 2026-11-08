@@ -4,6 +4,7 @@ import { closeStatus, openStatus, statusKey } from './status-save';
 import { runSerialized } from '../vc/voice-utils';
 import { handleStatusMetrics } from './status-metrics';
 import { client } from '../../../client/instance';
+import { Logger } from '../../logger';
 
 export const handleStatusUpdate = async (
   oldPresence: Presence | null,
@@ -31,7 +32,13 @@ export const handleStatusUpdate = async (
   // user's current status start (they joined a guild after boot), so there is
   // nothing to close.
   await runSerialized(statusKey(newPresence.userId), async () => {
-    if (previous) await closeStatus(previous, date);
+    // A failed close is logged and left to crash recovery; the new status
+    // still gets its row
+    if (previous) {
+      await closeStatus(previous, date).catch((error) =>
+        Logger.error(`Failed to close status ${previous.id}`, error)
+      );
+    }
     if (next) await openStatus(next);
   });
 };

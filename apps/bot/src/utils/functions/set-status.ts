@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { user_statuses } from '@prisma/client';
 import { client } from '../../client/instance';
 import { openAllStatuses } from '../handlers/presence/status-save';
+import { Logger } from '../logger';
 
 export const setStatusCache = async () => {
   const date = new Date();
@@ -22,5 +23,9 @@ export const setStatusCache = async () => {
       opened.push(userStatus);
     });
   });
-  await openAllStatuses(opened);
+  // Logged, not thrown: the ready handler still has guild configs and the
+  // digest scheduler to start
+  await openAllStatuses(opened).catch((error) =>
+    Logger.error('Failed to open startup statuses', error)
+  );
 };

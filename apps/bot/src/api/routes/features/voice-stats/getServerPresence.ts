@@ -8,7 +8,13 @@ import {
 } from '@nx-stolfo/api-interfaces';
 import { getTimeZone, memberOrUnknown, parsePeriod, visibleMembersOnly } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
-import { hourSlots, localHour, onlinePieces, presenceWindowStart } from './presence-sql';
+import {
+  hourSlots,
+  localHour,
+  onlinePieces,
+  presenceWindowStart,
+  wholeHours,
+} from './presence-sql';
 
 /** Members need this much online time in the period to be ranked */
 const MIN_ONLINE_SECONDS = 5 * 3600;
@@ -33,12 +39,12 @@ export const getServerPresence: RequestHandler<{ serverId: string }, ServerPrese
     );
     const tz = getTimeZone(req.query.tz);
     const ids = await discordDirectory().memberIds(serverId);
-    const lo = await presenceWindowStart(req.db, period, ids);
+    const { lo, hi } = wholeHours(await presenceWindowStart(req.db, period, ids));
     const local = localHour(tz);
 
     const [cellRows, rhythmRows] = await Promise.all([
       req.db.$queryRaw<CellRow[]>`
-        WITH pieces AS (${onlinePieces(Prisma.sql`user_id = ANY(${ids})`, lo)}),
+        WITH pieces AS (${onlinePieces(Prisma.sql`user_id = ANY(${ids})`, lo, hi)}),
         cells AS (
           SELECT EXTRACT(DOW FROM ${local})::int AS dow,
                  EXTRACT(HOUR FROM ${local})::int AS hour,
@@ -46,7 +52,7 @@ export const getServerPresence: RequestHandler<{ serverId: string }, ServerPrese
           FROM pieces
           GROUP BY 1, 2
         ),
-        slots AS (${hourSlots(lo, tz)})
+        slots AS (${hourSlots(lo, hi, tz)})
         SELECT slots.dow, slots.hour,
                (COALESCE(cells.secs, 0) / 3600 / slots.n)::float8 AS avg_online
         FROM slots
@@ -55,7 +61,8 @@ export const getServerPresence: RequestHandler<{ serverId: string }, ServerPrese
       req.db.$queryRaw<RhythmRow[]>`
         WITH pieces AS (${onlinePieces(
           Prisma.sql`user_id = ANY(${ids}) ${visibleMembersOnly('user_id', req.user?.id ?? '')}`,
-          lo
+          lo,
+          hi
         )})
         SELECT user_id,
                SUM(secs)::float8 AS total,

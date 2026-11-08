@@ -4,6 +4,12 @@ import { Prisma, user_statuses } from '@prisma/client';
 /** Status changes shorter than this are noise (client reconnects, idle flaps). */
 const MIN_DURATION_MS = 15_000;
 
+/**
+ * The startup batch insert (openAllStatuses). Closes wait for it, so a status
+ * change right after ready can't try to close a row that isn't inserted yet.
+ */
+let startupInsert: Promise<unknown> = Promise.resolve();
+
 /** Queue key: one user's status writes run in order (insert before close). */
 export const statusKey = (userId: string) => `status:${userId}`;
 
@@ -22,6 +28,7 @@ export const closeStatus = async (
   date: Date
 ) => {
   if (!status.id || !status.created_at) return;
+  await startupInsert.catch(() => undefined);
   const where = { id: status.id, ended_at: null };
   if (date.getTime() - status.created_at.getTime() < MIN_DURATION_MS) {
     await client.dataSource.userStatus.deleteMany({ where });
@@ -39,9 +46,10 @@ export const closeStatus = async (
  */
 export const openAllStatuses = async (statuses: Partial<user_statuses>[]) => {
   if (statuses.length === 0) return;
-  await client.dataSource.userStatus.createMany({
+  startupInsert = client.dataSource.userStatus.createMany({
     data: statuses.map((status) => ({ ...status, ended_at: null }) as user_statuses),
   });
+  await startupInsert;
 };
 
 /**

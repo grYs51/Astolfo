@@ -3,13 +3,16 @@ import asyncHandler from 'express-async-handler';
 import { Prisma } from '@prisma/client';
 import { DashboardPeriod, UserPresence } from '@nx-stolfo/api-interfaces';
 import { getTimeZone, isHiddenFrom, parsePeriod } from '../helpers';
+import { discordDirectory } from '../../../utils/discord-directory';
 import {
+  endsAfter,
   hourSlots,
   localHour,
   NOW_UTC,
   ONLINE,
   onlinePieces,
   presenceWindowStart,
+  wholeHours,
 } from './presence-sql';
 
 type StatusRow = { status: string; ms: number };
@@ -20,7 +23,14 @@ export const getUserPresence: RequestHandler<
   { serverId: string; userId: string },
   UserPresence | { error: string }
 > = asyncHandler(async (req, res) => {
-  const { userId } = req.params;
+  const { serverId, userId } = req.params;
+  // Statuses have no guild: without this, any server's members could read
+  // the status history of anyone the bot sees. Checked first, so outsiders
+  // can't tell who is hidden either.
+  if (!(await discordDirectory().isMember(serverId, userId))) {
+    res.status(404).send({ error: 'not a member of this server' });
+    return;
+  }
   if (await isHiddenFrom(req.db, userId, req.user?.id ?? '')) {
     res.status(403).send({ error: 'private' });
     return;
@@ -36,6 +46,7 @@ export const getUserPresence: RequestHandler<
   const previousLo =
     period === 'all' ? null : new Date(lo.getTime() - (Date.now() - lo.getTime()));
   const local = localHour(tz);
+  const hours = wholeHours(lo);
 
   const [statusRows, previousRows, hourRows] = await Promise.all([
     req.db.$queryRaw<StatusRow[]>`
@@ -44,7 +55,7 @@ export const getUserPresence: RequestHandler<
       FROM user_statuses
       WHERE user_id = ${userId}
         AND ${ONLINE}
-        AND COALESCE(ended_at, ${NOW_UTC}) > ${lo}::timestamp
+        AND ${endsAfter(lo)}
       GROUP BY status
     `,
     previousLo
@@ -56,18 +67,18 @@ export const getUserPresence: RequestHandler<
           WHERE user_id = ${userId}
             AND ${ONLINE}
             AND created_at < ${lo}::timestamp
-            AND COALESCE(ended_at, ${NOW_UTC}) > ${previousLo}::timestamp
+            AND ${endsAfter(previousLo)}
         `
       : Promise.resolve(null),
     req.db.$queryRaw<HourRow[]>`
-      WITH pieces AS (${onlinePieces(Prisma.sql`user_id = ${userId}`, lo)}),
+      WITH pieces AS (${onlinePieces(Prisma.sql`user_id = ${userId}`, hours.lo, hours.hi)}),
       hours AS (
         SELECT EXTRACT(HOUR FROM ${local})::int AS hour, SUM(secs) AS secs
         FROM pieces
         GROUP BY 1
       ),
       slots AS (
-        SELECT hour, SUM(n) AS n FROM (${hourSlots(lo, tz)}) per_day GROUP BY hour
+        SELECT hour, SUM(n) AS n FROM (${hourSlots(hours.lo, hours.hi, tz)}) per_day GROUP BY hour
       )
       SELECT slots.hour, (COALESCE(hours.secs, 0) / 3600 / slots.n)::float8 AS share
       FROM slots
