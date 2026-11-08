@@ -21,6 +21,8 @@ import {
   ServerGames,
   UserGames,
   ActivityCalendar,
+  VoiceHabitMetric,
+  VoiceHabitsLeaderboard,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -221,6 +223,18 @@ export class VoiceStatsApi extends ApiBase {
     return this.get<ServerGames>(
       () => `/features/voice-stats/${guildId()}/games`,
       () => ({ period: period() })
+    );
+  }
+
+  /** Members ranked by camera or streaming time */
+  fetchVoiceHabits(
+    guildId: () => string,
+    period: () => DashboardPeriod,
+    metric: () => VoiceHabitMetric
+  ) {
+    return this.get<VoiceHabitsLeaderboard>(
+      () => `/features/voice-stats/${guildId()}/voice-habits`,
+      () => ({ period: period(), metric: metric() })
     );
   }
 
