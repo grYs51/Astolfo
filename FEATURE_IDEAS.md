@@ -47,7 +47,9 @@ This is the feature people screenshot and share. Nothing else in the app has thi
 
 Spotify-Wrapped-style story page per user per server: total hours, longest session, favorite channel, top duo, peak month, percentile rank ("you were in the top 4% of voice users"). Historical data is already sitting in Postgres. Generate a shareable image/card for Discord posting. Seasonal, high-retention, and largely composed of queries you already have.
 
-### 2.3 Streaks & milestones 🟢
+### 2.3 Streaks & milestones 🟢 — ✅ done (2026-11-08)
+> Shipped as voice-day streaks (a UTC day with 10+ minutes in voice; current streak holds until the end of the next day) and lifetime-hours milestones at 10/50/100/250/500/1000h. Shown in `/stats`, `/stats image:true` and the member profile on the dashboard (streak and progress to the next milestone); the weekly digest names the top 3 current streaks and members who passed a milestone that week. Queries in `apps/bot/src/stats/queries.ts`. Not done: "first time in months", announcing milestones the moment they happen, role rewards (§3.2).
+
 Consecutive-day voice streaks, lifetime-hours milestones (10h/100h/1000h), "first time in months" detection. Cheap SQL, big engagement. Pairs naturally with §3.1 announcements and §3.2 role rewards.
 
 ### 2.4 Best-time-to-schedule recommender 🟢
@@ -71,7 +73,7 @@ A scheduled job (node-schedule is already in place) that posts a summary embed t
 Auto-assign roles at configurable hour thresholds ("Regular" at 50h, "No-Lifer" at 500h). Config lives in the dashboard (see §4.1), the bot enforces on a schedule. This is one of the most-requested features in activity-bot ecosystems, and it drives users to check their progress on your dashboard.
 
 ### 3.3 Personal stats slash command 🟢 — ✅ done (2026-10-10)
-> Shipped as `/stats [period]` (only you see the reply): voice time and messages vs the previous period, rank, favourite channel, top companions, dashboard button. Looking up someone else stays with `/profile [user]`, which respects privacy. Streaks aren’t tracked yet.
+> Shipped as `/stats [period]` (only you see the reply): voice time and messages vs the previous period, rank, favourite channel, top companions, dashboard button. Looking up someone else stays with `/profile [user]`, which respects privacy. Voice streak and next milestone added with §2.3.
 
 `/stats [user]` replying with an embed of the user's voice profile — hours, rank, favorite channel, streak — plus a link to their dashboard page. The queries all exist in the API handlers; refactor them into shared functions (CODE_REVIEW §2.2 helps here) and the command is thin.
 
