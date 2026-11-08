@@ -80,6 +80,8 @@ const main = async () => {
               { memberId: '3', togetherMs: 18_500_000 },
               { memberId: '4', togetherMs: 4_000_000 },
             ],
+            streak: { current: 12, longest: 31 },
+            lifetimeMs: 317_000_000, // 88h
           },
           companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
         },

@@ -1,4 +1,4 @@
-import { formatChange, formatDuration, PERIOD_LABEL, plural, PREVIOUS_LABEL } from '../stats/messages';
+import { formatChange, formatDuration, formatNextMilestone, formatStreak, PERIOD_LABEL, plural, PREVIOUS_LABEL } from '../stats/messages';
 import type { MemberSummary } from '../stats/queries';
 import type { StatsPeriod } from '../stats/windows';
 import { avatarSvg } from './avatars';
@@ -56,6 +56,15 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
       tile(right, y + TILE_H + 16, 'Sessions', `${s.sessions}`, d.favouriteChannelName ? `most in #${d.favouriteChannelName}` : undefined, t)
     );
     y += 2 * TILE_H + 16;
+
+    // Plain text: resvg only has Inter, so no 🔥
+    const streak = formatStreak(s.streak);
+    const milestone = formatNextMilestone(s.lifetimeMs);
+    const line = [streak && `Voice streak: ${streak}`, milestone && `Next milestone: ${milestone}`].filter(Boolean).join(' · ');
+    if (line) {
+      y += 36;
+      parts.push(text(PAD, y, 16, t.text, escapeXml(line)));
+    }
 
     const companions = s.companions.slice(0, 3);
     if (companions.length) {

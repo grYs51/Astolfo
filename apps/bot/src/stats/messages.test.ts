@@ -21,6 +21,8 @@ const summary = (overrides: Partial<MemberSummary> = {}): MemberSummary => ({
   rankedMembers: 3,
   favouriteChannelId: 'vc1',
   companions: [{ memberId: '200', togetherMs: 2 * H }],
+  streak: { current: 3, longest: 7 },
+  lifetimeMs: 88 * H,
   ...overrides,
 });
 
@@ -34,6 +36,8 @@ const digest = (overrides: Partial<ServerDigest> = {}): ServerDigest => ({
   topMessages: [{ memberId: '100', count: 5 }],
   bestDuo: { a: '100', b: '200', togetherMs: 2 * H },
   busiestDay: { day: new Date('2026-09-29T00:00:00Z'), ms: 10 * H },
+  topStreaks: [{ memberId: '100', days: 5 }],
+  milestones: [{ memberId: '200', hours: 100 }],
   ...overrides,
 });
 
@@ -76,9 +80,21 @@ describe('buildStatsMessage', () => {
       'Rank',
       'Favourite channel',
       'Sessions',
+      'Voice streak',
+      'Next milestone',
       'You hang out most with',
     ]);
+    expect(embed.fields?.[3].value).toBe('🔥 3 days · best 7');
+    expect(embed.fields?.[4].value).toBe('100h (12h to go)');
     expect(JSON.stringify(message.components)).toContain(URL);
+  });
+
+  test('no streak field before the first voice day, no milestone after the last', () => {
+    const embed = embedOf(
+      buildStatsMessage({ summary: summary({ streak: { current: 0, longest: 0 }, lifetimeMs: 1200 * H }), period: 'week', guildName: 'Test' })
+    );
+    expect(embed.fields?.map((f) => f.name)).not.toContain('Voice streak');
+    expect(embed.fields?.map((f) => f.name)).not.toContain('Next milestone');
   });
 
   test('no activity: a friendly line instead of zeros', () => {
@@ -110,15 +126,19 @@ describe('buildDigestMessage', () => {
       'Most time in voice',
       'Most messages',
       'Duo of the week',
+      'Longest voice streaks',
+      'Milestones',
       'Busiest day',
     ]);
-    expect(embed.fields?.[3].value).toBe('Tuesday · 10h in voice');
+    expect(embed.fields?.[3].value).toBe('🥇 <@100> · 🔥 5 days');
+    expect(embed.fields?.[4].value).toBe('<@200> passed **100h** in voice');
+    expect(embed.fields?.[5].value).toBe('Tuesday · 10h in voice');
     // Nobody gets pinged by the weekly post
     expect(message.allowedMentions).toEqual({ parse: [] });
   });
 
   test('leaves out sections with nothing to show', () => {
-    const quiet = digest({ topVoice: [], bestDuo: undefined, busiestDay: undefined, voiceMs: 0, previousVoiceMs: 0 });
+    const quiet = digest({ topVoice: [], bestDuo: undefined, busiestDay: undefined, voiceMs: 0, previousVoiceMs: 0, topStreaks: [], milestones: [] });
     const embed = embedOf(buildDigestMessage({ digest: quiet, guildName: 'Test', dashboardUrl: URL, weekStart }));
     expect(embed.fields?.map((f) => f.name)).toEqual(['Most messages']);
   });

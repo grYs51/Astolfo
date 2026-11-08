@@ -3,6 +3,7 @@ import type { Db } from '../db';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { visibleMembersOnly } from '../utils/privacy';
 import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows';
+import { crossedMilestones, MILESTONE_HOURS } from './milestones';
 
 /**
  * Stats for the Discord-side features (/stats, weekly digest). Same rules as
@@ -51,6 +52,76 @@ const messageCount = async (db: QueryDb, guildId: string, window: TimeWindow, me
   return Number(row.count);
 };
 
+// ── Streaks ─────────────────────────────────────────────────────────────────
+
+/** Voice time a UTC day needs to count for a streak (a quick join-and-leave doesn't) */
+const VOICE_DAY_MS = 10 * 60 * 1000;
+const HOUR = 60 * 60 * 1000;
+
+export interface Streak {
+  memberId: string;
+  /** Voice days in a row ending today or yesterday (UTC), so it holds until you've joined today */
+  current: number;
+  longest: number;
+}
+
+/**
+ * Voice-day streaks per member, best current streak first. A voice day is a
+ * UTC day with at least 10 minutes in voice.
+ * shortcut: a session counts for the day it started, split by day if anyone notices.
+ */
+export const getStreaks = async (
+  db: QueryDb,
+  guildId: string,
+  opts: { viewerId: string; memberIds?: string[]; limit?: number },
+  now = new Date()
+): Promise<Streak[]> => {
+  if (opts.memberIds?.length === 0) return [];
+  const members = opts.memberIds
+    ? Prisma.sql`AND member_id IN (${Prisma.join(opts.memberIds)})`
+    : Prisma.empty;
+  const today = now.toISOString().slice(0, 10);
+  const rows = await db.$queryRaw<{ member_id: string; current: number; longest: number }[]>`
+    WITH days AS (
+      SELECT member_id, issued_on::date AS day
+      FROM voice_stats
+      WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
+        ${members}
+        ${visibleMembersOnly('member_id', opts.viewerId)}
+      GROUP BY member_id, issued_on::date
+      HAVING SUM(${durationMs()}) >= ${VOICE_DAY_MS}
+    ),
+    -- Gaps and islands: consecutive days share the same day - row_number
+    runs AS (
+      SELECT member_id, COUNT(*)::int AS length, MAX(day) AS last_day
+      FROM (
+        SELECT member_id, day,
+          day - (ROW_NUMBER() OVER (PARTITION BY member_id ORDER BY day))::int AS island
+        FROM days
+      ) numbered
+      GROUP BY member_id, island
+    )
+    SELECT member_id,
+      COALESCE(MAX(length) FILTER (WHERE last_day >= ${today}::date - 1), 0)::int AS current,
+      MAX(length)::int AS longest
+    FROM runs
+    GROUP BY member_id
+    ORDER BY current DESC, longest DESC, member_id
+    ${opts.limit ? Prisma.sql`LIMIT ${opts.limit}` : Prisma.empty}
+  `;
+  return rows.map((row) => ({ memberId: row.member_id, current: row.current, longest: row.longest }));
+};
+
+/** One member's streak (for themselves, or after the caller checked they may see it) */
+export const getMemberStreak = async (db: QueryDb, guildId: string, memberId: string, now = new Date()) => {
+  const [streak] = await getStreaks(db, guildId, { viewerId: memberId, memberIds: [memberId] }, now);
+  return { current: streak?.current ?? 0, longest: streak?.longest ?? 0 };
+};
+
+/** All-time voice ms of one member */
+export const lifetimeVoiceMs = async (db: QueryDb, guildId: string, memberId: string, now = new Date()) =>
+  (await voiceTotal(db, guildId, { to: now }, memberId)).total;
+
 // ── /stats ──────────────────────────────────────────────────────────────────
 
 export interface MemberSummary {
@@ -66,6 +137,9 @@ export interface MemberSummary {
   favouriteChannelId?: string;
   /** Who they shared a channel with most (members visible to them) */
   companions: { memberId: string; togetherMs: number }[];
+  streak: { current: number; longest: number };
+  /** All-time voice ms, for the next milestone */
+  lifetimeMs: number;
 }
 
 export const getMemberSummary = async (
@@ -77,7 +151,7 @@ export const getMemberSummary = async (
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
 
-  const [voice, previousVoice, messages, previousMessages, [rank], [favourite], companions] =
+  const [voice, previousVoice, messages, previousMessages, [rank], [favourite], companions, streak, lifetimeMs] =
     await Promise.all([
       voiceTotal(db, guildId, current, memberId),
       previous ? voiceTotal(db, guildId, previous, memberId) : null,
@@ -125,6 +199,8 @@ export const getMemberSummary = async (
         ORDER BY together DESC
         LIMIT 3
       `,
+      getMemberStreak(db, guildId, memberId, now),
+      lifetimeVoiceMs(db, guildId, memberId, now),
     ]);
 
   return {
@@ -140,6 +216,8 @@ export const getMemberSummary = async (
       memberId: row.member_id,
       togetherMs: Number(row.together),
     })),
+    streak,
+    lifetimeMs,
   };
 };
 
@@ -157,6 +235,10 @@ export interface ServerDigest {
   bestDuo?: { a: string; b: string; togetherMs: number };
   /** UTC day with the most voice time */
   busiestDay?: { day: Date; ms: number };
+  /** Longest current voice streaks (2+ days) */
+  topStreaks: { memberId: string; days: number }[];
+  /** Members who reached a lifetime voice milestone in the window (highest one each) */
+  milestones: { memberId: string; hours: number }[];
 }
 
 /**
@@ -172,7 +254,7 @@ export const getServerDigest = async (
   // Public output: no viewer exception, every hidden member is left out
   const everyone = '';
 
-  const [voice, previousVoice, messages, previousMessages, [active], topVoice, topMessages, [duo], [day]] =
+  const [voice, previousVoice, messages, previousMessages, [active], topVoice, topMessages, [duo], [day], streaks, lifetimes] =
     await Promise.all([
       voiceTotal(db, guildId, window),
       voiceTotal(db, guildId, previous),
@@ -235,7 +317,29 @@ export const getServerDigest = async (
         ORDER BY total DESC
         LIMIT 1
       `,
+      getStreaks(db, guildId, { viewerId: everyone, limit: 3 }),
+      // Lifetime voice before and at the end of the window, for milestones crossed in it
+      db.$queryRaw<{ member_id: string; before: bigint; after: bigint }[]>`
+        SELECT member_id,
+          COALESCE(SUM(${durationMs()}) FILTER (WHERE issued_on < ${window.from}), 0)::bigint AS before,
+          SUM(${durationMs()})::bigint AS after
+        FROM voice_stats
+        WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${window.to}
+          ${visibleMembersOnly('member_id', everyone)}
+        GROUP BY member_id
+        HAVING SUM(${durationMs()}) >= ${MILESTONE_HOURS[0] * HOUR}
+      `,
     ]);
+
+  const milestones = lifetimes
+    .map((row) => ({
+      memberId: row.member_id,
+      hours: Math.max(0, ...crossedMilestones(Number(row.before), Number(row.after))),
+    }))
+    .filter((m) => m.hours > 0)
+    .sort((a, b) => b.hours - a.hours)
+    // Keeps the embed field under Discord's 1024 characters
+    .slice(0, 10);
 
   return {
     voiceMs: voice.total,
@@ -247,5 +351,7 @@ export const getServerDigest = async (
     topMessages: topMessages.map((row) => ({ memberId: row.user_id, count: Number(row.count) })),
     bestDuo: duo ? { a: duo.a, b: duo.b, togetherMs: Number(duo.together) } : undefined,
     busiestDay: day && Number(day.total) > 0 ? { day: day.day, ms: Number(day.total) } : undefined,
+    topStreaks: streaks.filter((s) => s.current >= 2).map((s) => ({ memberId: s.memberId, days: s.current })),
+    milestones,
   };
 };

@@ -7,6 +7,7 @@ import {
 } from 'discord.js';
 import type { MemberSummary, ServerDigest } from './queries';
 import type { StatsPeriod } from './windows';
+import { nextMilestone } from './milestones';
 
 /**
  * Discord messages for /stats and the weekly digest. Pure functions (data in,
@@ -62,6 +63,16 @@ export const dashboardButton = (url: string, label: string) =>
     new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setURL(url)
   );
 
+/** "3 days · best 7"; undefined before the first voice day */
+export const formatStreak = (streak: { current: number; longest: number }) =>
+  streak.longest > 0 ? `${plural(streak.current, 'day')} · best ${streak.longest}` : undefined;
+
+/** "100h (12h to go)"; undefined once every milestone is reached */
+export const formatNextMilestone = (lifetimeMs: number) => {
+  const next = nextMilestone(lifetimeMs);
+  return next ? `${next.hours}h (${formatDuration(next.remainingMs)} to go)` : undefined;
+};
+
 /** The /stats reply (ephemeral) */
 export const buildStatsMessage = (input: {
   summary: MemberSummary;
@@ -96,6 +107,10 @@ export const buildStatsMessage = (input: {
       fields.push({ name: 'Favourite channel', value: `<#${s.favouriteChannelId}>`, inline: true });
     }
     fields.push({ name: 'Sessions', value: `${s.sessions}`, inline: true });
+    const streak = formatStreak(s.streak);
+    if (streak) fields.push({ name: 'Voice streak', value: `🔥 ${streak}`, inline: true });
+    const milestone = formatNextMilestone(s.lifetimeMs);
+    if (milestone) fields.push({ name: 'Next milestone', value: milestone, inline: true });
     if (s.companions.length > 0) {
       fields.push({
         name: 'You hang out most with',
@@ -161,6 +176,20 @@ export const buildDigestMessage = (input: {
     fields.push({
       name: 'Duo of the week',
       value: `<@${d.bestDuo.a}> & <@${d.bestDuo.b}> · ${formatDuration(d.bestDuo.togetherMs)} together`,
+    });
+  }
+  if (d.topStreaks.length > 0) {
+    fields.push({
+      name: 'Longest voice streaks',
+      value: d.topStreaks.map((m, i) => `${medal(i)} <@${m.memberId}> · 🔥 ${plural(m.days, 'day')}`).join('\n'),
+      inline: true,
+    });
+  }
+  if (d.milestones.length > 0) {
+    fields.push({
+      name: 'Milestones',
+      value: d.milestones.map((m) => `<@${m.memberId}> passed **${m.hours}h** in voice`).join('\n'),
+      inline: true,
     });
   }
   if (d.busiestDay) {
