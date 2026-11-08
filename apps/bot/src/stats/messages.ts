@@ -16,14 +16,14 @@ import type { StatsPeriod } from './windows';
 
 const COLOR = '#FF69B4';
 
-const PERIOD_LABEL: Record<StatsPeriod, string> = {
+export const PERIOD_LABEL: Record<StatsPeriod, string> = {
   week: 'the past week',
   month: 'the past month',
   year: 'the past year',
   all: 'all time',
 };
 
-const PREVIOUS_LABEL: Record<Exclude<StatsPeriod, 'all'>, string> = {
+export const PREVIOUS_LABEL: Record<Exclude<StatsPeriod, 'all'>, string> = {
   week: 'the week before',
   month: 'the month before',
   year: 'the year before',
@@ -55,7 +55,7 @@ export const formatChange = (current: number, previous: number | null, label: st
   return `${pct > 0 ? '↑' : '↓'} ${Math.abs(pct)}% vs ${label}`;
 };
 
-const plural = (n: number, word: string) => `${n.toLocaleString('en-GB')} ${word}${n === 1 ? '' : 's'}`;
+export const plural = (n: number, word: string) => `${n.toLocaleString('en-GB')} ${word}${n === 1 ? '' : 's'}`;
 
 const dashboardButton = (url: string, label: string) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(
