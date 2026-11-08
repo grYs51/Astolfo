@@ -237,14 +237,10 @@ export class DetailOverviewComponent {
   readonly habitMetricOptions: SegmentedControlOption<VoiceHabitMetric>[] = [
     { value: 'camera', label: 'Camera' },
     { value: 'streaming', label: 'Streaming' },
-    { value: 'listening', label: 'Listening' },
-    { value: 'muted', label: 'Mostly muted' },
   ];
   readonly habitEmptyText: Record<VoiceHabitMetric, string> = {
     camera: 'Nobody turned their camera on',
     streaming: 'Nobody streamed',
-    listening: 'Nobody listened in voice',
-    muted: 'Nobody with 5h of voice was muted',
   };
   habitMetric = signal<VoiceHabitMetric>('camera');
   habitsResource = this.voiceStatsApi.fetchVoiceHabits(
@@ -258,17 +254,10 @@ export class DetailOverviewComponent {
     const metric = this.habitsResource.value()?.metric;
     return (this.habitsResource.value()?.leaderboard ?? []).map(({ member, habits }) => ({
       member,
-      value:
-        metric === 'muted'
-          ? `${Math.round((habits.muted / habits.voice) * 100)}% muted`
-          : this.durationPipe.transform(
-              metric === 'camera'
-                ? habits.video
-                : metric === 'streaming'
-                  ? habits.streaming
-                  : habits.voice - habits.deafened,
-              true
-            ),
+      value: this.durationPipe.transform(
+        metric === 'streaming' ? habits.streaming : habits.video,
+        true
+      ),
       subtitle: `${this.durationPipe.transform(habits.voice, true)} in voice`,
     }));
   });

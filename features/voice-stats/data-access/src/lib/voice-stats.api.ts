@@ -225,7 +225,7 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /** Members ranked by camera, streaming or listening time, or by muted share */
+  /** Members ranked by camera or streaming time */
   fetchVoiceHabits(
     guildId: () => string,
     period: () => DashboardPeriod,

@@ -6,27 +6,22 @@ import { memberOrUnknown, parsePeriod, periodFilter, visibleMembersOnly } from '
 import { discordDirectory } from '../../../utils/discord-directory';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 
-/** Members need this much voice time to rank on "mostly muted", so one muted minute doesn't top it */
-export const MUTED_MIN_VOICE_MS = 5 * 3_600_000;
-
-/** What each metric ranks by; rows where it's 0 are left out */
+/**
+ * What each metric ranks by; rows where it's 0 are left out. Listening and
+ * muted share stay on the profile: listening ranks like the voice board, and a
+ * public muted ranking reads as a shame list.
+ */
 const RANK_BY: Record<VoiceHabitMetric, Prisma.Sql> = {
   camera: Prisma.sql`video`,
   streaming: Prisma.sql`streaming`,
-  listening: Prisma.sql`(voice - deafened)`,
-  muted: Prisma.sql`(CASE WHEN voice >= ${MUTED_MIN_VOICE_MS} THEN muted::float / voice ELSE 0 END)`,
 };
 
-/** Members ranked by camera, streaming or listening time, or by muted share of voice. */
+/** Members ranked by camera or streaming time. */
 export const getVoiceHabits: RequestHandler<{ serverId: string }, VoiceHabitsLeaderboard> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
     const period = parsePeriod(req.query.period, ['week', 'month', 'year', 'all'], 'all');
-    const metric = parsePeriod<VoiceHabitMetric>(
-      req.query.metric,
-      ['camera', 'streaming', 'listening', 'muted'],
-      'camera'
-    );
+    const metric = parsePeriod<VoiceHabitMetric>(req.query.metric, ['camera', 'streaming'], 'camera');
     const rankBy = RANK_BY[metric];
 
     // Up to 100 so the viewer's rank is known even outside the shown top

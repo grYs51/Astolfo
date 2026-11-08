@@ -16,9 +16,12 @@ const capped = (type: VOICE_TYPE) => Prisma.sql`LEAST(${sumOf(type)}, ${voice})`
  * already include server mute/deafen (discord.js `mute` = serverMute ||
  * selfMute), so the SERVER_* rows aren't added; self-deafening also mutes,
  * so muted includes deafened time.
- * shortcut: rows are picked by issued_on, so a state that started in the
- * period inside a session that started before it counts without that voice
- * time; the cap to VOICE bounds it. Clip intervals to the period if it matters.
+ * shortcut: rows are picked by issued_on like every other endpoint, so a
+ * session that started before the period adds no voice time while its states
+ * that started inside it still count. The cap stops those over-counting but
+ * then under-counts them, down to 0 when that session is the member's only
+ * voice time in the period. Clip intervals to the period in periodFilter, for
+ * every endpoint at once, if it matters.
  */
 export const HABIT_SUMS = Prisma.sql`
   ${voice} AS voice,

@@ -142,8 +142,8 @@ export interface VoiceHabits {
   streaming: number;
 }
 
-/** What the voice-habits leaderboard ranks by; listening = voice - deafened, muted = muted / voice */
-export type VoiceHabitMetric = 'camera' | 'streaming' | 'listening' | 'muted';
+/** What the voice-habits leaderboard ranks by: video or streaming time */
+export type VoiceHabitMetric = 'camera' | 'streaming';
 
 /** GET …/:serverId/voice-habits: top first (up to 100, so the viewer's rank is known) */
 export interface VoiceHabitsLeaderboard {

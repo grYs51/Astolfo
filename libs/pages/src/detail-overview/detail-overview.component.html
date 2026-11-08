@@ -161,31 +161,25 @@
         </div>
       </div>
 
-      <!-- Voice habits: who has the camera on, streams, listens or sits muted -->
+      <!-- Voice habits: who has the camera on or streams -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
-        @if (habitsResource.error()) {
-          <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-            Failed to load voice habits
-          </div>
-        } @else {
-          <!-- Stays mounted while a new metric loads, so the switch doesn't jump away -->
-          <feature-voice-stats-leaderboard
-            title="Voice habits"
-            [rows]="habitRows()"
-            [loading]="habitsResource.isLoading()"
-            [highlightId]="currentUser()?.id"
-            [interactive]="true"
-            (userClick)="openMember($event)"
-            [emptyText]="habitEmptyText[habitMetric()]"
-          >
-            <lib-segmented-control
-              leaderboard-actions
-              label="Habit"
-              [options]="habitMetricOptions"
-              [(value)]="habitMetric"
-            />
-          </feature-voice-stats-leaderboard>
-        }
+        <!-- Stays mounted while a metric loads or fails, so the switch doesn't jump away -->
+        <feature-voice-stats-leaderboard
+          title="Voice habits"
+          [rows]="habitRows()"
+          [loading]="habitsResource.isLoading()"
+          [highlightId]="currentUser()?.id"
+          [interactive]="true"
+          (userClick)="openMember($event)"
+          [emptyText]="habitsResource.error() ? 'Failed to load voice habits' : habitEmptyText[habitMetric()]"
+        >
+          <lib-segmented-control
+            leaderboard-actions
+            label="Habit"
+            [options]="habitMetricOptions"
+            [(value)]="habitMetric"
+          />
+        </feature-voice-stats-leaderboard>
 
         @if (funFacts().length > 0) {
           <div class="rounded-xl border border-white/5 bg-base-300 p-lg">

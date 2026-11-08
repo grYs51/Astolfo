@@ -21,7 +21,7 @@ These are the highest ROI on the list: the pipeline exists, only the presentatio
 `user_statuses` tracks every online/idle/dnd/offline transition with durations. Nothing consumes it. Ideas: "server pulse" chart (how many members online over time), personal online-time profile, "night owls vs early birds" breakdown per server.
 
 ### 1.3 Rich voice-type breakdowns 🟡 — ✅ done (2026-11-08)
-> Shipped as a "Voice habits" leaderboard on the Server tab (switch: camera, streaming, listening = voice minus deafened, mostly muted = muted share of voice with a 5h minimum) and a voice-habits row on the You tab and member profiles. The state types are summed in SQL and clamped to voice time, not merged as intervals. Not done: these rankings in `/leaderboard`.
+> Shipped as a "Voice habits" leaderboard on the Server tab (switch: camera, streaming) and a voice-habits row on the You tab and member profiles (camera, streaming, listening = voice minus deafened, muted share of voice). Listening and muted aren't ranked: listening ranks like the voice board, and a public muted ranking reads as a shame list. The state types are summed in SQL and clamped to voice time, not merged as intervals. Not done: these rankings in `/leaderboard`.
 
 You track MUTED, DEAF, VIDEO, STREAMING sessions alongside VOICE, but the dashboard only shows an aggregate type-percentage widget. Interesting cuts:
 - **Camera/streaming leaderboard** — who streams or has video on the most.
