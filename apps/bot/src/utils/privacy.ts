@@ -35,7 +35,9 @@ export type MemberColumn =
   | 'user_id'
   | 'other.member_id'
   | 'a.member_id'
-  | 'b.member_id';
+  | 'b.member_id'
+  | 'a.user_id'
+  | 'b.user_id';
 
 /**
  * SQL filter leaving out members who hide from other members — except the

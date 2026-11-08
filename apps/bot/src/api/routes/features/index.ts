@@ -12,6 +12,10 @@ import {
   getVoiceStatsHeatmap,
   getVoiceStatsUserHeatmap,
   getServerMessages,
+  getServerPresence,
+  getUserPresence,
+  getServerGames,
+  getUserGames,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -70,5 +74,29 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getServerMessages,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/presence',
+    isAuthenticated,
+    isServerMember,
+    getServerPresence,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/presence',
+    isAuthenticated,
+    isServerMember,
+    getUserPresence,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/games',
+    isAuthenticated,
+    isServerMember,
+    getServerGames,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/games',
+    isAuthenticated,
+    isServerMember,
+    getUserGames,
   );
 };
