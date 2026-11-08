@@ -8,8 +8,11 @@ import { NOW_UTC } from './presence-sql';
  * started since `start` (undefined = all time). Each session is cut into the
  * hours it covers, so 8PM–1AM counts in 8PM, 9PM … 12AM instead of all in 8PM.
  * `session_count` / `unique_users` are the sessions / members in voice in that
- * hour. Cut in the viewer's wall-clock time so half-hour zones bucket right.
- * shortcut: on a DST change night that hour is off by the shift; fine for a heatmap.
+ * hour. Only VOICE rows count (MUTED/DEAF/... overlap them); open sessions
+ * count live. Cut in the viewer's wall-clock time so half-hour zones bucket right.
+ * `memberFilter` must start with AND (unlike `onlinePieces`).
+ * shortcut: on a DST change night that hour is off by the shift, and a session
+ * that ends before it starts in wall-clock time (fall-back) is dropped; fine for a heatmap.
  */
 export const voiceHeatmapCells = (
   serverId: string,
@@ -34,6 +37,6 @@ export const voiceHeatmapCells = (
       ${memberFilter}
   ) spans,
   LATERAL generate_series(date_trunc('hour', s), e, INTERVAL '1 hour') AS h
-  WHERE h < e
+  WHERE h < e AND s < e
   GROUP BY 1, 2
 `;
