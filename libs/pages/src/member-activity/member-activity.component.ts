@@ -7,6 +7,7 @@ import {
 import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse, HttpResourceRef } from '@angular/common/http';
 import {
+  ActivityCalendar,
   DashboardPeriod,
   UserGames,
   UserPresence,
@@ -14,6 +15,7 @@ import {
   VoiceStatsUserHeatmap,
 } from '@nx-stolfo/data-access-voice-stats';
 import {
+  ActivityCalendarComponent,
   GameRecordComponent,
   OnlineTimeComponent,
   VoiceStatsUserHeatmapComponent,
@@ -46,6 +48,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
 @Component({
   selector: 'pages-member-activity',
   imports: [
+    ActivityCalendarComponent,
     VoiceStatsUserHeatmapComponent,
     VoiceStatsUserProfileComponent,
     OnlineTimeComponent,
@@ -63,6 +66,8 @@ export class MemberActivityComponent {
   heatmapResource = input.required<HttpResourceRef<VoiceStatsUserHeatmap | undefined>>();
   presenceResource = input.required<HttpResourceRef<UserPresence | undefined>>();
   gamesResource = input.required<HttpResourceRef<UserGames | undefined>>();
+  /** Last 12 months, whatever the period */
+  calendarResource = input.required<HttpResourceRef<ActivityCalendar | undefined>>();
   period = input.required<DashboardPeriod>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);

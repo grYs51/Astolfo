@@ -15,6 +15,7 @@ import {
   VoiceStatsTimelineComponent,
   VoiceStatsHeatmapComponent,
   ServerPulseComponent,
+  ActivityCalendarComponent,
   LeaderboardRow,
 } from '@nx-stolfo/ui-voice-stats';
 import {
@@ -51,6 +52,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
     ServerPulseComponent,
+    ActivityCalendarComponent,
     SegmentedControlComponent,
     MemberActivityComponent,
   ],
@@ -158,6 +160,11 @@ export class DetailOverviewComponent {
     () => this.userId(),
     () => this.period()
   );
+  userCalendarResource = this.voiceStatsApi.fetchUserActivityCalendar(
+    () => this.id(),
+    () => this.userId()
+  );
+  calendarResource = this.voiceStatsApi.fetchServerActivityCalendar(() => this.id());
   presenceResource = this.voiceStatsApi.fetchServerPresence(
     () => this.id(),
     () => this.period()

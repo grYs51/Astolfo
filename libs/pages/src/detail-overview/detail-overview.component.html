@@ -40,6 +40,7 @@
         [heatmapResource]="userHeatmapResource"
         [presenceResource]="userPresenceResource"
         [gamesResource]="userGamesResource"
+        [calendarResource]="userCalendarResource"
         [period]="period()"
         [voiceRank]="myRank()"
         [messageRank]="myMessageRank()"
@@ -117,6 +118,16 @@
         <feature-voice-stats-timeline [timeline]="timelineResource.value()!" />
       } @else {
         <div class="h-80 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+      }
+
+      @if (calendarResource.error()) {
+        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          Failed to load the past year
+        </div>
+      } @else if (calendarResource.hasValue()) {
+        <feature-voice-stats-activity-calendar [calendar]="calendarResource.value()!" />
+      } @else {
+        <div class="h-[260px] rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
       }
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
