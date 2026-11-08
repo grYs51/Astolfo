@@ -18,7 +18,7 @@ const defaultAvatarIndex = (id?: string): number => {
 })
 export class DiscordImagePipe implements PipeTransform {
 
-    transform (value: string | undefined, key: 'avatars' | 'icons' | 'banners' | string, id?: string): string {
+    transform (value: string | null | undefined, key: 'avatars' | 'icons' | 'banners' | string, id?: string): string {
         if (!value || !id) {
             return `https://cdn.discordapp.com/embed/avatars/${defaultAvatarIndex(id)}.png`;
         }

@@ -32,7 +32,7 @@ export type MockGuild = {
   members: MockMember[];
 };
 
-/** The user every mock login signs in as. Shape matches Discord's /users/@me. */
+/** The user every mock login signs in as (an AuthUser, as /auth/status returns it). */
 export const MOCK_USER = {
   id: '200000000000000001',
   username: 'you',

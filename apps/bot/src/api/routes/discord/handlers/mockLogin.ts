@@ -8,10 +8,12 @@ import { MOCK_USER } from '../../../../dev/mock-discord';
  * callback does. Only mounted when isMockDiscord() (never in production).
  */
 export const mockLogin: RequestHandler = asyncHandler(async (req, res, next) => {
+  const { id, username, global_name, avatar } = MOCK_USER;
+  const profile = { username, global_name, avatar };
   const user = await req.db.userSession.upsert({
-    where: { id: MOCK_USER.id },
-    create: { id: MOCK_USER.id, access_token: 'mock', refresh_token: 'mock' },
-    update: {},
+    where: { id },
+    create: { id, ...profile },
+    update: profile,
   });
 
   req.login(user, (error) => {

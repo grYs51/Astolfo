@@ -1,14 +1,13 @@
 import { ValidateFunction } from 'ajv';
 import pino from 'pino';
 import { Db } from '../../db';
+import { AuthUser } from '@nx-stolfo/api-interfaces';
 
 declare global {
     namespace Express {
-        interface User extends LoggedUser {
-            id: string;
-            access_token: string;
-            refresh_token: string;
-        }
+        // The user_session row passport puts on req.user
+        // eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
+        interface User extends AuthUser {}
         interface Request {
             /**
              * The request id.
