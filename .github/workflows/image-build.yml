@@ -22,7 +22,7 @@ jobs:
   deploy:
     # A fork PR can also have a branch called main, so check the event too
     if: >-
-      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
       (github.event.workflow_run.conclusion == 'success' &&
       github.event.workflow_run.event == 'push')
     runs-on: self-hosted
@@ -37,9 +37,13 @@ jobs:
       - name: run astolfo-bot
         run: |
           # A re-run of an old CI run must not deploy over newer code
-          if [ -n "$RUN_SHA" ] && [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$RUN_SHA" ]; then
-            echo "main has moved past $RUN_SHA, skipping the deploy"
-            exit 0
+          if [ -n "$RUN_SHA" ]; then
+            # Fail, don't skip quietly, when main can't be read
+            head=$(git ls-remote origin refs/heads/main | cut -f1) && [ -n "$head" ] || exit 1
+            if [ "$head" != "$RUN_SHA" ]; then
+              echo "main has moved past $RUN_SHA, skipping the deploy"
+              exit 0
+            fi
           fi
           docker compose build --pull && docker compose up -d
         env:

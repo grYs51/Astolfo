@@ -46,7 +46,8 @@ empty database and over the live one with `--clean` gave the same row counts):
 
 ```bash
 docker stop Astolfo-bot Astolfo-web
-docker exec -i Astolfo-postgres pg_restore --clean --if-exists   -U <POSTGRES_USER> -d <POSTGRES_DB> < /var/backups/astolfo/<date>.dump
+docker exec -i Astolfo-postgres pg_restore --clean --if-exists \
+  -U <POSTGRES_USER> -d <POSTGRES_DB> < /var/backups/astolfo/astolfo_<date>.dump
 docker start Astolfo-bot Astolfo-web
 curl localhost:<PORT>/api/health
 ```
