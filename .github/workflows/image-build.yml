@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# One deploy at a time; a queued one waits instead of cancelling a running compose up
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     # A fork PR can also have a branch called main, so check the event too
@@ -30,8 +35,15 @@ jobs:
           ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: run astolfo-bot
-        run: docker compose build --pull && docker compose up -d
+        run: |
+          # A re-run of an old CI run must not deploy over newer code
+          if [ -n "$RUN_SHA" ] && [ "$(git ls-remote origin refs/heads/main | cut -f1)" != "$RUN_SHA" ]; then
+            echo "main has moved past $RUN_SHA, skipping the deploy"
+            exit 0
+          fi
+          docker compose build --pull && docker compose up -d
         env:
+          RUN_SHA: ${{ github.event.workflow_run.head_sha }}
           DISCORD_CLIENT_ID: ${{ secrets.DISCORD_CLIENT_ID }}
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           DISCORD_PUBLIC_KEY: ${{ secrets.DISCORD_PUBLIC_KEY }}

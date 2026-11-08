@@ -18,6 +18,11 @@
 >   already contains the `_prisma_migrations` history, so `migrate deploy`
 >   picks up from there.
 
+Create the LXC by hand (Step 1), then `server-setup.sh` automates everything
+inside it (Step 2). The remaining steps are UI work: Nginx Proxy Manager, the
+Discord Developer Portal, and the GitHub runner. When you see
+`astolfo.example.com`, substitute your real domain.
+
 ## Backups for the current Docker deploy
 
 Until the move, the database lives in the `postgres-data` volume of the Docker
@@ -49,11 +54,6 @@ curl localhost:<PORT>/api/health
 `-i` without `-t` keeps the binary dump intact on stdin. The dump also holds
 `_prisma_migrations`, so the bot's `migrate deploy` at startup only applies
 migrations newer than the dump.
-
-Create the LXC by hand (Step 1), then `server-setup.sh` automates everything
-inside it (Step 2). The remaining steps are UI work: Nginx Proxy Manager, the
-Discord Developer Portal, and the GitHub runner. When you see
-`astolfo.example.com`, substitute your real domain.
 
 ## What you're building
 

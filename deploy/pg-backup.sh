@@ -9,6 +9,7 @@
 # Restore (with both services stopped):
 #          pg_restore --clean --if-exists -d astolfo <file.dump>
 set -euo pipefail
+umask 077 # the dumps hold the whole database
 
 DIR=${DIR:-/var/backups/astolfo}
 DB=${DB:-astolfo}
@@ -16,6 +17,7 @@ PG_DUMP=${PG_DUMP:-pg_dump}
 
 mkdir -p "$DIR"
 out="$DIR/astolfo_$(date +%F).dump"
+trap 'rm -f "$out.tmp"' EXIT
 # Write to stdout, not -f: with PG_DUMP="docker exec …" a -f path would be inside the container.
 # The .tmp file and mv mean a failed dump never looks like a good one.
 # shellcheck disable=SC2086 # PG_DUMP is a command with arguments, split on purpose
