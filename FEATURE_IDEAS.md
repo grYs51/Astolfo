@@ -15,7 +15,9 @@ These are the highest ROI on the list: the pipeline exists, only the presentatio
 ### 1.1 Message activity dashboard 🟢
 `message_stats` records every message (guild, channel, user, timestamp) and the dashboard shows none of it. Mirror the voice-stats pages: messages-per-day timeline, most active text channels, top chatters, hour×day heatmap. Most of the backend is copy-adapting the existing SQL aggregations, and the frontend components (timeline, heatmap, leaderboard) already exist and are reusable.
 
-### 1.2 Online-time / status analytics 🟢
+### 1.2 Online-time / status analytics 🟢 — ✅ done (2026-11-08)
+> Shipped as a server pulse heatmap (average members online per hour of the week, in the viewer's time zone) with night owls and early birds on the Server tab, and an online-time card (time per status, change from the previous period, online share per hour of day) on the You tab and member profiles. Status rows are now written when the status starts, so the current status counts. The server views use the current member list. Not done: status data in the digest or in /stats.
+
 `user_statuses` tracks every online/idle/dnd/offline transition with durations. Nothing consumes it. Ideas: "server pulse" chart (how many members online over time), personal online-time profile, "night owls vs early birds" breakdown per server.
 
 ### 1.3 Rich voice-type breakdowns 🟡
@@ -24,7 +26,9 @@ You track MUTED, DEAF, VIDEO, STREAMING sessions alongside VOICE, but the dashbo
 - **"Actually listening" score** — voice time minus deafened time, per user (the bot-side active leaderboard already computes this; the dashboard doesn't have it).
 - **Lurker index** — ratio of muted time to voice time.
 
-### 1.4 Game stats page 🟢
+### 1.4 Game stats page 🟢 — ✅ done (2026-11-08)
+> Shipped as cards rather than a page: a rock-paper-scissors leaderboard (win rate, 3+ games) and the most-played rivalries on the Server tab, and a game record (W/L/T, favourite move, the move that beats them most, head-to-head against the viewer) on the You tab and member profiles. Not done: a full head-to-head grid, a /games command.
+
 `game_result` / `game_player` store every rock-paper-scissors match including moves, but there's no stats surface. Win/loss/tie records, head-to-head grids, "favorite move" (and the fun stat: what move beats this player most often). Doing this makes adding future games worthwhile.
 
 ### 1.5 The `user_activities` table 🟡
