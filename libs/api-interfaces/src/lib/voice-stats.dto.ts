@@ -130,6 +130,28 @@ export interface VoiceStatsOverview {
   activityBreakdown: ActivityTypeBreakdown[];
 }
 
+/**
+ * A member's voice time by state, in ms. muted includes deafened time
+ * (deafening also mutes); both are clamped to voice.
+ */
+export interface VoiceHabits {
+  voice: number;
+  muted: number;
+  deafened: number;
+  video: number;
+  streaming: number;
+}
+
+/** What the voice-habits leaderboard ranks by; listening = voice - deafened, muted = muted / voice */
+export type VoiceHabitMetric = 'camera' | 'streaming' | 'listening' | 'muted';
+
+/** GET …/:serverId/voice-habits: top first (up to 100, so the viewer's rank is known) */
+export interface VoiceHabitsLeaderboard {
+  period: DashboardPeriod;
+  metric: VoiceHabitMetric;
+  leaderboard: { member: DiscordMember; habits: VoiceHabits }[];
+}
+
 // Voice Stats Leaderboard Response
 export interface VoiceStatsLeaderboardEntry {
   member: DiscordMember;
@@ -204,6 +226,9 @@ export interface VoiceStatsUser {
     /** totalDuration of the period just before (same length); null for 'all' */
     previousTotalDuration: number | null;
   };
+
+  /** Voice time by state in the period (camera, streaming, deafened, muted) */
+  habits: VoiceHabits;
 
   /** Who the user shared voice channels with most in the period (top 5) */
   companions: VoiceCompanion[];
