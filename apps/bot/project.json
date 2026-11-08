@@ -32,7 +32,11 @@
         "main": "apps/bot/src/index.ts",
         "tsConfig": "apps/bot/tsconfig.app.json",
         "assets": [
-          "apps/bot/src/assets"
+          {
+            "input": "apps/bot/src/assets",
+            "glob": "**/*",
+            "output": "apps/bot/src/assets"
+          }
         ],
         "generatePackageJson": true,
         "esbuildOptions": {
@@ -131,6 +135,12 @@
       "executor": "nx:run-commands",
       "options": {
         "command": "ts-node --transpile-only apps/bot/src/dev/seed.ts"
+      }
+    },
+    "card-preview": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "ts-node --transpile-only apps/bot/src/dev/card-preview.ts"
       }
     }
   }
