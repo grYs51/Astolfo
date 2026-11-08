@@ -22,6 +22,10 @@ const durationMs = (alias = '') => {
   );
 };
 
+/** Like durationMs, but only the part before `cap` */
+const durationBeforeMs = (cap: Date) =>
+  Prisma.sql`EXTRACT(EPOCH FROM (LEAST(COALESCE(ended_on, NOW()), ${cap}) - issued_on)) * 1000`;
+
 /** Overlap of two voice_stats rows (aliases a/b or me/other) in ms */
 const overlapMs = (x: string, y: string) =>
   Prisma.raw(
@@ -67,7 +71,8 @@ export interface Streak {
 
 /**
  * Voice-day streaks per member, best current streak first. A voice day is a
- * UTC day with at least 10 minutes in voice.
+ * UTC day with at least 10 minutes in voice. Measured at `now`: sessions
+ * started later are ignored, so a past date gives the streaks as they were then.
  * shortcut: a session counts for the day it started, split by day if anyone notices.
  */
 export const getStreaks = async (
@@ -85,7 +90,7 @@ export const getStreaks = async (
     WITH days AS (
       SELECT member_id, issued_on::date AS day
       FROM voice_stats
-      WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
+      WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${now}
         ${members}
         ${visibleMembersOnly('member_id', opts.viewerId)}
       GROUP BY member_id, issued_on::date
@@ -317,17 +322,18 @@ export const getServerDigest = async (
         ORDER BY total DESC
         LIMIT 1
       `,
-      getStreaks(db, guildId, { viewerId: everyone, limit: 3 }),
+      // As of the end of the week, so a late post or a mid-week preview still shows that week
+      getStreaks(db, guildId, { viewerId: everyone, limit: 3 }, window.to),
       // Lifetime voice before and at the end of the window, for milestones crossed in it
       db.$queryRaw<{ member_id: string; before: bigint; after: bigint }[]>`
         SELECT member_id,
-          COALESCE(SUM(${durationMs()}) FILTER (WHERE issued_on < ${window.from}), 0)::bigint AS before,
-          SUM(${durationMs()})::bigint AS after
+          COALESCE(SUM(${durationBeforeMs(window.from)}) FILTER (WHERE issued_on < ${window.from}), 0)::bigint AS before,
+          SUM(${durationBeforeMs(window.to)})::bigint AS after
         FROM voice_stats
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${window.to}
           ${visibleMembersOnly('member_id', everyone)}
         GROUP BY member_id
-        HAVING SUM(${durationMs()}) >= ${MILESTONE_HOURS[0] * HOUR}
+        HAVING SUM(${durationBeforeMs(window.to)}) >= ${MILESTONE_HOURS[0] * HOUR}
       `,
     ]);
 
