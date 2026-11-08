@@ -1,6 +1,5 @@
 import { client } from '../../../client/instance';
 import { Prisma, user_statuses } from '@prisma/client';
-import { runSerialized } from '../vc/voice-utils';
 
 /** Status changes shorter than this are noise (client reconnects, idle flaps). */
 const MIN_DURATION_MS = 15_000;
