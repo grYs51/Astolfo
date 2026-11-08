@@ -288,8 +288,8 @@ export interface VoiceStatsHeatmapDataPoint {
   hour: number; // 0-23, in the requested `tz` (default UTC)
   dayOfWeek: number; // 0-6 (Sunday-Saturday), in the requested `tz`
   value: number; // total minutes
-  sessionCount: number;
-  uniqueUsers: number;
+  sessionCount: number; // sessions in voice during this hour (one session spans several cells)
+  uniqueUsers: number; // members in voice during this hour
 
   // Activity type breakdown for this cell
   activityBreakdown?: ActivityTypeBreakdown[];
@@ -315,7 +315,7 @@ export interface VoiceStatsUserHeatmapDataPoint {
   serverAverage: number; // server average minutes for this time slot
   difference: number; // user value - server average
   percentageOfServer: number; // user's percentage of total server activity
-  sessionCount: number; // user's session count
+  sessionCount: number; // user's sessions in voice during this hour (one session spans several cells)
 }
 
 export interface VoiceStatsUserHeatmap {
