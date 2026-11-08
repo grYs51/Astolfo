@@ -18,6 +18,38 @@
 >   already contains the `_prisma_migrations` history, so `migrate deploy`
 >   picks up from there.
 
+## Backups for the current Docker deploy
+
+Until the move, the database lives in the `postgres-data` volume of the Docker
+stack. Run `pg-backup.sh` from the Docker host's crontab, pointing it at the
+container (as root, or a user in the `docker` group; use the real values of
+`POSTGRES_USER` and `POSTGRES_DB` from the deploy secrets):
+
+```bash
+sudo mkdir -p /opt/astolfo/bin
+sudo install -m 755 deploy/pg-backup.sh /opt/astolfo/bin/
+sudo crontab -e
+# 15 3 * * * PG_DUMP="docker exec Astolfo-postgres pg_dump -U <POSTGRES_USER>" DB=<POSTGRES_DB> DIR=/var/backups/astolfo /opt/astolfo/bin/pg-backup.sh
+```
+
+The dump goes to the host (`/var/backups/astolfo/astolfo_<date>.dump`, kept 14
+days), not into the container. That is still the same disk, so copy the folder
+off the host as well (a NAS, or a host-level backup job).
+
+**Restore** (tried on the dev database, 2026-11-08: a dump restored into an
+empty database and over the live one with `--clean` gave the same row counts):
+
+```bash
+docker stop Astolfo-bot Astolfo-web
+docker exec -i Astolfo-postgres pg_restore --clean --if-exists   -U <POSTGRES_USER> -d <POSTGRES_DB> < /var/backups/astolfo/<date>.dump
+docker start Astolfo-bot Astolfo-web
+curl localhost:<PORT>/api/health
+```
+
+`-i` without `-t` keeps the binary dump intact on stdin. The dump also holds
+`_prisma_migrations`, so the bot's `migrate deploy` at startup only applies
+migrations newer than the dump.
+
 Create the LXC by hand (Step 1), then `server-setup.sh` automates everything
 inside it (Step 2). The remaining steps are UI work: Nginx Proxy Manager, the
 Discord Developer Portal, and the GitHub runner. When you see
