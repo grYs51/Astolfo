@@ -7,10 +7,14 @@ import {
 import { HttpErrorResponse, HttpResourceRef } from '@angular/common/http';
 import {
   DashboardPeriod,
+  UserGames,
+  UserPresence,
   VoiceStatsUser,
   VoiceStatsUserHeatmap,
 } from '@nx-stolfo/data-access-voice-stats';
 import {
+  GameRecordComponent,
+  OnlineTimeComponent,
   VoiceStatsUserHeatmapComponent,
   VoiceStatsUserProfileComponent,
 } from '@nx-stolfo/ui-voice-stats';
@@ -43,6 +47,8 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
   imports: [
     VoiceStatsUserHeatmapComponent,
     VoiceStatsUserProfileComponent,
+    OnlineTimeComponent,
+    GameRecordComponent,
     HumanizeDurationPipe,
     ProgressBarComponent,
   ],
@@ -53,6 +59,8 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
 export class MemberActivityComponent {
   userResource = input.required<HttpResourceRef<VoiceStatsUser | undefined>>();
   heatmapResource = input.required<HttpResourceRef<VoiceStatsUserHeatmap | undefined>>();
+  presenceResource = input.required<HttpResourceRef<UserPresence | undefined>>();
+  gamesResource = input.required<HttpResourceRef<UserGames | undefined>>();
   period = input.required<DashboardPeriod>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);
@@ -66,6 +74,7 @@ export class MemberActivityComponent {
 
   protected self = computed(() => !this.name());
   protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
+  protected previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
 
   /** The member hides their stats from the viewer (API answers 403) */
   protected isPrivate = computed(() => {

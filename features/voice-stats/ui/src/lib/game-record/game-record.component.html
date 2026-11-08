@@ -1,0 +1,52 @@
+@let g = games();
+<div class="h-full rounded-xl border border-white/5 bg-base-300 p-lg">
+  <h3 class="mb-md text-base font-semibold text-gray-100">Rock paper scissors</h3>
+
+  @if (g.games === 0) {
+    <p class="py-md text-center text-sm text-gray-400">
+      {{ name() ? name() + ' hasn’t' : 'You haven’t' }} played in this period.
+      Challenge someone with <code class="rounded bg-base-200 px-xs text-gray-300">/rockpaperscissors</code>.
+    </p>
+  } @else {
+    <p class="text-2xl font-semibold text-primary-300">
+      {{ winRate() }}% <span class="text-sm font-normal text-gray-400">wins in {{ g.games }} {{ g.games === 1 ? 'game' : 'games' }}</span>
+    </p>
+    <dl class="mt-md grid grid-cols-3 gap-sm text-sm">
+      <div>
+        <dt class="text-xs text-gray-500">Wins</dt>
+        <dd class="font-medium text-success">{{ g.wins }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-gray-500">Losses</dt>
+        <dd class="font-medium text-error">{{ g.losses }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-gray-500">Ties</dt>
+        <dd class="font-medium text-gray-100">{{ g.ties }}</dd>
+      </div>
+    </dl>
+    <dl class="mt-sm grid grid-cols-2 gap-sm text-sm">
+      <div>
+        <dt class="text-xs text-gray-500">Favourite move</dt>
+        <dd class="font-medium capitalize text-gray-100">{{ move(g.favouriteMove) }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs text-gray-500">Loses most to</dt>
+        <dd class="font-medium capitalize text-gray-100">{{ move(g.nemesisMove) }}</dd>
+      </div>
+    </dl>
+
+    @if (g.headToHead; as h2h) {
+      <div class="mt-md border-t border-white/5 pt-md text-sm">
+        <p class="text-xs text-gray-500">Against you</p>
+        @if (h2h.games === 0) {
+          <p class="text-gray-400">You haven’t played each other yet</p>
+        } @else {
+          <p class="font-medium text-gray-100">
+            {{ name() }} won {{ h2h.wins }}, you won {{ h2h.losses }}@if (h2h.ties > 0) {<span>, {{ h2h.ties }} {{ h2h.ties === 1 ? 'tie' : 'ties' }}</span>}
+          </p>
+        }
+      </div>
+    }
+  }
+</div>
