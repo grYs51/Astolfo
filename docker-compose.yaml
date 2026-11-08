@@ -81,7 +81,7 @@ services:
 
 
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.16.0
     container_name: Astolfo-prometheus
     environment:
       - METRICS_TOKEN=${METRICS_TOKEN}
@@ -100,7 +100,7 @@ services:
       - astolfo-network
 
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.3.0
     container_name: Astolfo-grafana
     restart: unless-stopped
     environment:

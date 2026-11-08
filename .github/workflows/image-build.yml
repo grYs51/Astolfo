@@ -1,27 +1,33 @@
-# This is a basic workflow to help you get started with Actions
-
-name: run docker build
+name: deploy
 
 on:
-  # Triggers the workflow on push or pull request events but only for the "master" branch
-  push:
-    branches:
-      - main
+  # Deploy only what CI tested and passed on main
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
+    # A fork PR can also have a branch called main, so check the event too
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push')
     runs-on: self-hosted
     environment: .env
-    permissions:
-      contents: read
-      packages: write
-      actions: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
+        with:
+          # The commit CI tested, not whatever main points at now
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: run astolfo-bot
         run: docker compose build --pull && docker compose up -d
