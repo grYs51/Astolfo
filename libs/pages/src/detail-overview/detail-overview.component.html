@@ -158,17 +158,39 @@
             <div class="h-64 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
           }
 
-          @if (funFacts().length > 0) {
-            <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
-              <h3 class="mb-sm text-base font-semibold text-gray-100">How people spend voice time</h3>
-              <ul class="space-y-xs text-sm text-gray-400">
-                @for (fact of funFacts(); track fact.text) {
-                  <li><strong class="font-semibold text-gray-100">{{ fact.pct }}%</strong> {{ fact.text }}</li>
-                }
-              </ul>
-            </div>
-          }
         </div>
+      </div>
+
+      <!-- Voice habits: who has the camera on or streams -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
+        <!-- Stays mounted while a metric loads or fails, so the switch doesn't jump away -->
+        <feature-voice-stats-leaderboard
+          title="Voice habits"
+          [rows]="habitRows()"
+          [loading]="habitsResource.isLoading()"
+          [highlightId]="currentUser()?.id"
+          [interactive]="true"
+          (userClick)="openMember($event)"
+          [emptyText]="habitsResource.error() ? 'Failed to load voice habits' : habitEmptyText[habitMetric()]"
+        >
+          <lib-segmented-control
+            leaderboard-actions
+            label="Habit"
+            [options]="habitMetricOptions"
+            [(value)]="habitMetric"
+          />
+        </feature-voice-stats-leaderboard>
+
+        @if (funFacts().length > 0) {
+          <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
+            <h3 class="mb-sm text-base font-semibold text-gray-100">How people spend voice time</h3>
+            <ul class="space-y-xs text-sm text-gray-400">
+              @for (fact of funFacts(); track fact.text) {
+                <li><strong class="font-semibold text-gray-100">{{ fact.pct }}%</strong> {{ fact.text }}</li>
+              }
+            </ul>
+          </div>
+        }
       </div>
 
       @if (heatmapResource.error()) {

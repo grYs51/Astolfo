@@ -4,6 +4,7 @@ import {
   computed,
   input,
 } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { HttpErrorResponse, HttpResourceRef } from '@angular/common/http';
 import {
   DashboardPeriod,
@@ -51,6 +52,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     GameRecordComponent,
     HumanizeDurationPipe,
     ProgressBarComponent,
+    DecimalPipe,
   ],
   templateUrl: './member-activity.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
