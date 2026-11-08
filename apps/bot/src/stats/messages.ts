@@ -57,7 +57,7 @@ export const formatChange = (current: number, previous: number | null, label: st
 
 export const plural = (n: number, word: string) => `${n.toLocaleString('en-GB')} ${word}${n === 1 ? '' : 's'}`;
 
-const dashboardButton = (url: string, label: string) =>
+export const dashboardButton = (url: string, label: string) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setURL(url)
   );
