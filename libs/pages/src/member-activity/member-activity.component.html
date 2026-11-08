@@ -66,6 +66,37 @@
           {{ subject }} {{ self() ? 'haven’t' : 'hasn’t' }} been in voice or sent messages {{ periodPhrase() }}.
         </p>
       }
+
+      <!-- All time, whatever the period -->
+      @let streak = user.value()!.streak;
+      @if (streak.longest > 0 || milestone()) {
+        <div class="mt-md grid gap-md border-t border-white/5 pt-md text-sm sm:grid-cols-2">
+          @if (streak.longest > 0) {
+            <div>
+              <p class="text-xs text-gray-500">Voice streak</p>
+              <p class="font-medium text-gray-100">
+                <span aria-hidden="true">🔥</span> {{ streak.current }} {{ streak.current === 1 ? 'day' : 'days' }}
+                <span class="text-xs font-normal text-gray-500">· best {{ streak.longest }}</span>
+              </p>
+            </div>
+          }
+          @if (milestone(); as m) {
+            <div>
+              <p class="text-xs text-gray-500">Next milestone</p>
+              <p class="font-medium text-gray-100">
+                {{ m.hours }}h in voice
+                <span class="text-xs font-normal text-gray-500">· {{ m.remainingMs | humanizeDuration: true }} to go</span>
+              </p>
+              <lib-progress-bar
+                [percentage]="m.percentage"
+                [showLabel]="false"
+                containerClass="mt-xs"
+                height="h-1.5 bg-base-100"
+              />
+            </div>
+          }
+        </div>
+      }
     }
   </div>
 

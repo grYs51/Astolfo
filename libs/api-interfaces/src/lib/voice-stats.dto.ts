@@ -219,6 +219,13 @@ export interface VoiceStatsUser {
   // Recent activity
   recentSessions: VoiceSession[];
   channelBreakdown: VoiceChannelBreakdown[];
+
+  /** Voice days (UTC days with 10+ min in voice) in a row; all time, not per period */
+  streak: { current: number; longest: number };
+  /** All-time voice ms */
+  lifetimeMs: number;
+  /** Next lifetime voice-hours milestone; null once every milestone is reached */
+  nextMilestone: { hours: number; remainingMs: number } | null;
 }
 
 // Voice Stats Timeline Response
