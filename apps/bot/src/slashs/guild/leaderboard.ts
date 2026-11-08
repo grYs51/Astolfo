@@ -256,13 +256,26 @@ export default class LeaderboardEvent extends BaseSlash {
             return;
           }
 
+          if (!image) {
+            await InterActionUtils.update(btn, {
+              embeds: [buildEmbed(currentPage)],
+              components: [makeRow(currentPage)],
+            });
+            return;
+          }
+
           // Acknowledge first: a new page of avatars plus the render can take longer than Discord's 3s
-          await btn.deferUpdate();
-          await btn.editReply({
-            ...(await buildPage(currentPage)),
+          const page = currentPage;
+          await InterActionUtils.deferUpdate(btn);
+          const files = [await buildCard(page)];
+          // A later click or the timeout got here first; don't overwrite its page or re-enable the buttons
+          if (page !== currentPage || collector.ended) return;
+          await InterActionUtils.editReply(btn, {
+            embeds: [],
+            files,
             // Drop the previous page's image instead of stacking them
             attachments: [],
-            components: [makeRow(currentPage)],
+            components: [makeRow(page)],
           });
         } catch (error) {
           Logger.error('Leaderboard collector', error);

@@ -17,6 +17,15 @@ describe('escapeXml', () => {
       '&lt;a href=&quot;x&quot;&gt;Tom &amp; Jerry&apos;s&lt;/a&gt;'
     );
   });
+
+  it('drops characters XML does not allow, so the card still renders', async () => {
+    const name = 'A\u0000s\u0001t\u000Bo￾l\tfo';
+    expect(escapeXml(name)).toBe('Astol\tfo');
+    const png = await renderPng(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="40"><text x="4" y="28">${escapeXml(name)}</text></svg>`
+    );
+    expect(png.subarray(0, 8)).toEqual(PNG_SIGNATURE);
+  });
 });
 
 describe('truncate', () => {

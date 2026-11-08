@@ -9,9 +9,12 @@ import path from 'path';
  */
 
 const FONT_DIR = path.join(__dirname, '../assets/fonts');
-const fontFiles = readdirSync(FONT_DIR)
-  .filter((file) => file.endsWith('.ttf'))
-  .map((file) => path.join(FONT_DIR, file));
+// Read on first render, not at import: a packaging slip then breaks the image option, not the bot's startup
+let fontFiles: string[] | undefined;
+const fonts = () =>
+  (fontFiles ??= readdirSync(FONT_DIR)
+    .filter((file) => file.endsWith('.ttf'))
+    .map((file) => path.join(FONT_DIR, file)));
 
 export const FONT_FAMILY = 'Inter';
 
@@ -19,7 +22,7 @@ export const FONT_FAMILY = 'Inter';
 export const renderPng = async (svg: string): Promise<Buffer> => {
   // shortcut: Inter has no emoji or CJK glyphs, so those show as blanks; ship a fallback font when names need them
   const image = await renderAsync(svg, {
-    font: { fontFiles, loadSystemFonts: false, defaultFontFamily: FONT_FAMILY },
+    font: { fontFiles: fonts(), loadSystemFonts: false, defaultFontFamily: FONT_FAMILY },
   });
   return image.asPng();
 };
@@ -32,8 +35,16 @@ const XML_ENTITIES: Record<string, string> = {
   "'": '&apos;',
 };
 
-/** Every member, server or channel name goes through this before it lands in an SVG */
-export const escapeXml = (text: string) => text.replace(/[&<>"']/g, (c) => XML_ENTITIES[c]);
+/**
+ * Every member, server or channel name goes through this before it lands in
+ * an SVG. Characters XML doesn't allow (control characters, U+FFFE/U+FFFF)
+ * are dropped: resvg rejects the whole card over one of them.
+ */
+export const escapeXml = (text: string) =>
+  text
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\uFFFE\uFFFF]/g, '')
+    .replace(/[&<>"']/g, (c) => XML_ENTITIES[c]);
 
 /** Cuts long names so they don't run into the next column */
 export const truncate = (text: string, max: number) => {
