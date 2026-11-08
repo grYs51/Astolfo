@@ -3,12 +3,8 @@ import type { Request, Response } from 'express';
 import { HeatmapPeriod, VoiceStatsUserHeatmap } from '@nx-stolfo/api-interfaces';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import {
-  getStartDateForPeriod,
-  getTimeZone,
-  isHiddenFrom,
-  localIssuedOn,
-} from '../helpers';
+import { getStartDateForPeriod, getTimeZone, isHiddenFrom } from '../helpers';
+import { voiceHeatmapCells } from './heatmap-sql';
 
 type HeatmapCellRow = {
   hour: number; // 0-23
@@ -33,28 +29,14 @@ export const getVoiceStatsUserHeatmap = asyncHandler(
 
     // 'all' means from the beginning of time
     const startDate = getStartDateForPeriod(period) ?? new Date(0);
-    const local = localIssuedOn(getTimeZone(req.query.tz));
+    const tz = getTimeZone(req.query.tz);
 
     // User and server cells come from the same SQL aggregation, so both sides
     // bucket by the same hour/day (in the viewer's time zone) and round the
-    // same way. Only VOICE rows count (MUTED/DEAF/... overlap them); open
-    // sessions count live.
+    // same way.
     const heatmapCells = (memberFilter: Prisma.Sql) =>
       req.db.$queryRaw<HeatmapCellRow[]>(
-        Prisma.sql`
-          SELECT
-            EXTRACT(HOUR FROM ${local})::int         AS hour,
-            EXTRACT(DOW  FROM ${local})::int         AS day_of_week,
-            SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
-            COUNT(*)::bigint                          AS session_count,
-            COUNT(DISTINCT member_id)::bigint         AS unique_users
-          FROM voice_stats
-          WHERE guild_id = ${serverId}
-            AND type = ${VOICE_TYPE.VOICE}
-            AND issued_on >= ${startDate}
-            ${memberFilter}
-          GROUP BY 1, 2
-        `
+        voiceHeatmapCells(serverId, tz, startDate, memberFilter)
       );
 
     const [userRows, serverAggRaw, [periodUsers]] = await Promise.all([

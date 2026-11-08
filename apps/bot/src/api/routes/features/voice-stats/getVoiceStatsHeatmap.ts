@@ -5,8 +5,8 @@ import {
   VoiceStatsHeatmap,
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/api-interfaces';
-import { Prisma } from '@prisma/client';
-import { getStartDateForPeriod, getTimeZone, localIssuedOn } from '../helpers';
+import { getStartDateForPeriod, getTimeZone } from '../helpers';
+import { voiceHeatmapCells } from './heatmap-sql';
 
 export const getVoiceStatsHeatmap = asyncHandler(
   async (req: Request, res: Response<VoiceStatsHeatmap>) => {
@@ -19,17 +19,10 @@ export const getVoiceStatsHeatmap = asyncHandler(
         ? rawPeriod
         : 'month';
     const tz = getTimeZone(req.query.tz);
-    const local = localIssuedOn(tz);
 
     // 'all' means no lower bound
     const startDate = getStartDateForPeriod(period);
-    const dateFilter = startDate
-      ? Prisma.sql`AND issued_on >= ${startDate}`
-      : Prisma.empty;
 
-    // Aggregate in the database — bounded 168-row result instead of loading
-    // every session of the period into memory. Hours/days are in the
-    // viewer's time zone (same as the user heatmap).
     type HeatmapRow = {
       hour: number;
       day_of_week: number;
@@ -38,20 +31,10 @@ export const getVoiceStatsHeatmap = asyncHandler(
       unique_users: bigint;
     };
 
+    // Aggregated in SQL: a bounded 168-row result. Hours/days are in the
+    // viewer's time zone (same as the user heatmap).
     const rows = await req.db.$queryRaw<HeatmapRow[]>(
-      Prisma.sql`
-        SELECT
-          EXTRACT(HOUR FROM ${local})::int AS hour,
-          EXTRACT(DOW  FROM ${local})::int AS day_of_week,
-          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS total_minutes,
-          COUNT(*)::bigint AS session_count,
-          COUNT(DISTINCT member_id)::bigint AS unique_users
-        FROM voice_stats
-        WHERE guild_id = ${serverId}
-          AND type = 'VOICE'
-          ${dateFilter}
-        GROUP BY 1, 2
-      `
+      voiceHeatmapCells(serverId, tz, startDate)
     );
 
     const heatmapData: VoiceStatsHeatmapDataPoint[] = rows.map((row) => ({
