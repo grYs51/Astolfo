@@ -20,6 +20,8 @@ import {
   UserPresence,
   ServerGames,
   UserGames,
+  VoiceHabitMetric,
+  VoiceHabitsLeaderboard,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -220,6 +222,18 @@ export class VoiceStatsApi extends ApiBase {
     return this.get<ServerGames>(
       () => `/features/voice-stats/${guildId()}/games`,
       () => ({ period: period() })
+    );
+  }
+
+  /** Members ranked by camera, streaming or listening time, or by muted share */
+  fetchVoiceHabits(
+    guildId: () => string,
+    period: () => DashboardPeriod,
+    metric: () => VoiceHabitMetric
+  ) {
+    return this.get<VoiceHabitsLeaderboard>(
+      () => `/features/voice-stats/${guildId()}/voice-habits`,
+      () => ({ period: period(), metric: metric() })
     );
   }
 
