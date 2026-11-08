@@ -43,6 +43,8 @@ You have everything needed: overlapping `voice_stats` intervals in the same chan
 This is the feature people screenshot and share. Nothing else in the app has this virality potential.
 
 ### 2.2 "Server Wrapped" — yearly/monthly recap 🟡
+> Groundwork (2026-11-08): the image-card renderer exists (`apps/bot/src/cards/`, used by `/leaderboard image:true` and `/stats image:true`), so the shareable card is a new template, not new infrastructure.
+
 Spotify-Wrapped-style story page per user per server: total hours, longest session, favorite channel, top duo, peak month, percentile rank ("you were in the top 4% of voice users"). Historical data is already sitting in Postgres. Generate a shareable image/card for Discord posting. Seasonal, high-retention, and largely composed of queries you already have.
 
 ### 2.3 Streaks & milestones 🟢
