@@ -50,6 +50,16 @@ export class MemberProfileComponent {
     () => this.memberId(),
     () => this.period()
   );
+  presenceResource = this.api.fetchUserPresence(
+    () => this.id(),
+    () => this.memberId(),
+    () => this.period()
+  );
+  gamesResource = this.api.fetchUserGames(
+    () => this.id(),
+    () => this.memberId(),
+    () => this.period()
+  );
   // For the member's ranks and the server name in the back link
   private leaderboardResource = this.api.fetchVoiceStatsLeaderboard(
     () => this.id(),

@@ -1,43 +1,101 @@
 import { client } from '../../../client/instance';
-import { user_statuses } from '@prisma/client';
+import { Prisma, user_statuses } from '@prisma/client';
 
 /** Status changes shorter than this are noise (client reconnects, idle flaps). */
 const MIN_DURATION_MS = 15_000;
 
 /**
- * Persists one closed status interval.
- *
- * Takes the cache entry itself rather than looking it up: the caller must
- * detach it from `client.userStatus` *synchronously*, before awaiting this —
- * see `handleStatusUpdate` for why.
+ * The startup batch insert (openAllStatuses). Closes wait for it, so a status
+ * change right after ready can't try to close a row that isn't inserted yet.
  */
-export const saveStatus = async (
+let startupInsert: Promise<unknown> = Promise.resolve();
+
+/** Queue key: one user's status writes run in order (insert before close). */
+export const statusKey = (userId: string) => `status:${userId}`;
+
+/** Inserts the row for a status that just started (persist-on-open). */
+export const openStatus = (status: Partial<user_statuses>) =>
+  client.dataSource.userStatus.create({
+    data: { ...status, ended_at: null } as user_statuses,
+  });
+
+/**
+ * Closes one open status row, or deletes it when it lasted under
+ * MIN_DURATION_MS. `ended_at: null` never overwrites an end that is already set.
+ */
+export const closeStatus = async (
   status: Partial<user_statuses>,
   date: Date
 ) => {
-  if (!status.created_at) return;
-  if (date.getTime() - status.created_at.getTime() < MIN_DURATION_MS) return;
-
-  await client.dataSource.userStatus.create({
-    data: { ...status, ended_at: date } as user_statuses,
-  });
+  if (!status.id || !status.created_at) return;
+  await startupInsert.catch(() => undefined);
+  const where = { id: status.id, ended_at: null };
+  if (date.getTime() - status.created_at.getTime() < MIN_DURATION_MS) {
+    await client.dataSource.userStatus.deleteMany({ where });
+  } else {
+    await client.dataSource.userStatus.updateMany({
+      where,
+      data: { ended_at: date },
+    });
+  }
 };
 
 /**
- * Flushes every cached open status duration to the DB in one batch.
- * Called on shutdown so deploys don't silently drop them.
+ * Opens a row for every cached status in one batch (startup, after the cache
+ * is filled from the gateway).
+ */
+export const openAllStatuses = async (statuses: Partial<user_statuses>[]) => {
+  if (statuses.length === 0) return;
+  startupInsert = client.dataSource.userStatus.createMany({
+    data: statuses.map((status) => ({ ...status, ended_at: null }) as user_statuses),
+  });
+  await startupInsert;
+};
+
+/**
+ * Closes every cached open status on shutdown so deploys don't leave them
+ * open (crash recovery would close them later, at a guessed time).
  */
 export const saveAllStatuses = async (date: Date) => {
-  const statuses = Array.from(client.userStatus.values())
-    .filter(
-      (status) =>
-        status.created_at &&
-        date.getTime() - status.created_at.getTime() >= MIN_DURATION_MS
-    )
-    .map((status) => ({ ...status, ended_at: date }) as user_statuses);
-
+  const statuses = Array.from(client.userStatus.values());
   client.userStatus.clear();
 
-  if (statuses.length === 0) return;
-  await client.dataSource.userStatus.createMany({ data: statuses });
+  const short = (status: Partial<user_statuses>) =>
+    !!status.created_at &&
+    date.getTime() - status.created_at.getTime() < MIN_DURATION_MS;
+  const ids = (list: Partial<user_statuses>[]) =>
+    list.map((status) => status.id).filter((id): id is string => !!id);
+
+  const shortIds = ids(statuses.filter(short));
+  const closeIds = ids(statuses.filter((status) => !short(status)));
+  if (shortIds.length > 0) {
+    await client.dataSource.userStatus.deleteMany({
+      where: { id: { in: shortIds }, ended_at: null },
+    });
+  }
+  if (closeIds.length > 0) {
+    await client.dataSource.userStatus.updateMany({
+      where: { id: { in: closeIds }, ended_at: null },
+      data: { ended_at: date },
+    });
+  }
 };
+
+/**
+ * Crash recovery: close statuses left open by an unclean shutdown, at the
+ * last metrics snapshot (same rule as closeDanglingVoiceSessions).
+ */
+export const closeDanglingStatuses = async () => {
+  const lastAlive = await client.dataSource.metrics.findFirst({
+    orderBy: { updated_at: 'desc' },
+    select: { updated_at: true },
+  });
+  const cutoff = lastAlive?.updated_at ?? new Date();
+
+  return client.dataSource.$executeRaw(Prisma.sql`
+    UPDATE user_statuses
+    SET ended_at = GREATEST(created_at, ${cutoff})
+    WHERE ended_at IS NULL
+  `);
+};
+

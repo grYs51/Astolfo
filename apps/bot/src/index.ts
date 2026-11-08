@@ -16,6 +16,7 @@ import { setupShutdownHandler } from './utils/handlers/shutdown-handler';
 import { saveGamesToDb } from './utils/handlers/games-handler';
 import { startMetricsScheduler } from './utils/schedulers/metrics.scheduler';
 import { closeDanglingVoiceSessions } from './utils/handlers/vc';
+import { closeDanglingStatuses } from './utils/handlers/presence/status-save';
 import { isMockDiscord } from './dev/mock-discord';
 
 
@@ -30,10 +31,10 @@ process.on('unhandledRejection', (reason) => {
 
 let httpServer: Server | undefined;
 
-// Close sessions a previous crash left open. Must run before the metrics
-// scheduler starts: the cutoff is the last metrics snapshot of the previous
-// run, and the first tick would overwrite it with "now" (recording the whole
-// downtime as voice time). Also runs before the API serves those rows live.
+// Close voice sessions and statuses a previous crash left open. Must run
+// before the metrics scheduler starts: the cutoff is the last metrics snapshot
+// of the previous run, and the first tick would overwrite it with "now"
+// (recording the whole downtime as voice time). Also runs before the API serves those rows live.
 const recoverDanglingVoiceSessions = async () => {
   // Mock mode has no gateway, so every open row is "dangling" — keep the
   // seeded in-voice sessions open instead
@@ -41,6 +42,10 @@ const recoverDanglingVoiceSessions = async () => {
   const recovered = await closeDanglingVoiceSessions();
   if (recovered > 0) {
     Logger.info(`Closed ${recovered} dangling voice sessions from a previous run`);
+  }
+  const statuses = await closeDanglingStatuses();
+  if (statuses > 0) {
+    Logger.info(`Closed ${statuses} dangling statuses from a previous run`);
   }
 };
 

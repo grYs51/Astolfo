@@ -32,6 +32,8 @@ export interface DiscordDirectory {
   guild(guildId: string): { name: string; icon: string | null } | undefined;
   channel(guildId: string, channelId: string): ChannelInfo | undefined;
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
+  /** Ids of the guild's current human members */
+  memberIds(guildId: string): Promise<string[]>;
 }
 
 // Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
@@ -46,6 +48,9 @@ const notAMember = (error: unknown): null => {
   Logger.warn('Discord member lookup failed', error);
   throw new ServiceUnavailable('Discord member lookup failed');
 };
+
+/** Guilds whose full member list was fetched once (memberIds) */
+const fullyFetched = new Set<string>();
 
 const live: DiscordDirectory = {
   async isMember(guildId, userId) {
@@ -102,6 +107,21 @@ const live: DiscordDirectory = {
     }
     return result;
   },
+
+  async memberIds(guildId) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return [];
+    // Discord leaves offline members out of large guilds on connect; one full
+    // fetch fills the cache, and later calls skip it
+    if (!fullyFetched.has(guildId) && guild.members.cache.size < guild.memberCount) {
+      fullyFetched.add(guildId);
+      await guild.members.fetch().catch((error) => {
+        fullyFetched.delete(guildId); // try again on the next request
+        Logger.warn(`Failed to fetch all members for guild ${guildId}`, error);
+      });
+    }
+    return [...guild.members.cache.filter((m) => !m.user.bot).keys()];
+  },
 };
 
 const mock: DiscordDirectory = {
@@ -133,6 +153,10 @@ const mock: DiscordDirectory = {
       });
     }
     return result;
+  },
+
+  async memberIds(guildId) {
+    return findMockGuild(guildId)?.members.map((m) => m.id) ?? [];
   },
 };
 

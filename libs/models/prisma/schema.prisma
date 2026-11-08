@@ -40,13 +40,17 @@ model voice_stats {
 }
 
 model user_statuses {
-  id         String   @id @default(uuid()) @db.VarChar
-  user_id    String   @db.VarChar
-  status     String   @db.VarChar
-  created_at DateTime @db.Timestamp(6)
-  ended_at   DateTime @db.Timestamp(6)
+  id         String    @id @default(uuid()) @db.VarChar
+  user_id    String    @db.VarChar
+  status     String    @db.VarChar
+  created_at DateTime  @db.Timestamp(6)
+  // NULL = status still current (persist-on-open, like voice_stats); closed
+  // on the next status change, on shutdown, or by crash recovery at startup
+  ended_at   DateTime? @db.Timestamp(6)
 
-  @@index([user_id])
+  // Dashboard queries ask for rows still running after a date:
+  // (ended_at > x OR ended_at IS NULL)
+  @@index([user_id, ended_at])
 }
 
 model user_activities {

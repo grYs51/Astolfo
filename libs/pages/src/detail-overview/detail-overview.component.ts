@@ -14,6 +14,7 @@ import {
   VoiceStatsChannelsComponent,
   VoiceStatsTimelineComponent,
   VoiceStatsHeatmapComponent,
+  ServerPulseComponent,
   LeaderboardRow,
 } from '@nx-stolfo/ui-voice-stats';
 import {
@@ -48,6 +49,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     VoiceStatsChannelsComponent,
     VoiceStatsTimelineComponent,
     VoiceStatsHeatmapComponent,
+    ServerPulseComponent,
     SegmentedControlComponent,
     MemberActivityComponent,
   ],
@@ -145,6 +147,24 @@ export class DetailOverviewComponent {
     () => this.userId(),
     () => this.period()
   );
+  userPresenceResource = this.voiceStatsApi.fetchUserPresence(
+    () => this.id(),
+    () => this.userId(),
+    () => this.period()
+  );
+  userGamesResource = this.voiceStatsApi.fetchUserGames(
+    () => this.id(),
+    () => this.userId(),
+    () => this.period()
+  );
+  presenceResource = this.voiceStatsApi.fetchServerPresence(
+    () => this.id(),
+    () => this.period()
+  );
+  gamesResource = this.voiceStatsApi.fetchServerGames(
+    () => this.id(),
+    () => this.period()
+  );
 
   /** Server name from the overview response; falls back while loading or if the bot can't see the guild */
   serverName = computed(
@@ -211,6 +231,17 @@ export class DetailOverviewComponent {
       subtitle: `${plural(entry.sessionCount, 'session')} · ${plural(entry.uniqueChannels, 'channel')}`,
     }));
   });
+
+  // ── Rock-paper-scissors leaderboard ──────────────────────────────────────
+  gameRows = computed<LeaderboardRow[]>(() =>
+    this.gamesResource.hasValue()
+      ? (this.gamesResource.value()?.leaderboard ?? []).map((entry) => ({
+          member: entry.member,
+          value: `${Math.round(entry.winRate * 100)}% wins`,
+          subtitle: `${entry.wins}W · ${entry.losses}L · ${entry.ties}T in ${entry.games} games`,
+        }))
+      : []
+  );
 
   // ── Privacy ──────────────────────────────────────────────────────────────
   privacyResource = this.voiceStatsApi.fetchPrivacy();

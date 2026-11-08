@@ -38,6 +38,8 @@
       <pages-member-activity
         [userResource]="userResource"
         [heatmapResource]="userHeatmapResource"
+        [presenceResource]="userPresenceResource"
+        [gamesResource]="userGamesResource"
         [period]="period()"
         [voiceRank]="myRank()"
         [messageRank]="myMessageRank()"
@@ -178,6 +180,61 @@
       } @else {
         <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
       }
+
+      @if (presenceResource.error()) {
+        <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+          Failed to load the server pulse
+        </div>
+      } @else if (presenceResource.hasValue()) {
+        <feature-voice-stats-server-pulse [presence]="presenceResource.value()!" [memberLink]="memberLink" />
+      } @else {
+        <div class="h-[520px] rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+      }
+
+      <!-- Rock-paper-scissors -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
+        @if (gamesResource.error()) {
+          <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+            Failed to load games
+          </div>
+        } @else if (gamesResource.hasValue()) {
+          @let games = gamesResource.value()!;
+          <feature-voice-stats-leaderboard
+            title="Rock paper scissors"
+            [rows]="gameRows()"
+            [highlightId]="currentUser()?.id"
+            [interactive]="true"
+            (userClick)="openMember($event)"
+            emptyText="Nobody has played 3 games yet. Challenge someone with /rockpaperscissors"
+          />
+          <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
+            <h3 class="mb-sm text-base font-semibold text-gray-100">Rivalries</h3>
+            <p class="mb-md text-xs text-gray-500">
+              {{ games.games }} {{ games.games === 1 ? 'game' : 'games' }} between {{ games.players }} players
+            </p>
+            @if (games.matchups.length === 0) {
+              <p class="py-md text-center text-sm text-gray-400">No games in this period</p>
+            } @else {
+              <ul class="space-y-sm text-sm">
+                @for (m of games.matchups; track m.a.id + m.b.id) {
+                  <li class="flex items-center justify-between gap-sm">
+                    <span class="min-w-0 truncate text-gray-100">
+                      {{ m.a.displayName || m.a.username }}
+                      <span class="text-gray-500">vs</span>
+                      {{ m.b.displayName || m.b.username }}
+                    </span>
+                    <span class="shrink-0 text-gray-300">
+                      {{ m.aWins }}–{{ m.bWins }}@if (m.ties > 0) {<span class="text-gray-500"> · {{ m.ties }} tied</span>}
+                    </span>
+                  </li>
+                }
+              </ul>
+            }
+          </div>
+        } @else {
+          <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+        }
+      </div>
     </section>
   }
 </div>

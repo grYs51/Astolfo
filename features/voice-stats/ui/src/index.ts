@@ -7,3 +7,6 @@ export * from './lib/voice-stats-user-profile/voice-stats-user-profile.component
 export * from './lib/voice-stats-user-heatmap/voice-stats-user-heatmap.component';
 export * from './lib/voice-stats-timeline/voice-stats-timeline.component';
 export * from './lib/voice-stats-heatmap/voice-stats-heatmap.component';
+export * from './lib/server-pulse/server-pulse.component';
+export * from './lib/online-time/online-time.component';
+export * from './lib/game-record/game-record.component';

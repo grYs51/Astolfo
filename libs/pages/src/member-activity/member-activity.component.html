@@ -115,6 +115,26 @@
     <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
   }
 
+  <!-- Online time and rock-paper-scissors -->
+  @let presence = presenceResource();
+  @let games = gamesResource();
+  <div class="grid grid-cols-1 gap-md lg:grid-cols-2">
+    @if (presence.error()) {
+      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load online time</div>
+    } @else if (presence.hasValue()) {
+      <feature-voice-stats-online-time [presence]="presence.value()!" [name]="name()" [previousLabel]="previousLabel()" />
+    } @else {
+      <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+    }
+    @if (games.error()) {
+      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load games</div>
+    } @else if (games.hasValue()) {
+      <feature-voice-stats-game-record [games]="games.value()!" [name]="name()" />
+    } @else {
+      <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+    }
+  </div>
+
   <!-- Companions, channels (and recent sessions on your own page) -->
   @if (user.hasValue()) {
     <feature-voice-stats-user-profile

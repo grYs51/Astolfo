@@ -1,0 +1,50 @@
+<div class="h-full rounded-xl border border-white/5 bg-base-300 p-lg">
+  <h3 class="mb-md text-base font-semibold text-gray-100">{{ name() ? name() + '’s online time' : 'Your online time' }}</h3>
+
+  @if (total() === 0) {
+    <p class="py-md text-center text-sm text-gray-400">No online status recorded in this period</p>
+  } @else {
+    <p class="text-2xl font-semibold text-primary-300">{{ total() | humanizeDuration: true }}</p>
+    @if (change(); as c) {
+      <p class="mt-xs text-sm" [class.text-success]="c.up" [class.text-gray-400]="!c.up">{{ c.text }}</p>
+    }
+
+    <!-- Status split -->
+    <div class="mt-md flex h-2 overflow-hidden rounded-full bg-base-100" aria-hidden="true">
+      @for (s of statuses(); track s.label) {
+        <div [class]="s.color" [style.width.%]="s.pct"></div>
+      }
+    </div>
+    <dl class="mt-sm grid grid-cols-3 gap-sm text-sm">
+      @for (s of statuses(); track s.label) {
+        <div>
+          <dt class="flex items-center gap-xs text-xs text-gray-500">
+            <span class="inline-block h-2 w-2 rounded-full" [class]="s.color" aria-hidden="true"></span>{{ s.label }}
+          </dt>
+          <dd class="font-medium text-gray-100">{{ s.ms | humanizeDuration: true }}</dd>
+        </div>
+      }
+    </dl>
+
+    <!-- Hour of day -->
+    <h4 class="mt-lg text-xs text-gray-500">When in the day, in your time zone</h4>
+    <ol class="mt-xs flex h-20 items-end gap-px" aria-label="Share of each hour spent online">
+      @for (bar of bars(); track bar.hour) {
+        <li
+          class="flex-1 rounded-t-sm bg-primary-400/80"
+          [style.height.%]="bar.pct || 2"
+          [class.opacity-30]="bar.pct === 0"
+          [title]="hourLabel(bar.hour) + ': online ' + bar.pct + '% of the time'"
+        >
+          <span class="sr-only">{{ hourLabel(bar.hour) }}: {{ bar.pct }}%</span>
+        </li>
+      }
+    </ol>
+    <div class="mt-xs flex justify-between text-[10px] text-gray-500" aria-hidden="true">
+      @for (label of hourLabels; track label) {
+        <span>{{ label }}</span>
+      }
+      <span></span>
+    </div>
+  }
+</div>

@@ -16,6 +16,10 @@ import {
   DashboardPeriod,
   ServerMessageStats,
   MemberPrivacy,
+  ServerPresence,
+  UserPresence,
+  ServerGames,
+  UserGames,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -184,6 +188,54 @@ export class VoiceStatsApi extends ApiBase {
 
         return params;
       }
+    );
+  }
+
+  /** Server pulse: average members online per hour, night owls, early birds */
+  fetchServerPresence(guildId: () => string, period: () => DashboardPeriod) {
+    return this.get<ServerPresence>(
+      () => `/features/voice-stats/${guildId()}/presence`,
+      () => ({ period: period(), tz: viewerTimeZone() })
+    );
+  }
+
+  /** One member's online time per status and hour of day */
+  fetchUserPresence(
+    guildId: () => string,
+    userId: () => string | undefined | null,
+    period: () => DashboardPeriod
+  ) {
+    return this.get<UserPresence>(
+      () => {
+        const user = userId();
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guildId()}/users/${user}/presence`;
+      },
+      () => ({ period: period(), tz: viewerTimeZone() })
+    );
+  }
+
+  /** Rock-paper-scissors leaderboard and most-played pairs */
+  fetchServerGames(guildId: () => string, period: () => DashboardPeriod) {
+    return this.get<ServerGames>(
+      () => `/features/voice-stats/${guildId()}/games`,
+      () => ({ period: period() })
+    );
+  }
+
+  /** One member's rock-paper-scissors record (and head-to-head with the viewer) */
+  fetchUserGames(
+    guildId: () => string,
+    userId: () => string | undefined | null,
+    period: () => DashboardPeriod
+  ) {
+    return this.get<UserGames>(
+      () => {
+        const user = userId();
+        if (!user) return undefined; // skip request until userId is available
+        return `/features/voice-stats/${guildId()}/users/${user}/games`;
+      },
+      () => ({ period: period() })
     );
   }
 }

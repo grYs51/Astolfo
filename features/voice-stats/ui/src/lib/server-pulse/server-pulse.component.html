@@ -1,0 +1,51 @@
+<div class="rounded-xl border border-white/5 bg-base-300 p-lg">
+  <div class="mb-sm flex flex-wrap items-center justify-between gap-sm">
+    <div>
+      <h3 class="text-base font-semibold text-gray-100">Server pulse</h3>
+      <p class="text-xs text-gray-500">
+        Average members online (online, idle or do not disturb) each hour, in your time zone
+      </p>
+    </div>
+    @if (!isEmpty()) {
+      <span class="rounded-md bg-base-200 px-sm py-xs text-xs text-gray-300">
+        Busiest: {{ peak().label }} · {{ peak().value | number: '1.0-1' }} online
+      </span>
+    }
+  </div>
+
+  @if (isEmpty()) {
+    <p class="py-lg text-center text-sm text-gray-400">No online status recorded in this period yet</p>
+  } @else {
+    <div echarts [options]="chartOption()" [initOpts]="{ renderer: 'canvas' }" class="block h-[420px] w-full"></div>
+
+    <div class="mt-md grid gap-md border-t border-white/5 pt-md sm:grid-cols-2">
+      @for (group of groups(); track group.title) {
+        <div>
+          <h4 class="mb-sm text-sm font-semibold text-gray-100">{{ group.title }}</h4>
+          @if (group.members.length === 0) {
+            <p class="text-sm text-gray-500">Nobody stands out</p>
+          } @else {
+            <ul class="space-y-xs">
+              @for (entry of group.members; track entry.member.id) {
+                <li class="flex items-center gap-sm text-sm">
+                  @if (entry.member.avatar) {
+                    <img [src]="entry.member.avatar" alt="" class="h-6 w-6 shrink-0 rounded-full ring-1 ring-white/10" />
+                  }
+                  @if (memberLink(); as link) {
+                    <a [routerLink]="link(entry.member.id)" class="min-w-0 flex-1 truncate text-gray-100 hover:text-primary-300 hover:underline">
+                      {{ entry.member.displayName || entry.member.username }}
+                    </a>
+                  } @else {
+                    <span class="min-w-0 flex-1 truncate text-gray-100">{{ entry.member.displayName || entry.member.username }}</span>
+                  }
+                  <span class="shrink-0 text-primary-300">{{ entry.share | percent }}</span>
+                </li>
+              }
+            </ul>
+            <p class="mt-xs text-xs text-gray-500">Share {{ group.hint }}</p>
+          }
+        </div>
+      }
+    </div>
+  }
+</div>

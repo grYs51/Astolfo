@@ -2,7 +2,8 @@
  * Seeds the local DB with ~4 months of realistic voice activity for the
  * MOCK_DISCORD fixture servers, so every dashboard feature has data:
  * heatmaps, timeline, leaderboard, channels, activity breakdown, user
- * profiles and a few people "in voice right now" — plus text messages.
+ * profiles and a few people "in voice right now" — plus text messages,
+ * online statuses and rock-paper-scissors games.
  *
  *   yarn nx run bot:seed        (then serve the bot with MOCK_DISCORD=true)
  *
@@ -10,9 +11,17 @@
  * Deterministic: the same seed produces the same activity patterns.
  */
 import { randomUUID } from 'crypto';
-import { message_stats, PrismaClient, voice_stats } from '@prisma/client';
+import {
+  game_player,
+  game_result,
+  message_stats,
+  PrismaClient,
+  user_statuses,
+  voice_stats,
+} from '@prisma/client';
 import { MOCK_GUILDS, MOCK_USER, MockGuild } from './mock-discord';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
+import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 import { Logger } from '../utils/logger';
 
 const DAYS = 120;
@@ -49,15 +58,17 @@ type Persona = {
   video: number;
   /** Average messages on an active day */
   messages: number;
+  /** Discord status: usual online window, start hour (UTC) and length in hours */
+  online: [number, number];
 };
 
 const personas: Record<string, Persona> = {
-  regular: { weekday: 0.55, weekend: 0.6, hours: [17, 18, 19, 20], minutes: [45, 180], channels: ['Lobby', 'Gaming'], deafen: 0.1, stream: 0.15, video: 0.05, messages: 6 },
-  nightOwl: { weekday: 0.6, weekend: 0.7, hours: [21, 22, 23, 0, 1], minutes: [90, 300], channels: ['Late Night', 'Raid Night', 'Gaming'], deafen: 0.1, stream: 0.3, video: 0.02, messages: 14 },
-  weekend: { weekday: 0.08, weekend: 0.85, hours: [11, 13, 15, 17, 19], minutes: [120, 360], channels: ['Gaming', 'Raid Night', 'Friday Stage'], deafen: 0.05, stream: 0.25, video: 0.05, messages: 9 },
-  student: { weekday: 0.5, weekend: 0.15, hours: [12, 13, 14, 15], minutes: [45, 150], channels: ['Study Room'], deafen: 0.05, stream: 0.05, video: 0.25, messages: 5 },
-  lurker: { weekday: 0.15, weekend: 0.2, hours: [14, 16, 18, 20], minutes: [60, 300], channels: ['AFK', 'Music', 'Lobby'], deafen: 0.75, stream: 0, video: 0, messages: 1 },
-  music: { weekday: 0.35, weekend: 0.4, hours: [16, 18, 20], minutes: [30, 120], channels: ['Music', 'Lobby'], deafen: 0.05, stream: 0.1, video: 0, messages: 10 },
+  regular: { weekday: 0.55, weekend: 0.6, hours: [17, 18, 19, 20], minutes: [45, 180], channels: ['Lobby', 'Gaming'], deafen: 0.1, stream: 0.15, video: 0.05, messages: 6, online: [16, 7] },
+  nightOwl: { weekday: 0.6, weekend: 0.7, hours: [21, 22, 23, 0, 1], minutes: [90, 300], channels: ['Late Night', 'Raid Night', 'Gaming'], deafen: 0.1, stream: 0.3, video: 0.02, messages: 14, online: [20, 9] },
+  weekend: { weekday: 0.08, weekend: 0.85, hours: [11, 13, 15, 17, 19], minutes: [120, 360], channels: ['Gaming', 'Raid Night', 'Friday Stage'], deafen: 0.05, stream: 0.25, video: 0.05, messages: 9, online: [10, 12] },
+  student: { weekday: 0.5, weekend: 0.15, hours: [12, 13, 14, 15], minutes: [45, 150], channels: ['Study Room'], deafen: 0.05, stream: 0.05, video: 0.25, messages: 5, online: [6, 10] },
+  lurker: { weekday: 0.15, weekend: 0.2, hours: [14, 16, 18, 20], minutes: [60, 300], channels: ['AFK', 'Music', 'Lobby'], deafen: 0.75, stream: 0, video: 0, messages: 1, online: [12, 10] },
+  music: { weekday: 0.35, weekend: 0.4, hours: [16, 18, 20], minutes: [30, 120], channels: ['Music', 'Lobby'], deafen: 0.05, stream: 0.1, video: 0, messages: 10, online: [15, 7] },
 };
 
 const personaOf: Record<string, Persona> = {
@@ -236,6 +247,81 @@ const generateMessages = (now: number): message_stats[] => {
   return rows;
 };
 
+/**
+ * Statuses: one unbroken timeline per member (offline, then online with idle
+ * and dnd spells inside the persona's window). The last row stays open, as the
+ * bot leaves the current status.
+ */
+const generateStatuses = (now: number): user_statuses[] => {
+  const rows: user_statuses[] = [];
+  const today = Math.floor(now / DAY) * DAY;
+  const memberIds = [...new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))];
+
+  for (const memberId of memberIds) {
+    const persona = personaOf[memberId] ?? personas.regular;
+    let status = 'offline';
+    let since = today - DAYS * DAY;
+    const change = (next: string, at: number) => {
+      if (at <= since || at > now || next === status) return;
+      rows.push({ id: randomUUID(), user_id: memberId, status, created_at: new Date(since), ended_at: new Date(at) });
+      status = next;
+      since = at;
+    };
+
+    for (let day = today - DAYS * DAY; day <= today; day += DAY) {
+      const weekday = new Date(day).getUTCDay();
+      const isWeekend = weekday === 0 || weekday === 6;
+      // Online on more days than they join voice, like messages
+      if (!chance(Math.min(1, (isWeekend ? persona.weekend : persona.weekday) + 0.3))) continue;
+      const start = day + (persona.online[0] + between(-1, 1)) * HOUR;
+      const end = start + persona.online[1] * between(0.6, 1.2) * HOUR;
+      change('online', start);
+      for (let at = start + between(1, 2) * HOUR; at < end - HOUR; at += between(1, 3) * HOUR) {
+        change(chance(0.2) ? 'dnd' : 'idle', at);
+        change('online', at + between(15, 50) * MINUTE);
+      }
+      change('offline', end);
+    }
+    rows.push({ id: randomUUID(), user_id: memberId, status, created_at: new Date(since), ended_at: null });
+  }
+  return rows;
+};
+
+/** Rock-paper-scissors: a few games a day per guild; everyone has a favourite move */
+const generateGames = (now: number) => {
+  const results: game_result[] = [];
+  const players: game_player[] = [];
+  const moves = ['rock', 'paper', 'scissors'];
+  const beats: Record<string, string> = { rock: 'scissors', paper: 'rock', scissors: 'paper' };
+  const favourite = (memberId: string) => moves[Number(BigInt(memberId) % BigInt(3))];
+  const moveOf = (memberId: string) => (chance(0.5) ? favourite(memberId) : pick(moves));
+  const today = Math.floor(now / DAY) * DAY;
+
+  for (const guild of MOCK_GUILDS) {
+    const ids = guild.members.map((m) => m.id);
+    for (let day = today - DAYS * DAY; day <= today; day += DAY) {
+      for (let i = Math.floor(between(0, 4)); i > 0; i--) {
+        // The mock user plays often, so their profile has head-to-head data
+        const a = chance(0.4) ? MOCK_USER.id : pick(ids);
+        const b = pick(ids.filter((id) => id !== a));
+        if (!ids.includes(a)) continue;
+        const at = day + between(10, 23) * HOUR;
+        if (at > now) continue;
+        const [moveA, moveB] = [moveOf(a), moveOf(b)];
+        const result = (mine: string, theirs: string) =>
+          mine === theirs ? SCORING.TIE : beats[mine] === theirs ? SCORING.WIN : SCORING.LOSS;
+        const id = randomUUID();
+        results.push({ id, game_type_id: GAME_TYPES.ROCK_PAPER_SCISSORS, guild_id: guild.id, created_at: new Date(at), metadata: null });
+        players.push(
+          { id: randomUUID(), game_result_id: id, user_id: a, result: result(moveA, moveB), move: moveA },
+          { id: randomUUID(), game_result_id: id, user_id: b, result: result(moveB, moveA), move: moveB }
+        );
+      }
+    }
+  }
+  return { results, players };
+};
+
 async function main() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Refusing to seed mock data with NODE_ENV=production');
@@ -247,6 +333,9 @@ async function main() {
     const now = Date.now();
     const rows = generate(now);
     const messages = generateMessages(now);
+    const statuses = generateStatuses(now);
+    const games = generateGames(now);
+    const memberIds = [...new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))];
 
     const { count: removed } = await db.voice_stats.deleteMany({
       where: { guild_id: { in: guildIds } },
@@ -258,8 +347,22 @@ async function main() {
     for (let i = 0; i < messages.length; i += 5000) {
       await db.message_stats.createMany({ data: messages.slice(i, i + 5000) });
     }
+    await db.user_statuses.deleteMany({ where: { user_id: { in: memberIds } } });
+    for (let i = 0; i < statuses.length; i += 5000) {
+      await db.user_statuses.createMany({ data: statuses.slice(i, i + 5000) });
+    }
+    await db.game_type.upsert({
+      where: { id: GAME_TYPES.ROCK_PAPER_SCISSORS },
+      create: { id: GAME_TYPES.ROCK_PAPER_SCISSORS, name: 'Rock Paper Scissors' },
+      update: {},
+    });
+    await db.game_player.deleteMany({ where: { game_result: { guild_id: { in: guildIds } } } });
+    await db.game_result.deleteMany({ where: { guild_id: { in: guildIds } } });
+    // createMany can't take a null Json, so metadata is left out (it defaults to NULL)
+    await db.game_result.createMany({ data: games.results.map(({ metadata: _metadata, ...rest }) => rest) });
+    await db.game_player.createMany({ data: games.players });
     // Privacy demo: one hidden member, everyone else visible
-    for (const id of new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))) {
+    for (const id of memberIds) {
       await db.user_configs.upsert({
         where: { user_id: id },
         create: { user_id: id, privacy_hidden: id === hiddenMember },
@@ -270,7 +373,7 @@ async function main() {
     const open = rows.filter((r) => r.ended_on === null && r.type === VOICE_TYPE.VOICE);
     Logger.info(
       `Seeded ${rows.length} voice_stats rows for ${MOCK_GUILDS.map((g) => g.name).join(' + ')} ` +
-        `and ${messages.length} messages (${DAYS} days, ${open.length} people in voice now; replaced ${removed} old voice rows).`
+        `with ${messages.length} messages, ${statuses.length} statuses and ${games.results.length} games (${DAYS} days, ${open.length} people in voice now; replaced ${removed} old voice rows).`
     );
     Logger.info('Serve the bot with MOCK_DISCORD=true and log in on the dashboard as the mock user.');
   } finally {
