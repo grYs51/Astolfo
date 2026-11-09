@@ -20,12 +20,14 @@
           </span>
         }
       </div>
-      <div
-        echarts
-        [options]="chartOption()"
-        [initOpts]="{ renderer: 'canvas' }"
-        class="heatmap-chart"
-      ></div>
+      <feature-voice-stats-heatmap-chart
+        [cells]="cells()"
+        [xLabels]="hours"
+        [xLabelInterval]="1"
+        [legend]="['High', 'Low']"
+        [tooltip]="tooltip"
+        class="h-[420px]"
+      />
     </div>
   }
 </div>

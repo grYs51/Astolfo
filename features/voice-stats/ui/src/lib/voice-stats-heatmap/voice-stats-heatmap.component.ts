@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -10,24 +9,18 @@ import {
   VoiceStatsHeatmapDataPoint,
 } from '@nx-stolfo/data-access-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
-import * as echarts from 'echarts/core';
-import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
-import { CanvasRenderer } from 'echarts/renderers';
-import { GridComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
-import { HeatmapChart } from 'echarts/charts';
 import {
   HEATMAP_DAYS_OF_WEEK,
   HEATMAP_HOURS,
   buildHeatmapGrid,
   heatmapKey,
-  HEATMAP_SEQUENTIAL_COLORS,
+  weekdayRow,
 } from '../heatmap-grid';
-echarts.use([CanvasRenderer, TooltipComponent, VisualMapComponent, GridComponent, HeatmapChart]);
+import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component';
 
 @Component({
   selector: 'feature-voice-stats-heatmap',
-  imports: [CommonModule, NgxEchartsDirective],
-  providers: [provideEchartsCore({ echarts })],
+  imports: [HeatmapChartComponent],
   templateUrl: './voice-stats-heatmap.component.html',
   styleUrls: ['./voice-stats-heatmap.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -38,132 +31,36 @@ export class VoiceStatsHeatmapComponent {
   loading = input<boolean>(false);
 
   private readonly durationPipe = new HumanizeDurationPipe();
+  protected readonly hours = HEATMAP_HOURS;
 
-  private readonly daysOfWeek = HEATMAP_DAYS_OF_WEEK;
-  private readonly hours = HEATMAP_HOURS;
-
-  chartOption = computed(() => {
-    const data = this.heatmap();
-
-    // Keep the full point per cell so the tooltip doesn't have to
-    // re-scan the payload on every hover
-    const dataMap = new Map<string, VoiceStatsHeatmapDataPoint>();
-    data.heatmap.forEach((point) => {
-      dataMap.set(heatmapKey(point.hour, point.dayOfWeek), point);
-    });
-
-    // Transform data for ECharts: all 168 [hour, dayOfWeek, value] cells
-    const chartData = buildHeatmapGrid(
-      (hour, day) => dataMap.get(heatmapKey(hour, day))?.value ?? 0
-    );
-
-    // Find max value for color scale (at least 1)
-    const maxValue = Math.max(data.stats.maxValue || 1, 1);
-
-    return {
-      tooltip: {
-        position: 'top',
-        backgroundColor: '#1f2937', // bg-gray-800
-        borderColor: '#374151', // border-gray-700
-        borderWidth: 1,
-        textStyle: {
-          color: '#f3f4f6', // text-gray-100
-        },
-        formatter: (params: unknown) => {
-          const value = (params as { value: [number, number, number] }).value;
-          const hour = this.hours[value[0]]; // X-axis is hour
-          const day = this.daysOfWeek[value[1]]; // Y-axis is day
-          const minutes = value[2];
-
-          const dataPoint = dataMap.get(heatmapKey(value[0], value[1]));
-
-          let tooltip = `<strong>${day} at ${hour}</strong><br/>`;
-          tooltip += `Duration: ${this.durationPipe.transform(minutes * 60000, true)}<br/>`;
-          if (dataPoint) {
-            tooltip += `Sessions: ${dataPoint.sessionCount}<br/>`;
-            tooltip += `Users: ${dataPoint.uniqueUsers}`;
-          }
-          return tooltip;
-        },
-      },
-      grid: {
-        height: '72%',
-        top: '4%',
-        left: '48px',
-        right: '16px',
-      },
-      xAxis: {
-        type: 'category',
-        data: this.hours,
-        axisLabel: {
-          interval: 1,
-          fontSize: 10,
-          color: '#9ca3af',
-        },
-        axisTick: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: '#374151',
-          },
-        },
-      },
-      yAxis: {
-        type: 'category',
-        data: this.daysOfWeek,
-        axisLabel: {
-          color: '#9ca3af',
-        },
-        axisTick: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: '#374151',
-          },
-        },
-      },
-      visualMap: {
-        min: 0,
-        max: maxValue,
-        calculable: true,
-        orient: 'horizontal',
-        left: 'center',
-        bottom: '2%',
-        inRange: { color: HEATMAP_SEQUENTIAL_COLORS },
-        text: ['High', 'Low'],
-        textStyle: {
-          color: '#9ca3af',
-        },
-      },
-      series: [
-        {
-          name: 'Voice Activity',
-          type: 'heatmap',
-          data: chartData,
-          label: {
-            show: false,
-          },
-          itemStyle: {
-            // 2px gap in the card surface color between cells
-            borderColor: '#141824',
-            borderWidth: 2,
-            borderRadius: 2,
-          },
-          emphasis: {
-            itemStyle: {
-              borderColor: '#e5e7eb',
-              borderWidth: 1,
-            },
-          },
-        },
-      ],
-    };
+  // Keep the full point per cell so the tooltip doesn't have to
+  // re-scan the payload on every hover
+  private points = computed(() => {
+    const map = new Map<string, VoiceStatsHeatmapDataPoint>();
+    for (const point of this.heatmap().heatmap) {
+      map.set(heatmapKey(point.hour, weekdayRow(point.dayOfWeek)), point);
+    }
+    return map;
   });
 
-  // Peak time display
+  protected cells = computed(() => {
+    const points = this.points();
+    return buildHeatmapGrid((hour, day) => points.get(heatmapKey(hour, day))?.value ?? 0);
+  });
+
+  protected tooltip = (hour: number, day: number) => {
+    const point = this.points().get(heatmapKey(hour, day));
+    let tooltip = `<strong>${HEATMAP_DAYS_OF_WEEK[day]} at ${this.hours[hour]}</strong><br/>`;
+    tooltip += `Duration: ${this.durationPipe.transform((point?.value ?? 0) * 60000, true)}<br/>`;
+    if (point) {
+      tooltip += `Sessions: ${point.sessionCount}<br/>`;
+      tooltip += `Users: ${point.uniqueUsers}`;
+    }
+    return tooltip;
+  };
+
   peakTimeDisplay = computed(() => {
-    const data = this.heatmap();
-    const day = this.daysOfWeek[data.stats.peakDay];
-    const hour = this.hours[data.stats.peakHour];
-    return `${day} at ${hour}`;
+    const { peakDay, peakHour } = this.heatmap().stats;
+    return `${HEATMAP_DAYS_OF_WEEK[weekdayRow(peakDay)]} at ${this.hours[peakHour]}`;
   });
-
 }
