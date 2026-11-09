@@ -2,7 +2,8 @@ import { formatChange, formatDuration, formatNextMilestone, formatStreak, PERIOD
 import type { MemberSummary } from '../stats/queries';
 import type { StatsPeriod } from '../stats/windows';
 import { avatarSvg } from './avatars';
-import { escapeXml, FONT_FAMILY, truncate } from './render';
+import { escapeXml, truncate } from './render';
+import { header, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
 import { CardTheme } from './themes';
 
 export interface StatsCardData {
@@ -16,23 +17,7 @@ export interface StatsCardData {
   companions: { name: string; avatar?: string }[];
 }
 
-const W = 800;
-const PAD = 32;
-const TILE_W = (W - 2 * PAD - 16) / 2;
-const TILE_H = 104;
 const COMPANION_H = 52;
-
-const text = (x: number, y: number, size: number, fill: string, content: string, extra = '') =>
-  `<text x="${x}" y="${y}" font-family="${FONT_FAMILY}" font-size="${size}" fill="${fill}" ${extra}>${content}</text>`;
-
-const panel = (x: number, y: number, w: number, h: number, t: CardTheme) =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${t.surface}"/>`;
-
-const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme) =>
-  panel(x, y, TILE_W, TILE_H, t) +
-  text(x + 24, y + 32, 14, t.muted, escapeXml(label)) +
-  text(x + 24, y + 68, 30, t.text, escapeXml(value), 'font-weight="700"') +
-  (sub ? text(x + 24, y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, 38))) : '');
 
 /** The /stats summary as an SVG */
 export const statsCard = (d: StatsCardData, t: CardTheme) => {
@@ -85,15 +70,9 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
     }
   }
 
-  const H = y + 56;
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
-    `<rect width="${W}" height="${H}" rx="24" fill="${t.background}"/>`,
-    avatarSvg({ id: 'me', x: PAD, y: 32, size: 72, name: d.memberName, image: d.avatar, theme: t }),
-    text(124, 64, 28, t.text, escapeXml(truncate(d.memberName, 36)), 'font-weight="700"'),
-    text(124, 94, 16, t.muted, escapeXml(truncate(`${d.serverName} · over ${PERIOD_LABEL[d.period]}`, 60))),
+  return svgCard(y + 56, t, [
+    header({ name: d.memberName, avatar: d.avatar, title: d.memberName, subtitle: `${d.serverName} · over ${PERIOD_LABEL[d.period]}` }, t),
     ...parts,
     text(PAD, y + 34, 13, t.muted, 'Open sessions count live'),
-    `</svg>`,
-  ].join('');
+  ]);
 };

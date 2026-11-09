@@ -17,7 +17,7 @@ import {
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
 import { nextMilestone } from '../../../../stats/milestones';
-import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
+import { HABIT_SUMS, HabitRow, toHabits } from '../../../../stats/habits-sql';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };

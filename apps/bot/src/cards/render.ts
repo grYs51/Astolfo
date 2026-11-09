@@ -1,4 +1,5 @@
 import { renderAsync } from '@resvg/resvg-js';
+import { AttachmentBuilder } from 'discord.js';
 import { readdirSync } from 'fs';
 import path from 'path';
 
@@ -9,7 +10,7 @@ import path from 'path';
  */
 
 const FONT_DIR = path.join(__dirname, '../assets/fonts');
-// Read on first render, not at import: a packaging slip then breaks the image option, not the bot's startup
+// Read on first render, not at import: a packaging slip then breaks the card replies, not the bot's startup
 let fontFiles: string[] | undefined;
 const fonts = () =>
   (fontFiles ??= readdirSync(FONT_DIR)
@@ -26,6 +27,10 @@ export const renderPng = async (svg: string): Promise<Buffer> => {
   });
   return image.asPng();
 };
+
+/** A card as a Discord file, e.g. `cardFile(svg, 'stats.png')` */
+export const cardFile = async (svg: string, name: string) =>
+  new AttachmentBuilder(await renderPng(svg), { name });
 
 const XML_ENTITIES: Record<string, string> = {
   '&': '&amp;',

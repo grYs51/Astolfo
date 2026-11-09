@@ -49,12 +49,12 @@ You have everything needed: overlapping `voice_stats` intervals in the same chan
 This is the feature people screenshot and share. Nothing else in the app has this virality potential.
 
 ### 2.2 "Server Wrapped" — yearly/monthly recap 🟡
-> Groundwork (2026-11-08): the image-card renderer exists (`apps/bot/src/cards/`, used by `/leaderboard image:true` and `/stats image:true`), so the shareable card is a new template, not new infrastructure.
+> Groundwork (2026-11-08): the image-card renderer exists (`apps/bot/src/cards/`, used by every stats reply since 2026-11-09), so the shareable card is a new template, not new infrastructure.
 
 Spotify-Wrapped-style story page per user per server: total hours, longest session, favorite channel, top duo, peak month, percentile rank ("you were in the top 4% of voice users"). Historical data is already sitting in Postgres. Generate a shareable image/card for Discord posting. Seasonal, high-retention, and largely composed of queries you already have.
 
 ### 2.3 Streaks & milestones 🟢 — ✅ done (2026-11-08)
-> Shipped as voice-day streaks (a UTC day with 10+ minutes in voice; current streak holds until the end of the next day) and lifetime-hours milestones at 10/50/100/250/500/1000h. Shown in `/stats`, `/stats image:true` and the member profile on the dashboard (streak and progress to the next milestone); the weekly digest names the top 3 current streaks and members who passed a milestone that week. Queries in `apps/bot/src/stats/queries.ts`. Not done: "first time in months", announcing milestones the moment they happen, role rewards (§3.2).
+> Shipped as voice-day streaks (a UTC day with 10+ minutes in voice; current streak holds until the end of the next day) and lifetime-hours milestones at 10/50/100/250/500/1000h. Shown in the `/stats` card and the member profile on the dashboard (streak and progress to the next milestone); the weekly digest names the top 3 current streaks and members who passed a milestone that week. Queries in `apps/bot/src/stats/queries.ts`. Not done: "first time in months", announcing milestones the moment they happen, role rewards (§3.2).
 
 Consecutive-day voice streaks, lifetime-hours milestones (10h/100h/1000h), "first time in months" detection. Cheap SQL, big engagement. Pairs naturally with §3.1 announcements and §3.2 role rewards.
 
