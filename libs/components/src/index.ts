@@ -11,3 +11,4 @@ export * from './lib/shared/badge/badge.component';
 export * from './lib/shared/button/button.component';
 export * from './lib/shared/button-group/button-group.component';
 export * from './lib/shared/segmented-control/segmented-control.component';
+export * from './lib/shared/notice-banner/notice-banner.component';

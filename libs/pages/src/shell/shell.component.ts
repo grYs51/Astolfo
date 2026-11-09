@@ -15,6 +15,7 @@ import {
   BreadCrumbs,
   BreadCrumbsComponent,
   NavbarComponent,
+  NoticeBannerComponent,
   PageComponent,
 } from '@nx-stolfo/components';
 import { distinctUntilChanged, filter, map } from 'rxjs';
@@ -33,6 +34,7 @@ const routePattern = (snapshot: ActivatedRouteSnapshot | null): string => {
   imports: [
     PageComponent,
     NavbarComponent,
+    NoticeBannerComponent,
     BreadCrumbsComponent,
     DiscordImagePipe,
     AsyncPipe,
@@ -51,6 +53,8 @@ export class ShellComponent {
   readonly backendUrl = inject(COMMON_BACKEND_API_URL);
 
   private readonly route = inject(ActivatedRoute);
+
+  readonly notice = inject(botApi).fetchNotice();
 
   // TODO - Check out how to get the breadcrumbs from the route
   breadcrumbs$ = this.route.data.pipe(
