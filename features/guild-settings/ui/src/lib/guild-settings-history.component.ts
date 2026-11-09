@@ -54,7 +54,7 @@ const LABELS: Record<string, string> = {
                     <li class="break-words">
                       {{ label(change.field) }}:
                       <span class="text-gray-500">{{ show(change, change.from) }}</span>
-                      <span aria-label="changed to"> → </span>
+                      <span aria-hidden="true"> → </span><span class="sr-only"> changed to </span>
                       <span class="text-gray-200">{{ show(change, change.to) }}</span>
                     </li>
                   }
