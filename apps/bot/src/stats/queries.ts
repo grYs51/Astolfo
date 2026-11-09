@@ -156,18 +156,20 @@ export interface MemberSummary {
   voiceRank?: number;
   rankedMembers: number;
   favouriteChannelId?: string;
-  /** Who they shared a channel with most (members visible to them) */
+  /** Who they shared a channel with most (members visible to the viewer) */
   companions: { memberId: string; togetherMs: number }[];
   streak: { current: number; longest: number };
   /** All-time voice ms, for the next milestone */
   lifetimeMs: number;
 }
 
+/** `viewerId` is who looks at it (the member for /stats, anyone for the dashboard download) */
 export const getMemberSummary = async (
   db: QueryDb,
   guildId: string,
   memberId: string,
   period: StatsPeriod,
+  viewerId = memberId,
   now = new Date()
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
@@ -184,7 +186,7 @@ export const getMemberSummary = async (
           FROM voice_stats
           WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
             ${windowFilter('issued_on', current)}
-            ${visibleMembersOnly('member_id', memberId)}
+            ${visibleMembersOnly('member_id', viewerId)}
           GROUP BY member_id
         )
         SELECT
@@ -205,7 +207,7 @@ export const getMemberSummary = async (
          AND other.member_id <> me.member_id
          AND other.issued_on < COALESCE(me.ended_on, NOW())
          AND COALESCE(other.ended_on, NOW()) > me.issued_on
-         ${visibleMembersOnly('other.member_id', memberId)}
+         ${visibleMembersOnly('other.member_id', viewerId)}
         WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
           ${windowFilter('me.issued_on', current)}
         GROUP BY other.member_id

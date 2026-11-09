@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getDuo } from './queries';
+import { getDuo, getMemberSummary } from './queries';
 
 // No test database in this repo: the SQL was checked once against the dev database
 // (overlap in one channel, no overlap in another, an open session, MUTED rows ignored).
@@ -40,5 +40,31 @@ describe('getDuo', () => {
     const queryRaw = dbWith([[], [{ total: BigInt(0), sessions: BigInt(0) }], [{ total: BigInt(60_000), sessions: BigInt(1) }]]);
     const duo = await getDuo({ $queryRaw: queryRaw } as never, 'g', 'a', 'b', 'all', now);
     expect(duo).toEqual({ togetherMs: 0, aVoiceMs: 0, bVoiceMs: 60_000, topChannelId: undefined });
+  });
+});
+
+describe('getMemberSummary privacy', () => {
+  const queryRaw = jest.fn(async (..._args: unknown[]) => [{ total: 0n, sessions: 0n, count: 0n }]);
+  const db = { $queryRaw: queryRaw } as never;
+
+  /** For each query, the viewer its privacy filter lets through (`user_id <> viewer`) */
+  const viewersSeen = () =>
+    queryRaw.mock.calls.flatMap(([strings, ...values]) => {
+      const sql = Prisma.sql(strings as TemplateStringsArray, ...values);
+      return sql.strings.flatMap((s, i) => (/user_id <> $/.test(s) ? [sql.values[i]] : []));
+    });
+
+  beforeEach(() => queryRaw.mockClear());
+
+  // rank, companions and the streak each filter hidden members
+  test('/stats: every filter lets the member through (they always see themselves)', async () => {
+    await getMemberSummary(db, 'g', 'member', 'month');
+    expect(viewersSeen()).toEqual(['member', 'member', 'member']);
+  });
+
+  test('another viewer: rank and companions leave out members hidden from the viewer', async () => {
+    await getMemberSummary(db, 'g', 'member', 'month', 'viewer');
+    // the streak is the member's own, so it stays theirs
+    expect(viewersSeen().sort()).toEqual(['member', 'viewer', 'viewer']);
   });
 });
