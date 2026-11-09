@@ -7,6 +7,7 @@ import { discordDirectory } from '../../../utils/discord-directory';
 import { GAME_TYPES, SCORING } from '../../../../utils/handlers/games-handler';
 
 type TotalsRow = { games: bigint; players: bigint };
+type RecordRow = { wins: bigint; losses: bigint; ties: bigint };
 type LeaderRow = { user_id: string; games: bigint; wins: bigint; losses: bigint; ties: bigint };
 type MatchupRow = {
   a_id: string;
@@ -28,34 +29,38 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
     );
     const viewerId = req.user?.id ?? '';
     // created_at only exists on game_result, so the filter is unambiguous
-    const games = Prisma.sql`
+    const gamesOf = (type: GAME_TYPES) => Prisma.sql`
       gr.guild_id = ${serverId}
-      AND gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS}
+      AND gr.game_type_id = ${type}
       ${periodFilter(period, 'created_at')}
     `;
+    const games = gamesOf(GAME_TYPES.ROCK_PAPER_SCISSORS);
+    // Against the bot only the member has a row, so every row is a member's game
+    const astolfoGames = gamesOf(GAME_TYPES.ROCK_PAPER_SCISSORS_ASTOLFO);
+    const leaderboard = (where: Prisma.Sql) => req.db.$queryRaw<LeaderRow[]>`
+      SELECT gp.user_id,
+             COUNT(*)::bigint AS games,
+             COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::bigint AS wins,
+             COUNT(*) FILTER (WHERE gp.result = ${SCORING.LOSS})::bigint AS losses,
+             COUNT(*) FILTER (WHERE gp.result = ${SCORING.TIE})::bigint AS ties
+      FROM game_result gr
+      JOIN game_player gp ON gp.game_result_id = gr.id
+      WHERE ${where}
+        ${visibleMembersOnly('user_id', viewerId)}
+      GROUP BY gp.user_id
+      HAVING COUNT(*) >= 3
+      ORDER BY COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::float8 / COUNT(*) DESC, games DESC
+      LIMIT 10
+    `;
 
-    const [[totals], leaderRows, matchupRows] = await Promise.all([
+    const [[totals], leaderRows, matchupRows, [astolfoTotals], astolfoRows] = await Promise.all([
       req.db.$queryRaw<TotalsRow[]>`
         SELECT COUNT(DISTINCT gr.id)::bigint AS games, COUNT(DISTINCT gp.user_id)::bigint AS players
         FROM game_result gr
         JOIN game_player gp ON gp.game_result_id = gr.id
         WHERE ${games}
       `,
-      req.db.$queryRaw<LeaderRow[]>`
-        SELECT gp.user_id,
-               COUNT(*)::bigint AS games,
-               COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::bigint AS wins,
-               COUNT(*) FILTER (WHERE gp.result = ${SCORING.LOSS})::bigint AS losses,
-               COUNT(*) FILTER (WHERE gp.result = ${SCORING.TIE})::bigint AS ties
-        FROM game_result gr
-        JOIN game_player gp ON gp.game_result_id = gr.id
-        WHERE ${games}
-          ${visibleMembersOnly('user_id', viewerId)}
-        GROUP BY gp.user_id
-        HAVING COUNT(*) >= 3
-        ORDER BY COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::float8 / COUNT(*) DESC, games DESC
-        LIMIT 10
-      `,
+      leaderboard(games),
       req.db.$queryRaw<MatchupRow[]>`
         SELECT a.user_id AS a_id, b.user_id AS b_id,
                COUNT(*)::bigint AS games,
@@ -72,27 +77,40 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
         ORDER BY games DESC
         LIMIT 5
       `,
+      req.db.$queryRaw<(TotalsRow & RecordRow)[]>`
+        SELECT COUNT(*)::bigint AS games, COUNT(DISTINCT gp.user_id)::bigint AS players,
+               COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::bigint AS wins,
+               COUNT(*) FILTER (WHERE gp.result = ${SCORING.LOSS})::bigint AS losses,
+               COUNT(*) FILTER (WHERE gp.result = ${SCORING.TIE})::bigint AS ties
+        FROM game_result gr
+        JOIN game_player gp ON gp.game_result_id = gr.id
+        WHERE ${astolfoGames}
+      `,
+      leaderboard(astolfoGames),
     ]);
 
     const members = await discordDirectory().members(serverId, [
       ...new Set([
-        ...leaderRows.map((row) => row.user_id),
+        ...[...leaderRows, ...astolfoRows].map((row) => row.user_id),
         ...matchupRows.flatMap((row) => [row.a_id, row.b_id]),
       ]),
     ]);
 
-    res.send({
-      period,
-      games: Number(totals.games),
-      players: Number(totals.players),
-      leaderboard: leaderRows.map((row) => ({
+    const toEntries = (rows: LeaderRow[]) =>
+      rows.map((row) => ({
         member: memberOrUnknown(members, row.user_id),
         games: Number(row.games),
         wins: Number(row.wins),
         losses: Number(row.losses),
         ties: Number(row.ties),
         winRate: Number(row.wins) / Number(row.games),
-      })),
+      }));
+
+    res.send({
+      period,
+      games: Number(totals.games),
+      players: Number(totals.players),
+      leaderboard: toEntries(leaderRows),
       matchups: matchupRows.map((row) => ({
         a: memberOrUnknown(members, row.a_id),
         b: memberOrUnknown(members, row.b_id),
@@ -101,5 +119,13 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
         bWins: Number(row.b_wins),
         ties: Number(row.ties),
       })),
+      vsAstolfo: {
+        games: Number(astolfoTotals.games),
+        players: Number(astolfoTotals.players),
+        wins: Number(astolfoTotals.wins),
+        losses: Number(astolfoTotals.losses),
+        ties: Number(astolfoTotals.ties),
+        leaderboard: toEntries(astolfoRows),
+      },
     });
   });

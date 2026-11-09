@@ -35,6 +35,16 @@ export interface ServerGames {
   leaderboard: GameLeaderboardEntry[];
   /** Most-played pairs, top 5 */
   matchups: GameMatchup[];
+  vsAstolfo: AstolfoGames;
+}
+
+/** Games against the bot, which cheats, so they're kept out of the leaderboard and records above */
+export interface AstolfoGames extends GameRecord {
+  /** Games and players, hidden members included; wins, losses and ties are the members' */
+  games: number;
+  players: number;
+  /** Best win rate against Astolfo first, at least 3 games, top 10 */
+  leaderboard: GameLeaderboardEntry[];
 }
 
 /** One member's rock-paper-scissors record (GET …/:serverId/users/:userId/games) */
@@ -46,4 +56,6 @@ export interface UserGames extends GameRecord {
   nemesisMove: RpsMove | null;
   /** Their record against the viewer; null on your own profile */
   headToHead: (GameRecord & { games: number }) | null;
+  /** Their record against the bot (not counted above) */
+  vsAstolfo: GameRecord & { games: number };
 }

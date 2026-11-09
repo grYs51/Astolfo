@@ -1,4 +1,4 @@
-import RockPaperScissors from './rockpaperscissors';
+import RockPaperScissors, { astolfoMove } from './rockpaperscissors';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { cardFile } from '../../cards/render';
 
@@ -14,7 +14,7 @@ jest.mock('../../cards/render', () => ({ ...jest.requireActual('../../cards/rend
 const user = (id: string) => ({ id, bot: false, toString: () => `<@${id}>` });
 
 /** Starts a game of a vs b and returns a way to click its buttons */
-const startGame = async () => {
+const startGame = async (opponent = user('b')) => {
   const handlers: Record<string, (...args: never[]) => Promise<unknown>> = {};
   const collector = { on: (event: string, handler: never) => (handlers[event] = handler), stop: jest.fn() };
   const create = jest.fn(async () => ({}));
@@ -23,11 +23,11 @@ const startGame = async () => {
     guildId: 'g',
     guild: {},
     user: user('a'),
-    options: { get: () => ({ user: user('b') }) },
+    options: { get: () => ({ user: opponent }) },
     channel: { isSendable: () => true, createMessageComponentCollector: () => collector },
   };
   await (new RockPaperScissors() as unknown as { slash: (c: unknown, i: unknown) => Promise<void> }).slash(
-    { dataSource: { gameResults: { create } } },
+    { user: { id: 'astolfo' }, dataSource: { gameResults: { create } } },
     interaction
   );
   const click = (id: string, move: string, deferFails = false) =>
@@ -77,5 +77,46 @@ describe('/rockpaperscissors', () => {
       content: '<@a> chose rock, <@b> chose paper. <@b> wins!',
       components: [],
     });
+  });
+});
+
+describe('astolfoMove', () => {
+  test('always beats paper and scissors', () => {
+    expect(astolfoMove('paper', () => 0.99)).toBe('scissors');
+    expect(astolfoMove('scissors', () => 0.99)).toBe('rock');
+  });
+
+  test('wins against rock 10% of the time, otherwise plays at random', () => {
+    expect(astolfoMove('rock', () => 0.05)).toBe('paper');
+    const rolls = [0.5, 0.1];
+    expect(astolfoMove('rock', () => rolls.shift() ?? 0)).toBe('rock');
+    expect(astolfoMove('rock', () => 0.99)).toBe('scissors');
+  });
+});
+
+describe('/rockpaperscissors against the bot', () => {
+  test('plays on one click and saves it apart from the normal games', async () => {
+    const { click, create, collector } = await startGame({ ...user('astolfo'), bot: true });
+    await click('a', 'paper');
+
+    expect(collector.stop).toHaveBeenCalledWith('played');
+    expect(create).toHaveBeenCalledWith({
+      data: {
+        game_type: { connect: { id: 'rock-paper-scissors-astolfo' } },
+        guild_id: 'g',
+        metadata: { astolfoMove: 'scissors' },
+        players: { create: [{ user_id: 'a', result: 0, move: 'paper' }] },
+      },
+    });
+    expect(InterActionUtils.editReply).toHaveBeenCalledTimes(1);
+  });
+
+  test('still refuses other bots', async () => {
+    await startGame({ ...user('otherbot'), bot: true });
+    expect(InterActionUtils.send).toHaveBeenCalledWith(
+      expect.anything(),
+      { content: 'Please choose a valid user to challenge!' },
+      true
+    );
   });
 });
