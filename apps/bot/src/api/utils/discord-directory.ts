@@ -11,6 +11,7 @@ import {
   defaultAvatarUrl,
   findMockGuild,
   isMockDiscord,
+  MOCK_GUILDS,
 } from '../../dev/mock-discord';
 
 export type ChannelInfo = { id: string; name: string; type: string };
@@ -27,7 +28,17 @@ export type MemberInfo = {
  * dashboard can run against fixtures (MOCK_DISCORD) as well as the live
  * gateway cache.
  */
+export type GuildInfo = {
+  id: string;
+  name: string;
+  icon: string | null;
+  memberCount: number;
+  joinedAt: Date | null;
+};
+
 export interface DiscordDirectory {
+  /** Every server the bot is in */
+  guilds(): GuildInfo[];
   isMember(guildId: string, userId: string): Promise<boolean>;
   guild(guildId: string): { name: string; icon: string | null } | undefined;
   channel(guildId: string, channelId: string): ChannelInfo | undefined;
@@ -53,6 +64,16 @@ const notAMember = (error: unknown): null => {
 const fullyFetched = new Set<string>();
 
 const live: DiscordDirectory = {
+  guilds() {
+    return client.guilds.cache.map((guild) => ({
+      id: guild.id,
+      name: guild.name,
+      icon: guild.iconURL(),
+      memberCount: guild.memberCount,
+      joinedAt: guild.joinedAt,
+    }));
+  },
+
   async isMember(guildId, userId) {
     const guild = client.guilds.cache.get(guildId);
     if (!guild) return false;
@@ -125,6 +146,16 @@ const live: DiscordDirectory = {
 };
 
 const mock: DiscordDirectory = {
+  guilds() {
+    return MOCK_GUILDS.map((guild) => ({
+      id: guild.id,
+      name: guild.name,
+      icon: null,
+      memberCount: guild.members.length,
+      joinedAt: null,
+    }));
+  },
+
   async isMember(guildId, userId) {
     return !!findMockGuild(guildId)?.members.some((m) => m.id === userId);
   },
