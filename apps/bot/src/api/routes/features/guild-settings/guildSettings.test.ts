@@ -56,6 +56,10 @@ describe('parseSettings', () => {
     expect(parse({ prefix })).toEqual({ error: expect.stringContaining('prefix') });
   });
 
+  test('a message of only spaces is empty', () => {
+    expect(parse({ goodbyeMessage: '   ' })).toHaveProperty('data.goodbye_message', '');
+  });
+
   test('refuses a message over 200 characters', () => {
     expect(parse({ goodbyeMessage: 'x'.repeat(201) })).toHaveProperty('error');
     expect(parse({ welcomeMessage: 'x'.repeat(200) })).toHaveProperty('data');

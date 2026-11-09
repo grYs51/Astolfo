@@ -24,7 +24,7 @@ type SettingsBody = Omit<GuildSettings, 'channels' | 'toggles'> & {
 };
 
 /** guild_configs.welcome_message / goodbye_message are VarChar(200) */
-export const MAX_MESSAGE_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 200;
 const PREFIX = /^\S{1,5}$/;
 
 const isString = (v: unknown): v is string => typeof v === 'string';
@@ -81,8 +81,9 @@ export const parseSettings = (
     data: {
       prefix,
       welcome_channel_id: welcomeChannelId ?? null,
-      welcome_message: welcomeMessage,
-      goodbye_message: goodbyeMessage,
+      // Discord refuses a blank post, so only spaces counts as empty
+      welcome_message: welcomeMessage.trim(),
+      goodbye_message: goodbyeMessage.trim(),
       toggles: bits,
       digest_channel_id: digestChannelId ?? null,
     },
