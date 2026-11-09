@@ -8,20 +8,13 @@ import DiscordClient from '../../client/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { getMemberSummary } from '../../stats/queries';
-import { dashboardButton, dashboardUrlFor } from '../../stats/messages';
+import { dashboardButton, dashboardUrlFor, PERIOD_CHOICES } from '../../stats/messages';
 import { StatsPeriod } from '../../stats/windows';
 import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { statsCard } from '../../cards/stats.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
-
-const PERIODS: { name: string; value: StatsPeriod }[] = [
-  { name: 'Past week', value: 'week' },
-  { name: 'Past month', value: 'month' },
-  { name: 'Past year', value: 'year' },
-  { name: 'All time', value: 'all' },
-];
 
 /**
  * /stats [period] — your own voice and message summary on this server, with
@@ -41,7 +34,7 @@ export default class StatsSlash extends BaseSlash {
           .setName('period')
           .setDescription('Which period (default: past month)')
           .setRequired(false)
-          .setChoices(...PERIODS)
+          .setChoices(...PERIOD_CHOICES)
       )
       .setContexts(InteractionContextType.Guild);
   }

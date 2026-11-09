@@ -41,6 +41,7 @@ The schema has a `user_activities` table (activity + start/end) that appears com
 ## 2. Social & insight features — the dashboard's killer content
 
 ### 2.1 Voice social graph — "who hangs out with whom" 🟡
+> Duo stats done (2026-11-09) as `/duo member [period]`: a public card with the time you spent in the same channel as that member, each one's share of their voice time and the channel you meet in most (`getDuo` in `apps/bot/src/stats/queries.ts`). `/stats` already lists your top 3 companions. Not done: the friend graph and bridge members.
 You have everything needed: overlapping `voice_stats` intervals in the same channel = time spent together. Compute pairwise co-presence and render:
 - A **force-directed graph** of the server's friend clusters (ECharts `graph` type — the charting stack is already there).
 - Per-user "**duo stats**": most-shared-VC partner, total hours together.
