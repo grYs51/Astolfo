@@ -49,4 +49,14 @@
       </div>
     }
   }
+
+  @if (g.vsAstolfo.games > 0) {
+    <div class="mt-md border-t border-white/5 pt-md text-sm">
+      <p class="text-xs text-gray-500">Against Astolfo (not counted above)</p>
+      <p class="font-medium text-gray-100">
+        {{ g.vsAstolfo.wins }}W · {{ g.vsAstolfo.losses }}L · {{ g.vsAstolfo.ties }}T in {{ g.vsAstolfo.games }}
+        {{ g.vsAstolfo.games === 1 ? 'game' : 'games' }}
+      </p>
+    </div>
+  }
 </div>

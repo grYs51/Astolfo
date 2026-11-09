@@ -286,6 +286,17 @@ export class DetailOverviewComponent {
       : []
   );
 
+  /** Against the bot, which cheats: its own leaderboard */
+  astolfoRows = computed<LeaderboardRow[]>(() =>
+    this.gamesResource.hasValue()
+      ? (this.gamesResource.value()?.vsAstolfo.leaderboard ?? []).map((entry) => ({
+          member: entry.member,
+          value: `${Math.round(entry.winRate * 100)}% wins`,
+          subtitle: `${entry.wins}W · ${entry.losses}L · ${entry.ties}T in ${entry.games} games`,
+        }))
+      : []
+  );
+
   // ── Privacy ──────────────────────────────────────────────────────────────
   privacyResource = this.voiceStatsApi.fetchPrivacy();
   privacySaving = signal(false);

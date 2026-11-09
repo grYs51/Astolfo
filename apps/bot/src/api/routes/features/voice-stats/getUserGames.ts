@@ -16,6 +16,7 @@ type RecordRow = {
   h2h_losses: bigint;
   h2h_ties: bigint;
 };
+type AstolfoRow = { games: bigint; wins: bigint; losses: bigint; ties: bigint };
 
 /** One member's rock-paper-scissors record in a server, and how they do against the viewer. */
 export const getUserGames: RequestHandler<
@@ -35,7 +36,7 @@ export const getUserGames: RequestHandler<
   );
 
   // One row per game this member played, joined to the opponent's row
-  const [row] = await req.db.$queryRaw<RecordRow[]>`
+  const recordQuery = req.db.$queryRaw<RecordRow[]>`
     SELECT COUNT(*)::bigint AS games,
            COUNT(*) FILTER (WHERE me.result = ${SCORING.WIN})::bigint AS wins,
            COUNT(*) FILTER (WHERE me.result = ${SCORING.LOSS})::bigint AS losses,
@@ -54,6 +55,20 @@ export const getUserGames: RequestHandler<
       AND gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS}
       ${periodFilter(period, 'created_at')}
   `;
+  // Against the bot only the member has a row, so there's no opponent to join
+  const astolfoQuery = req.db.$queryRaw<AstolfoRow[]>`
+    SELECT COUNT(*)::bigint AS games,
+           COUNT(*) FILTER (WHERE me.result = ${SCORING.WIN})::bigint AS wins,
+           COUNT(*) FILTER (WHERE me.result = ${SCORING.LOSS})::bigint AS losses,
+           COUNT(*) FILTER (WHERE me.result = ${SCORING.TIE})::bigint AS ties
+    FROM game_player me
+    JOIN game_result gr ON gr.id = me.game_result_id
+    WHERE me.user_id = ${userId}
+      AND gr.guild_id = ${serverId}
+      AND gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS_ASTOLFO}
+      ${periodFilter(period, 'created_at')}
+  `;
+  const [[row], [astolfo]] = await Promise.all([recordQuery, astolfoQuery]);
 
   res.send({
     period,
@@ -72,5 +87,11 @@ export const getUserGames: RequestHandler<
             losses: Number(row.h2h_losses),
             ties: Number(row.h2h_ties),
           },
+    vsAstolfo: {
+      games: Number(astolfo.games),
+      wins: Number(astolfo.wins),
+      losses: Number(astolfo.losses),
+      ties: Number(astolfo.ties),
+    },
   });
 });

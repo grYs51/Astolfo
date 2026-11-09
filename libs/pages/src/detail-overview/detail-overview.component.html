@@ -275,6 +275,36 @@
           <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
         }
       </div>
+
+      <!-- Rock-paper-scissors against the bot (rigged, so kept out of the leaderboard above) -->
+      @if (gamesResource.hasValue()) {
+        @let astolfo = gamesResource.value()!.vsAstolfo;
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-md items-start">
+          <feature-voice-stats-leaderboard
+            title="Against Astolfo"
+            [rows]="astolfoRows()"
+            [highlightId]="currentUser()?.id"
+            [interactive]="true"
+            (userClick)="openMember($event)"
+            emptyText="Nobody has played Astolfo 3 times yet. Pick the bot as your /rockpaperscissors opponent"
+          />
+          <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
+            <h3 class="mb-sm text-base font-semibold text-gray-100">Astolfo's record</h3>
+            @if (astolfo.games === 0) {
+              <p class="py-md text-center text-sm text-gray-400">Nobody played Astolfo in this period</p>
+            } @else {
+              <p class="text-2xl font-semibold text-primary-300">
+                {{ astolfo.losses }}–{{ astolfo.wins }}
+                <span class="text-sm font-normal text-gray-400">
+                  in {{ astolfo.games }} {{ astolfo.games === 1 ? 'game' : 'games' }} against {{ astolfo.players }}
+                  {{ astolfo.players === 1 ? 'player' : 'players' }}@if (astolfo.ties > 0) {<span>, {{ astolfo.ties }} tied</span>}
+                </span>
+              </p>
+              <p class="mt-sm text-xs text-gray-500">Astolfo plays fair against rock only. These games don't count in the leaderboard above.</p>
+            }
+          </div>
+        </div>
+      }
     </section>
   }
 </div>

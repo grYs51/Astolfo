@@ -25,6 +25,22 @@ enum GameChoices {
   Scissors = 'scissors',
 }
 
+/** The move that beats each move */
+const COUNTER: Record<string, GameChoices> = {
+  [GameChoices.Rock]: GameChoices.Paper,
+  [GameChoices.Paper]: GameChoices.Scissors,
+  [GameChoices.Scissors]: GameChoices.Rock,
+};
+
+/**
+ * Astolfo's move against a member: it always counters paper and scissors.
+ * Rock gets a random move, except 10% of the time Astolfo wins anyway (it's Astolfo).
+ */
+export const astolfoMove = (userMove: string, random = Math.random): string =>
+  userMove !== GameChoices.Rock || random() < 0.1
+    ? COUNTER[userMove]
+    : Object.values(GameChoices)[Math.floor(random() * 3)];
+
 interface GameOutcome {
   winnerId?: string;
   loserId?: string;
@@ -46,7 +62,7 @@ export default class RockPaperScissors extends BaseSlash {
       .addUserOption((option) =>
         option
           .setName('opponent')
-          .setDescription('The user you want to challenge')
+          .setDescription('The user you want to challenge (or me, if you dare)')
           .setRequired(true)
       )
       .setContexts(InteractionContextType.Guild);
@@ -57,7 +73,8 @@ export default class RockPaperScissors extends BaseSlash {
     interaction: ChatInputCommandInteraction<CacheType>
   ): Promise<void> {
     const opponent = interaction.options.get('opponent')?.user;
-    if (!opponent || opponent.id === interaction.user.id || opponent.bot) {
+    const vsBot = opponent?.id === client.user?.id;
+    if (!opponent || opponent.id === interaction.user.id || (opponent.bot && !vsBot)) {
       await InterActionUtils.send(
         interaction,
         {
@@ -84,7 +101,9 @@ export default class RockPaperScissors extends BaseSlash {
     );
 
     await InterActionUtils.send(interaction, {
-      content: `${opponent}, you have been challenged to a game of Rock Paper Scissors! Choose your move:`,
+      content: vsBot
+        ? `${interaction.user}, you challenged me to Rock Paper Scissors! Choose your move:`
+        : `${opponent}, you have been challenged to a game of Rock Paper Scissors! Choose your move:`,
       components: [buttons],
     });
 
@@ -115,6 +134,7 @@ export default class RockPaperScissors extends BaseSlash {
       // Decided before any await, so a re-click while the card renders can't play the game twice
       if (outcome) return void ack();
       choices[i.user.id] = i.customId;
+      if (vsBot) choices[opponent.id] = astolfoMove(i.customId);
       if (!choices[interaction.user.id] || !choices[opponent.id]) return void ack();
       const played = (outcome = this.getGameOutcome(
         choices[interaction.user.id],
@@ -127,7 +147,7 @@ export default class RockPaperScissors extends BaseSlash {
       try {
         await ack();
         // Saved before the card renders (saveGameResult logs its own errors)
-        await this.saveGameResult(client, interaction, played);
+        await this.saveGameResult(client, interaction, played, vsBot ? opponent.id : undefined);
 
         // The mentions stay as text: an image can't ping
         const members = await cardMembers(interaction.guild, [interaction.user.id, opponent.id]);
@@ -204,7 +224,8 @@ export default class RockPaperScissors extends BaseSlash {
   private async saveGameResult(
     client: Client,
     interaction: ChatInputCommandInteraction,
-    outcome: GameOutcome
+    outcome: GameOutcome,
+    botId?: string
   ) {
     const players = outcome.isTie
       ? Object.entries(outcome.moves).map(([userId, move]) => ({
@@ -228,9 +249,13 @@ export default class RockPaperScissors extends BaseSlash {
     return client.dataSource.gameResults
       .create({
         data: {
-          game_type: { connect: { id: GAME_TYPES.ROCK_PAPER_SCISSORS } },
+          game_type: {
+            connect: { id: botId ? GAME_TYPES.ROCK_PAPER_SCISSORS_ASTOLFO : GAME_TYPES.ROCK_PAPER_SCISSORS },
+          },
           guild_id: interaction.guildId!,
-          players: { create: players },
+          // Against the bot only the member gets a row (so every row of that type is a member's); its move goes in metadata
+          ...(botId && { metadata: { astolfoMove: outcome.moves[botId] } }),
+          players: { create: players.filter((player) => player.user_id !== botId) },
         },
       })
       .catch((err) => {
