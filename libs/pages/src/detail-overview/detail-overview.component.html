@@ -5,7 +5,14 @@
       <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Activity</p>
       <h1 class="text-2xl font-bold tracking-tight text-gray-100">{{ serverName() }}</h1>
     </div>
-    <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
+    <div class="flex flex-wrap items-center gap-sm">
+      @if (settingsResource.hasValue()) {
+        <a [routerLink]="['/overview/detail', id(), 'settings']" class="btn btn-ghost btn-sm">
+          Server settings
+        </a>
+      }
+      <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
+    </div>
   </header>
 
   <!-- Tabs -->

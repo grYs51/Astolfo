@@ -7,7 +7,7 @@ import {
   input,
   signal,
 } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   VoiceStatsServerOverviewComponent,
   VoiceStatsLeaderboardComponent,
@@ -25,6 +25,7 @@ import {
   VoiceHabitMetric,
   VoiceStatsApi,
 } from '@nx-stolfo/data-access-voice-stats';
+import { GuildSettingsApi } from '@nx-stolfo/data-access-guild-settings';
 import { USER } from '@nx-stolfo/auth';
 import {
   SegmentedControlComponent,
@@ -55,10 +56,11 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     ActivityCalendarComponent,
     SegmentedControlComponent,
     MemberActivityComponent,
+    RouterLink,
   ],
   templateUrl: './detail-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  providers: [VoiceStatsApi],
+  providers: [VoiceStatsApi, GuildSettingsApi],
 })
 export class DetailOverviewComponent {
   /** Route param */
@@ -67,6 +69,7 @@ export class DetailOverviewComponent {
   tab = input<string | undefined>();
 
   private voiceStatsApi = inject(VoiceStatsApi);
+  private guildSettingsApi = inject(GuildSettingsApi);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private document = inject(DOCUMENT);
@@ -173,6 +176,9 @@ export class DetailOverviewComponent {
     () => this.id(),
     () => this.period()
   );
+
+  /** Only loads for members with Manage Server (403 otherwise), so it decides the settings link */
+  settingsResource = this.guildSettingsApi.fetchSettings(() => this.id());
 
   /** Server name from the overview response; falls back while loading or if the bot can't see the guild */
   serverName = computed(
