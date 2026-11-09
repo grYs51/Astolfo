@@ -4,6 +4,7 @@ import { ActivityCalendar } from '@nx-stolfo/api-interfaces';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { getTimeZone, isHiddenFrom, localIssuedOn, localTime } from '../helpers';
+import { NOW_UTC } from './presence-sql';
 
 type DayRow = { day: Date; minutes: number; messages: number };
 
@@ -28,16 +29,26 @@ export const getActivityCalendar = asyncHandler(
     const voiceMember = userId ? Prisma.sql`AND member_id = ${userId}` : Prisma.empty;
     const messageMember = userId ? Prisma.sql`AND user_id = ${userId}` : Prisma.empty;
 
+    // Each session is cut into the local days it covers (like voiceHeatmapCells),
+    // so a session past midnight counts on both days and one member's day caps at 24 h.
+    // shortcut: sessions that started before the first day don't count on it, and DST days
+    // are cut in wall-clock time (same as the heatmap); fine for a year-long calendar.
     // GROUP BY position: see localIssuedOn
     const rows = await req.db.$queryRaw<DayRow[]>`
       WITH voice AS (
-        SELECT DATE_TRUNC('day', ${localIssuedOn(tz)}) AS day,
-          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) / 60)::int AS minutes
-        FROM voice_stats
-        WHERE guild_id = ${serverId}
-          AND type = ${VOICE_TYPE.VOICE}
-          AND issued_on >= ${since}
-          ${voiceMember}
+        SELECT d AS day,
+          (SUM(EXTRACT(EPOCH FROM LEAST(e, d + INTERVAL '1 day') - GREATEST(s, d))) / 60)::int AS minutes
+        FROM (
+          SELECT ${localIssuedOn(tz)} AS s,
+                 ((COALESCE(ended_on, ${NOW_UTC}) AT TIME ZONE 'UTC') AT TIME ZONE ${tz}) AS e
+          FROM voice_stats
+          WHERE guild_id = ${serverId}
+            AND type = ${VOICE_TYPE.VOICE}
+            AND issued_on >= ${since}
+            ${voiceMember}
+        ) spans,
+        LATERAL generate_series(date_trunc('day', s), e, INTERVAL '1 day') AS d
+        WHERE d < e AND s < e
         GROUP BY 1
       ),
       msgs AS (
