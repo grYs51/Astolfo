@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
-import { GuildSettings } from '@nx-stolfo/api-interfaces';
+import { GuildSettings, GuildSettingsHistory } from '@nx-stolfo/api-interfaces';
 
 /** Server settings; the API answers 403 to members without Manage Server */
 export class GuildSettingsApi extends ApiBase {
@@ -10,6 +10,11 @@ export class GuildSettingsApi extends ApiBase {
 
   fetchSettings(guildId: () => string) {
     return this.get<GuildSettings>(() => `/features/servers/${guildId()}/settings`);
+  }
+
+  /** Who changed what on the settings page, newest first */
+  fetchHistory(guildId: () => string) {
+    return this.get<GuildSettingsHistory>(() => `/features/servers/${guildId()}/settings/history`);
   }
 
   /** Saves the whole form (one-off request, not a resource) */

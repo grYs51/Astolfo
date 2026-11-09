@@ -2,12 +2,15 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { GuildSettings, GuildSettingsApi } from '@nx-stolfo/data-access-guild-settings';
-import { GuildSettingsFormComponent } from '@nx-stolfo/ui-guild-settings';
+import {
+  GuildSettingsFormComponent,
+  GuildSettingsHistoryComponent,
+} from '@nx-stolfo/ui-guild-settings';
 
 /** Server settings (/overview/detail/:id/settings), for members with Manage Server. */
 @Component({
   selector: 'pages-guild-settings',
-  imports: [GuildSettingsFormComponent, RouterLink],
+  imports: [GuildSettingsFormComponent, GuildSettingsHistoryComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GuildSettingsApi],
   template: `
@@ -33,6 +36,12 @@ import { GuildSettingsFormComponent } from '@nx-stolfo/ui-guild-settings';
           [saved]="saved()"
           (save)="save($event)"
         />
+        @if (historyResource.hasValue()) {
+          <feature-guild-settings-history
+            [entries]="historyResource.value().entries"
+            [settings]="settingsResource.value()"
+          />
+        }
       } @else if (settingsResource.error()) {
         <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
           @if (forbidden()) {
@@ -54,6 +63,7 @@ export class GuildSettingsComponent {
   private api = inject(GuildSettingsApi);
 
   settingsResource = this.api.fetchSettings(() => this.id());
+  historyResource = this.api.fetchHistory(() => this.id());
   forbidden = computed(
     () => (this.settingsResource.error() as HttpErrorResponse | undefined)?.status === 403
   );
@@ -69,6 +79,7 @@ export class GuildSettingsComponent {
     this.api.saveSettings(this.id(), settings).subscribe({
       next: (result) => {
         this.settingsResource.set(result);
+        this.historyResource.reload();
         this.saving.set(false);
         this.saved.set(true);
       },
