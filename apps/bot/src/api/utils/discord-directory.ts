@@ -57,8 +57,8 @@ export interface DiscordDirectory {
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
   /** Ids of the guild's current human members */
   memberIds(guildId: string): Promise<string[]>;
-  /** Text and announcement channels the bot can post in */
-  postableChannels(guildId: string): Promise<ChannelInfo[]>;
+  /** Text and announcement channels the bot can post in and the viewer can see */
+  postableChannels(guildId: string, viewerId: string): Promise<ChannelInfo[]>;
 }
 
 // Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
@@ -164,15 +164,18 @@ const live: DiscordDirectory = {
     return [...guild.members.cache.filter((m) => !m.user.bot).keys()];
   },
 
-  async postableChannels(guildId) {
+  async postableChannels(guildId, viewerId) {
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) return [];
+    const viewer = await findMember(guildId, viewerId);
+    if (!guild || !viewer) return [];
     const me = guild.members.me ?? (await guild.members.fetchMe());
+    // Manage Server doesn't grant every channel; don't list private ones the viewer can't see
     return [...guild.channels.cache.values()]
       .filter(
         (c): c is TextChannel | NewsChannel =>
           (c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement) &&
-          c.permissionsFor(me).has(POST_PERMISSIONS)
+          c.permissionsFor(me).has(POST_PERMISSIONS) &&
+          c.permissionsFor(viewer).has(PermissionFlagsBits.ViewChannel)
       )
       .sort((a, b) => a.rawPosition - b.rawPosition)
       .map((c) => ({ id: c.id, name: c.name, type: ChannelType[c.type] }));

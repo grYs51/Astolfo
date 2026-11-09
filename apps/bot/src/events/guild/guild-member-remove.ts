@@ -1,4 +1,4 @@
-import { Events, GuildMember, PartialGuildMember, TextChannel } from 'discord.js';
+import { Events, GuildMember, PartialGuildMember } from 'discord.js';
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { goodbyePost } from '../../utils/functions/member-messages';
@@ -16,11 +16,11 @@ export default class GuildMemberRemoveEvent extends BaseEvent {
   async event(client: DiscordClient, member: GuildMember | PartialGuildMember) {
     const config = client.guildConfigs.get(member.guild.id);
     const post = config && goodbyePost(config.goodbye_message, member.displayName);
-    const channel =
-      config?.welcome_channel_id &&
-      (member.guild.channels.cache.get(config.welcome_channel_id) as TextChannel | undefined);
+    const channel = config?.welcome_channel_id
+      ? member.guild.channels.cache.get(config.welcome_channel_id)
+      : undefined;
 
-    if (!post || !channel) {
+    if (!post || !channel?.isSendable()) {
       return;
     }
 

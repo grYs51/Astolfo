@@ -101,13 +101,19 @@ const loadConfig = (guildId: string): Config =>
     digest_channel_id: null,
   };
 
-const toSettings = async (guildId: string, config: Config): Promise<GuildSettings> => {
-  const directory = discordDirectory();
-  const channels = (await directory.postableChannels(guildId)).map(({ id, name }) => ({ id, name }));
-  // A stored channel the bot can no longer post in still shows, so the form keeps it
+const toSettings = async (
+  guildId: string,
+  viewerId: string,
+  config: Config
+): Promise<GuildSettings> => {
+  const channels = (await discordDirectory().postableChannels(guildId, viewerId)).map(
+    ({ id, name }) => ({ id, name, postable: true })
+  );
+  // A stored channel that's no longer offered still shows, so the form can keep it.
+  // No name: the viewer may not be allowed to see it.
   for (const id of new Set([config.welcome_channel_id, config.digest_channel_id])) {
     if (id && !channels.some((c) => c.id === id)) {
-      channels.push({ id, name: directory.channel(guildId, id)?.name ?? 'deleted channel' });
+      channels.push({ id, name: 'current channel (unavailable)', postable: false });
     }
   }
   return {
@@ -129,7 +135,7 @@ const toSettings = async (guildId: string, config: Config): Promise<GuildSetting
 export const getGuildSettings: RequestHandler<{ serverId: string }, GuildSettings> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
-    res.send(await toSettings(serverId, loadConfig(serverId)));
+    res.send(await toSettings(serverId, req.user.id, loadConfig(serverId)));
   });
 
 /** PUT /features/servers/:serverId/settings — the whole settings object */
@@ -139,7 +145,9 @@ export const setGuildSettings: RequestHandler<
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
   const current = loadConfig(serverId);
-  const postable = (await discordDirectory().postableChannels(serverId)).map((c) => c.id);
+  const postable = (await discordDirectory().postableChannels(serverId, req.user.id)).map(
+    (c) => c.id
+  );
 
   const parsed = parseSettings(req.body, current, postable);
   if ('error' in parsed) {
@@ -152,5 +160,5 @@ export const setGuildSettings: RequestHandler<
     ...rest,
     ...digestChannelUpdate(current, digest_channel_id),
   });
-  res.send(await toSettings(serverId, saved));
+  res.send(await toSettings(serverId, req.user.id, saved));
 });

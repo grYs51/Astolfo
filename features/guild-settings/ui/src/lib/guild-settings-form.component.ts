@@ -61,7 +61,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
             (change)="set('welcomeChannelId', value($event) || null)"
           >
             <option value="" [selected]="!s.welcomeChannelId">None (no posts)</option>
-            @for (c of s.channels; track c.id) {
+            @for (c of welcomeOptions(); track c.id) {
               <option [value]="c.id" [selected]="c.id === s.welcomeChannelId">#{{ c.name }}</option>
             }
           </select>
@@ -143,7 +143,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
             (change)="set('digestChannelId', value($event) || null)"
           >
             <option value="" [selected]="!s.digestChannelId">Off</option>
-            @for (c of s.channels; track c.id) {
+            @for (c of digestOptions(); track c.id) {
               <option [value]="c.id" [selected]="c.id === s.digestChannelId">#{{ c.name }}</option>
             }
           </select>
@@ -180,6 +180,14 @@ export class GuildSettingsFormComponent {
   protected readonly value = value;
 
   protected draft = linkedSignal(() => this.settings());
+  // A stored channel that's no longer offered only shows in the picker that stores it
+  protected welcomeOptions = computed(() =>
+    this.settings().channels.filter((c) => c.postable || c.id === this.settings().welcomeChannelId)
+  );
+  protected digestOptions = computed(() =>
+    this.settings().channels.filter((c) => c.postable || c.id === this.settings().digestChannelId)
+  );
+
   /** Any edit replaces the draft object, so identity says whether it changed */
   protected dirty = computed(() => this.draft() !== this.settings());
 

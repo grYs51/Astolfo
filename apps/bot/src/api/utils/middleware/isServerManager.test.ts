@@ -12,23 +12,43 @@ jest.mock('../discord-directory', () => ({
 }));
 
 const mockHas = jest.fn();
-jest.mock('../../../client/instance', () => ({
-  client: {
-    guilds: {
-      cache: new Map([
-        [
-          'guild-1',
-          {
-            members: {
-              cache: new Map([['member', { permissions: { has: (p: bigint) => mockHas(p) } }]]),
-              fetch: jest.fn(),
+jest.mock('../../../client/instance', () => {
+  const bot = { id: 'bot' };
+  const viewer = { permissions: { has: (p: bigint) => mockHas(p) } };
+  // Who may do what in each channel: [type, bot can post, viewer can see]
+  const channel = (id: string, type: number, botCan: boolean, viewerCan: boolean, rawPosition: number) => ({
+    id,
+    name: id,
+    type,
+    rawPosition,
+    permissionsFor: (who: unknown) => ({ has: () => (who === bot ? botCan : viewerCan) }),
+  });
+  return {
+    client: {
+      guilds: {
+        cache: new Map([
+          [
+            'guild-1',
+            {
+              members: { me: bot, cache: new Map([['member', viewer]]), fetch: jest.fn() },
+              channels: {
+                cache: new Map(
+                  [
+                    channel('news', 5, true, true, 2),
+                    channel('general', 0, true, true, 1),
+                    channel('staff', 0, true, false, 3), // private to the viewer
+                    channel('rules', 0, false, true, 4), // bot can't post
+                    channel('lobby', 2, true, true, 5), // voice
+                  ].map((c) => [c.id, c])
+                ),
+              },
             },
-          },
-        ],
-      ]),
+          ],
+        ]),
+      },
     },
-  },
-}));
+  };
+});
 
 const check = async (params: Record<string, string>, userId?: string) => {
   const res = { status: jest.fn().mockReturnThis(), json: jest.fn() };
@@ -102,5 +122,18 @@ describe('live canManage', () => {
     mockHas.mockReturnValue(false);
     await expect(discordDirectory().canManage('guild-1', 'member')).resolves.toBe(false);
     await expect(discordDirectory().canManage('other-guild', 'member')).resolves.toBe(false);
+  });
+});
+
+describe('live postableChannels', () => {
+  const { discordDirectory } = jest.requireActual('../discord-directory');
+
+  test('text and announcement channels the bot can post in and the viewer can see, in order', async () => {
+    const channels = await discordDirectory().postableChannels('guild-1', 'member');
+    expect(channels.map((c: { id: string }) => c.id)).toEqual(['general', 'news']);
+  });
+
+  test('nothing for someone outside the server', async () => {
+    await expect(discordDirectory().postableChannels('other-guild', 'member')).resolves.toEqual([]);
   });
 });

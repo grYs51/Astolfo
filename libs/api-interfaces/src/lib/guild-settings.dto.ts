@@ -9,6 +9,8 @@ export interface GuildToggle {
 export interface SettingsChannel {
   id: string;
   name: string;
+  /** false for a stored channel that's no longer offered (only its own picker shows it) */
+  postable: boolean;
 }
 
 /**
@@ -25,6 +27,6 @@ export interface GuildSettings {
   toggles: GuildToggle[];
   /** Weekly digest channel; null = off */
   digestChannelId: string | null;
-  /** Channels the bot can post in (plus any stored channel it no longer can) */
+  /** Channels the bot can post in and the viewer can see, plus the stored ones */
   channels: SettingsChannel[];
 }
