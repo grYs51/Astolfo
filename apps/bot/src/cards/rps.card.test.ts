@@ -12,12 +12,14 @@ const data = (overrides: Partial<RpsCardData> = {}): RpsCardData => ({
 });
 
 describe('rpsCard', () => {
-  it('shows both moves and the winner', () => {
+  it('shows both moves, the winner and why', () => {
     const svg = rpsCard(data(), THEMES.dark);
     expect(svg).toContain('>Rock<');
     expect(svg).toContain('>Scissors<');
     expect(svg).toContain('>Astolfo wins!<');
-    expect(svg.match(/stroke=/g)).toHaveLength(1); // only the winner's panel is outlined
+    expect(svg).toContain('>Rock crushes Scissors<');
+    expect(svg.match(/stroke-width="3"/g)).toHaveLength(1); // only the winner's avatar is ringed
+    expect(svg.match(/opacity=/g)).toHaveLength(2); // the loser's badge and icon are faded
   });
 
   it('can be won by the opponent', () => {
@@ -26,9 +28,14 @@ describe('rpsCard', () => {
   });
 
   it('says so on a tie, with no winner outlined', () => {
-    const svg = rpsCard(data({ winner: undefined }), THEMES.light);
+    const svg = rpsCard(
+      data({ winner: undefined, players: [{ name: 'Astolfo', move: 'rock' }, { name: 'Roland', move: 'rock' }] }),
+      THEMES.light
+    );
     expect(svg).toContain('It’s a tie!');
-    expect(svg).not.toContain('stroke=');
+    expect(svg).toContain('>Both picked Rock<');
+    expect(svg).not.toContain('stroke-width="3"');
+    expect(svg).not.toContain('opacity=');
   });
 
   it('escapes names', () => {
