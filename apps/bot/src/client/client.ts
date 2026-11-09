@@ -22,7 +22,7 @@ export default class DiscordClient extends Client {
   // key: `${guildId}:${memberId}` — O(1) lookup by user+guild.
   // Pure cache of the open rows (ended_on = null) already persisted in the DB.
   public voiceUsers: Map<string, voice_stats[]> = new Map();
-  public dataSource: Db;
+  public dataSource!: Db; // set by setConfigs() at startup
 
   constructor(options: ClientOptions) {
     super(options);

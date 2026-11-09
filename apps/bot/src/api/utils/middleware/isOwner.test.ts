@@ -37,7 +37,7 @@ describe('isOwner', () => {
   test('every admin route checks login and owner', () => {
     const router = Router();
     registerAdmin(router);
-    const routes = router.stack.map((layer) => layer.route).filter(Boolean);
+    const routes = router.stack.flatMap((layer) => layer.route ?? []);
 
     expect(routes.length).toBe(5);
     for (const route of routes) {

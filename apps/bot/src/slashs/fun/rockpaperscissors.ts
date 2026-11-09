@@ -183,7 +183,7 @@ export default class RockPaperScissors extends BaseSlash {
       };
     }
 
-    const winningMoves = {
+    const winningMoves: Record<string, string> = {
       rock: 'scissors',
       paper: 'rock',
       scissors: 'paper',

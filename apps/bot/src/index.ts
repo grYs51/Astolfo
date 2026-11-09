@@ -6,7 +6,7 @@ import {
 } from './utils/registry';
 import { client } from './client/instance';
 import type { Server } from 'http';
-import { createPrismaClient } from './db';
+import { assertUtcTimeZone, createPrismaClient } from './db';
 import { Logger } from './utils/logger';
 import { validateEnv } from './utils/validate-env';
 import { setConfigs } from './utils/functions/set-config';
@@ -56,6 +56,7 @@ const main = () =>
   Promise.resolve()
     .then(() => validateEnv())
     .then(() => createPrismaClient())
+    .then((db) => assertUtcTimeZone(db))
     .then(() => setConfigs())
     .then(() => recoverDanglingVoiceSessions())
     .then(() => saveGamesToDb())
@@ -84,4 +85,4 @@ const main = () =>
       process.exit(1);
     });
 
-main();
+void main(); // main() catches and exits on its own

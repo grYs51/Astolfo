@@ -1,11 +1,10 @@
-import { voice_stats } from '@prisma/client';
 import {
   SimpleGuildMember,
   Leaderboard,
   getVoiceStatsType,
 } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
-import { getOpenVoiceStats } from './intervals';
+import { getOpenVoiceStats, isClosed, ClosedVoiceStat } from './intervals';
 
 export const getLonerVoiceStats: getVoiceStatsType = async (
   client,
@@ -25,7 +24,7 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
 
   const inChannel = getOpenVoiceStats(client, guildId, [VOICE_TYPE.VOICE], fromTime);
 
-  return [...dbVoiceStats, ...inChannel];
+  return [...dbVoiceStats.filter(isClosed), ...inChannel];
 };
 
 /**
@@ -36,7 +35,7 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
  */
 export const getLonerLeaderboard = (
   members: SimpleGuildMember[],
-  stats: voice_stats[]
+  stats: ClosedVoiceStat[]
 ): Leaderboard[] => {
   const eventsByChannel = new Map<string, { time: number; memberId: string; delta: 1 | -1 }[]>();
   for (const stat of stats) {
