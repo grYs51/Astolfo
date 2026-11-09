@@ -10,6 +10,16 @@
   "targets": {
     "lint": {
       "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "features/voice-stats/ui/jest.config.ts",
+        "tsConfig": "features/voice-stats/ui/tsconfig.spec.json"
+      }
     }
   }
 }

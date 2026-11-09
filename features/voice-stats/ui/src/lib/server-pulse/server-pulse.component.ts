@@ -3,10 +3,10 @@ import { DecimalPipe, PercentPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { PresenceRhythmMember, ServerPresence } from '@nx-stolfo/data-access-voice-stats';
 import {
-  HEATMAP_DAYS_OF_WEEK,
   HEATMAP_HOURS,
   buildHeatmapGrid,
   heatmapKey,
+  slotLabel,
   weekdayRow,
 } from '../heatmap-grid';
 import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component';
@@ -35,7 +35,7 @@ export class ServerPulseComponent {
 
   protected peak = computed(() => {
     const best = this.presence().cells.reduce((a, b) => (b.avgOnline > a.avgOnline ? b : a));
-    return { label: `${HEATMAP_DAYS_OF_WEEK[weekdayRow(best.dayOfWeek)]} at ${HEATMAP_HOURS[best.hour]}`, value: best.avgOnline };
+    return { label: slotLabel(best.hour, weekdayRow(best.dayOfWeek)), value: best.avgOnline };
   });
 
   protected groups = computed<{ title: string; hint: string; members: PresenceRhythmMember[] }[]>(() => [
@@ -51,5 +51,5 @@ export class ServerPulseComponent {
   });
 
   protected tooltip = (hour: number, day: number) =>
-    `<strong>${HEATMAP_DAYS_OF_WEEK[day]} at ${HEATMAP_HOURS[hour]}</strong><br/>${(this.averages().get(heatmapKey(hour, day)) ?? 0).toFixed(1)} members online on average`;
+    `<strong>${slotLabel(hour, day)}</strong><br/>${(this.averages().get(heatmapKey(hour, day)) ?? 0).toFixed(1)} members online on average`;
 }
