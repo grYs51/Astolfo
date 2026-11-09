@@ -63,7 +63,8 @@ export class AdminComponent {
   leave(server: AdminServer) {
     if (!confirm(`Leave ${server.name}? The bot stops tracking it and has to be invited again to come back.`)) return;
     this.run(this.api.leave(server.id), () => {
-      this.servers.reload();
+      // Not reload(): the bot drops the server from its cache only when Discord's GUILD_DELETE arrives
+      this.servers.update((v) => v && { ...v, servers: v.servers.filter((s) => s.id !== server.id) });
       return `Left ${server.name}`;
     });
   }
