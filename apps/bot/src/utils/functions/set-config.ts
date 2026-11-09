@@ -1,6 +1,7 @@
 import { client } from '../../client/instance';
 import DiscordClient from '../../client/client';
 import { guild_configs } from '@prisma/client';
+import { SettingChange } from '@nx-stolfo/api-interfaces';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 
@@ -39,18 +40,31 @@ export const recordGuildEvent = (
 
 /**
  * Upserts a guild's config and updates `client.guildConfigs`, so the bot sees
- * the change at once. New code writes guild_configs through this.
+ * the change at once. New code writes guild_configs through this. With
+ * `audit`, the changes are logged in the same transaction (settings page).
  */
 export const saveGuildConfig = async (
   discord: DiscordClient,
   guildId: string,
-  data: Partial<Omit<guild_configs, 'guild_id'>>
+  data: Partial<Omit<guild_configs, 'guild_id'>>,
+  audit?: { userId: string; changes: SettingChange[] }
 ) => {
-  const updated = await discord.dataSource.guildConfigurations.upsert({
+  const db = discord.dataSource;
+  const upsert = db.guildConfigurations.upsert({
     where: { guild_id: guildId },
     update: data,
     create: { guild_id: guildId, ...data },
   });
+  const updated = audit?.changes.length
+    ? (
+        await db.$transaction([
+          upsert,
+          db.settingsChanges.create({
+            data: { guild_id: guildId, user_id: audit.userId, changes: audit.changes },
+          }),
+        ])
+      )[0]
+    : await upsert;
   discord.guildConfigs.set(guildId, updated);
   return updated;
 };

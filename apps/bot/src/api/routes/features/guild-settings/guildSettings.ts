@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { guild_configs } from '@prisma/client';
-import { GuildSettings } from '@nx-stolfo/api-interfaces';
+import { GuildSettings, GuildSettingsHistory, SettingChange } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
 import { discordDirectory } from '../../../utils/discord-directory';
 import {
@@ -90,6 +90,29 @@ export const parseSettings = (
   };
 };
 
+const FIELDS = [
+  ['prefix', 'prefix'],
+  ['welcomeChannelId', 'welcome_channel_id'],
+  ['welcomeMessage', 'welcome_message'],
+  ['goodbyeMessage', 'goodbye_message'],
+  ['digestChannelId', 'digest_channel_id'],
+] as const;
+
+/** What a save changed, for the audit log; empty when nothing did */
+export const diffSettings = (before: Config, after: Config): SettingChange[] => [
+  ...FIELDS.filter(([, column]) => before[column] !== after[column]).map(([field, column]) => ({
+    field,
+    from: before[column],
+    to: after[column],
+  })),
+  ...toggleArray.flatMap(({ key }) => {
+    const flag = SETTING_FLAGS[key as Settings];
+    const from = isEnabled(before.toggles, flag);
+    const to = isEnabled(after.toggles, flag);
+    return from === to ? [] : [{ field: `toggle:${key}`, from, to }];
+  }),
+];
+
 /** The cached config, or what a guild without a row behaves like */
 const loadConfig = (guildId: string): Config =>
   client.guildConfigs.get(guildId) ?? {
@@ -156,9 +179,38 @@ export const setGuildSettings: RequestHandler<
   }
 
   const { digest_channel_id, ...rest } = parsed.data;
-  const saved = await saveGuildConfig(client, serverId, {
-    ...rest,
-    ...digestChannelUpdate(current, digest_channel_id),
-  });
+  const saved = await saveGuildConfig(
+    client,
+    serverId,
+    { ...rest, ...digestChannelUpdate(current, digest_channel_id) },
+    { userId: req.user.id, changes: diffSettings(current, parsed.data) }
+  );
   res.send(await toSettings(serverId, req.user.id, saved));
 });
+
+/** GET /features/servers/:serverId/settings/history — the newest 50 page saves */
+export const getGuildSettingsHistory: RequestHandler<{ serverId: string }, GuildSettingsHistory> =
+  asyncHandler(async (req, res) => {
+    const { serverId } = req.params;
+    const rows = await req.db.settingsChanges.findMany({
+      where: { guild_id: serverId },
+      orderBy: { at: 'desc' },
+      take: 50,
+    });
+    // Named even when hidden by the privacy setting: this logs admin actions, not activity
+    const members = await discordDirectory().members(serverId, [
+      ...new Set(rows.map((r) => r.user_id)),
+    ]);
+    res.send({
+      entries: rows.map((row) => ({
+        at: row.at,
+        member: members.get(row.user_id) ?? {
+          id: row.user_id,
+          username: 'Former member',
+          displayName: null,
+          avatar: null,
+        },
+        changes: row.changes as SettingChange[],
+      })),
+    });
+  });

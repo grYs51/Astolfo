@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { isServerManager } from '../../utils/middleware/isServerManager';
-import { getGuildSettings, setGuildSettings } from './guild-settings';
+import { getGuildSettings, getGuildSettingsHistory, setGuildSettings } from './guild-settings';
 import { getActiveServers } from './active-servers';
 import { getPrivacy, setPrivacy } from './privacy';
 import { trackPageView } from './track';
@@ -48,6 +48,13 @@ export default (router: Router) => {
     isServerMember,
     isServerManager,
     setGuildSettings,
+  );
+  router.get(
+    '/features/servers/:serverId/settings/history',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    getGuildSettingsHistory,
   );
 
   // Voice Stats endpoints — all require real guild membership

@@ -1,4 +1,4 @@
-import { parseSettings } from './guildSettings';
+import { diffSettings, parseSettings } from './guildSettings';
 
 jest.mock('../../../../client/instance', () => ({ client: {} }));
 
@@ -87,5 +87,20 @@ describe('parseSettings', () => {
 
   test('refuses a missing body', () => {
     expect(parseSettings(undefined, current, [])).toHaveProperty('error');
+  });
+});
+
+describe('diffSettings', () => {
+  test('lists each changed field and toggle, from and to', () => {
+    const after = { ...current, prefix: '?', welcome_channel_id: null, toggles: 0b1001 };
+    expect(diffSettings(current, after)).toEqual([
+      { field: 'prefix', from: 'astolfo!', to: '?' },
+      { field: 'welcomeChannelId', from: 'voice-1', to: null },
+      { field: 'toggle:VOICE_CHANNEL_REMINDER', from: false, to: true },
+    ]);
+  });
+
+  test('nothing changed, nothing to log', () => {
+    expect(diffSettings(current, { ...current })).toEqual([]);
   });
 });

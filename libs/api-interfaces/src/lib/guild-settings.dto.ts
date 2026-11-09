@@ -1,3 +1,5 @@
+import { DateLike, DiscordMember } from './voice-stats.dto';
+
 /** One feature toggle (a bit in guild_configs.toggles) */
 export interface GuildToggle {
   key: string;
@@ -29,4 +31,26 @@ export interface GuildSettings {
   digestChannelId: string | null;
   /** Channels the bot can post in and the viewer can see, plus the stored ones */
   channels: SettingsChannel[];
+}
+
+/**
+ * One changed setting: `field` is a GuildSettings key (`prefix`, `welcomeChannelId`, …) or
+ * `toggle:<key>`. A type, not an interface, so Prisma accepts it as JSON.
+ */
+export type SettingChange = {
+  field: string;
+  from: string | boolean | null;
+  to: string | boolean | null;
+};
+
+/** One save on the settings page */
+export interface SettingsHistoryEntry {
+  at: DateLike;
+  member: DiscordMember;
+  changes: SettingChange[];
+}
+
+/** GET /features/servers/:serverId/settings/history — newest first (Manage Server only) */
+export interface GuildSettingsHistory {
+  entries: SettingsHistoryEntry[];
 }
