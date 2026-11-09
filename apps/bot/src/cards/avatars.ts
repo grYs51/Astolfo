@@ -25,6 +25,10 @@ export const fetchImage = async (url: string | null | undefined): Promise<string
 /** Discord CDN options for card images: static PNG, small */
 export const CARD_IMAGE = { extension: 'png', forceStatic: true, size: 128 } as const;
 
+/** A Discord CDN URL from the Discord directory in the CARD_IMAGE form (resvg can't read WebP or GIF) */
+export const cardImageUrl = (url: string | null | undefined) =>
+  url?.replace(/\.(webp|gif)$/, `.${CARD_IMAGE.extension}?size=${CARD_IMAGE.size}`);
+
 /** A round image, or the first letter of the name on the accent colour */
 export const avatarSvg = (opts: {
   id: string;
