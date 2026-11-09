@@ -47,6 +47,7 @@ export const statsCardSvg = async (opts: {
         ? directory.channel(guildId, summary.favouriteChannelId)?.name
         : undefined,
       companions,
+      self: memberId === viewerId,
     },
     theme
   );

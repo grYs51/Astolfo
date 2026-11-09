@@ -14,6 +14,7 @@ describe('cardImageUrl', () => {
   it('asks the Discord CDN for a small static PNG', () => {
     expect(cardImageUrl('https://cdn.discordapp.com/avatars/1/abc.webp')).toBe('https://cdn.discordapp.com/avatars/1/abc.png?size=128');
     expect(cardImageUrl('https://cdn.discordapp.com/avatars/1/a_abc.gif')).toBe('https://cdn.discordapp.com/avatars/1/a_abc.png?size=128');
+    expect(cardImageUrl('https://cdn.discordapp.com/avatars/1/abc.webp?size=1024')).toBe('https://cdn.discordapp.com/avatars/1/abc.png?size=128');
     expect(cardImageUrl('https://cdn.discordapp.com/embed/avatars/3.png')).toBe('https://cdn.discordapp.com/embed/avatars/3.png');
     expect(cardImageUrl(null)).toBeUndefined();
   });

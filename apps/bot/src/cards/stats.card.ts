@@ -15,6 +15,8 @@ export interface StatsCardData {
   favouriteChannelName?: string;
   /** Same order as summary.companions */
   companions: { name: string; avatar?: string }[];
+  /** false when someone else looks at the card, so it doesn't say "you" */
+  self?: boolean;
 }
 
 const COMPANION_H = 52;
@@ -29,7 +31,7 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
   if (s.sessions === 0 && s.messages === 0) {
     parts.push(
       panel(PAD, y, W - 2 * PAD, 72, t),
-      text(W / 2, y + 36, 17, t.muted, escapeXml(`You haven’t been in voice or sent messages over ${PERIOD_LABEL[d.period]}.`), 'dy="0.35em" text-anchor="middle"')
+      text(W / 2, y + 36, 17, t.muted, escapeXml(d.self === false ? `No voice or messages over ${PERIOD_LABEL[d.period]}.` : `You haven’t been in voice or sent messages over ${PERIOD_LABEL[d.period]}.`), 'dy="0.35em" text-anchor="middle"')
     );
     y += 72;
   } else {
@@ -54,7 +56,7 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
     const companions = s.companions.slice(0, 3);
     if (companions.length) {
       y += 40;
-      parts.push(text(PAD, y, 14, t.muted, 'You hang out most with'));
+      parts.push(text(PAD, y, 14, t.muted, d.self === false ? 'Hangs out most with' : 'You hang out most with'));
       y += 16;
       parts.push(panel(PAD, y, W - 2 * PAD, companions.length * COMPANION_H + 8, t));
       companions.forEach((c, i) => {

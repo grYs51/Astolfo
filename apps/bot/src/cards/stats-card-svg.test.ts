@@ -27,7 +27,7 @@ test('draws the summary the viewer may see, with names from the Discord director
   const svg = await statsCardSvg({ db: {} as never, guildId: 'g', memberId: 'me', viewerId: 'viewer', period: 'all', theme: THEMES.dark });
 
   expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all', 'viewer');
-  for (const text of ['Astolfo', 'Paladins', '#Lobby', 'roland-user', 'Unknown member']) {
+  for (const text of ['Astolfo', 'Paladins', '#Lobby', 'roland-user', 'Unknown member', 'Hangs out most with']) {
     expect(svg).toContain(text);
   }
 });
