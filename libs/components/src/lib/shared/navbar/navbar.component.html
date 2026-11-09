@@ -7,7 +7,10 @@
       </a>
     </div>
 
-    <div class="flex-none h-[48px]">
+    <div class="flex-none flex items-center gap-sm h-[48px]">
+      @if (isOwner()) {
+        <a class="btn btn-ghost btn-sm" routerLink="/overview/admin">Admin</a>
+      }
       @if(name() ) {
         <div class="dropdown dropdown-end">
           <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">

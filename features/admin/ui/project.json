@@ -1,0 +1,15 @@
+{
+  "name": "ui-admin",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "features/admin/ui/src",
+  "prefix": "feature-admin",
+  "projectType": "library",
+  "tags": [
+    "type:ui"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

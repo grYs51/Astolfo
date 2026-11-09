@@ -12,3 +12,7 @@ export * from './login/login.component';
 // detail-overview
 export * from './detail-overview/detail-overview.routes';
 export * from './detail-overview/detail-overview.component';
+
+// admin (owner only)
+export * from './admin/admin.routes';
+export * from './admin/admin.component';

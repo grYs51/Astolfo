@@ -28,3 +28,7 @@ export const LoggedOut: Story = {
     loginUrl: '#',
   },
 };
+
+export const Owner: Story = {
+  args: { ...LoggedIn.args, isOwner: true },
+};

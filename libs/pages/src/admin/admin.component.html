@@ -1,0 +1,51 @@
+<div class="mx-auto max-w-7xl space-y-lg px-md py-lg lg:px-lg">
+  <header>
+    <h1 class="text-2xl font-bold tracking-tight text-gray-100 md:text-3xl">Admin</h1>
+    <p class="mt-xs text-sm text-gray-500">How Astolfo is doing. Counts and server names only, only you can see this page.</p>
+  </header>
+
+  <feature-admin-section id="health" title="Health" hint="Refreshes every 30 seconds"
+    [loading]="health.isLoading()" [error]="!!health.error()" (refresh)="health.reload()">
+    @if (health.value(); as value) {
+      <feature-admin-health [health]="value" />
+    } @else {
+      <lib-skeleton-loader type="stat-grid" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="servers" title="Servers" hint="Every server the bot is in. Faded: no voice or messages in 30 days"
+    [loading]="servers.isLoading()" [error]="!!servers.error()" (refresh)="servers.reload()">
+    @if (servers.value(); as value) {
+      <feature-admin-servers [servers]="value" />
+    } @else {
+      <lib-skeleton-loader type="list" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="usage" title="Usage" hint="Commands and API requests"
+    [loading]="usage.isLoading()" [error]="!!usage.error()" (refresh)="usage.reload()">
+    @if (usage.value(); as value) {
+      <feature-admin-usage [usage]="value" />
+    } @else {
+      <lib-skeleton-loader type="card" height="h-64" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="people" title="People" hint="Members across all servers, last 90 days"
+    [loading]="people.isLoading()" [error]="!!people.error()" (refresh)="people.reload()">
+    @if (people.value(); as value) {
+      <feature-admin-people [people]="value" />
+    } @else {
+      <lib-skeleton-loader type="card" height="h-64" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="web" title="Website" hint="Dashboard page views, last 90 days. A visitor is a logged-in user per day"
+    [loading]="web.isLoading()" [error]="!!web.error()" (refresh)="web.reload()">
+    @if (web.value(); as value) {
+      <feature-admin-web [web]="value" />
+    } @else {
+      <lib-skeleton-loader type="card" height="h-64" />
+    }
+  </feature-admin-section>
+</div>
