@@ -14,6 +14,10 @@ import { InterActionUtils } from '../../utils/interaction-utils';
 import Client from '../../client/client';
 import { Logger } from '../../utils/logger';
 import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
+import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
+import { cardFile } from '../../cards/render';
+import { rpsCard } from '../../cards/rps.card';
+import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 enum GameChoices {
   Rock = 'rock',
@@ -22,7 +26,6 @@ enum GameChoices {
 }
 
 interface GameOutcome {
-  result: string;
   winnerId?: string;
   loserId?: string;
   moves: {
@@ -117,14 +120,27 @@ export default class RockPaperScissors extends BaseSlash {
             opponent
           );
 
-          // Show results
+          // Save first, so a card that fails to render doesn't lose the game
+          await this.saveGameResult(client, interaction, outcome);
+
+          // Show results; the mentions stay as text (an image can't ping)
+          const playerFor = async (user: User, move: string) => ({
+            name: interaction.guild?.members.cache.get(user.id)?.displayName ?? user.displayName,
+            avatar: await fetchImage(user.displayAvatarURL(CARD_IMAGE)),
+            move,
+          });
+          const svg = rpsCard(
+            {
+              players: await Promise.all([playerFor(interaction.user, userChoice), playerFor(opponent, opponentChoice)]),
+              winner: outcome.isTie ? undefined : outcome.winnerId === interaction.user.id ? 0 : 1,
+            },
+            THEMES[DEFAULT_THEME]
+          );
           await InterActionUtils.editReply(interaction, {
-            content: `${interaction.user} chose ${userChoice}, ${opponent} chose ${opponentChoice}. ${outcome.result}`,
+            content: `${interaction.user} vs ${opponent}`,
+            files: [await cardFile(svg, 'rockpaperscissors.png')],
             components: [],
           });
-
-          // Save game results
-          await this.saveGameResult(client, interaction, outcome);
 
           collector.stop();
         }
@@ -157,7 +173,6 @@ export default class RockPaperScissors extends BaseSlash {
 
     if (userChoice === opponentChoice) {
       return {
-        result: "It's a tie!",
         isTie: true,
         moves,
       };
@@ -174,7 +189,6 @@ export default class RockPaperScissors extends BaseSlash {
     const loser = userWins ? opponent : user;
 
     return {
-      result: `${winner} wins!`,
       winnerId: winner.id,
       loserId: loser.id,
       moves,
