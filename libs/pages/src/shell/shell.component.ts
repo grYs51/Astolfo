@@ -17,7 +17,7 @@ import {
   NavbarComponent,
   PageComponent,
 } from '@nx-stolfo/components';
-import { filter, map } from 'rxjs';
+import { distinctUntilChanged, filter, map } from 'rxjs';
 
 /** `overview/detail/:id`: the matched route config paths, so ids never reach the page_views table */
 const routePattern = (snapshot: ActivatedRouteSnapshot | null): string => {
@@ -64,7 +64,9 @@ export class ShellComponent {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
     this.router.events
       .pipe(
-        filter((event) => event instanceof NavigationEnd),
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        // A ?tab= change on the same page isn't another view
+        distinctUntilChanged((a, b) => a.urlAfterRedirects.split('?')[0] === b.urlAfterRedirects.split('?')[0]),
         filter(() => isLoggedIn()),
         map(() => routePattern(this.router.routerState.snapshot.root)),
         filter(Boolean),

@@ -10,10 +10,17 @@ type BotMetric = {
   values: { value: number; labels: Record<string, string | number | undefined> }[];
 };
 
+// The counters the admin page charts per day; the rest only need their running total
+export const DAILY_COUNTERS = [
+  'discord_bot_commands_total',
+  'discord_bot_slash_total',
+  'discord_bot_command_errors_total',
+];
+
 /** One row per counter label set; several labels are joined in key order with `|`. */
 export const dailyRows = (metrics: BotMetric[]) =>
   metrics
-    .filter((metric) => metric.type === 'counter')
+    .filter((metric) => metric.type === 'counter' && DAILY_COUNTERS.includes(metric.name))
     .flatMap((metric) =>
       metric.values.map(({ labels, value }) => ({
         name: metric.name,

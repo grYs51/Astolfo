@@ -37,7 +37,8 @@ export const apiRequestDuration = new Histogram({
   name: 'api_request_duration_seconds',
   help: 'API request duration by route pattern',
   labelNames: ['method', 'route'],
-  buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+  // Up to 60 s, so a slow route's p95 still lands in a bucket (beyond is a timeout)
+  buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10, 30, 60],
 });
 
 const commandsCount = (commandName: string) => {

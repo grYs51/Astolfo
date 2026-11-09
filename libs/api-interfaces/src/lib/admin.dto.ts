@@ -80,7 +80,8 @@ export interface AdminPeople {
   /** Active 30–60 days ago, not in the last 30 */
   churned: number;
   signIns: { last7d: number; last30d: number; total: number; beforeTracking: number };
-  liveWebSessions: number;
+  /** Distinct logged-in users with an unexpired dashboard session */
+  liveWebUsers: number;
   hiddenMembers: number;
 }
 

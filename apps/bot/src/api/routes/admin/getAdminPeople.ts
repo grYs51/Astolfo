@@ -22,7 +22,7 @@ const ACTIVITY = Prisma.sql`
 
 export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler(
   async (req, res) => {
-    const [daily, [counts], firstSeenPerWeek, [signIns], liveWebSessions, hiddenMembers] =
+    const [daily, [counts], firstSeenPerWeek, [signIns], [live], hiddenMembers] =
       await Promise.all([
         req.db.$queryRaw<AdminPeople['daily']>`
           WITH ${ACTIVITY}
@@ -65,7 +65,10 @@ export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler
             COUNT(*)::int AS total,
             COUNT(*) FILTER (WHERE last_login_at IS NULL)::int AS before_tracking
           FROM user_session`,
-        req.db.session.count({ where: { expiresAt: { gt: new Date() } } }),
+        // Distinct logged-in users: one person can have several sessions, an unfinished login has none
+        req.db.$queryRaw<[{ users: number }]>`
+          SELECT COUNT(DISTINCT data::jsonb #>> '{passport,user}')::int AS users
+          FROM session WHERE "expiresAt" > NOW()`,
         // Anonymous total: counting hidden members doesn't name them
         req.db.userConfigs.count({ where: { privacy_hidden: true } }),
       ]);
@@ -80,7 +83,7 @@ export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler
         total: signIns.total,
         beforeTracking: signIns.before_tracking,
       },
-      liveWebSessions,
+      liveWebUsers: live.users,
       hiddenMembers,
     });
   }

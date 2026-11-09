@@ -13,6 +13,11 @@ const metrics = [
     ],
   },
   {
+    name: 'discord_bot_command_errors_total',
+    type: 'counter',
+    values: [{ labels: { name: 'stats', kind: 'slash' }, value: 2 }],
+  },
+  {
     name: 'discord_api_requests_total',
     type: 'counter',
     values: [{ labels: { status: 200, route: '/api/admin/health', method: 'GET' }, value: 7 }],
@@ -21,11 +26,11 @@ const metrics = [
 ];
 
 describe('daily metrics', () => {
-  test('one row per counter label set, labels joined in key order', () => {
+  test('one row per command counter label set, labels joined in key order, other metrics left out', () => {
     expect(dailyRows(metrics)).toEqual([
       { name: 'discord_bot_commands_total', label: 'ping', value: 3 },
       { name: 'discord_bot_commands_total', label: 'help', value: 1 },
-      { name: 'discord_api_requests_total', label: 'GET|/api/admin/health|200', value: 7 },
+      { name: 'discord_bot_command_errors_total', label: 'slash|stats', value: 2 },
     ]);
   });
 
@@ -34,9 +39,9 @@ describe('daily metrics', () => {
     expect(executeRaw).toHaveBeenCalledTimes(1);
     const [sql, names, labels, values] = executeRaw.mock.calls[0];
     expect(sql.join('?')).toMatch(/ON CONFLICT \(day, name, label\) DO UPDATE SET value = EXCLUDED.value/);
-    expect(names).toEqual(['discord_bot_commands_total', 'discord_bot_commands_total', 'discord_api_requests_total']);
-    expect(labels).toEqual(['ping', 'help', 'GET|/api/admin/health|200']);
-    expect(values).toEqual([3, 1, 7]);
+    expect(names).toEqual(['discord_bot_commands_total', 'discord_bot_commands_total', 'discord_bot_command_errors_total']);
+    expect(labels).toEqual(['ping', 'help', 'slash|stats']);
+    expect(values).toEqual([3, 1, 2]);
   });
 
   test('nothing to save, no query', async () => {
