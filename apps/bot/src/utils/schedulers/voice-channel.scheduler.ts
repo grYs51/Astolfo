@@ -31,21 +31,30 @@ export const schedule5hrVoiceChannelJob = (
     if (channel?.isSendable()) {
       const straightOrGay = Math.random() > 0.9 ? 'straight' : 'gay';
       const send = async () => {
-        const svg = reminderCard(
-          {
-            memberName: member.displayName,
-            avatar: await fetchImage(member.displayAvatarURL(CARD_IMAGE)),
-            channelName: 'name' in channel && channel.name ? channel.name : 'voice',
-            hours: REMINDER_HOURS,
-            word: straightOrGay,
-          },
-          THEMES[DEFAULT_THEME]
-        );
+        let files;
+        try {
+          const svg = reminderCard(
+            {
+              memberName: member.displayName,
+              avatar: await fetchImage(member.displayAvatarURL(CARD_IMAGE)),
+              channelName: 'name' in channel && channel.name ? channel.name : 'voice',
+              hours: REMINDER_HOURS,
+              word: straightOrGay,
+            },
+            THEMES[DEFAULT_THEME]
+          );
+          files = [await cardFile(svg, 'reminder.png')];
+        } catch (error) {
+          // A one-shot timer: if the card can't render, still ping with the old text line
+          Logger.error(`Failed to render the 5h voice reminder card for ${member.id}`, error);
+          await channel.send(`${member} has been in the voice channel for ${REMINDER_HOURS} hours ${straightOrGay}!`);
+          return;
+        }
         // member.toString() is a mention: the text pings, the image can't
-        await channel.send({ content: `${member}`, files: [await cardFile(svg, 'reminder.png')] });
+        await channel.send({ content: `${member}`, files });
       };
       // Runs from a node-schedule timer: nothing else would observe a
-      // rejection (e.g. missing send permission, a failed render)
+      // rejection (e.g. missing send permission)
       send().catch((error) =>
         Logger.error(`Failed to send 5h voice reminder in ${channel_id}`, error)
       );
