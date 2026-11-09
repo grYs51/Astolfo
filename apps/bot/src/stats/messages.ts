@@ -12,6 +12,14 @@ export const PERIOD_LABEL: Record<StatsPeriod, string> = {
   all: 'all time',
 };
 
+/** The period option of /stats and /duo */
+export const PERIOD_CHOICES: { name: string; value: StatsPeriod }[] = [
+  { name: 'Past week', value: 'week' },
+  { name: 'Past month', value: 'month' },
+  { name: 'Past year', value: 'year' },
+  { name: 'All time', value: 'all' },
+];
+
 export const PREVIOUS_LABEL: Record<Exclude<StatsPeriod, 'all'>, string> = {
   week: 'the week before',
   month: 'the month before',
