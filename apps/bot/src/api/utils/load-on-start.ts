@@ -21,8 +21,13 @@ function restoreCounters(metrics: StoredMetric[]): void {
   for (const metric of metrics) {
     const counter = register.getSingleMetric(metric.name);
     if (metric.type !== 'counter' || !(counter instanceof Counter)) continue;
-    for (const { value, labels } of metric.values) {
-      counter.inc(labels, value);
+    try {
+      for (const { value, labels } of metric.values) {
+        counter.inc(labels, value);
+      }
+    } catch (error) {
+      // A renamed label would throw here; losing one counter beats a boot loop
+      Logger.warn(`Skipping stored metric ${metric.name}`, error);
     }
   }
 }

@@ -52,7 +52,7 @@ describe('admin servers', () => {
   test('VOICE rows only, open sessions count live time', async () => {
     const { sql } = await run(getAdminServers, [[], []]);
     expect(sql[0]).toMatch(/type = 'VOICE'/);
-    expect(sql[0]).toMatch(/COALESCE\(ended_on, NOW\(\)\)/);
+    expect(sql[0]).toMatch(/COALESCE\(ended_on, \(NOW\(\) AT TIME ZONE 'UTC'\)\)/);
   });
 
   test('servers with no activity get zeros, not a crash', async () => {

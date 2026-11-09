@@ -1,4 +1,5 @@
 import { client } from '../../client/instance';
+import DiscordClient from '../../client/client';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 
@@ -23,6 +24,17 @@ export const setConfigs = async () => {
 
   client.dataSource = prismaClient;
 };
+
+/** Logs a join or leave for the admin page; a failure never blocks the caller */
+export const recordGuildEvent = (
+  discord: DiscordClient,
+  guildId: string,
+  type: 'join' | 'leave',
+  at = new Date()
+) =>
+  discord.dataSource.guildEvents
+    .create({ data: { guild_id: guildId, type, at } })
+    .catch((error) => Logger.error(`Failed to record guild ${type} for ${guildId}`, error));
 
 export const checkForNewGuilds = async () => {
   const prismaClient = getDb();
@@ -51,5 +63,7 @@ export const checkForNewGuilds = async () => {
         goodbye_message: '',
       },
     });
+    // Joined while the bot was offline (GuildCreate only fires once ready)
+    await recordGuildEvent(client, guild.id, 'join', guild.joinedAt ?? new Date());
   }
 };

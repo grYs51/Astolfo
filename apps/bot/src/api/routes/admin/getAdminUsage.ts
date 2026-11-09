@@ -70,13 +70,13 @@ const routeStats = async (): Promise<AdminRouteStats[]> => {
 export const getAdminUsage: RequestHandler<unknown, AdminUsage> = asyncHandler(
   async (req, res) => {
     // A day's usage is its running total minus the previous snapshot's. A label's first row
-    // counts in full only after the first tracked day (before that it holds the lifetime total).
+    // counts in full unless it's on the first tracked day (then it holds the lifetime total).
     const usage = Prisma.sql`
       WITH diffs AS (
         SELECT day, name, label,
           GREATEST(COALESCE(
             value - LAG(value) OVER (PARTITION BY name, label ORDER BY day),
-            CASE WHEN day > MIN(day) OVER (PARTITION BY name) THEN value ELSE 0 END
+            CASE WHEN day > (SELECT MIN(day) FROM metric_daily) THEN value ELSE 0 END
           ), 0) AS used
         FROM metric_daily
         WHERE name IN (${PREFIX}, ${SLASH}, ${ERRORS})

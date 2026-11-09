@@ -18,6 +18,7 @@ describe('trackPageView', () => {
     expect(status).toBe(204);
     const [sql, path, userId] = executeRaw.mock.calls[0];
     expect(sql.join('?')).toMatch(/DO UPDATE SET views = page_views.views \+ 1/);
+    expect(sql.join('?')).toMatch(/COUNT\(\*\) FROM page_views/); // per-user daily cap
     expect([path, userId]).toEqual(['overview/detail/:id/members/:memberId', 'u1']);
   });
 

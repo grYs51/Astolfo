@@ -4,6 +4,7 @@ import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
 import { closeGuildVoiceSessions } from '../../utils/handlers/vc';
+import { recordGuildEvent } from '../../utils/functions/set-config';
 
 /**
  * The bot was removed from a guild (an outage emits GuildUnavailable
@@ -18,9 +19,7 @@ export default class GuildDeleteEvent extends BaseEvent {
   async event(client: DiscordClient, guild: Guild) {
     const [closed] = await Promise.all([
       closeGuildVoiceSessions(guild.id, new Date()),
-      client.dataSource.guildEvents.create({
-        data: { guild_id: guild.id, type: 'leave' },
-      }),
+      recordGuildEvent(client, guild.id, 'leave'),
     ]);
     if (closed > 0) {
       Logger.info(`Left guild ${guild.id}: closed ${closed} open voice sessions`);

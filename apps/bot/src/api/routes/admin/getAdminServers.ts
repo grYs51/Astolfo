@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { AdminServers } from '@nx-stolfo/api-interfaces';
 import { discordDirectory } from '../../utils/discord-directory';
+import { NOW_UTC } from '../features/voice-stats/presence-sql';
 import {
   isEnabled,
   SETTING_FLAGS,
@@ -28,10 +29,10 @@ export const getAdminServers: RequestHandler<unknown, AdminServers> = asyncHandl
         SELECT guild_id, SUM(voice_ms)::float AS voice_ms, SUM(messages)::int AS messages, MAX(last_at) AS last_at
         FROM (
           SELECT guild_id,
-            COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - GREATEST(issued_on, ${since}))) * 1000)
-              FILTER (WHERE COALESCE(ended_on, NOW()) > ${since}), 0) AS voice_ms,
+            COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, ${NOW_UTC}) - GREATEST(issued_on, ${since}))) * 1000)
+              FILTER (WHERE COALESCE(ended_on, ${NOW_UTC}) > ${since}), 0) AS voice_ms,
             0 AS messages,
-            MAX(COALESCE(ended_on, NOW())) AS last_at
+            MAX(COALESCE(ended_on, ${NOW_UTC})) AS last_at
           FROM voice_stats
           WHERE type = 'VOICE'
           GROUP BY guild_id
