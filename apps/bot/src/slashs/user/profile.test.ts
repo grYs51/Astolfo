@@ -25,6 +25,7 @@ const clientWith = () =>
 const interactionFor = (targetId?: string) =>
   ({
     guildId: 'guild',
+    inCachedGuild: () => true,
     user: { id: ME },
     member: { id: ME },
     options: { get: () => (targetId ? { member: { id: targetId } } : null) },
@@ -83,10 +84,10 @@ test('/profile posts the profile as a PNG card', async () => {
     lastWeekMs: 0,
     rps: { wins: 1, ties: 0, losses: 0 },
   });
-  const client = { ...(clientWith() as object), channels: { cache: new Map() } } as never;
+  const client = clientWith();
   const interaction = {
     ...(interactionFor() as object),
-    guild: { name: 'Paladins' },
+    guild: { name: 'Paladins', channels: { cache: new Map() } },
     member: { id: ME, displayName: 'Me', displayAvatarURL: () => undefined },
   } as never;
   await run(client, interaction);

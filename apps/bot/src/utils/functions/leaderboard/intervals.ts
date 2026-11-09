@@ -4,6 +4,11 @@ import { VOICE_TYPE } from '../../handlers/vc';
 
 export type Interval = { start: number; end: number };
 
+/** A voice_stats row with an end: a finished session, or an open one clipped to "now" */
+export type ClosedVoiceStat = voice_stats & { ended_on: Date };
+
+export const isClosed = (stat: voice_stats): stat is ClosedVoiceStat => stat.ended_on !== null;
+
 /**
  * Total length covered by the intervals, counting overlapping parts once
  * (e.g. deafening also mutes, so DEAF and MUTED overlap exactly).
@@ -39,7 +44,7 @@ export const getOpenVoiceStats = (
   guildId: string,
   types: VOICE_TYPE[],
   fromTime?: Date
-): voice_stats[] => {
+): ClosedVoiceStat[] => {
   const now = new Date();
   return Array.from(client.voiceUsers.entries())
     .filter(([key]) => key.startsWith(`${guildId}:`))

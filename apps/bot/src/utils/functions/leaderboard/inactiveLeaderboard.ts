@@ -4,7 +4,7 @@ import {
   getVoiceStatsType,
   Leaderboard,
 } from './leaderboard';
-import { getOpenVoiceStats, Interval, unionDuration } from './intervals';
+import { getOpenVoiceStats, isClosed, Interval, unionDuration } from './intervals';
 
 const inactiveTypes = [
   VOICE_TYPE.DEAF,
@@ -33,7 +33,7 @@ export const getInactiveVoiceStats: getVoiceStatsType = async (
 
   const inChannel = getOpenVoiceStats(client, guildId, inactiveTypes, fromTime);
 
-  return [...dbVoiceStats, ...inChannel];
+  return [...dbVoiceStats.filter(isClosed), ...inChannel];
 };
 
 /**

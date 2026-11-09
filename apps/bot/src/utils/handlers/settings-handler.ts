@@ -26,7 +26,7 @@ export const toggleFeature = (toggles: number, feature: number) =>
     ? disableFeature(toggles, feature)
     : enableFeature(toggles, feature);
 
-export const toggleArray = Object.entries(SETTING_FLAGS).map(([key]) => ({
+export const toggleArray = (Object.keys(SETTING_FLAGS) as Settings[]).map((key) => ({
   key,
-  label: `${SETTINGS_LABELS[key as Settings]}`,
+  label: SETTINGS_LABELS[key],
 }));

@@ -51,9 +51,9 @@ export const registerDiscordStrategy = () =>
   passport.use(
     new Strategy(
       {
-        clientID: process.env.DISCORD_CLIENT_ID,
-        clientSecret: process.env.DISCORD_CLIENT_SECRET,
-        callbackURL: process.env.REDIRECT_URI,
+        clientID: process.env.DISCORD_CLIENT_ID!, // validateEnv requires these outside mock mode
+        clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        callbackURL: process.env.REDIRECT_URI!,
         scope: ['identify'],
         // Random state stored in the session and checked on the callback, so
         // an attacker can't log a victim in with the attacker's auth code
