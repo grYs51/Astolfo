@@ -3,6 +3,7 @@ import { isOwner } from './isOwner';
 import { isAuthenticated } from './isAuthenticated';
 import { Forbidden, Unauthorized } from '../http-errors';
 import registerAdmin from '../../routes/admin';
+import { jsonOnly } from '../../routes/admin/actions';
 
 const check = (user?: { id: string }) => {
   const next = jest.fn();
@@ -41,6 +42,8 @@ describe('isOwner', () => {
     const isPublic = (route: { path: string }) => route.path === '/notice';
 
     expect(routes.length).toBe(11);
+    // Mounted ahead of the action routes, so they only take JSON
+    expect(router.stack.some((layer) => !layer.route && layer.handle === jsonOnly)).toBe(true);
     expect(routes.filter(isPublic)).toHaveLength(1);
     for (const route of routes.filter((r) => !isPublic(r))) {
       expect(route.path).toMatch(/^\/admin\//);

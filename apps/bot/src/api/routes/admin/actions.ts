@@ -12,12 +12,22 @@ import { client } from '../../../client/instance';
 import { Logger } from '../../../utils/logger';
 import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 import { closeLeftVoiceSessions } from '../../../utils/handlers/vc';
+import { setVc } from '../../../utils/functions/set-vc';
 
 type Failure = { error: string };
 
 const NOTICE_MAX = 300;
 const BROADCAST_MAX = 1000;
 const BROADCAST_PAUSE_MS = 500;
+
+/**
+ * A plain form POST from another subdomain (same site, so the lax cookie goes along) needs no preflight
+ * and no body. A JSON body does need one, so refuse anything else.
+ */
+export const jsonOnly: RequestHandler = (req, res, next) => {
+  if (req.is('application/json')) return next();
+  res.status(415).send({ error: 'JSON only' });
+};
 
 /** The guild the bot is in, or a 400/404 already sent */
 const guildFrom = (body: Partial<AdminGuildAction> | undefined, res: Response) => {
@@ -69,6 +79,8 @@ export const leaveGuild: RequestHandler<unknown, { left: true } | Failure, Parti
 export const closeStuckSessions: RequestHandler<unknown, AdminClosedSessions> = asyncHandler(
   async (req, res) => {
     const closed = await closeLeftVoiceSessions(new Date());
+    // A missed channel switch closed the old session: reopen it in the new channel, like ShardReady
+    await setVc();
     Logger.info(`Admin action: close stuck sessions, closed ${closed}`);
     res.send({ closed });
   }

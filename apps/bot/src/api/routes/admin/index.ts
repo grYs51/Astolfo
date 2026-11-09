@@ -10,6 +10,7 @@ import {
   broadcast,
   closeStuckSessions,
   getNotice,
+  jsonOnly,
   leaveGuild,
   postDigestNow,
   setNotice,
@@ -24,6 +25,7 @@ export default (router: Router) => {
   router.get('/admin/web', isAuthenticated, isOwner, getAdminWeb);
 
   // Actions write, so POST/PUT: the session cookie is SameSite=lax, a cross-site page can trigger a GET
+  router.use('/admin/actions', jsonOnly);
   router.post('/admin/actions/digest', isAuthenticated, isOwner, postDigestNow);
   router.post('/admin/actions/leave', isAuthenticated, isOwner, leaveGuild);
   router.post('/admin/actions/close-stuck-sessions', isAuthenticated, isOwner, closeStuckSessions);

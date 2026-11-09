@@ -5,7 +5,8 @@ import { getAdminPeople } from './getAdminPeople';
 import { getAdminUsage, p95FromBuckets } from './getAdminUsage';
 import { getAdminWeb } from './getAdminWeb';
 import { getAdminHealth } from './getAdminHealth';
-import { broadcast, closeStuckSessions, getNotice, leaveGuild, postDigestNow, setNotice } from './actions';
+import { broadcast, closeStuckSessions, getNotice, jsonOnly, leaveGuild, postDigestNow, setNotice } from './actions';
+import { setVc } from '../../../utils/functions/set-vc';
 import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 
 jest.mock('../../utils/discord-directory', () => ({
@@ -41,6 +42,7 @@ jest.mock('../../../client/instance', () => ({
 }));
 jest.mock('../../../utils/schedulers/digest.scheduler', () => ({ postDigest: jest.fn() }));
 jest.mock('../../../utils/handlers/vc', () => ({ closeLeftVoiceSessions: jest.fn(async () => 2) }));
+jest.mock('../../../utils/functions/set-vc', () => ({ setVc: jest.fn() }));
 jest.mock('../../../utils/logger', () => ({ Logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } }));
 
 /** Runs a handler against a db whose raw queries return `results` in call order */
@@ -187,8 +189,20 @@ describe('admin actions', () => {
     expect(mockLeave).toHaveBeenCalledTimes(1);
   });
 
-  test('close stuck sessions returns the count', async () => {
+  test('close stuck sessions returns the count and reopens switched sessions, like ShardReady', async () => {
     expect((await act(closeStuckSessions, undefined)).body).toEqual({ closed: 2 });
+    expect(setVc).toHaveBeenCalledTimes(1);
+  });
+
+  test('actions refuse anything but JSON (a cross-site form POST needs no preflight)', () => {
+    const check = (type: string | false) => {
+      const res = { status: jest.fn().mockReturnThis(), send: jest.fn() };
+      const next = jest.fn();
+      jsonOnly({ is: () => type } as unknown as Request, res as unknown as Response, next);
+      return next.mock.calls.length ? 'next' : res.status.mock.calls[0][0];
+    };
+    expect(check('application/json')).toBe('next');
+    expect(check(false)).toBe(415);
   });
 
   test('notice: validates, trims, and clears on null or blank', async () => {
