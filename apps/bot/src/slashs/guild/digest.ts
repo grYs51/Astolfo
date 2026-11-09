@@ -10,6 +10,7 @@ import DiscordClient from '../../client/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { buildLatestDigest } from '../../utils/schedulers/digest.scheduler';
+import { digestChannelUpdate, saveGuildConfig } from '../../utils/functions/set-config';
 
 const SCHEDULE = 'every Monday at 08:00 UTC';
 
@@ -73,11 +74,7 @@ export default class DigestSlash extends BaseSlash {
           );
           return;
         }
-        await this.save(client, guild.id, {
-          digest_channel_id: channel.id,
-          // Start with next Monday's recap, not a catch-up post today
-          ...(config?.digest_channel_id ? {} : { digest_last_sent_at: new Date() }),
-        });
+        await saveGuildConfig(client, guild.id, digestChannelUpdate(config, channel.id));
         await InterActionUtils.send(
           interaction,
           `The weekly recap will be posted in <#${channel.id}> ${SCHEDULE}. Members who hide their stats aren’t named in it.`,
@@ -87,7 +84,7 @@ export default class DigestSlash extends BaseSlash {
       }
 
       case 'off': {
-        await this.save(client, guild.id, { digest_channel_id: null });
+        await saveGuildConfig(client, guild.id, digestChannelUpdate(config, null));
         await InterActionUtils.send(interaction, 'The weekly recap is off.', true);
         return;
       }
@@ -107,18 +104,5 @@ export default class DigestSlash extends BaseSlash {
         return;
       }
     }
-  }
-
-  private async save(
-    client: DiscordClient,
-    guildId: string,
-    data: { digest_channel_id: string | null; digest_last_sent_at?: Date }
-  ) {
-    const updated = await client.dataSource.guildConfigurations.upsert({
-      where: { guild_id: guildId },
-      update: data,
-      create: { guild_id: guildId, ...data },
-    });
-    client.guildConfigs.set(guildId, updated);
   }
 }

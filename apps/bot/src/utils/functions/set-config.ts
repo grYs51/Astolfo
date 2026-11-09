@@ -1,5 +1,6 @@
 import { client } from '../../client/instance';
 import DiscordClient from '../../client/client';
+import { guild_configs } from '@prisma/client';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 
@@ -35,6 +36,33 @@ export const recordGuildEvent = (
   discord.dataSource.guildEvents
     .create({ data: { guild_id: guildId, type, at } })
     .catch((error) => Logger.error(`Failed to record guild ${type} for ${guildId}`, error));
+
+/**
+ * Upserts a guild's config and updates `client.guildConfigs`, so the bot sees
+ * the change at once. New code writes guild_configs through this.
+ */
+export const saveGuildConfig = async (
+  discord: DiscordClient,
+  guildId: string,
+  data: Partial<Omit<guild_configs, 'guild_id'>>
+) => {
+  const updated = await discord.dataSource.guildConfigurations.upsert({
+    where: { guild_id: guildId },
+    update: data,
+    create: { guild_id: guildId, ...data },
+  });
+  discord.guildConfigs.set(guildId, updated);
+  return updated;
+};
+
+/** Digest channel change; turning it on starts with next Monday's recap, not a catch-up post now */
+export const digestChannelUpdate = (
+  config: { digest_channel_id: string | null } | undefined,
+  channelId: string | null
+): { digest_channel_id: string | null; digest_last_sent_at?: Date } =>
+  channelId && !config?.digest_channel_id
+    ? { digest_channel_id: channelId, digest_last_sent_at: new Date() }
+    : { digest_channel_id: channelId };
 
 export const checkForNewGuilds = async () => {
   const prismaClient = getDb();
