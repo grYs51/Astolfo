@@ -1,20 +1,9 @@
-import {
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle,
-  EmbedBuilder,
-} from 'discord.js';
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import type { ServerDigest } from './queries';
 import type { StatsPeriod } from './windows';
 import { nextMilestone } from './milestones';
 
-/**
- * Text helpers shared by the cards, and the weekly digest message. Pure functions (data in,
- * message out) so they're easy to test. Members are shown as <@id> mentions,
- * which embeds render as names without pinging anyone.
- */
-
-const COLOR = '#FF69B4';
+/** Text helpers the image cards and the Discord replies share. Pure functions, easy to test. */
 
 export const PERIOD_LABEL: Record<StatsPeriod, string> = {
   week: 'the past week',
@@ -70,86 +59,6 @@ export const formatStreak = (streak: { current: number; longest: number }) =>
 export const formatNextMilestone = (lifetimeMs: number) => {
   const next = nextMilestone(lifetimeMs);
   return next ? `${next.hours}h (${formatDuration(next.remainingMs)} to go)` : undefined;
-};
-
-const medal = (index: number) => ['🥇', '🥈', '🥉'][index] ?? `${index + 1}.`;
-
-/** The weekly digest post */
-export const buildDigestMessage = (input: {
-  digest: ServerDigest;
-  guildName: string;
-  /** No link or button when the dashboard URL isn't configured */
-  dashboardUrl?: string;
-  /** Monday (00:00 UTC) the digest's week starts */
-  weekStart: Date;
-}) => {
-  const { digest: d, guildName, dashboardUrl, weekStart } = input;
-  const voiceChange = formatChange(d.voiceMs, d.previousVoiceMs, 'the week before');
-  const messageChange = formatChange(d.messages, d.previousMessages, 'the week before');
-  const dayMonth = (date: Date) =>
-    date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' });
-  const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
-
-  const embed = new EmbedBuilder()
-    .setColor(COLOR)
-    .setTitle(`Last week in ${guildName}`)
-    .setURL(dashboardUrl ?? null)
-    .setDescription(
-      `🎙️ **${formatDuration(d.voiceMs)}** in voice${voiceChange ? ` (${voiceChange})` : ''}\n` +
-        `💬 **${plural(d.messages, 'message')}**${messageChange ? ` (${messageChange})` : ''}\n` +
-        `👥 **${plural(d.activeMembers, 'active member')}**`
-    )
-    .setFooter({
-      text: `${dayMonth(weekStart)} – ${dayMonth(weekEnd)} (UTC) · members who hide their stats aren’t named`,
-    });
-
-  const fields = [];
-  if (d.topVoice.length > 0) {
-    fields.push({
-      name: 'Most time in voice',
-      value: d.topVoice.map((m, i) => `${medal(i)} <@${m.memberId}> · ${formatDuration(m.ms)}`).join('\n'),
-      inline: true,
-    });
-  }
-  if (d.topMessages.length > 0) {
-    fields.push({
-      name: 'Most messages',
-      value: d.topMessages.map((m, i) => `${medal(i)} <@${m.memberId}> · ${m.count.toLocaleString('en-GB')}`).join('\n'),
-      inline: true,
-    });
-  }
-  if (d.bestDuo) {
-    fields.push({
-      name: 'Duo of the week',
-      value: `<@${d.bestDuo.a}> & <@${d.bestDuo.b}> · ${formatDuration(d.bestDuo.togetherMs)} together`,
-    });
-  }
-  if (d.topStreaks.length > 0) {
-    fields.push({
-      name: 'Longest voice streaks',
-      value: d.topStreaks.map((m, i) => `${medal(i)} <@${m.memberId}> · 🔥 ${plural(m.days, 'day')}`).join('\n'),
-      inline: true,
-    });
-  }
-  if (d.milestones.length > 0) {
-    fields.push({
-      name: 'Milestones',
-      value: d.milestones.map((m) => `<@${m.memberId}> passed **${m.hours}h** in voice`).join('\n'),
-      inline: true,
-    });
-  }
-  if (d.busiestDay) {
-    const day = d.busiestDay.day.toLocaleDateString('en-GB', { weekday: 'long', timeZone: 'UTC' });
-    fields.push({ name: 'Busiest day', value: `${day} · ${formatDuration(d.busiestDay.ms)} in voice` });
-  }
-  embed.addFields(fields);
-
-  return {
-    embeds: [embed],
-    components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open the dashboard')] : [],
-    // Mentions inside embeds never ping, but be explicit for the content too
-    allowedMentions: { parse: [] as [] },
-  };
 };
 
 /** True when a digest has nothing worth posting */

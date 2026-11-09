@@ -2,7 +2,11 @@ import schedule from 'node-schedule';
 import type DiscordClient from '../../client/client';
 import { Logger } from '../logger';
 import { getServerDigest } from '../../stats/queries';
-import { buildDigestMessage, dashboardUrlFor, isEmptyDigest } from '../../stats/messages';
+import { dashboardButton, dashboardUrlFor, isEmptyDigest } from '../../stats/messages';
+import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
+import { digestCard, DigestMember } from '../../cards/digest.card';
+import { cardFile } from '../../cards/render';
+import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 /**
  * Weekly digest: every Monday 08:00 UTC each server with a digest channel
@@ -50,12 +54,42 @@ export const buildLatestDigest = async (
     to: week.from,
   });
   if (isEmptyDigest(digest)) return undefined;
-  return buildDigestMessage({
-    digest,
-    guildName: client.guilds.cache.get(guildId)?.name ?? 'this server',
-    dashboardUrl: dashboardUrlFor(guildId),
-    weekStart: week.from,
-  });
+
+  // <@id> doesn't resolve inside an image, so names come from the guild cache
+  const guild = client.guilds.cache.get(guildId);
+  const ids = new Set([
+    ...digest.topVoice.map((m) => m.memberId),
+    ...digest.topMessages.map((m) => m.memberId),
+    ...digest.topStreaks.map((m) => m.memberId),
+    ...digest.milestones.map((m) => m.memberId),
+    ...(digest.bestDuo ? [digest.bestDuo.a, digest.bestDuo.b] : []),
+  ]);
+  const members: Record<string, DigestMember> = {};
+  await Promise.all(
+    [...ids].map(async (id) => {
+      const member = guild?.members.cache.get(id);
+      members[id] = {
+        name: member?.displayName ?? 'Unknown member',
+        avatar: await fetchImage(member?.displayAvatarURL(CARD_IMAGE)),
+      };
+    })
+  );
+
+  const svg = digestCard(
+    {
+      digest,
+      serverName: guild?.name ?? 'this server',
+      serverIcon: await fetchImage(guild?.iconURL(CARD_IMAGE)),
+      weekStart: week.from,
+      members,
+    },
+    THEMES[DEFAULT_THEME]
+  );
+  const dashboardUrl = dashboardUrlFor(guildId);
+  return {
+    files: [await cardFile(svg, 'digest.png')],
+    components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open the dashboard')] : [],
+  };
 };
 
 /** Post every digest that is due. Returns the guild ids it posted to. */

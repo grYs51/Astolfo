@@ -52,7 +52,7 @@ describe('runDueDigests', () => {
           update,
         },
       },
-      guilds: { cache: new Map(opts.inGuild === false ? [] : [['g', { name: 'Test' }]]) },
+      guilds: { cache: new Map(opts.inGuild === false ? [] : [['g', { name: 'Test', iconURL: () => null, members: { cache: new Map() } }]]) },
       channels: {
         fetch: jest.fn(async () =>
           opts.sendable === false ? null : { isSendable: () => true, send }
@@ -79,6 +79,7 @@ describe('runDueDigests', () => {
       { from: at('2026-09-21T00:00:00Z'), to: at('2026-09-28T00:00:00Z') }
     );
     expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0].files[0].name).toBe('digest.png');
     expect(update).toHaveBeenCalledWith({ where: { guild_id: 'g' }, data: { digest_last_sent_at: NOW } });
   });
 
