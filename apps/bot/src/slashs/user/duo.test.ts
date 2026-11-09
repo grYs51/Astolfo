@@ -1,11 +1,16 @@
 import DuoSlash from './duo';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { getDuo } from '../../stats/queries';
+import { duoCard } from '../../cards/duo.card';
 
 jest.mock('../../utils/interaction-utils', () => ({
   InterActionUtils: { send: jest.fn() },
 }));
 jest.mock('../../stats/queries', () => ({ getDuo: jest.fn() }));
+jest.mock('../../cards/duo.card', () => {
+  const actual = jest.requireActual('../../cards/duo.card');
+  return { ...actual, duoCard: jest.fn(actual.duoCard) };
+});
 
 const ME = 'me';
 const HIDDEN = 'hidden-member';
@@ -22,19 +27,27 @@ const client = {
 
 const member = (id: string) => [id, { displayName: id, displayAvatarURL: () => undefined }] as const;
 
-/** /duo member:<other> [period] invoked by ME */
-const interactionWith = (other: { id: string; bot?: boolean }, period?: string) =>
+const EVERYONE = { id: 'everyone-role' };
+/** A voice channel; `open` = @everyone may view it */
+const channel = (name: string, open: boolean) => ({
+  name,
+  permissionsFor: (role: unknown) => ({ has: (perm: string) => role === EVERYONE && perm === 'ViewChannel' && open }),
+});
+
+/** /duo member:<other> [period] invoked by ME; other = null when they're not in the server */
+const interactionWith = (other: { id: string; bot?: boolean } | null, period?: string) =>
   ({
     inCachedGuild: () => true,
     guild: {
       id: 'g',
       name: 'Paladins',
+      roles: { everyone: EVERYONE },
       members: { cache: new Map([member(ME), member('friend')]) },
-      channels: { cache: new Map([['vc1', { name: 'round-table' }]]) },
+      channels: { cache: new Map([['vc1', channel('round-table', true)], ['staff', channel('staff-room', false)]]) },
     },
     user: { id: ME },
     options: {
-      getUser: () => ({ bot: false, ...other }),
+      getMember: () => (other ? { id: other.id, user: { bot: other.bot ?? false } } : null),
       get: () => (period ? { value: period } : null),
     },
   }) as never;
@@ -59,6 +72,15 @@ describe('/duo', () => {
     expect(hidden).toBeUndefined();
   });
 
+  test.each([
+    ['names a channel everyone can see', 'vc1', 'round-table'],
+    ['leaves out a channel @everyone can’t see', 'staff', undefined],
+  ])('%s', async (_, topChannelId, topChannelName) => {
+    (getDuo as jest.Mock).mockResolvedValue({ togetherMs: 1, aVoiceMs: 1, bVoiceMs: 1, topChannelId });
+    await run(interactionWith({ id: 'friend' }));
+    expect((duoCard as jest.Mock).mock.calls[0][0].topChannelName).toBe(topChannelName);
+  });
+
   test('uses the chosen period', async () => {
     await run(interactionWith({ id: 'friend' }, 'all'));
     expect(getDuo).toHaveBeenCalledWith(expect.anything(), 'g', ME, 'friend', 'all');
@@ -66,8 +88,9 @@ describe('/duo', () => {
 
   test.each([
     ['a hidden member', { id: HIDDEN }, 'This member keeps their stats private.'],
-    ['yourself', { id: ME }, 'Pick another member (not yourself or a bot).'],
-    ['a bot', { id: 'bot', bot: true }, 'Pick another member (not yourself or a bot).'],
+    ['yourself', { id: ME }, 'Pick another member of this server (not yourself or a bot).'],
+    ['a bot', { id: 'bot', bot: true }, 'Pick another member of this server (not yourself or a bot).'],
+    ['someone who left the server', null, 'Pick another member of this server (not yourself or a bot).'],
   ])('refuses, privately, %s', async (_, other, message) => {
     await run(interactionWith(other));
     refused(message);

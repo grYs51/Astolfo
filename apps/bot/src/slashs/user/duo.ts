@@ -41,9 +41,10 @@ export default class DuoSlash extends BaseSlash {
       return;
     }
     const me = interaction.user.id;
-    const other = interaction.options.getUser('member', true);
-    if (other.id === me || other.bot) {
-      await InterActionUtils.send(interaction, 'Pick another member (not yourself or a bot).', true);
+    // getMember is null for someone who left the server, so their old stats aren't posted
+    const other = interaction.options.getMember('member');
+    if (!other || other.id === me || other.user.bot) {
+      await InterActionUtils.send(interaction, 'Pick another member of this server (not yourself or a bot).', true);
       return;
     }
     // The reply is public, so a hidden member's time is never posted
@@ -56,13 +57,15 @@ export default class DuoSlash extends BaseSlash {
     const guild = interaction.guild;
     const duo = await getDuo(client.dataSource, guild.id, me, other.id, period);
     const members = await cardMembers(guild, [me, other.id]);
+    const topChannel = duo.topChannelId ? guild.channels.cache.get(duo.topChannelId) : undefined;
     const svg = duoCard(
       {
         duo,
         period,
         members: [members[me], members[other.id]],
         serverName: guild.name,
-        topChannelName: duo.topChannelId ? guild.channels.cache.get(duo.topChannelId)?.name : undefined,
+        // Public reply: never name a channel @everyone can't see
+        topChannelName: topChannel?.permissionsFor(guild.roles.everyone)?.has('ViewChannel') ? topChannel.name : undefined,
       },
       THEMES[DEFAULT_THEME]
     );
