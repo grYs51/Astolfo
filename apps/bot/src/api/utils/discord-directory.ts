@@ -2,7 +2,10 @@ import {
   ChannelType,
   DiscordAPIError,
   GuildMember,
+  NewsChannel,
+  PermissionFlagsBits,
   RESTJSONErrorCodes,
+  TextChannel,
 } from 'discord.js';
 import { client } from '../../client/instance';
 import { Logger } from '../../utils/logger';
@@ -15,6 +18,13 @@ import {
 } from '../../dev/mock-discord';
 
 export type ChannelInfo = { id: string; name: string; type: string };
+
+/** What the bot needs in a channel to post there (digest, welcome, goodbye) */
+export const POST_PERMISSIONS = [
+  PermissionFlagsBits.ViewChannel,
+  PermissionFlagsBits.SendMessages,
+  PermissionFlagsBits.EmbedLinks,
+];
 
 export type MemberInfo = {
   id: string;
@@ -40,11 +50,15 @@ export interface DiscordDirectory {
   /** Every server the bot is in */
   guilds(): GuildInfo[];
   isMember(guildId: string, userId: string): Promise<boolean>;
+  /** Manage Server (also true for Administrator and the owner) */
+  canManage(guildId: string, userId: string): Promise<boolean>;
   guild(guildId: string): { name: string; icon: string | null } | undefined;
   channel(guildId: string, channelId: string): ChannelInfo | undefined;
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
   /** Ids of the guild's current human members */
   memberIds(guildId: string): Promise<string[]>;
+  /** Text and announcement channels the bot can post in */
+  postableChannels(guildId: string): Promise<ChannelInfo[]>;
 }
 
 // Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
@@ -58,6 +72,13 @@ const notAMember = (error: unknown): null => {
   }
   Logger.warn('Discord member lookup failed', error);
   throw new ServiceUnavailable('Discord member lookup failed');
+};
+
+// Cache first, gateway fetch as fallback
+const findMember = async (guildId: string, userId: string) => {
+  const guild = client.guilds.cache.get(guildId);
+  if (!guild) return null;
+  return guild.members.cache.get(userId) ?? (await guild.members.fetch(userId).catch(notAMember));
 };
 
 /** Guilds whose full member list was fetched once (memberIds) */
@@ -75,13 +96,12 @@ const live: DiscordDirectory = {
   },
 
   async isMember(guildId, userId) {
-    const guild = client.guilds.cache.get(guildId);
-    if (!guild) return false;
-    // Cache first, gateway fetch as fallback
-    const member =
-      guild.members.cache.get(userId) ??
-      (await guild.members.fetch(userId).catch(notAMember));
-    return !!member;
+    return !!(await findMember(guildId, userId));
+  },
+
+  async canManage(guildId, userId) {
+    const member = await findMember(guildId, userId);
+    return !!member?.permissions.has(PermissionFlagsBits.ManageGuild);
   },
 
   guild(guildId) {
@@ -143,6 +163,20 @@ const live: DiscordDirectory = {
     }
     return [...guild.members.cache.filter((m) => !m.user.bot).keys()];
   },
+
+  async postableChannels(guildId) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) return [];
+    const me = guild.members.me ?? (await guild.members.fetchMe());
+    return [...guild.channels.cache.values()]
+      .filter(
+        (c): c is TextChannel | NewsChannel =>
+          (c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement) &&
+          c.permissionsFor(me).has(POST_PERMISSIONS)
+      )
+      .sort((a, b) => a.rawPosition - b.rawPosition)
+      .map((c) => ({ id: c.id, name: c.name, type: ChannelType[c.type] }));
+  },
 };
 
 const mock: DiscordDirectory = {
@@ -158,6 +192,10 @@ const mock: DiscordDirectory = {
 
   async isMember(guildId, userId) {
     return !!findMockGuild(guildId)?.members.some((m) => m.id === userId);
+  },
+
+  async canManage(guildId, userId) {
+    return !!findMockGuild(guildId)?.managers.includes(userId);
   },
 
   guild(guildId) {
@@ -188,6 +226,10 @@ const mock: DiscordDirectory = {
 
   async memberIds(guildId) {
     return findMockGuild(guildId)?.members.map((m) => m.id) ?? [];
+  },
+
+  async postableChannels(guildId) {
+    return findMockGuild(guildId)?.textChannels ?? [];
   },
 };
 

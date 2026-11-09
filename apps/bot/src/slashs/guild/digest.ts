@@ -11,15 +11,9 @@ import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { buildLatestDigest } from '../../utils/schedulers/digest.scheduler';
 import { digestChannelUpdate, saveGuildConfig } from '../../utils/functions/set-config';
+import { POST_PERMISSIONS } from '../../api/utils/discord-directory';
 
 const SCHEDULE = 'every Monday at 08:00 UTC';
-
-/** Permissions the bot needs in the digest channel */
-const NEEDED = [
-  PermissionFlagsBits.ViewChannel,
-  PermissionFlagsBits.SendMessages,
-  PermissionFlagsBits.EmbedLinks,
-];
 
 /**
  * /digest channel <channel> | off | preview — configure the weekly digest
@@ -66,7 +60,7 @@ export default class DigestSlash extends BaseSlash {
           interaction.options.getChannel('channel', true).id
         );
         const me = guild.members.me ?? (await guild.members.fetchMe());
-        if (!channel || !channel.permissionsFor(me).has(NEEDED)) {
+        if (!channel || !channel.permissionsFor(me).has(POST_PERMISSIONS)) {
           await InterActionUtils.send(
             interaction,
             `I can’t post in <#${interaction.options.getChannel('channel', true).id}>. I need View Channel, Send Messages and Embed Links there.`,
