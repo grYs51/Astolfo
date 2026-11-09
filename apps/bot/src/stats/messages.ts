@@ -3,14 +3,13 @@ import {
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
-  InteractionReplyOptions,
 } from 'discord.js';
-import type { MemberSummary, ServerDigest } from './queries';
+import type { ServerDigest } from './queries';
 import type { StatsPeriod } from './windows';
 import { nextMilestone } from './milestones';
 
 /**
- * Discord messages for /stats and the weekly digest. Pure functions (data in,
+ * Text helpers shared by the cards, and the weekly digest message. Pure functions (data in,
  * message out) so they're easy to test. Members are shown as <@id> mentions,
  * which embeds render as names without pinging anyone.
  */
@@ -71,59 +70,6 @@ export const formatStreak = (streak: { current: number; longest: number }) =>
 export const formatNextMilestone = (lifetimeMs: number) => {
   const next = nextMilestone(lifetimeMs);
   return next ? `${next.hours}h (${formatDuration(next.remainingMs)} to go)` : undefined;
-};
-
-/** The /stats reply (ephemeral) */
-export const buildStatsMessage = (input: {
-  summary: MemberSummary;
-  period: StatsPeriod;
-  guildName: string;
-  /** No link or button when the dashboard URL isn't configured */
-  dashboardUrl?: string;
-}): InteractionReplyOptions => {
-  const { summary: s, period, guildName, dashboardUrl } = input;
-  const previousLabel = period === 'all' ? '' : PREVIOUS_LABEL[period];
-
-  const embed = new EmbedBuilder()
-    .setColor(COLOR)
-    .setTitle(`Your stats in ${guildName}`)
-    .setURL(dashboardUrl ?? null)
-    .setFooter({ text: `Over ${PERIOD_LABEL[period]} · open sessions count live` });
-
-  if (s.sessions === 0 && s.messages === 0) {
-    embed.setDescription(`You haven’t been in voice or sent messages over ${PERIOD_LABEL[period]}.`);
-  } else {
-    const voiceChange = formatChange(s.voiceMs, s.previousVoiceMs, previousLabel);
-    const messageChange = formatChange(s.messages, s.previousMessages, previousLabel);
-    embed.setDescription(
-      `🎙️ **${formatDuration(s.voiceMs)}** in voice${voiceChange ? ` (${voiceChange})` : ''}\n` +
-        `💬 **${plural(s.messages, 'message')}**${messageChange ? ` (${messageChange})` : ''}`
-    );
-    const fields = [];
-    if (s.voiceRank) {
-      fields.push({ name: 'Rank', value: `#${s.voiceRank} of ${s.rankedMembers} in voice time`, inline: true });
-    }
-    if (s.favouriteChannelId) {
-      fields.push({ name: 'Favourite channel', value: `<#${s.favouriteChannelId}>`, inline: true });
-    }
-    fields.push({ name: 'Sessions', value: `${s.sessions}`, inline: true });
-    const streak = formatStreak(s.streak);
-    if (streak) fields.push({ name: 'Voice streak', value: `🔥 ${streak}`, inline: true });
-    const milestone = formatNextMilestone(s.lifetimeMs);
-    if (milestone) fields.push({ name: 'Next milestone', value: milestone, inline: true });
-    if (s.companions.length > 0) {
-      fields.push({
-        name: 'You hang out most with',
-        value: s.companions.map((c) => `<@${c.memberId}> · ${formatDuration(c.togetherMs)}`).join('\n'),
-      });
-    }
-    embed.addFields(fields);
-  }
-
-  return {
-    embeds: [embed],
-    components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open your dashboard')] : [],
-  };
 };
 
 const medal = (index: number) => ['🥇', '🥈', '🥉'][index] ?? `${index + 1}.`;
