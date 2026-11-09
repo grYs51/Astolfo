@@ -2,21 +2,42 @@ import { ChangeDetectionStrategy, Component, computed, input, signal } from '@an
 import { ActivityCalendar, ActivityCalendarDay } from '@nx-stolfo/data-access-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import { SegmentedControlComponent, SegmentedControlOption } from '@nx-stolfo/components';
-import * as echarts from 'echarts/core';
-import { NgxEchartsDirective, provideEchartsCore } from 'ngx-echarts';
-import { CanvasRenderer } from 'echarts/renderers';
-import { CalendarComponent, TooltipComponent, VisualMapComponent } from 'echarts/components';
-import { HeatmapChart } from 'echarts/charts';
-import { HEATMAP_SEQUENTIAL_COLORS } from '../heatmap-grid';
-echarts.use([CanvasRenderer, CalendarComponent, TooltipComponent, VisualMapComponent, HeatmapChart]);
+import { weekdayRow } from '../heatmap-grid';
+import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component';
 
 type Metric = 'minutes' | 'messages';
 
-/** GitHub-style graph: one square per day over the last 12 months. */
+const DAY_MS = 24 * 60 * 60 * 1000;
+const toDate = (date: string) => new Date(`${date}T00:00:00Z`);
+
+/**
+ * Lays the days from `start` to `end` ('YYYY-MM-DD') out in Monday-first week
+ * columns: `dates[column][row]` ('' outside the range) and a month label on
+ * the first column of each month.
+ */
+export function calendarWeeks(start: string, end: string) {
+  const first = toDate(start).getTime();
+  const last = toDate(end).getTime();
+  const monday = first - weekdayRow(toDate(start).getUTCDay()) * DAY_MS;
+  const dates: string[][] = [];
+  const months: string[] = [];
+  for (let week = monday; week <= last; week += 7 * DAY_MS) {
+    const column = Array.from({ length: 7 }, (_, row) => {
+      const day = week + row * DAY_MS;
+      return day < first || day > last ? '' : new Date(day).toISOString().slice(0, 10);
+    });
+    // Label the column holding the 1st (a label on the partial first month could collide with the next)
+    const firstOfMonth = column.find((date) => date.endsWith('-01'));
+    months.push(firstOfMonth ? toDate(firstOfMonth).toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' }) : '');
+    dates.push(column);
+  }
+  return { dates, months };
+}
+
+/** GitHub-style graph: one cell per day over the last 12 months, weeks as columns. */
 @Component({
   selector: 'feature-voice-stats-activity-calendar',
-  imports: [NgxEchartsDirective, SegmentedControlComponent, HumanizeDurationPipe],
-  providers: [provideEchartsCore({ echarts })],
+  imports: [HeatmapChartComponent, SegmentedControlComponent, HumanizeDurationPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -33,9 +54,15 @@ type Metric = 'minutes' | 'messages';
         </div>
         <lib-segmented-control label="Show" [options]="metricOptions" [(value)]="metric" />
       </div>
-      <!-- Fixed-size squares like GitHub; narrow screens scroll sideways -->
+      <!-- Full width; narrow screens scroll sideways rather than squash 53 weeks -->
       <div class="overflow-x-auto">
-        <div echarts [options]="chartOption()" [initOpts]="{ renderer: 'canvas' }" class="h-[160px] w-[800px]"></div>
+        <feature-voice-stats-heatmap-chart
+          [cells]="cells()"
+          [xLabels]="weeks().months"
+          [tooltip]="tooltip"
+          [square]="true"
+          class="min-w-[720px]"
+        />
       </div>
     </div>
   `,
@@ -59,70 +86,34 @@ export class ActivityCalendarComponent {
     )
   );
 
-  chartOption = computed(() => {
-    const { days, start, end } = this.calendar();
-    const metric = this.metric();
-    const byDate = new Map<string, ActivityCalendarDay>(days.map((day) => [day.date, day]));
-    // Days without any of the metric keep the empty-square colour
-    const data = days.filter((day) => day[metric] > 0).map((day) => [day.date, day[metric]]);
-    // Quartiles of the active days, like GitHub, so one outlier day doesn't wash out the rest
-    const values = data.map(([, value]) => value as number).sort((a, b) => a - b);
-    const q = (p: number) => values[Math.floor(p * (values.length - 1))] ?? 1;
-    const colors = [2, 4, 6, 8].map((i) => HEATMAP_SEQUENTIAL_COLORS[i]);
+  private byDate = computed(() => new Map<string, ActivityCalendarDay>(this.calendar().days.map((day) => [day.date, day])));
+  protected weeks = computed(() => calendarWeeks(this.calendar().start, this.calendar().end));
 
-    return {
-      tooltip: {
-        backgroundColor: '#1f2937',
-        borderColor: '#374151',
-        textStyle: { color: '#f3f4f6' },
-        formatter: (params: unknown) => {
-          const date = (params as { value: [string, number] }).value[0];
-          const day = byDate.get(date);
-          const label = new Date(`${date}T00:00:00Z`).toLocaleDateString(undefined, {
-            timeZone: 'UTC',
-            weekday: 'short',
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          });
-          const voice = day?.minutes ? this.durationPipe.transform(day.minutes * 60000, true) : 'No time';
-          const messages = day?.messages ?? 0;
-          return `<strong>${label}</strong><br/>${voice} in voice<br/>${messages} ${messages === 1 ? 'message' : 'messages'}`;
-        },
-      },
-      visualMap: {
-        type: 'piecewise',
-        pieces: [
-          { gt: 0, lte: q(0.25), color: colors[0] },
-          { gt: q(0.25), lte: q(0.5), color: colors[1] },
-          { gt: q(0.5), lte: q(0.75), color: colors[2] },
-          { gt: q(0.75), color: colors[3] },
-        ],
-        // A clickable legend would hide days from the calendar
-        selectedMode: false,
-        orient: 'horizontal',
-        left: 36,
-        bottom: 0,
-        itemWidth: 12,
-        itemHeight: 12,
-        itemGap: 3,
-        showLabel: false,
-        text: ['More', 'Less'],
-        textStyle: { color: '#9ca3af', fontSize: 11 },
-      },
-      calendar: {
-        range: [start, end],
-        top: 24,
-        left: 36,
-        cellSize: 14,
-        splitLine: { show: false },
-        // 3px card-coloured border = the gap between squares
-        itemStyle: { color: HEATMAP_SEQUENTIAL_COLORS[0], borderColor: '#141824', borderWidth: 3 },
-        yearLabel: { show: false },
-        dayLabel: { firstDay: 0, nameMap: ['', 'Mon', '', 'Wed', '', 'Fri', ''], color: '#9ca3af', fontSize: 10 },
-        monthLabel: { color: '#9ca3af', fontSize: 10 },
-      },
-      series: [{ type: 'heatmap', coordinateSystem: 'calendar', data }],
-    };
+  // Days without any of the metric are uncoloured; days outside the range aren't drawn
+  protected cells = computed(() => {
+    const byDate = this.byDate();
+    const metric = this.metric();
+    return this.weeks().dates.flatMap((column, x) =>
+      column.flatMap((date, y) => {
+        if (!date) return [];
+        const value = byDate.get(date)?.[metric] || null;
+        return [[x, y, value] as [number, number, number | null]];
+      })
+    );
   });
+
+  protected tooltip = (x: number, y: number) => {
+    const date = this.weeks().dates[x][y];
+    const day = this.byDate().get(date);
+    const label = toDate(date).toLocaleDateString(undefined, {
+      timeZone: 'UTC',
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+    const voice = day?.minutes ? this.durationPipe.transform(day.minutes * 60000, true) : 'No time';
+    const messages = day?.messages ?? 0;
+    return `<strong>${label}</strong><br/>${voice} in voice<br/>${messages} ${messages === 1 ? 'message' : 'messages'}`;
+  };
 }

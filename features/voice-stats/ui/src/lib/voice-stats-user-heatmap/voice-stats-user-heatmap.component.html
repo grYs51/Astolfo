@@ -18,11 +18,13 @@
   @if (loading()) {
     <div class="h-96 rounded-lg bg-base-200 animate-pulse"></div>
   } @else {
-    <div
-      echarts
-      [options]="chartOption()"
-      [initOpts]="{ renderer: 'canvas' }"
-      class="heatmap-chart"
-    ></div>
+    <feature-voice-stats-heatmap-chart
+      [cells]="cells()"
+      [xLabels]="hours"
+      [xLabelInterval]="1"
+      [diverging]="mode() === 'compare'"
+      [tooltip]="tooltip"
+      class="h-[380px]"
+    />
   }
 </div>

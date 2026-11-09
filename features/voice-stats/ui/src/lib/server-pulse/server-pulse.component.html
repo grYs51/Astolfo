@@ -16,7 +16,14 @@
   @if (isEmpty()) {
     <p class="py-lg text-center text-sm text-gray-400">No online status recorded in this period yet</p>
   } @else {
-    <div echarts [options]="chartOption()" [initOpts]="{ renderer: 'canvas' }" class="block h-[420px] w-full"></div>
+    <feature-voice-stats-heatmap-chart
+      [cells]="cells()"
+      [xLabels]="hours"
+      [xLabelInterval]="1"
+      [legend]="['More online', 'Fewer']"
+      [tooltip]="tooltip"
+      class="h-[420px]"
+    />
 
     <div class="mt-md grid gap-md border-t border-white/5 pt-md sm:grid-cols-2">
       @for (group of groups(); track group.title) {

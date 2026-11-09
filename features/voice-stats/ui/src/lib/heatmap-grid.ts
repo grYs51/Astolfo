@@ -1,14 +1,10 @@
 /** Shared 24×7 grid labels and fill logic for the heatmap components. */
 
-export const HEATMAP_DAYS_OF_WEEK = [
-  'Sun',
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-] as const;
+/** Heatmap rows, Monday first; the API's `dayOfWeek` goes through `weekdayRow` */
+export const HEATMAP_DAYS_OF_WEEK = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** API day of week (Postgres `EXTRACT(DOW)`, 0 = Sunday) → row in `HEATMAP_DAYS_OF_WEEK` */
+export const weekdayRow = (dayOfWeek: number) => (dayOfWeek + 6) % 7;
 
 /** Hour labels: 12AM, 1AM, …, 11PM */
 export const HEATMAP_HOURS = Array.from({ length: 24 }, (_, i) => {
@@ -33,15 +29,15 @@ export const HEATMAP_SEQUENTIAL_COLORS = [
   '#e9d5ff',
 ];
 
-export const heatmapKey = (hour: number, dayOfWeek: number) =>
-  `${hour}-${dayOfWeek}`;
+/** Cell key by hour and row (`weekdayRow` of the API's day of week) */
+export const heatmapKey = (hour: number, row: number) => `${hour}-${row}`;
 
 /**
- * Generates all 168 `[hour, dayOfWeek, value]` cells for an ECharts heatmap
- * series; `getValue` decides what a missing cell is (0, null, …).
+ * Generates all 168 `[hour, row, value]` heatmap cells;
+ * `getValue` decides what a missing cell is (0, null, …).
  */
 export function buildHeatmapGrid<T = number>(
-  getValue: (hour: number, dayOfWeek: number) => T
+  getValue: (hour: number, row: number) => T
 ): [number, number, T][] {
   const cells: [number, number, T][] = [];
   for (let hour = 0; hour < 24; hour++) {
