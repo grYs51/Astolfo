@@ -1,5 +1,6 @@
 import { avatarSvg } from './avatars';
-import { escapeXml, FONT_FAMILY, truncate } from './render';
+import { escapeXml, truncate } from './render';
+import { text } from './svg';
 import { CardTheme } from './themes';
 
 export interface LeaderboardCardRow {
@@ -29,9 +30,6 @@ const HEADER_H = 112;
 const ROW_H = 56;
 const ROW_GAP = 8;
 const BAR_W = 460;
-
-const text = (x: number, y: number, size: number, fill: string, content: string, extra = '') =>
-  `<text x="${x}" y="${y}" font-family="${FONT_FAMILY}" font-size="${size}" fill="${fill}" ${extra}>${content}</text>`;
 
 const row = (r: LeaderboardCardRow, y: number, t: CardTheme) => {
   const filled = r.fraction > 0 ? Math.max(8, Math.min(1, r.fraction) * BAR_W) : 0;
