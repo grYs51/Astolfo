@@ -19,6 +19,7 @@ export interface Db {
   metricDaily: PrismaClient['metric_daily'];
   guildEvents: PrismaClient['guild_events'];
   pageViews: PrismaClient['page_views'];
+  appNotice: PrismaClient['app_notice'];
   settingsChanges: PrismaClient['guild_settings_changes'];
 }
 
@@ -73,6 +74,7 @@ export function getDb(): Db {
     metricDaily: currentClient.metric_daily,
     guildEvents: currentClient.guild_events,
     pageViews: currentClient.page_views,
+    appNotice: currentClient.app_notice,
     settingsChanges: currentClient.guild_settings_changes,
   };
 }

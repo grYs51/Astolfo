@@ -9,5 +9,8 @@ export type {
   AdminUsage,
   AdminPeople,
   AdminWeb,
+  AdminClosedSessions,
+  AdminBroadcastQueued,
+  AppNotice,
 } from '@nx-stolfo/api-interfaces';
 export * from './lib/admin.api';

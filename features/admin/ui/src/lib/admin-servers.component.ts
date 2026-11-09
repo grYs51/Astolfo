@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { AdminServer, AdminServers } from '@nx-stolfo/data-access-admin';
 
@@ -38,6 +38,7 @@ const isInactive = (server: AdminServer) => server.voiceHours30d === 0 && server
               </th>
             }
             <th>Settings</th>
+            <th><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -60,10 +61,31 @@ const isInactive = (server: AdminServer) => server.voiceHours30d === 0 && server
               <td>{{ server.lastActivity ? (server.lastActivity | date: 'mediumDate') : 'Never' }}</td>
               <td>{{ server.joinedAt ? (server.joinedAt | date: 'mediumDate') : 'Unknown' }}</td>
               <td class="text-xs text-gray-400">{{ settings(server) }}</td>
+              <td class="whitespace-nowrap text-right">
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs"
+                  [disabled]="busy() || !server.digest"
+                  [title]="server.digest ? 'Post the latest digest now' : 'No digest channel'"
+                  [attr.aria-label]="'Post digest to ' + server.name"
+                  (click)="postDigest.emit(server)"
+                >
+                  Post digest
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-ghost btn-xs text-red-400"
+                  [disabled]="busy()"
+                  [attr.aria-label]="'Leave ' + server.name"
+                  (click)="leave.emit(server)"
+                >
+                  Leave
+                </button>
+              </td>
             </tr>
           } @empty {
             <tr>
-              <td colspan="7" class="py-lg text-center text-gray-400">The bot is in no server</td>
+              <td colspan="8" class="py-lg text-center text-gray-400">The bot is in no server</td>
             </tr>
           }
         </tbody>
@@ -88,6 +110,10 @@ const isInactive = (server: AdminServer) => server.voiceHours30d === 0 && server
 })
 export class AdminServersComponent {
   servers = input.required<AdminServers>();
+  /** An action is running: actions are disabled */
+  busy = input(false);
+  postDigest = output<AdminServer>();
+  leave = output<AdminServer>();
   protected readonly columns = COLUMNS;
   protected readonly inactive = isInactive;
   protected sortKey = signal<SortKey>('voiceHours30d');

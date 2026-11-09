@@ -91,3 +91,36 @@ export interface AdminWeb {
   /** Route patterns, most viewed first, last 90 days */
   topPages: { path: string; views: number; visitors: number }[];
 }
+
+/**
+ * Admin actions: POST /admin/actions/{digest,leave,close-stuck-sessions,broadcast} and PUT /admin/notice.
+ * The notice is also served to everyone, logged in or not, by GET /notice.
+ */
+export interface AdminGuildAction {
+  guildId: string;
+}
+
+/** The maintenance notice; null when none is set. At most 300 characters. */
+export interface AppNotice {
+  text: string | null;
+}
+
+export interface AdminClosedSessions {
+  closed: number;
+}
+
+/** At most 1,000 characters */
+export interface AdminBroadcast {
+  text: string;
+}
+
+/** The broadcast's 202: how many servers it will post to; the posting runs in the background */
+export interface AdminBroadcastQueued {
+  queued: number;
+}
+
+/** Logged by the bot once the background broadcast is done */
+export interface AdminBroadcastResult {
+  posted: number;
+  failed: number;
+}

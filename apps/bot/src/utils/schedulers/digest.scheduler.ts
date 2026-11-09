@@ -82,6 +82,25 @@ export const buildLatestDigest = async (
   };
 };
 
+/**
+ * Build and send one server's latest digest. A silent week isn't worth a post.
+ * Doesn't touch digest_last_sent_at: the scheduler stamps it, a manual post doesn't.
+ */
+export const postDigest = async (
+  client: DiscordClient,
+  config: { guild_id: string; digest_channel_id: string | null },
+  now = new Date()
+): Promise<'posted' | 'silent' | 'unsendable'> => {
+  const message = await buildLatestDigest(client, config.guild_id, now);
+  if (!message) return 'silent';
+  const channel = config.digest_channel_id
+    ? await client.channels.fetch(config.digest_channel_id).catch(() => null)
+    : null;
+  if (!channel?.isSendable()) return 'unsendable';
+  await channel.send(message);
+  return 'posted';
+};
+
 /** Post every digest that is due. Returns the guild ids it posted to. */
 export const runDueDigests = async (client: DiscordClient, now = new Date()) => {
   const configs = await client.dataSource.guildConfigurations.findMany({
@@ -95,20 +114,12 @@ export const runDueDigests = async (client: DiscordClient, now = new Date()) => 
     if (!isDigestDue(config.digest_last_sent_at, now)) continue;
 
     try {
-      // A silent week isn't worth a post
-      const message = await buildLatestDigest(client, config.guild_id, now);
-      if (message) {
-        const channel = await client.channels
-          .fetch(config.digest_channel_id as string)
-          .catch(() => null);
-        if (channel?.isSendable()) {
-          await channel.send(message);
-          posted.push(config.guild_id);
-        } else {
-          Logger.warn(
-            `Weekly digest: channel ${config.digest_channel_id} in guild ${config.guild_id} is missing or not sendable`
-          );
-        }
+      const result = await postDigest(client, config, now);
+      if (result === 'posted') posted.push(config.guild_id);
+      if (result === 'unsendable') {
+        Logger.warn(
+          `Weekly digest: channel ${config.digest_channel_id} in guild ${config.guild_id} is missing or not sendable`
+        );
       }
     } catch (error) {
       Logger.error(`Weekly digest failed for guild ${config.guild_id}`, error);

@@ -8,6 +8,10 @@
     [loading]="health.isLoading()" [error]="!!health.error()" (refresh)="health.reload()">
     @if (health.value(); as value) {
       <feature-admin-health [health]="value" />
+      <div class="mt-md flex flex-wrap items-center gap-sm">
+        <button type="button" class="btn btn-sm" [disabled]="busy()" (click)="closeStuckSessions()">Close stuck sessions</button>
+        <span class="text-xs text-gray-500">Closes open voice sessions of members the gateway says have left</span>
+      </div>
     } @else {
       <lib-skeleton-loader type="stat-grid" />
     }
@@ -16,9 +20,19 @@
   <feature-admin-section id="servers" title="Servers" hint="Every server the bot is in. Faded: no voice or messages in 30 days"
     [loading]="servers.isLoading()" [error]="!!servers.error()" (refresh)="servers.reload()">
     @if (servers.value(); as value) {
-      <feature-admin-servers [servers]="value" />
+      <feature-admin-servers [servers]="value" [busy]="busy()" (postDigest)="postDigest($event)" (leave)="leave($event)" />
     } @else {
       <lib-skeleton-loader type="list" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="announcements" title="Announcements" hint="Tell users about downtime"
+    [loading]="notice.isLoading()" [error]="!!notice.error()" (refresh)="notice.reload()">
+    @if (notice.value(); as value) {
+      <feature-admin-announcements [notice]="value.text" [digestServers]="digestServers()" [busy]="busy()"
+        (saveNotice)="saveNotice($event)" (broadcast)="broadcast($event)" />
+    } @else {
+      <lib-skeleton-loader type="card" height="h-32" />
     }
   </feature-admin-section>
 
@@ -48,4 +62,13 @@
       <lib-skeleton-loader type="card" height="h-64" />
     }
   </feature-admin-section>
+
+  <div class="toast toast-end" role="status" aria-live="polite">
+    @if (result(); as r) {
+      <div class="alert text-sm" [class.alert-success]="r.ok" [class.alert-error]="!r.ok">
+        <span>{{ r.text }}</span>
+        <button type="button" class="btn btn-ghost btn-xs" aria-label="Dismiss" (click)="result.set(null)">✕</button>
+      </div>
+    }
+  </div>
 </div>

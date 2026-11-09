@@ -1,4 +1,5 @@
 <lib-page>
+  <lib-notice-banner [text]="notice.value()?.text" />
   <lib-navbar [name]="user()?.username" [image]="user()?.avatar| discordImage: 'avatars': user()?.id"
     [isOwner]="!!user()?.isOwner" [loginUrl]="backendUrl + '/auth/login'" [logoutUrl]="backendUrl + '/auth/logout'" [loading]="!sessionChecked()" />
 

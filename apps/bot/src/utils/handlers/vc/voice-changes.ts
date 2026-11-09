@@ -64,6 +64,7 @@ const closeSessions = async (
   date: Date,
   stillApplies: (key: string) => boolean = () => true
 ) => {
+  let closed = 0;
   await Promise.all(
     keys.map((key) => {
       const [guildId, memberId] = key.split(':');
@@ -74,6 +75,7 @@ const closeSessions = async (
         if (!stillApplies(key)) return;
         try {
           await saveAllUserVoiceStatsToDb(memberId, guildId, date);
+          closed++;
         } finally {
           cancelJob(guildId, memberId);
         }
@@ -81,7 +83,7 @@ const closeSessions = async (
     })
   );
 
-  return keys.length;
+  return closed;
 };
 
 export const handleUserJoinedVoiceChannel = async (

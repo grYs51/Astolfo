@@ -280,12 +280,25 @@ describe('closeLeftVoiceSessions (missed events after a re-identify)', () => {
   test('closes sessions of members who left or switched channel, keeps the rest', async () => {
     setGuild({ [MEMBER]: CHANNEL, [OTHER]: null, [THIRD]: 'channel-2' });
 
-    await closeLeftVoiceSessions(new Date());
+    expect(await closeLeftVoiceSessions(new Date())).toBe(2);
 
     expect(db.open().map((row) => row.member_id)).toEqual([MEMBER]);
     expect([...client.voiceUsers.keys()]).toEqual([KEY]);
     expect(cancelJob).toHaveBeenCalledWith(GUILD, OTHER);
     expect(cancelJob).toHaveBeenCalledWith(GUILD, THIRD);
+  });
+
+  test('counts only the sessions it really closed', async () => {
+    const voice: Record<string, string | null> = { [MEMBER]: CHANNEL, [OTHER]: null, [THIRD]: null };
+    setGuild(voice);
+
+    const closing = closeLeftVoiceSessions(new Date());
+    // OTHER is back before its queued close runs, so it's skipped
+    (client.guilds.cache.get(GUILD) as unknown as { voiceStates: { cache: Map<string, unknown> } })
+      .voiceStates.cache.set(OTHER, { channelId: CHANNEL });
+
+    expect(await closing).toBe(1);
+    expect(db.open().map((row) => row.member_id).sort()).toEqual([MEMBER, OTHER].sort());
   });
 
   test("leaves an unavailable guild's sessions open (its voice states are stale)", async () => {
