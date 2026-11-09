@@ -4,7 +4,8 @@ import { Logger } from '../logger';
 import { getServerDigest } from '../../stats/queries';
 import { dashboardButton, dashboardUrlFor, isEmptyDigest } from '../../stats/messages';
 import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
-import { digestCard, DigestMember } from '../../cards/digest.card';
+import { digestCard } from '../../cards/digest.card';
+import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
@@ -55,32 +56,14 @@ export const buildLatestDigest = async (
   });
   if (isEmptyDigest(digest)) return undefined;
 
-  // <@id> doesn't resolve inside an image, so names come from the guild cache
   const guild = client.guilds.cache.get(guildId);
-  const ids = new Set([
+  const members = await cardMembers(guild, [
     ...digest.topVoice.map((m) => m.memberId),
     ...digest.topMessages.map((m) => m.memberId),
     ...digest.topStreaks.map((m) => m.memberId),
     ...digest.milestones.map((m) => m.memberId),
     ...(digest.bestDuo ? [digest.bestDuo.a, digest.bestDuo.b] : []),
   ]);
-  // Large guilds leave offline members out of the cache; one batched fetch fills it
-  const missing = [...ids].filter((id) => !guild?.members.cache.has(id));
-  if (guild && missing.length) {
-    await guild.members
-      .fetch({ user: missing })
-      .catch((error) => Logger.warn(`Weekly digest: failed to fetch members for guild ${guildId}`, error));
-  }
-  const members: Record<string, DigestMember> = {};
-  await Promise.all(
-    [...ids].map(async (id) => {
-      const member = guild?.members.cache.get(id);
-      members[id] = {
-        name: member?.displayName ?? 'Unknown member',
-        avatar: await fetchImage(member?.displayAvatarURL(CARD_IMAGE)),
-      };
-    })
-  );
 
   const svg = digestCard(
     {

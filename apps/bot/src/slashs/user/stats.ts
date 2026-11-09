@@ -11,6 +11,7 @@ import { getMemberSummary } from '../../stats/queries';
 import { dashboardButton, dashboardUrlFor } from '../../stats/messages';
 import { StatsPeriod } from '../../stats/windows';
 import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
+import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { statsCard } from '../../cards/stats.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
@@ -56,7 +57,8 @@ export default class StatsSlash extends BaseSlash {
     const summary = await getMemberSummary(client.dataSource, guild.id, interaction.user.id, period);
 
     const me = guild.members.cache.get(interaction.user.id);
-    const companions = summary.companions.slice(0, 3).map((c) => guild.members.cache.get(c.memberId));
+    const companionIds = summary.companions.slice(0, 3).map((c) => c.memberId);
+    const companions = await cardMembers(guild, companionIds);
     const svg = statsCard(
       {
         summary,
@@ -67,12 +69,7 @@ export default class StatsSlash extends BaseSlash {
         favouriteChannelName: summary.favouriteChannelId
           ? guild.channels.cache.get(summary.favouriteChannelId)?.name
           : undefined,
-        companions: await Promise.all(
-          companions.map(async (m) => ({
-            name: m?.displayName ?? 'Unknown member',
-            avatar: await fetchImage(m?.displayAvatarURL(CARD_IMAGE)),
-          }))
-        ),
+        companions: companionIds.map((id) => companions[id]),
       },
       THEMES[DEFAULT_THEME]
     );

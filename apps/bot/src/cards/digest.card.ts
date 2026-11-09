@@ -1,14 +1,10 @@
 import { formatChange, formatDuration, plural } from '../stats/messages';
 import type { ServerDigest } from '../stats/queries';
 import { avatarSvg } from './avatars';
+import type { CardMember } from './members';
 import { escapeXml, truncate } from './render';
 import { header, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
 import { CardTheme } from './themes';
-
-export interface DigestMember {
-  name: string;
-  avatar?: string;
-}
 
 export interface DigestCardData {
   digest: ServerDigest;
@@ -17,7 +13,7 @@ export interface DigestCardData {
   /** Monday (00:00 UTC) the digest's week starts */
   weekStart: Date;
   /** Names and avatars of every member the digest names, by id */
-  members: Record<string, DigestMember>;
+  members: Record<string, CardMember>;
 }
 
 interface ListRow {
