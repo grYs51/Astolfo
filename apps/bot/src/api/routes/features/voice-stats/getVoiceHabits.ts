@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 import { VoiceHabitMetric, VoiceHabitsLeaderboard } from '@nx-stolfo/api-interfaces';
 import { memberOrUnknown, parsePeriod, periodFilter, visibleMembersOnly } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
-import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
+import { HABIT_SUMS, HabitRow, toHabits } from '../../../../stats/habits-sql';
 
 /**
  * What each metric ranks by; rows where it's 0 are left out. Listening and

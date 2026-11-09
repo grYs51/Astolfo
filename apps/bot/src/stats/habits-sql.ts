@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { VoiceHabits } from '@nx-stolfo/api-interfaces';
-import { VOICE_TYPE } from '../../../../utils/handlers/vc';
+import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 
 const sumOf = (type: VOICE_TYPE) => Prisma.sql`
   COALESCE(SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, NOW()) - issued_on)) * 1000)

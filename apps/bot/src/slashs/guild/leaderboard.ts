@@ -1,15 +1,12 @@
-import humanizeDuration from 'humanize-duration';
 import {
   ChatInputCommandInteraction,
   CacheType,
-  EmbedBuilder,
   SlashCommandBuilder,
   InteractionContextType,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   ComponentType,
-  AttachmentBuilder,
 } from 'discord.js';
 import client from '../../client/client';
 import { BaseSlash } from '../../utils/structures/base-slash';
@@ -20,12 +17,11 @@ import {
   leaderboardTimeRangeLabels,
   leaderboardTypesLabels,
 } from '../../utils/functions/leaderboard/leaderboard';
-import { createBar } from '../../utils/functions/create-bar';
 import { Logger } from '../../utils/logger';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
 import { leaderboardCard } from '../../cards/leaderboard.card';
-import { renderPng } from '../../cards/render';
+import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 import { formatDuration } from '../../stats/messages';
 
@@ -64,12 +60,6 @@ export default class LeaderboardEvent extends BaseSlash {
             )
           )
       )
-      .addBooleanOption((option) =>
-        option
-          .setName('image')
-          .setDescription('Show it as an image card')
-          .setRequired(false)
-      )
       .setContexts(InteractionContextType.Guild);
   }
 
@@ -92,7 +82,6 @@ export default class LeaderboardEvent extends BaseSlash {
     const timeRange =
       (interaction.options.get('time-range')?.value as LeaderboardTimeRanges) ??
       'allTime';
-    const image = interaction.options.getBoolean('image') ?? false;
 
     await InterActionUtils.deferReply(interaction);
 
@@ -119,43 +108,7 @@ export default class LeaderboardEvent extends BaseSlash {
 
       const longestInVc = sortedLeaderboard[0]?.count ?? 1;
 
-      const mapped = sortedLeaderboard.map((x) => ({
-        ...x,
-        time: humanizeDuration(x.count, { round: true }),
-        bar: createBar(x.count, longestInVc, 15),
-      }));
-
-      const titleBase =
-        type === 'current'
-          ? leaderboardLabels[type].title
-          : `${leaderboardLabels[type].title} - ${leaderboardTimeRangeLabels[timeRange]}`;
-
-      const totalPages = Math.max(1, Math.ceil(mapped.length / PAGE_SIZE));
-
-      const buildEmbed = (page: number) => {
-        const start = page * PAGE_SIZE;
-        const pageItems = mapped.slice(start, start + PAGE_SIZE);
-
-        const embed = new EmbedBuilder()
-          .setTitle(titleBase)
-          .setDescription(leaderboardLabels[type].description)
-          .setFooter({ text: `Page ${page + 1}/${totalPages}` });
-
-        if (pageItems.length > 0) {
-          embed.setFields(
-            pageItems.map((x, i) => ({
-              name: `${start + i + 1}. ${x.name}`,
-              value: `${x.time}\n${x.bar}`,
-            }))
-          );
-        } else {
-          embed.setDescription(
-            leaderboardLabels[type].empty ?? 'No data found'
-          );
-        }
-
-        return embed;
-      };
+      const totalPages = Math.max(1, Math.ceil(sortedLeaderboard.length / PAGE_SIZE));
 
       // Fetched once per member, so paging back and forth doesn't refetch
       const avatars = new Map<string, Promise<string | undefined>>();
@@ -165,7 +118,7 @@ export default class LeaderboardEvent extends BaseSlash {
         }
         return avatars.get(id);
       };
-      const serverIcon = image ? fetchImage(guild.iconURL(CARD_IMAGE)) : undefined;
+      const serverIcon = fetchImage(guild.iconURL(CARD_IMAGE));
 
       const buildCard = async (page: number) => {
         const start = page * PAGE_SIZE;
@@ -190,11 +143,8 @@ export default class LeaderboardEvent extends BaseSlash {
           },
           THEMES[DEFAULT_THEME]
         );
-        return new AttachmentBuilder(await renderPng(svg), { name: 'leaderboard.png' });
+        return cardFile(svg, 'leaderboard.png');
       };
-
-      const buildPage = async (page: number) =>
-        image ? { embeds: [], files: [await buildCard(page)] } : { embeds: [buildEmbed(page)] };
 
       const prevId = `leaderboard_prev_${interaction.id}`;
       const nextId = `leaderboard_next_${interaction.id}`;
@@ -221,7 +171,7 @@ export default class LeaderboardEvent extends BaseSlash {
       let currentPage = 0;
 
       const sent = await InterActionUtils.send(interaction, {
-        ...(await buildPage(currentPage)),
+        files: [await buildCard(currentPage)],
         components: [makeRow(currentPage)],
         fetchReply: true,
       });
@@ -256,14 +206,6 @@ export default class LeaderboardEvent extends BaseSlash {
             return;
           }
 
-          if (!image) {
-            await InterActionUtils.update(btn, {
-              embeds: [buildEmbed(currentPage)],
-              components: [makeRow(currentPage)],
-            });
-            return;
-          }
-
           // Acknowledge first: a new page of avatars plus the render can take longer than Discord's 3s
           const page = currentPage;
           await InterActionUtils.deferUpdate(btn);
@@ -271,7 +213,6 @@ export default class LeaderboardEvent extends BaseSlash {
           // A later click or the timeout got here first; don't overwrite its page or re-enable the buttons
           if (page !== currentPage || collector.ended) return;
           await InterActionUtils.editReply(btn, {
-            embeds: [],
             files,
             // Drop the previous page's image instead of stacking them
             attachments: [],

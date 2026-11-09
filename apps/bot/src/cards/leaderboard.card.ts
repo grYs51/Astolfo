@@ -1,5 +1,6 @@
 import { avatarSvg } from './avatars';
-import { escapeXml, FONT_FAMILY, truncate } from './render';
+import { escapeXml, truncate } from './render';
+import { header, PAD, svgCard, text, W } from './svg';
 import { CardTheme } from './themes';
 
 export interface LeaderboardCardRow {
@@ -23,15 +24,11 @@ export interface LeaderboardCardData {
   empty: string;
 }
 
-const W = 800;
-const PAD = 32;
-const HEADER_H = 112;
+/** Below the shared header, with the same gap as the other cards */
+const BODY_Y = 136;
 const ROW_H = 56;
 const ROW_GAP = 8;
 const BAR_W = 460;
-
-const text = (x: number, y: number, size: number, fill: string, content: string, extra = '') =>
-  `<text x="${x}" y="${y}" font-family="${FONT_FAMILY}" font-size="${size}" fill="${fill}" ${extra}>${content}</text>`;
 
 const row = (r: LeaderboardCardRow, y: number, t: CardTheme) => {
   const filled = r.fraction > 0 ? Math.max(8, Math.min(1, r.fraction) * BAR_W) : 0;
@@ -49,20 +46,14 @@ const row = (r: LeaderboardCardRow, y: number, t: CardTheme) => {
 /** One page of the leaderboard (up to 10 rows) as an SVG */
 export const leaderboardCard = (d: LeaderboardCardData, t: CardTheme) => {
   const body = d.rows.length
-    ? d.rows.map((r, i) => row(r, HEADER_H + i * (ROW_H + ROW_GAP), t)).join('')
-    : `<rect x="${PAD}" y="${HEADER_H}" width="${W - 2 * PAD}" height="${ROW_H}" rx="12" fill="${t.surface}"/>` +
-      text(W / 2, HEADER_H + ROW_H / 2, 17, t.muted, escapeXml(d.empty), 'dy="0.35em" text-anchor="middle"');
-  const bodyEnd = HEADER_H + Math.max(1, d.rows.length) * (ROW_H + ROW_GAP) - ROW_GAP;
-  const H = bodyEnd + 48;
+    ? d.rows.map((r, i) => row(r, BODY_Y + i * (ROW_H + ROW_GAP), t)).join('')
+    : `<rect x="${PAD}" y="${BODY_Y}" width="${W - 2 * PAD}" height="${ROW_H}" rx="12" fill="${t.surface}"/>` +
+      text(W / 2, BODY_Y + ROW_H / 2, 17, t.muted, escapeXml(d.empty), 'dy="0.35em" text-anchor="middle"');
+  const bodyEnd = BODY_Y + Math.max(1, d.rows.length) * (ROW_H + ROW_GAP) - ROW_GAP;
 
-  return [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
-    `<rect width="${W}" height="${H}" rx="24" fill="${t.background}"/>`,
-    avatarSvg({ id: 'icon', x: PAD, y: 28, size: 56, name: d.serverName, image: d.serverIcon, theme: t }),
-    text(104, 54, 26, t.text, escapeXml(truncate(d.title, 40)), 'font-weight="700"'),
-    text(104, 82, 16, t.muted, escapeXml(truncate(`${d.serverName} · ${d.subtitle}`, 60))),
+  return svgCard(bodyEnd + 48, t, [
+    header({ name: d.serverName, avatar: d.serverIcon, title: d.title, subtitle: `${d.serverName} · ${d.subtitle}` }, t),
     body,
     text(PAD, bodyEnd + 30, 13, t.muted, escapeXml(d.footer)),
-    `</svg>`,
-  ].join('');
+  ]);
 };

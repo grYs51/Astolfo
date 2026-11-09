@@ -4,6 +4,12 @@ import { client } from '../../client/instance';
 import { isEnabled, SETTING_FLAGS } from '../handlers/settings-handler';
 import { voiceKey } from '../handlers/vc/voice-utils';
 import { Logger } from '../logger';
+import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
+import { reminderCard } from '../../cards/reminder.card';
+import { cardFile } from '../../cards/render';
+import { DEFAULT_THEME, THEMES } from '../../cards/themes';
+
+const REMINDER_HOURS = 5;
 
 const scheduledJobs = new Map<string, Job>();
 
@@ -13,7 +19,7 @@ export const schedule5hrVoiceChannelJob = (
   date: Date
 ) => {
   const jobKey = voiceKey(member.guild.id, member.id);
-  scheduleJob(jobKey, new Date(date.getTime() + 5 * 60 * 60 * 1000), () => {
+  scheduleJob(jobKey, new Date(date.getTime() + REMINDER_HOURS * 60 * 60 * 1000), () => {
     const guildConfig = client.guildConfigs.get(member.guild.id);
     if (
       guildConfig?.toggles === undefined ||
@@ -23,17 +29,35 @@ export const schedule5hrVoiceChannelJob = (
     }
     const channel = client.channels.cache.get(channel_id);
     if (channel?.isSendable()) {
-      //member.toString() makes it a mention (pinging the user)
       const straightOrGay = Math.random() > 0.9 ? 'straight' : 'gay';
-      channel
-        .send(
-          `${member} has been in the voice channel for 5 hours ${straightOrGay}!`
-        )
-        // Runs from a node-schedule timer: nothing else would observe a
-        // rejection (e.g. missing send permission)
-        .catch((error) =>
-          Logger.error(`Failed to send 5h voice reminder in ${channel_id}`, error)
-        );
+      const send = async () => {
+        let files;
+        try {
+          const svg = reminderCard(
+            {
+              memberName: member.displayName,
+              avatar: await fetchImage(member.displayAvatarURL(CARD_IMAGE)),
+              channelName: 'name' in channel && channel.name ? channel.name : 'voice',
+              hours: REMINDER_HOURS,
+              word: straightOrGay,
+            },
+            THEMES[DEFAULT_THEME]
+          );
+          files = [await cardFile(svg, 'reminder.png')];
+        } catch (error) {
+          // A one-shot timer: if the card can't render, still ping with the old text line
+          Logger.error(`Failed to render the 5h voice reminder card for ${member.id}`, error);
+          await channel.send(`${member} has been in the voice channel for ${REMINDER_HOURS} hours ${straightOrGay}!`);
+          return;
+        }
+        // member.toString() is a mention: the text pings, the image can't
+        await channel.send({ content: `${member}`, files });
+      };
+      // Runs from a node-schedule timer: nothing else would observe a
+      // rejection (e.g. missing send permission)
+      send().catch((error) =>
+        Logger.error(`Failed to send 5h voice reminder in ${channel_id}`, error)
+      );
     }
   });
 };
