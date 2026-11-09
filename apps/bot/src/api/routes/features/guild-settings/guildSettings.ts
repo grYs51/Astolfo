@@ -4,6 +4,7 @@ import { guild_configs } from '@prisma/client';
 import { GuildSettings, GuildSettingsHistory, SettingChange } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
 import { discordDirectory } from '../../../utils/discord-directory';
+import { memberOrUnknown } from '../helpers';
 import {
   defaultPrefix,
   digestChannelUpdate,
@@ -204,12 +205,7 @@ export const getGuildSettingsHistory: RequestHandler<{ serverId: string }, Guild
     res.send({
       entries: rows.map((row) => ({
         at: row.at,
-        member: members.get(row.user_id) ?? {
-          id: row.user_id,
-          username: 'Former member',
-          displayName: null,
-          avatar: null,
-        },
+        member: memberOrUnknown(members, row.user_id),
         changes: row.changes as SettingChange[],
       })),
     });

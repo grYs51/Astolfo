@@ -33,7 +33,7 @@ const LABELS: Record<string, string> = {
 
       @if (entries().length) {
         <ol class="divide-y divide-white/5">
-          @for (entry of entries(); track $index) {
+          @for (entry of entries(); track entry.at) {
             <li class="flex gap-md py-sm first:pt-0 last:pb-0">
               @if (entry.member.avatar) {
                 <img [src]="entry.member.avatar" alt="" class="mt-0.5 h-8 w-8 shrink-0 rounded-full" />
