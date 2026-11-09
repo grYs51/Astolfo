@@ -34,13 +34,15 @@ describe('isOwner', () => {
   });
 
   // The only thing keeping the admin panel from every logged-in user
-  test('every admin route checks login and owner', () => {
+  test('every admin route checks login and owner, /notice is the only public one', () => {
     const router = Router();
     registerAdmin(router);
     const routes = router.stack.flatMap((layer) => layer.route ?? []);
+    const isPublic = (route: { path: string }) => route.path === '/notice';
 
-    expect(routes.length).toBe(5);
-    for (const route of routes) {
+    expect(routes.length).toBe(11);
+    expect(routes.filter(isPublic)).toHaveLength(1);
+    for (const route of routes.filter((r) => !isPublic(r))) {
       expect(route.path).toMatch(/^\/admin\//);
       const handles = route.stack.map((layer: { handle: unknown }) => layer.handle);
       expect(handles.slice(0, 2)).toEqual([isAuthenticated, isOwner]);

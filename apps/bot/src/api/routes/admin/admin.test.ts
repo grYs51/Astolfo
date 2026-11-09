@@ -5,6 +5,8 @@ import { getAdminPeople } from './getAdminPeople';
 import { getAdminUsage, p95FromBuckets } from './getAdminUsage';
 import { getAdminWeb } from './getAdminWeb';
 import { getAdminHealth } from './getAdminHealth';
+import { broadcast, closeStuckSessions, getNotice, leaveGuild, postDigestNow, setNotice } from './actions';
+import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 
 jest.mock('../../utils/discord-directory', () => ({
   discordDirectory: () => ({
@@ -14,6 +16,8 @@ jest.mock('../../utils/discord-directory', () => ({
     ],
   }),
 }));
+const mockLeave = jest.fn();
+const mockSend = jest.fn();
 jest.mock('../../../client/instance', () => ({
   client: {
     ws: { status: 0, ping: -1 },
@@ -21,8 +25,23 @@ jest.mock('../../../client/instance', () => ({
     userStatus: new Map(),
     commands: new Map(),
     slashs: new Map(),
+    // The bot is in g1 and g2; g3 is a server it left
+    guilds: {
+      cache: new Map([
+        ['g1', { id: 'g1', name: 'Café', leave: () => mockLeave() }],
+        ['g2', { id: 'g2', name: 'Quiet', leave: () => mockLeave() }],
+      ]),
+    },
+    channels: {
+      fetch: jest.fn(async (id: string) =>
+        id === 'gone' ? null : { isSendable: () => true, send: (msg: unknown) => mockSend(id, msg) }
+      ),
+    },
   },
 }));
+jest.mock('../../../utils/schedulers/digest.scheduler', () => ({ postDigest: jest.fn() }));
+jest.mock('../../../utils/handlers/vc', () => ({ closeLeftVoiceSessions: jest.fn(async () => 2) }));
+jest.mock('../../../utils/logger', () => ({ Logger: { info: jest.fn(), warn: jest.fn(), error: jest.fn() } }));
 
 /** Runs a handler against a db whose raw queries return `results` in call order */
 const run = async (handler: unknown, results: unknown[][], extra: object = {}) => {
@@ -118,5 +137,91 @@ describe('admin web and health', () => {
       openVoiceSessions: 1,
       database: { sizeBytes: 2048, tables: [{ name: 'voice_stats', rows: 5 }] },
     });
+  });
+});
+
+/** Runs an action handler with a JSON body; returns the status (200 unless set) and the body sent */
+const act = async (handler: unknown, body: unknown, db: object = {}) => {
+  const res = { statusCode: 200, send: jest.fn(), status: jest.fn() };
+  res.status.mockImplementation((code: number) => ((res.statusCode = code), res));
+  const next = jest.fn();
+  await (handler as (req: Request, res: Response, next: jest.Mock) => Promise<void>)(
+    { db, body } as unknown as Request,
+    res as unknown as Response,
+    next
+  );
+  expect(next).not.toHaveBeenCalled();
+  return { status: res.statusCode, body: res.send.mock.calls[0][0] };
+};
+
+describe('admin actions', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  const configs = (config: object | null) => ({
+    guildConfigurations: { findUnique: jest.fn().mockResolvedValue(config) },
+  });
+
+  test('digest: 400 without a guild id, 404 for a server the bot is not in', async () => {
+    expect((await act(postDigestNow, {})).status).toBe(400);
+    expect((await act(postDigestNow, { guildId: 'g3' })).status).toBe(404);
+    expect(postDigest).not.toHaveBeenCalled();
+  });
+
+  test('digest: 409 without a digest channel or for a silent week', async () => {
+    expect((await act(postDigestNow, { guildId: 'g1' }, configs({ guild_id: 'g1', digest_channel_id: null }))).status).toBe(409);
+    (postDigest as jest.Mock).mockResolvedValueOnce('silent');
+    expect((await act(postDigestNow, { guildId: 'g1' }, configs({ guild_id: 'g1', digest_channel_id: 'c1' }))).status).toBe(409);
+  });
+
+  test('digest: posts through the scheduler helper', async () => {
+    (postDigest as jest.Mock).mockResolvedValueOnce('posted');
+    const config = { guild_id: 'g1', digest_channel_id: 'c1' };
+    expect(await act(postDigestNow, { guildId: 'g1' }, configs(config))).toEqual({ status: 200, body: { posted: true } });
+    expect(postDigest).toHaveBeenCalledWith(expect.anything(), config);
+  });
+
+  test('leave: 404 for an unknown server, otherwise leaves it', async () => {
+    expect((await act(leaveGuild, { guildId: 'g3' })).status).toBe(404);
+    expect(mockLeave).not.toHaveBeenCalled();
+    expect((await act(leaveGuild, { guildId: 'g2' })).status).toBe(200);
+    expect(mockLeave).toHaveBeenCalledTimes(1);
+  });
+
+  test('close stuck sessions returns the count', async () => {
+    expect((await act(closeStuckSessions, undefined)).body).toEqual({ closed: 2 });
+  });
+
+  test('notice: validates, trims, and clears on null or blank', async () => {
+    const appNotice = { upsert: jest.fn(), deleteMany: jest.fn(), findUnique: jest.fn().mockResolvedValue(null) };
+    expect((await act(setNotice, { text: 5 }, { appNotice })).status).toBe(400);
+    expect((await act(setNotice, {}, { appNotice })).status).toBe(400);
+    expect((await act(setNotice, { text: 'x'.repeat(301) }, { appNotice })).status).toBe(400);
+    expect(appNotice.upsert).not.toHaveBeenCalled();
+
+    expect((await act(setNotice, { text: '  Down at 22:00  ' }, { appNotice })).body).toEqual({ text: 'Down at 22:00' });
+    expect(appNotice.upsert).toHaveBeenCalledWith(expect.objectContaining({ create: { id: 1, text: 'Down at 22:00' } }));
+
+    expect((await act(setNotice, { text: null }, { appNotice })).body).toEqual({ text: null });
+    expect((await act(setNotice, { text: '   ' }, { appNotice })).body).toEqual({ text: null });
+    expect(appNotice.deleteMany).toHaveBeenCalledTimes(2);
+
+    expect((await act(getNotice, undefined, { appNotice })).body).toEqual({ text: null });
+  });
+
+  test('broadcast: 1 to 1,000 characters', async () => {
+    expect((await act(broadcast, {})).status).toBe(400);
+    expect((await act(broadcast, { text: '  ' })).status).toBe(400);
+    expect((await act(broadcast, { text: 'x'.repeat(1001) })).status).toBe(400);
+  });
+
+  test('broadcast: digest channels of servers the bot is in, no pings, failures counted', async () => {
+    const findMany = jest.fn().mockResolvedValue([
+      { guild_id: 'g1', digest_channel_id: 'c1' },
+      { guild_id: 'g2', digest_channel_id: 'gone' },
+      { guild_id: 'g3', digest_channel_id: 'c3' }, // left
+    ]);
+    const { body } = await act(broadcast, { text: 'Hello @everyone' }, { guildConfigurations: { findMany } });
+    expect(body).toEqual({ posted: 1, failed: 1 });
+    expect(mockSend).toHaveBeenCalledWith('c1', { content: 'Hello @everyone', allowedMentions: { parse: [] } });
   });
 });
