@@ -7,13 +7,10 @@ import {
 import DiscordClient from '../../client/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
-import { getMemberSummary } from '../../stats/queries';
 import { dashboardButton, dashboardUrlFor, PERIOD_CHOICES } from '../../stats/messages';
 import { StatsPeriod } from '../../stats/windows';
-import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
-import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
-import { statsCard } from '../../cards/stats.card';
+import { statsCardSvg } from '../../cards/stats-card-svg';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 /**
@@ -47,25 +44,14 @@ export default class StatsSlash extends BaseSlash {
     }
 
     const period = (interaction.options.get('period')?.value as StatsPeriod | undefined) ?? 'month';
-    const summary = await getMemberSummary(client.dataSource, guild.id, interaction.user.id, period);
-
-    const me = guild.members.cache.get(interaction.user.id);
-    const companionIds = summary.companions.slice(0, 3).map((c) => c.memberId);
-    const companions = await cardMembers(guild, companionIds);
-    const svg = statsCard(
-      {
-        summary,
-        period,
-        memberName: me?.displayName ?? interaction.user.displayName,
-        avatar: await fetchImage((me ?? interaction.user).displayAvatarURL(CARD_IMAGE)),
-        serverName: guild.name,
-        favouriteChannelName: summary.favouriteChannelId
-          ? guild.channels.cache.get(summary.favouriteChannelId)?.name
-          : undefined,
-        companions: companionIds.map((id) => companions[id]),
-      },
-      THEMES[DEFAULT_THEME]
-    );
+    const svg = await statsCardSvg({
+      db: client.dataSource,
+      guildId: guild.id,
+      memberId: interaction.user.id,
+      viewerId: interaction.user.id,
+      period,
+      theme: THEMES[DEFAULT_THEME],
+    });
     const dashboardUrl = dashboardUrlFor(guild.id);
     await InterActionUtils.send(
       interaction,

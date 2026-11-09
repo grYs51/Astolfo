@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { isServerManager } from '../../utils/middleware/isServerManager';
+import { cardRateLimit } from '../../utils/middleware/cardRateLimit';
 import {
   getGuildSettings,
   getGuildSettingsHistory,
@@ -26,6 +27,7 @@ import {
   getUserGames,
   getActivityCalendar,
   getVoiceHabits,
+  getStatsCard,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -89,6 +91,13 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getVoiceStatsUser,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/stats.png',
+    isAuthenticated,
+    cardRateLimit,
+    isServerMember,
+    getStatsCard,
   );
   router.get(
     '/features/voice-stats/:serverId/users/:userId/heatmap',

@@ -127,7 +127,8 @@ const live: DiscordDirectory = {
         id: member.id,
         username: member.user.username,
         displayName: member.displayName,
-        avatar: member.user.displayAvatarURL(),
+        // The server avatar when they set one, like displayName
+        avatar: member.displayAvatarURL(),
       });
 
     // Cache first: the gateway request is rate limited by Discord, and a
