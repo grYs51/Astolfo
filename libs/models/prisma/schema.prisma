@@ -162,3 +162,10 @@ model page_views {
 
   @@id([day, path, user_id])
 }
+
+/// The owner's maintenance notice, shown as a banner on every dashboard page. One row (id 1) or none.
+model app_notice {
+  id         Int      @id @default(1)
+  text       String   @db.VarChar(300)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+}
