@@ -1,4 +1,4 @@
-import { voice_stats } from '@prisma/client';
+import { ClosedVoiceStat } from './intervals';
 import DiscordClient from '../../../client/client';
 import { hiddenMemberIds } from '../../privacy';
 import { getCurrentLeaderboard, getCurrentVoiceStats } from './currentLeaderboard';
@@ -42,11 +42,11 @@ export type getVoiceStatsType = (
   client: DiscordClient,
   guildId: string,
   fromTime?: Date
-) => Promise<voice_stats[]>;
+) => Promise<ClosedVoiceStat[]>;
 
 export type getLeaderboardType = (
   members: SimpleGuildMember[],
-  stats: voice_stats[]
+  stats: ClosedVoiceStat[]
 ) => Leaderboard[];
 
 type GetLeaderBoardType = {

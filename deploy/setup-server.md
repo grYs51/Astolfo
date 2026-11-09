@@ -277,6 +277,14 @@ it drops and recreates each object from the dump, including the
 `_prisma_migrations` history table, so the next `migrate deploy` only applies
 migrations newer than the dump. Don't run them concurrently.
 
+Time zone: the database must be on UTC (migration `database_timezone_utc`).
+That is a database setting, not data, so a dump doesn't carry it, while it
+does carry the migration as applied. Restoring over the database `migrate
+deploy` already ran on, as above, keeps the setting. If you restore into a
+database you created by hand, run
+`sudo -u postgres psql -c "ALTER DATABASE astolfo SET timezone TO 'UTC'"`
+first: the bot refuses to start while the database time zone isn't UTC.
+
 ---
 
 ## Adding another project

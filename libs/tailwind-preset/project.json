@@ -3,5 +3,5 @@
     "root": "libs/tailwind-preset",
     "sourceRoot": "libs/tailwind-preset",
     "targets": {},
-    "tags": []
+    "tags": ["type:common"]
 }

@@ -1,11 +1,10 @@
-import { voice_stats } from '@prisma/client';
 import {
   Leaderboard,
   getVoiceStatsType,
   getLeaderboardType,
 } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
-import { getOpenVoiceStats, unionDuration } from './intervals';
+import { ClosedVoiceStat, getOpenVoiceStats, isClosed, unionDuration } from './intervals';
 
 const voiceTypesToCheck = [
   VOICE_TYPE.VOICE,
@@ -44,7 +43,7 @@ export const getActiveVoiceStats: getVoiceStatsType = async (
   // still-open session is credited as active
   const inChannel = getOpenVoiceStats(client, guildId, voiceTypesToCheck, fromTime);
 
-  return [...dbVoiceStatsOfGuild, ...inChannel];
+  return [...dbVoiceStatsOfGuild.filter(isClosed), ...inChannel];
 };
 
 /**
@@ -55,7 +54,7 @@ export const getActiveVoiceStats: getVoiceStatsType = async (
 const deductedOverlap = (
   voiceStart: number,
   voiceEnd: number,
-  deductedStats: voice_stats[]
+  deductedStats: ClosedVoiceStat[]
 ): number =>
   unionDuration(
     deductedStats.map((s) => ({
@@ -67,7 +66,7 @@ const deductedOverlap = (
 export const getActiveLeaderboard: getLeaderboardType = (members, stats) => {
   // Pre-group deducted stats by member so each VOICE stat doesn't re-scan
   // the whole array (previously O(n²))
-  const deductedByMember = new Map<string, voice_stats[]>();
+  const deductedByMember = new Map<string, ClosedVoiceStat[]>();
   for (const stat of stats) {
     if (!deductedTypes.includes(stat.type as VOICE_TYPE)) continue;
     const list = deductedByMember.get(stat.member_id);

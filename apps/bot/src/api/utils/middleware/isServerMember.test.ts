@@ -60,8 +60,8 @@ describe('isServerMember', () => {
     const router = Router();
     registerFeatures(router);
     const routes = router.stack
-      .map((layer) => layer.route)
-      .filter((route) => route?.path.startsWith('/features/voice-stats/'));
+      .flatMap((layer) => layer.route ?? [])
+      .filter((route) => route.path.startsWith('/features/voice-stats/'));
 
     expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {

@@ -8,24 +8,6 @@ module.exports = [
     ignores: ['**/dist'],
   },
   {
-    files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],
-    rules: {
-      '@nx/enforce-module-boundaries': [
-        'error',
-        {
-          enforceBuildableLibDependency: true,
-          allow: ['^.*/eslint(\\.base)?\\.config\\.[cm]?js$'],
-          depConstraints: [
-            {
-              sourceTag: '*',
-              onlyDependOnLibsWithTags: ['*'],
-            },
-          ],
-        },
-      ],
-    },
-  },
-  {
     files: [
       '**/*.ts',
       '**/*.tsx',
@@ -36,9 +18,12 @@ module.exports = [
     ],
     // Override or add rules here
     rules: {
+      // Use the bot's Logger (utils/logger.ts); the web app opts out line by line
+      "no-console": "error",
       "@nx/enforce-module-boundaries": [
         "error",
         {
+          enforceBuildableLibDependency: true,
           // config files require() these by relative path
           allow: [
             '^.*/eslint(\\.base)?\\.config\\.[cm]?js$',
@@ -46,6 +31,11 @@ module.exports = [
             '^(\\.\\./)+libs/tailwind-preset/tailwind\\.config$',
           ],
           "depConstraints": [
+            // The bot runs on Node: shared libs only, no Angular code
+            {
+              sourceTag: 'platform:node',
+              onlyDependOnLibsWithTags: ['scope:shared']
+            },
             {
               sourceTag: 'type:app',
               onlyDependOnLibsWithTags: ['type:feature', 'type:ui', 'type:data-access', 'type:common']

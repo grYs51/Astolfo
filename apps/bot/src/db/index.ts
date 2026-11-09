@@ -35,6 +35,21 @@ export async function createPrismaClient() {
   return currentClient;
 }
 
+/**
+ * Timestamps are stored as UTC without a zone and compared with NOW(), which
+ * follows the session time zone. The migration pins the database to UTC, but
+ * that setting isn't in a pg_dump: restoring into a new database loses it.
+ */
+export async function assertUtcTimeZone(db: Pick<Db, '$queryRaw'>): Promise<void> {
+  const [{ timezone }] = await db.$queryRaw<{ timezone: string }[]>`SELECT current_setting('TimeZone') AS timezone`;
+  if (timezone !== 'UTC' && timezone !== 'Etc/UTC') {
+    throw new Error(
+      `Database time zone is ${timezone}, not UTC, so live durations would be off. ` +
+        `Run: ALTER DATABASE <name> SET timezone TO 'UTC'; then restart.`
+    );
+  }
+}
+
 export function getDb(): Db {
   if (!currentClient) {
     throw new Error('Database client is not initialized');

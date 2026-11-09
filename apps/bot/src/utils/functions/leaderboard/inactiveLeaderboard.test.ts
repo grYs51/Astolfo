@@ -1,7 +1,7 @@
 import { voice_stats } from '@prisma/client';
 import { getInactiveLeaderboard } from './inactiveLeaderboard';
 import { getLonerLeaderboard } from './lonerLeaderboard';
-import { getOpenVoiceStats, unionDuration } from './intervals';
+import { ClosedVoiceStat, getOpenVoiceStats, unionDuration } from './intervals';
 import { SimpleGuildMember } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
 import DiscordClient from '../../../client/client';
@@ -15,16 +15,22 @@ const stat = (
   member_id: string,
   type: VOICE_TYPE,
   issued: string,
-  ended: string | null,
+  ended: string,
   channel_id = '1'
-): voice_stats => ({
+): ClosedVoiceStat => ({
   id: `${member_id}-${type}-${issued}`,
   guild_id: '1',
   member_id,
   channel_id,
   issued_on: new Date(issued),
-  ended_on: ended ? new Date(ended) : null,
+  ended_on: new Date(ended),
   type,
+});
+
+// A row in the voice cache: the session is still open
+const openStat = (member_id: string, type: VOICE_TYPE, issued: string): voice_stats => ({
+  ...stat(member_id, type, issued, issued),
+  ended_on: null,
 });
 
 describe('inactiveLeaderboard', () => {
@@ -103,14 +109,14 @@ describe('getOpenVoiceStats', () => {
     ({
       voiceUsers: new Map([
         ['1:1', stats],
-        ['other-guild:1', [stat('1', VOICE_TYPE.VOICE, '2024-12-25T10:00:00', null)]],
+        ['other-guild:1', [openStat('1', VOICE_TYPE.VOICE, '2024-12-25T10:00:00')]],
       ]),
     }) as unknown as DiscordClient;
 
   test('returns the guild rows of the requested types, closed at now', () => {
     const client = clientWith([
-      stat('1', VOICE_TYPE.VOICE, '2024-12-25T10:00:00', null),
-      stat('1', VOICE_TYPE.MUTED, '2024-12-25T10:30:00', null),
+      openStat('1', VOICE_TYPE.VOICE, '2024-12-25T10:00:00'),
+      openStat('1', VOICE_TYPE.MUTED, '2024-12-25T10:30:00'),
     ]);
 
     const open = getOpenVoiceStats(client, '1', [VOICE_TYPE.MUTED]);
@@ -121,7 +127,7 @@ describe('getOpenVoiceStats', () => {
   });
 
   test('clips sessions that started before the time range', () => {
-    const client = clientWith([stat('1', VOICE_TYPE.VOICE, '2024-12-20T10:00:00', null)]);
+    const client = clientWith([openStat('1', VOICE_TYPE.VOICE, '2024-12-20T10:00:00')]);
     const fromTime = new Date('2024-12-25T00:00:00');
 
     const [open] = getOpenVoiceStats(client, '1', [VOICE_TYPE.VOICE], fromTime);

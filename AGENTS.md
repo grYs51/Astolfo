@@ -86,6 +86,7 @@ Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_
 - New code writes `guild_configs` through `saveGuildConfig(client, guildId, data)` (`utils/functions/set-config.ts`), which also updates `client.guildConfigs` so the bot sees the change at once. The old chat commands, `guild-create.ts` and the digest scheduler still do their own writes.
 - Discord IDs are strings everywhere; never parse to number.
 - Logger: use `utils/logger.ts` `Logger`, never `console.*`.
+- **Guardrails:** the bot is `strict` TypeScript (prefer narrowing over `!`); lint enforces module boundaries by tag (`type:*` layering, and the bot (`platform:node`) may only import `scope:shared` libs: `api-interfaces`, `models`), `no-console`, and `no-floating-promises` in the bot. New libs need `type:` tags (plus `scope:shared` if the bot uses them). The database is pinned to UTC (migration `database_timezone_utc`, checked at startup by `assertUtcTimeZone`), so `NOW()` matches the UTC timestamps; in new SQL prefer `NOW_UTC` (`voice-stats/presence-sql.ts`), which doesn't depend on the session time zone.
 
 ## Reference docs (read before re-deriving)
 

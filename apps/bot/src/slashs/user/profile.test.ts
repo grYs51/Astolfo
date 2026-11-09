@@ -25,6 +25,7 @@ const clientWith = () =>
 const interactionFor = (targetId?: string) =>
   ({
     guildId: 'guild',
+    inCachedGuild: () => true,
     user: { id: ME },
     member: { id: ME },
     options: { get: () => (targetId ? { member: { id: targetId } } : null) },
@@ -72,6 +73,13 @@ describe('/profile and member privacy', () => {
   });
 });
 
+test('/profile in a DM answers instead of leaving the reply pending', async () => {
+  await run(clientWith(), { ...(interactionFor() as object), inCachedGuild: () => false } as never);
+
+  expect(InterActionUtils.send).toHaveBeenCalledWith(expect.anything(), 'Use /profile in a server.', true);
+  expect(getMemberProfile).not.toHaveBeenCalled();
+});
+
 test('/profile posts the profile as a PNG card', async () => {
   (getMemberProfile as jest.Mock).mockResolvedValue({
     trackingSince: new Date('2026-07-11T00:00:00Z'),
@@ -83,10 +91,10 @@ test('/profile posts the profile as a PNG card', async () => {
     lastWeekMs: 0,
     rps: { wins: 1, ties: 0, losses: 0 },
   });
-  const client = { ...(clientWith() as object), channels: { cache: new Map() } } as never;
+  const client = clientWith();
   const interaction = {
     ...(interactionFor() as object),
-    guild: { name: 'Paladins' },
+    guild: { name: 'Paladins', channels: { cache: new Map() } },
     member: { id: ME, displayName: 'Me', displayAvatarURL: () => undefined },
   } as never;
   await run(client, interaction);

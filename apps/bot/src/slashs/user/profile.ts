@@ -1,4 +1,5 @@
-import { SlashCommandBuilder } from 'discord.js';
+import { CacheType, ChatInputCommandInteraction, InteractionContextType, SlashCommandBuilder } from 'discord.js';
+import DiscordClient from '../../client/client';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { isHiddenFrom } from '../../utils/privacy';
@@ -17,6 +18,7 @@ export default class ProfileSlash extends BaseSlash {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
+      .setContexts(InteractionContextType.Guild)
       .addMentionableOption((option) =>
         option
           .setName('user')
@@ -25,7 +27,12 @@ export default class ProfileSlash extends BaseSlash {
       );
   }
 
-  async slash(client, interaction) {
+  async slash(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
+    // Members and channels come from the server's cache (DMs are blocked, but a stale registration may still allow them)
+    if (!interaction.inCachedGuild()) {
+      await InterActionUtils.send(interaction, 'Use /profile in a server.', true);
+      return;
+    }
     const guildId = interaction.guildId;
     const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
     const userId = memberToGetProfileFor.id;
@@ -58,9 +65,9 @@ export default class ProfileSlash extends BaseSlash {
         profile,
         memberName: memberToGetProfileFor.displayName,
         avatar: await fetchImage(memberToGetProfileFor.displayAvatarURL(CARD_IMAGE)),
-        serverName: interaction.guild?.name ?? '',
+        serverName: interaction.guild.name,
         favouriteChannelName: profile.favouriteChannelId
-          ? client.channels.cache.get(profile.favouriteChannelId)?.name
+          ? interaction.guild.channels.cache.get(profile.favouriteChannelId)?.name
           : undefined,
         now,
       },

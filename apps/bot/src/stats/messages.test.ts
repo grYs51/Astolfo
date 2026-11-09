@@ -41,7 +41,7 @@ describe('dashboard link', () => {
   });
 
   test('left out when CLIENT_URL is missing or not absolute', () => {
-    delete process.env.CLIENT_URL;
+    Reflect.deleteProperty(process.env, 'CLIENT_URL');
     expect(dashboardUrlFor('g')).toBeUndefined();
     process.env.CLIENT_URL = 'astolfo.example';
     expect(dashboardUrlFor('g')).toBeUndefined();

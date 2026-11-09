@@ -1,4 +1,4 @@
-import { voice_stats } from '@prisma/client';
+import { ClosedVoiceStat } from './intervals';
 import { getLonerLeaderboard } from './lonerLeaderboard';
 import { SimpleGuildMember } from './leaderboard';
 
@@ -13,7 +13,7 @@ describe('lonerboard', () => {
     2:   |-----|
     */
 
-    const voice_stats: voice_stats[] = [
+    const voice_stats: ClosedVoiceStat[] = [
       {
         id: '1',
         guild_id: '1',
@@ -49,7 +49,7 @@ describe('lonerboard', () => {
     2: |-----|
     */
 
-    const voice_stats: voice_stats[] = [
+    const voice_stats: ClosedVoiceStat[] = [
       {
         id: '1',
         guild_id: '1',
@@ -88,7 +88,7 @@ describe('lonerboard', () => {
     3: |----|  |-----|  |----| 
     */
 
-    const voice_stats: voice_stats[] = [
+    const voice_stats: ClosedVoiceStat[] = [
       {
         id: '1',
         guild_id: '1',
@@ -163,7 +163,7 @@ describe('lonerboard', () => {
     2: |--|
     */
 
-    const voice_stats: voice_stats[] = [
+    const voice_stats: ClosedVoiceStat[] = [
       {
         id: '1',
         guild_id: '1',
@@ -200,7 +200,7 @@ describe('lonerboard', () => {
     1:   |--|  |---|
     */
 
-    const voice_stats: voice_stats[] = [
+    const voice_stats: ClosedVoiceStat[] = [
       {
         id: '1',
         guild_id: '1',
@@ -236,7 +236,7 @@ describe('lonerboard', () => {
     ch1  1:     |-----|
     ch2  2:  |-----------|
     */
-    const row = (member_id: string, channel_id: string, from: string, to: string): voice_stats => ({
+    const row = (member_id: string, channel_id: string, from: string, to: string): ClosedVoiceStat => ({
       id: `${member_id}-${from}`,
       guild_id: '1',
       member_id,

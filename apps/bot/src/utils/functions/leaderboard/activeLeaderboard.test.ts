@@ -1,4 +1,4 @@
-import { voice_stats } from '@prisma/client';
+import { ClosedVoiceStat } from './intervals';
 import { getActiveLeaderboard } from './activeLeaderboard';
 import { SimpleGuildMember } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
@@ -10,7 +10,7 @@ const stat = (
   type: VOICE_TYPE,
   issued: string,
   ended: string
-): voice_stats => ({
+): ClosedVoiceStat => ({
   id: '1',
   guild_id: '1',
   member_id,

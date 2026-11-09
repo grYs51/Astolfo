@@ -4,7 +4,7 @@
   "sourceRoot": "libs/models",
   "root": "libs/models",
   "projectType": "library",
-  "tags": [],
+  "tags": ["type:common", "scope:shared"],
   "targets": {
     "prisma-deploy": {
       "executor": "@nx-tools/nx-prisma:deploy"
