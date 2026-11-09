@@ -101,14 +101,21 @@ export default class RockPaperScissors extends BaseSlash {
     });
 
     const choices: { [key: string]: string } = {};
+    let played = false;
 
     collector?.on('collect', async (i) => {
       try {
+        // Decide before any await: a re-click while the card renders must not save the game twice
+        if (played) {
+          await i.deferUpdate();
+          return;
+        }
         choices[i.user.id] = i.customId;
+        played = Boolean(choices[interaction.user.id] && choices[opponent.id]);
+        if (played) collector.stop('played');
         await i.deferUpdate();
 
-        // Check if both players have made their choices
-        if (choices[interaction.user.id] && choices[opponent.id]) {
+        if (played) {
           const userChoice = choices[interaction.user.id];
           const opponentChoice = choices[opponent.id];
 
@@ -141,12 +148,17 @@ export default class RockPaperScissors extends BaseSlash {
             files: [await cardFile(svg, 'rockpaperscissors.png')],
             components: [],
           });
-
-          collector.stop();
         }
       } catch (err) {
         Logger.error('Failed to collect button interaction', err);
         collector.stop();
+        // Don't leave live-looking buttons behind; the game is already saved if it was played
+        await InterActionUtils.editReply(interaction, {
+          content: played
+            ? `${interaction.user} chose ${choices[interaction.user.id]}, ${opponent} chose ${choices[opponent.id]}.`
+            : 'Game cancelled - something went wrong.',
+          components: [],
+        }).catch(() => undefined);
       }
     });
 

@@ -64,6 +64,13 @@ export const buildLatestDigest = async (
     ...digest.milestones.map((m) => m.memberId),
     ...(digest.bestDuo ? [digest.bestDuo.a, digest.bestDuo.b] : []),
   ]);
+  // Large guilds leave offline members out of the cache; one batched fetch fills it
+  const missing = [...ids].filter((id) => !guild?.members.cache.has(id));
+  if (guild && missing.length) {
+    await guild.members
+      .fetch({ user: missing })
+      .catch((error) => Logger.warn(`Weekly digest: failed to fetch members for guild ${guildId}`, error));
+  }
   const members: Record<string, DigestMember> = {};
   await Promise.all(
     [...ids].map(async (id) => {

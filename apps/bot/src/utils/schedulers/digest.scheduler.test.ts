@@ -42,6 +42,8 @@ describe('runDueDigests', () => {
 
   const clientWith = (opts: { lastSent?: Date | null; inGuild?: boolean; sendable?: boolean } = {}) => {
     const send = jest.fn();
+    const fetchMembers = jest.fn(async () => new Map());
+    const guild = { name: 'Test', iconURL: () => null, members: { cache: new Map(), fetch: fetchMembers } };
     const update = jest.fn(async ({ where, data }) => ({ guild_id: where.guild_id, ...data }));
     const client = {
       dataSource: {
@@ -52,7 +54,7 @@ describe('runDueDigests', () => {
           update,
         },
       },
-      guilds: { cache: new Map(opts.inGuild === false ? [] : [['g', { name: 'Test', iconURL: () => null, members: { cache: new Map() } }]]) },
+      guilds: { cache: new Map(opts.inGuild === false ? [] : [['g', guild]]) },
       channels: {
         fetch: jest.fn(async () =>
           opts.sendable === false ? null : { isSendable: () => true, send }
@@ -60,7 +62,7 @@ describe('runDueDigests', () => {
       },
       guildConfigs: new Map(),
     };
-    return { client: client as never, send, update };
+    return { client: client as never, send, update, fetchMembers };
   };
 
   beforeEach(() => {
@@ -81,6 +83,14 @@ describe('runDueDigests', () => {
     expect(send).toHaveBeenCalledTimes(1);
     expect(send.mock.calls[0][0].files[0].name).toBe('digest.png');
     expect(update).toHaveBeenCalledWith({ where: { guild_id: 'g' }, data: { digest_last_sent_at: NOW } });
+  });
+
+  test('fetches members the cache is missing, so the card can name them', async () => {
+    (getServerDigest as jest.Mock).mockResolvedValue({ ...activeWeek, topVoice: [{ memberId: '100', ms: H }] });
+    const { client, send, fetchMembers } = clientWith();
+    expect(await runDueDigests(client, NOW)).toEqual(['g']);
+    expect(fetchMembers).toHaveBeenCalledWith({ user: ['100'] });
+    expect(send).toHaveBeenCalledTimes(1);
   });
 
   test('does not post twice in a week', async () => {
