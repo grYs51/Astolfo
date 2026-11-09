@@ -50,6 +50,11 @@ export class VoiceStatsApi extends ApiBase {
     return this.http.put<MemberPrivacy>(`${this.host}/features/me/privacy`, { hidden });
   }
 
+  /** A member's stats card as a PNG, for a plain download link (the browser sends the session cookie) */
+  statsCardUrl(guildId: string, userId: string, period: DashboardPeriod) {
+    return `${this.host}/features/voice-stats/${guildId}/users/${userId}/stats.png?period=${period}`;
+  }
+
   /** Fetch overview statistics */
   fetchVoiceStatsOverview(
     guildId: () => string,
