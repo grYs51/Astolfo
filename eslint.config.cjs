@@ -18,6 +18,8 @@ module.exports = [
     ],
     // Override or add rules here
     rules: {
+      // Use the bot's Logger (utils/logger.ts); the web app opts out line by line
+      "no-console": "error",
       "@nx/enforce-module-boundaries": [
         "error",
         {

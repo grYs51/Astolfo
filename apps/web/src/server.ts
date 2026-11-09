@@ -71,6 +71,7 @@ app.use('/**', (req, res, next) => {
 if (isMainModule(import.meta.url)) {
   const port = process.env['PORT_WEB'] || 4000;
   app.listen(port, () => {
+    // eslint-disable-next-line no-console -- SSR server start-up line, no Logger in the web app
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }

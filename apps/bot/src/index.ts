@@ -84,4 +84,4 @@ const main = () =>
       process.exit(1);
     });
 
-main();
+void main(); // main() catches and exits on its own
