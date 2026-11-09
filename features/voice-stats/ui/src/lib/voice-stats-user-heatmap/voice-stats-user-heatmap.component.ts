@@ -12,10 +12,10 @@ import {
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 import {
-  HEATMAP_DAYS_OF_WEEK,
   HEATMAP_HOURS,
   buildHeatmapGrid,
   heatmapKey,
+  slotLabel,
   weekdayRow,
 } from '../heatmap-grid';
 import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component';
@@ -53,7 +53,7 @@ export class VoiceStatsUserHeatmapComponent {
 
   peakTimeDisplay = computed(() => {
     const { peakDay, peakHour } = this.heatmap().stats.user;
-    return `${HEATMAP_DAYS_OF_WEEK[weekdayRow(peakDay)]} at ${this.hours[peakHour]}`;
+    return slotLabel(peakHour, weekdayRow(peakDay));
   });
 
   private points = computed(() => {
@@ -81,7 +81,7 @@ export class VoiceStatsUserHeatmapComponent {
   });
 
   protected tooltip = (hour: number, day: number) => {
-    const title = `<strong>${HEATMAP_DAYS_OF_WEEK[day]} at ${this.hours[hour]}</strong><br/>`;
+    const title = `<strong>${slotLabel(hour, day)}</strong><br/>`;
     const point = this.points().get(heatmapKey(hour, day));
     if (!point || point.userValue === 0) return `${title}No activity`;
 

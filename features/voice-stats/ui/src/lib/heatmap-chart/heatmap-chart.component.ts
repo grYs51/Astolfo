@@ -45,8 +45,6 @@ export class HeatmapChartComponent {
   xLabels = input.required<readonly string[]>();
   /** Labels to skip between shown ones (1 = every other) */
   xLabelInterval = input(0);
-  /** Rows, drawn top to bottom */
-  yLabels = input<readonly string[]>(HEATMAP_DAYS_OF_WEEK);
   /** Values above/below zero, coloured blue/red around a grey 0 */
   diverging = input(false);
   /** Legend ends of the sequential scale: [high, low] */
@@ -55,7 +53,7 @@ export class HeatmapChartComponent {
 
   protected height = computed(() =>
     this.square()
-      ? `calc((100cqw - ${GRID.left + GRID.right}px) * ${this.yLabels().length} / ${this.xLabels().length} + ${GRID.top + GRID.bottom}px)`
+      ? `calc((100cqw - ${GRID.left + GRID.right}px) * ${HEATMAP_DAYS_OF_WEEK.length} / ${this.xLabels().length} + ${GRID.top + GRID.bottom}px)`
       : '100%'
   );
 
@@ -90,7 +88,7 @@ export class HeatmapChartComponent {
       },
       yAxis: {
         type: 'category',
-        data: this.yLabels(),
+        data: HEATMAP_DAYS_OF_WEEK,
         // ECharts draws the first category at the bottom
         inverse: true,
         axisLabel: { color: '#9ca3af' },

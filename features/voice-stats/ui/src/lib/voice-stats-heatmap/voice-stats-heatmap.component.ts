@@ -10,10 +10,10 @@ import {
 } from '@nx-stolfo/data-access-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import {
-  HEATMAP_DAYS_OF_WEEK,
   HEATMAP_HOURS,
   buildHeatmapGrid,
   heatmapKey,
+  slotLabel,
   weekdayRow,
 } from '../heatmap-grid';
 import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component';
@@ -50,7 +50,7 @@ export class VoiceStatsHeatmapComponent {
 
   protected tooltip = (hour: number, day: number) => {
     const point = this.points().get(heatmapKey(hour, day));
-    let tooltip = `<strong>${HEATMAP_DAYS_OF_WEEK[day]} at ${this.hours[hour]}</strong><br/>`;
+    let tooltip = `<strong>${slotLabel(hour, day)}</strong><br/>`;
     tooltip += `Duration: ${this.durationPipe.transform((point?.value ?? 0) * 60000, true)}<br/>`;
     if (point) {
       tooltip += `Sessions: ${point.sessionCount}<br/>`;
@@ -61,6 +61,6 @@ export class VoiceStatsHeatmapComponent {
 
   peakTimeDisplay = computed(() => {
     const { peakDay, peakHour } = this.heatmap().stats;
-    return `${HEATMAP_DAYS_OF_WEEK[weekdayRow(peakDay)]} at ${this.hours[peakHour]}`;
+    return slotLabel(peakHour, weekdayRow(peakDay));
   });
 }

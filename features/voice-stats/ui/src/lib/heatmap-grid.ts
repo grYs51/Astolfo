@@ -13,6 +13,9 @@ export const HEATMAP_HOURS = Array.from({ length: 24 }, (_, i) => {
   return `${hour}${period}`;
 });
 
+/** "Mon at 8PM" for a cell; pass a row, so an API day goes through `weekdayRow` first */
+export const slotLabel = (hour: number, row: number) => `${HEATMAP_DAYS_OF_WEEK[row]} at ${HEATMAP_HOURS[hour]}`;
+
 /**
  * Sequential single-hue ramp for "how much voice time" heatmaps; zero-value
  * cells stay close to the card surface so an empty grid reads as empty.
