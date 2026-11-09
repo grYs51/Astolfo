@@ -27,8 +27,11 @@ export default class ProfileSlash extends BaseSlash {
   }
 
   async slash(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
-    // Guild members and channels come from the cache; registered for servers only
-    if (!interaction.inCachedGuild()) return;
+    // Members and channels come from the server's cache; in a DM there is none
+    if (!interaction.inCachedGuild()) {
+      await InterActionUtils.send(interaction, 'Use /profile in a server.', true);
+      return;
+    }
     const guildId = interaction.guildId;
     const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
     const userId = memberToGetProfileFor.id;

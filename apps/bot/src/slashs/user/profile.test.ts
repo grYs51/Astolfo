@@ -73,6 +73,13 @@ describe('/profile and member privacy', () => {
   });
 });
 
+test('/profile in a DM answers instead of leaving the reply pending', async () => {
+  await run(clientWith(), { ...(interactionFor() as object), inCachedGuild: () => false } as never);
+
+  expect(InterActionUtils.send).toHaveBeenCalledWith(expect.anything(), 'Use /profile in a server.', true);
+  expect(getMemberProfile).not.toHaveBeenCalled();
+});
+
 test('/profile posts the profile as a PNG card', async () => {
   (getMemberProfile as jest.Mock).mockResolvedValue({
     trackingSince: new Date('2026-07-11T00:00:00Z'),
