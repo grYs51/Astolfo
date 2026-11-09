@@ -41,7 +41,8 @@ export const rpsCard = (d: RpsCardData, t: CardTheme) => {
     text(W / 2, 48, 16, t.muted, 'Rock paper scissors', 'text-anchor="middle"'),
     player(d.players[0], 0, d.winner === 0, t),
     player(d.players[1], 1, d.winner === 1, t),
-    text(W / 2, TOP + PANEL_H / 2, 20, t.muted, 'vs', 'dy="0.35em" text-anchor="middle" font-weight="700"'),
+    `<circle cx="${W / 2}" cy="${TOP + PANEL_H / 2}" r="24" fill="${t.background}"/>`,
+    text(W / 2, TOP + PANEL_H / 2, 18, t.muted, 'vs', 'dy="0.35em" text-anchor="middle" font-weight="700"'),
     text(W / 2, bottom + 54, 30, t.text, escapeXml(result), 'text-anchor="middle" font-weight="700"'),
   ]);
 };
