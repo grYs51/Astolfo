@@ -86,8 +86,8 @@ export class AdminComponent {
     if (!confirm(`Post to ${this.digestServers()} servers?
 
 ${text}`)) return;
-    this.run(this.api.broadcast(text), ({ posted, failed }) =>
-      `Posted to ${posted} server${posted === 1 ? '' : 's'}` + (failed ? `, ${failed} failed (see the bot log)` : '')
+    this.run(this.api.broadcast(text), ({ queued }) =>
+      `Posting to ${queued} server${queued === 1 ? '' : 's'} in the background. The bot log has the result.`
     );
   }
 

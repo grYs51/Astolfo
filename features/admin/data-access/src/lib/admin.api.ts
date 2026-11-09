@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
 import {
-  AdminBroadcastResult,
+  AdminBroadcastQueued,
   AdminClosedSessions,
   AdminHealth,
   AdminPeople,
@@ -57,6 +57,6 @@ export class AdminApi extends ApiBase {
   }
 
   broadcast(text: string) {
-    return this.http.post<AdminBroadcastResult>(`${this.host}/admin/actions/broadcast`, { text });
+    return this.http.post<AdminBroadcastQueued>(`${this.host}/admin/actions/broadcast`, { text });
   }
 }

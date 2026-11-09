@@ -3,6 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { setTimeout as sleep } from 'node:timers/promises';
 import {
   AdminBroadcast,
+  AdminBroadcastQueued,
   AdminBroadcastResult,
   AdminClosedSessions,
   AdminGuildAction,
@@ -118,35 +119,45 @@ export const setNotice: RequestHandler<unknown, AppNotice | Failure, Partial<App
 
 /**
  * POST /admin/actions/broadcast { text }: post to every digest channel (servers that turned the digest
- * on agreed to posts), one at a time, never pinging anyone.
+ * on agreed to posts), one at a time, never pinging anyone. Answers 202 at once and posts in the
+ * background: the loop can outlast the proxy's timeout, and a "failed" retry would post everything twice.
  */
-export const broadcast: RequestHandler<unknown, AdminBroadcastResult | Failure, Partial<AdminBroadcast>> =
+export const broadcast: RequestHandler<unknown, AdminBroadcastQueued | Failure, Partial<AdminBroadcast>> =
   asyncHandler(async (req, res) => {
     const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
     if (!text || text.length > BROADCAST_MAX) {
       res.status(400).send({ error: `\`text\` must be 1 to ${BROADCAST_MAX} characters` });
       return;
     }
-    Logger.info(`Admin action: broadcast ${JSON.stringify(text)}`);
-
     const configs = await req.db.guildConfigurations.findMany({
       where: { digest_channel_id: { not: null } },
       select: { guild_id: true, digest_channel_id: true },
     });
-    let posted = 0;
-    let failed = 0;
     // Servers the bot has left keep their config; they aren't counted on the page either
-    for (const config of configs.filter((c) => client.guilds.cache.has(c.guild_id))) {
-      if (posted + failed > 0) await sleep(BROADCAST_PAUSE_MS);
-      try {
-        const channel = await client.channels.fetch(config.digest_channel_id as string);
-        if (!channel?.isSendable()) throw new Error('missing or not sendable');
-        await channel.send({ content: text, allowedMentions: { parse: [] } });
-        posted++;
-      } catch (error) {
-        failed++;
-        Logger.warn(`Broadcast to guild ${config.guild_id} failed`, error);
-      }
-    }
-    res.send({ posted, failed });
+    const channelIds = configs.filter((c) => client.guilds.cache.has(c.guild_id)).map((c) => c.digest_channel_id as string);
+    Logger.info(`Admin action: broadcast to ${channelIds.length} servers ${JSON.stringify(text)}`);
+    res.status(202).send({ queued: channelIds.length });
+
+    sendBroadcast(text, channelIds)
+      .then(({ posted, failed }) => Logger.info(`Broadcast done: posted ${posted}, failed ${failed}`))
+      .catch((error) => Logger.error('Broadcast stopped', error));
   });
+
+/** Posts `text` to each channel in turn with a pause between; a failed channel is logged and skipped */
+export const sendBroadcast = async (text: string, channelIds: string[]): Promise<AdminBroadcastResult> => {
+  let posted = 0;
+  let failed = 0;
+  for (const channelId of channelIds) {
+    if (posted + failed > 0) await sleep(BROADCAST_PAUSE_MS);
+    try {
+      const channel = await client.channels.fetch(channelId);
+      if (!channel?.isSendable()) throw new Error('missing or not sendable');
+      await channel.send({ content: text, allowedMentions: { parse: [] } });
+      posted++;
+    } catch (error) {
+      failed++;
+      Logger.warn(`Broadcast to channel ${channelId} failed`, error);
+    }
+  }
+  return { posted, failed };
+};

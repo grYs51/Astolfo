@@ -10,7 +10,7 @@ export type {
   AdminPeople,
   AdminWeb,
   AdminClosedSessions,
-  AdminBroadcastResult,
+  AdminBroadcastQueued,
   AppNotice,
 } from '@nx-stolfo/api-interfaces';
 export * from './lib/admin.api';

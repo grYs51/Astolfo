@@ -5,7 +5,7 @@ import { getAdminPeople } from './getAdminPeople';
 import { getAdminUsage, p95FromBuckets } from './getAdminUsage';
 import { getAdminWeb } from './getAdminWeb';
 import { getAdminHealth } from './getAdminHealth';
-import { broadcast, closeStuckSessions, getNotice, jsonOnly, leaveGuild, postDigestNow, setNotice } from './actions';
+import { broadcast, closeStuckSessions, sendBroadcast, getNotice, jsonOnly, leaveGuild, postDigestNow, setNotice } from './actions';
 import { setVc } from '../../../utils/functions/set-vc';
 import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 
@@ -228,14 +228,19 @@ describe('admin actions', () => {
     expect((await act(broadcast, { text: 'x'.repeat(1001) })).status).toBe(400);
   });
 
-  test('broadcast: digest channels of servers the bot is in, no pings, failures counted', async () => {
+  test('broadcast: answers 202 with the servers the bot is still in', async () => {
     const findMany = jest.fn().mockResolvedValue([
       { guild_id: 'g1', digest_channel_id: 'c1' },
-      { guild_id: 'g2', digest_channel_id: 'gone' },
       { guild_id: 'g3', digest_channel_id: 'c3' }, // left
     ]);
-    const { body } = await act(broadcast, { text: 'Hello @everyone' }, { guildConfigurations: { findMany } });
-    expect(body).toEqual({ posted: 1, failed: 1 });
+    expect(await act(broadcast, { text: 'Hi' }, { guildConfigurations: { findMany } })).toEqual({
+      status: 202,
+      body: { queued: 1 },
+    });
+  });
+
+  test('sendBroadcast: no pings, failures counted and skipped', async () => {
+    expect(await sendBroadcast('Hello @everyone', ['c1', 'gone'])).toEqual({ posted: 1, failed: 1 });
     expect(mockSend).toHaveBeenCalledWith('c1', { content: 'Hello @everyone', allowedMentions: { parse: [] } });
   });
 });

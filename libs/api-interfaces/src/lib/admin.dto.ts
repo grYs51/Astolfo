@@ -114,6 +114,12 @@ export interface AdminBroadcast {
   text: string;
 }
 
+/** The broadcast's 202: how many servers it will post to; the posting runs in the background */
+export interface AdminBroadcastQueued {
+  queued: number;
+}
+
+/** Logged by the bot once the background broadcast is done */
 export interface AdminBroadcastResult {
   posted: number;
   failed: number;
