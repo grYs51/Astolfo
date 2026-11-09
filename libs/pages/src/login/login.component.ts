@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { botApi, COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
+import { COMMON_BACKEND_API_URL, NoticeState } from '@nx-stolfo/common/api';
 import { NoticeBannerComponent } from '@nx-stolfo/components';
 
 @Component({
@@ -10,5 +10,5 @@ import { NoticeBannerComponent } from '@nx-stolfo/components';
 })
 export class LoginComponent {
   loginUrl = inject(COMMON_BACKEND_API_URL) + '/auth/login';
-  notice = inject(botApi).fetchNotice();
+  notice = inject(NoticeState).notice;
 }

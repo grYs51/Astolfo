@@ -6,3 +6,4 @@ export * from './api.provider';
 export * from './bot-api/bot.provider';
 export * from './bot-api/bot-api.types';
 export * from './bot-api/bot.api';
+export * from './bot-api/notice.state';

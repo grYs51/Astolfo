@@ -2,7 +2,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, PLATFORM_ID, signal } from '@angular/core';
 import { Observable } from 'rxjs';
-import { botApi } from '@nx-stolfo/common/api';
+import { NoticeState } from '@nx-stolfo/common/api';
 import { AdminApi, AdminServer } from '@nx-stolfo/data-access-admin';
 import {
   AdminAnnouncementsComponent,
@@ -42,7 +42,8 @@ export class AdminComponent {
   readonly usage = this.api.fetchUsage();
   readonly people = this.api.fetchPeople();
   readonly web = this.api.fetchWeb();
-  readonly notice = inject(botApi).fetchNotice();
+  // Shared with the banner, so a save or clear shows there at once
+  readonly notice = inject(NoticeState).notice;
 
   /** Servers a broadcast reaches: those with a digest channel */
   readonly digestServers = computed(() => this.servers.value()?.servers.filter((s) => s.digest).length ?? 0);

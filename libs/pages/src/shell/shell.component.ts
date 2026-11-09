@@ -9,7 +9,7 @@ import {
   RouterOutlet
 } from '@angular/router';
 import { IS_LOGGED_IN, IS_SESSION_CHECKED, USER } from '@nx-stolfo/auth';
-import { botApi, COMMON_BACKEND_API_URL } from '@nx-stolfo/common/api';
+import { botApi, COMMON_BACKEND_API_URL, NoticeState } from '@nx-stolfo/common/api';
 import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
 import {
   BreadCrumbs,
@@ -54,7 +54,7 @@ export class ShellComponent {
 
   private readonly route = inject(ActivatedRoute);
 
-  readonly notice = inject(botApi).fetchNotice();
+  readonly notice = inject(NoticeState).notice;
 
   // TODO - Check out how to get the breadcrumbs from the route
   breadcrumbs$ = this.route.data.pipe(
