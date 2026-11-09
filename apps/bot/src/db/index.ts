@@ -15,6 +15,9 @@ export interface Db {
   gamePlayers : PrismaClient['game_player'];
   userSession: PrismaClient['user_session'];
   session: PrismaClient['session'];
+  metricDaily: PrismaClient['metric_daily'];
+  guildEvents: PrismaClient['guild_events'];
+  pageViews: PrismaClient['page_views'];
 }
 
 export let currentClient: PrismaClient;
@@ -49,6 +52,9 @@ export function getDb(): Db {
     gamePlayers: currentClient.game_player,
     userSession: currentClient.user_session,
     session: currentClient.session,
+    metricDaily: currentClient.metric_daily,
+    guildEvents: currentClient.guild_events,
+    pageViews: currentClient.page_views,
   };
 }
 

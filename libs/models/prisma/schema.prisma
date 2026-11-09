@@ -123,8 +123,42 @@ model session {
 // The Discord profile saved at login, which /auth/status returns. The OAuth
 // tokens are not stored: nothing calls Discord on the user's behalf.
 model user_session {
-  id          String  @id
-  username    String
-  global_name String?
-  avatar      String?
+  id            String    @id
+  username      String
+  global_name   String?
+  avatar        String?
+  // NULL for users who logged in before these were tracked
+  created_at    DateTime? @db.Timestamp(6)
+  last_login_at DateTime? @db.Timestamp(6)
+}
+
+/// Each `discord_*` counter's running total at the end of a UTC day (the last
+/// metrics snapshot that day). A day's usage is its total minus the day before.
+model metric_daily {
+  day   DateTime @db.Date
+  name  String   @db.VarChar
+  label String   @db.VarChar
+  value BigInt
+
+  @@id([day, name, label])
+}
+
+/// The bot joining or leaving a server (GuildCreate / GuildDelete)
+model guild_events {
+  id       String   @id @default(uuid()) @db.VarChar
+  guild_id String   @db.VarChar
+  type     String   @db.VarChar // 'join' | 'leave'
+  at       DateTime @default(now()) @db.Timestamp(6)
+
+  @@index([at])
+}
+
+/// Dashboard page views: the route pattern (never the URL), per user and UTC day
+model page_views {
+  day     DateTime @db.Date
+  path    String   @db.VarChar(100)
+  user_id String   @db.VarChar
+  views   Int      @default(1)
+
+  @@id([day, path, user_id])
 }

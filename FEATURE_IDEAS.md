@@ -61,7 +61,9 @@ Consecutive-day voice streaks, lifetime-hours milestones (10h/100h/1000h), "firs
 ### 2.4 Best-time-to-schedule recommender 🟢
 The heatmap data already answers "when is this server most active" — turn it into an explicit feature: pick the N members you want (or a role), and the app suggests the best weekly slot based on their historical presence. Server admins planning events will love it, and it's mostly a re-aggregation of existing heatmap queries filtered by member set.
 
-### 2.5 Server health trends 🟡
+### 2.5 Server health trends 🟡 — ✅ done (2026-11-09)
+> Shipped for the bot owner, across all servers, on the `/overview/admin` page: active members per day over 90 days, DAU/WAU/MAU, new members per week, members who drifted away (active 30–60 days ago, not since), plus per-server voice hours and messages over 30 days. Not done: a per-server version for server admins.
+
 For admins: week-over-week trends in active users, new-vs-returning voice participants, churn ("members who were active last month but silent this month"). One rollup query per metric, displayed with the existing timeline component.
 
 ---

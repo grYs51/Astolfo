@@ -13,10 +13,10 @@ describe('verifyDiscordLogin', () => {
 
     await verifyDiscordLogin('access-secret', 'refresh-secret', profile, done);
 
-    const fields = { username: 'astolfo', global_name: 'Astolfo', avatar: 'abc' };
+    const fields = { username: 'astolfo', global_name: 'Astolfo', avatar: 'abc', last_login_at: expect.any(Date) };
     expect(upsert).toHaveBeenCalledWith({
       where: { id: '1' },
-      create: { id: '1', ...fields },
+      create: { id: '1', ...fields, created_at: expect.any(Date) },
       update: fields,
     });
     expect(JSON.stringify(upsert.mock.calls)).not.toMatch(/secret/);

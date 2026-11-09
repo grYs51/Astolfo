@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { AuthGuard } from '@nx-stolfo/auth';
+import { AuthGuard, OwnerGuard } from '@nx-stolfo/auth';
 
 export const appRoutes: Route[] = [
   {
@@ -22,6 +22,13 @@ export const appRoutes: Route[] = [
         path: 'detail',
         loadChildren: () =>
           import('@nx-stolfo/pages').then((m) => m.detailOverviewRoutes),
+      },
+      {
+        // Owner only: the guard hides the page, the API's isOwner is the lock
+        path: 'admin',
+        canActivate: [OwnerGuard()],
+        loadChildren: () =>
+          import('@nx-stolfo/pages').then((m) => m.adminRoutes),
       },
     ],
   },

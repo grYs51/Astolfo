@@ -18,6 +18,7 @@ import { startMetricsScheduler } from './utils/schedulers/metrics.scheduler';
 import { closeDanglingVoiceSessions } from './utils/handlers/vc';
 import { closeDanglingStatuses } from './utils/handlers/presence/status-save';
 import { isMockDiscord } from './dev/mock-discord';
+import { startupStats } from './utils/startup-stats';
 
 
 process.on('uncaughtException', (err) => {
@@ -40,10 +41,12 @@ const recoverDanglingVoiceSessions = async () => {
   // seeded in-voice sessions open instead
   if (isMockDiscord()) return;
   const recovered = await closeDanglingVoiceSessions();
+  startupStats.danglingVoiceSessions = recovered;
   if (recovered > 0) {
     Logger.info(`Closed ${recovered} dangling voice sessions from a previous run`);
   }
   const statuses = await closeDanglingStatuses();
+  startupStats.danglingStatuses = statuses;
   if (statuses > 0) {
     Logger.info(`Closed ${statuses} dangling statuses from a previous run`);
   }

@@ -1,6 +1,6 @@
 import { Message, PermissionResolvable } from 'discord.js';
 import DiscordClient from '../../client/client';
-import { commandsCount } from '../../api/utils/counter';
+import { commandErrorsCount, commandsCount } from '../../api/utils/counter';
 import { MessageUtils } from '../message-utils';
 
 export default abstract class BaseCommand {
@@ -27,7 +27,7 @@ export default abstract class BaseCommand {
     return this._aliases;
   }
 
-  run(client: DiscordClient, message: Message, args: Array<string> | null) {
+  async run(client: DiscordClient, message: Message, args: Array<string> | null) {
     if (
       this._permissions.length > 0 &&
       !message.member?.permissions.has(this._permissions)
@@ -39,7 +39,12 @@ export default abstract class BaseCommand {
     }
 
     commandsCount(this.name);
-    return this.command(client, message, args);
+    try {
+      return await this.command(client, message, args);
+    } catch (error) {
+      commandErrorsCount(this.name);
+      throw error;
+    }
   }
 
   protected abstract command(

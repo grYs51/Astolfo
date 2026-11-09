@@ -37,7 +37,11 @@
       "@nx-stolfo/data-access-voice-stats": [
         "features/voice-stats/data-access/src/index.ts"
       ],
-      "@nx-stolfo/ui-voice-stats": ["features/voice-stats/ui/src/index.ts"]
+      "@nx-stolfo/ui-voice-stats": ["features/voice-stats/ui/src/index.ts"],
+      "@nx-stolfo/data-access-admin": [
+        "features/admin/data-access/src/index.ts"
+      ],
+      "@nx-stolfo/ui-admin": ["features/admin/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "coverage"]

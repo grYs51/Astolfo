@@ -1,6 +1,8 @@
 import { Logger } from '../../utils/logger';
 import { getDb } from '../../db';
-import { commandsCountSet, eventsCountSet, slashsCountSet } from './counter';
+import { Counter, register } from 'prom-client';
+// Registers the counters before they're looked up by name
+import './counter';
 
 // Shape produced by prom-client's register.getMetricsAsJSON()
 interface StoredMetric {
@@ -17,21 +19,15 @@ async function readMetricsFromDb() {
 function restoreCounters(metrics: StoredMetric[]): void {
   Logger.info('Initializing Prometheus metrics');
   for (const metric of metrics) {
-    if (metric.type !== 'counter') continue;
-    for (const { value, labels } of metric.values) {
-      switch (metric.name) {
-        case 'discord_bot_commands_total':
-          commandsCountSet(labels.commandName, value);
-          break;
-        case 'discord_bot_events_total':
-          eventsCountSet(labels.eventName, value);
-          break;
-        case 'discord_bot_slash_total':
-          slashsCountSet(labels.slashName, value);
-          break;
-        default:
-          break;
+    const counter = register.getSingleMetric(metric.name);
+    if (metric.type !== 'counter' || !(counter instanceof Counter)) continue;
+    try {
+      for (const { value, labels } of metric.values) {
+        counter.inc(labels, value);
       }
+    } catch (error) {
+      // A renamed label would throw here; losing one counter beats a boot loop
+      Logger.warn(`Skipping stored metric ${metric.name}`, error);
     }
   }
 }

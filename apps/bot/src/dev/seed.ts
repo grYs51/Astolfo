@@ -322,6 +322,25 @@ const generateGames = (now: number) => {
   return { results, players };
 };
 
+const PAGES = ['overview', 'overview/detail/:id', 'overview/detail/:id/members/:memberId'];
+
+/** Dashboard visits for the admin page's Website section: a few members on most days */
+const generatePageViews = (now: number, memberIds: string[]) => {
+  const views: { day: Date; path: string; user_id: string; views: number }[] = [];
+  for (let d = 0; d < 90; d++) {
+    const day = new Date(Math.floor((now - d * DAY) / DAY) * DAY);
+    for (const userId of memberIds) {
+      if (!chance(userId === MOCK_USER.id ? 0.7 : 0.15)) continue;
+      for (const path of PAGES) {
+        if (path === 'overview' || chance(0.6)) {
+          views.push({ day, path, user_id: userId, views: Math.ceil(between(1, 6)) });
+        }
+      }
+    }
+  }
+  return views;
+};
+
 async function main() {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('Refusing to seed mock data with NODE_ENV=production');
@@ -336,6 +355,7 @@ async function main() {
     const statuses = generateStatuses(now);
     const games = generateGames(now);
     const memberIds = [...new Set(MOCK_GUILDS.flatMap((g) => g.members.map((m) => m.id)))];
+    const pageViews = generatePageViews(now, memberIds);
 
     const { count: removed } = await db.voice_stats.deleteMany({
       where: { guild_id: { in: guildIds } },
@@ -361,6 +381,13 @@ async function main() {
     // createMany can't take a null Json, so metadata is left out (it defaults to NULL)
     await db.game_result.createMany({ data: games.results.map(({ metadata: _metadata, ...rest }) => rest) });
     await db.game_player.createMany({ data: games.players });
+    await db.page_views.deleteMany({ where: { user_id: { in: memberIds } } });
+    await db.page_views.createMany({ data: pageViews });
+    // The bot joining both servers when the seeded history starts
+    await db.guild_events.deleteMany({ where: { guild_id: { in: guildIds } } });
+    await db.guild_events.createMany({
+      data: guildIds.map((guild_id, i) => ({ guild_id, type: 'join', at: new Date(now - (DAYS - i * 7) * DAY) })),
+    });
     // Privacy demo: one hidden member, everyone else visible
     for (const id of memberIds) {
       await db.user_configs.upsert({
@@ -373,7 +400,7 @@ async function main() {
     const open = rows.filter((r) => r.ended_on === null && r.type === VOICE_TYPE.VOICE);
     Logger.info(
       `Seeded ${rows.length} voice_stats rows for ${MOCK_GUILDS.map((g) => g.name).join(' + ')} ` +
-        `with ${messages.length} messages, ${statuses.length} statuses and ${games.results.length} games (${DAYS} days, ${open.length} people in voice now; replaced ${removed} old voice rows).`
+        `with ${messages.length} messages, ${statuses.length} statuses, ${games.results.length} games and ${pageViews.length} page views (${DAYS} days, ${open.length} people in voice now; replaced ${removed} old voice rows).`
     );
     Logger.info('Serve the bot with MOCK_DISCORD=true and log in on the dashboard as the mock user.');
   } finally {

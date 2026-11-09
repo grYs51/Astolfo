@@ -26,11 +26,12 @@ export const verifyDiscordLogin = async (
   done: (error: unknown, user?: Express.User) => void,
 ) => {
   const { id, username, global_name, avatar } = profile;
-  const fields = { username, global_name, avatar };
+  const now = new Date();
+  const fields = { username, global_name, avatar, last_login_at: now };
   try {
     const user = await getDb().userSession.upsert({
       where: { id },
-      create: { id, ...fields },
+      create: { id, ...fields, created_at: now },
       update: fields,
     });
 
