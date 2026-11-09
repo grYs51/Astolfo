@@ -11,6 +11,7 @@ import { mkdirSync, writeFileSync } from 'fs';
 import path from 'path';
 import { fetchImage } from '../cards/avatars';
 import { digestCard } from '../cards/digest.card';
+import { duoCard } from '../cards/duo.card';
 import { leaderboardCard } from '../cards/leaderboard.card';
 import { profileCard } from '../cards/profile.card';
 import { reminderCard } from '../cards/reminder.card';
@@ -88,6 +89,33 @@ const main = async () => {
             lifetimeMs: 317_000_000, // 88h
           },
           companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+        },
+        THEMES[theme]
+      ),
+    duo: (theme) =>
+      duoCard(
+        {
+          period: 'month',
+          serverName: 'Paladins of France',
+          members: [
+            { name: NAMES[0], avatar: avatar(0) },
+            { name: NAMES[1], avatar: avatar(1) },
+          ],
+          topChannelName: 'round-table',
+          duo: { togetherMs: 30_000_000, aVoiceMs: 63_900_000, bVoiceMs: 41_000_000, topChannelId: '1' },
+        },
+        THEMES[theme]
+      ),
+    'duo-empty': (theme) =>
+      duoCard(
+        {
+          period: 'week',
+          serverName: 'Paladins of France',
+          members: [
+            { name: NAMES[0], avatar: avatar(0) },
+            { name: NAMES[2], avatar: avatar(2) },
+          ],
+          duo: { togetherMs: 0, aVoiceMs: 63_900_000, bVoiceMs: 0 },
         },
         THEMES[theme]
       ),

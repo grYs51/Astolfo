@@ -79,6 +79,8 @@ export class MemberProfileComponent {
     () => this.period()
   );
 
+  cardUrl = computed(() => this.api.statsCardUrl(this.id(), this.memberId(), this.period()));
+
   /** Viewing your own profile reads in the first person */
   isSelf = computed(() => this.memberId() === this.currentUser()?.id);
 

@@ -13,7 +13,7 @@ model guild_configs {
   prefix              String    @default("!") @db.VarChar
   welcome_channel_id  String?   @db.VarChar
   welcome_message     String    @default("Welcome @member") @db.VarChar(200)
-  goodbye_message     String    @default("Goodbye @member") @db.VarChar(200)
+  goodbye_message     String    @default("") @db.VarChar(200)
   toggles             Int       @default(0)
   /// Weekly digest: channel to post in (null = off) and when it last posted
   digest_channel_id   String?   @db.VarChar
@@ -151,6 +151,18 @@ model guild_events {
   at       DateTime @default(now()) @db.Timestamp(6)
 
   @@index([at])
+}
+
+/// Saves on the dashboard settings page: who changed what in a guild's settings
+model guild_settings_changes {
+  id       String   @id @default(uuid()) @db.VarChar
+  guild_id String   @db.VarChar
+  user_id  String   @db.VarChar
+  at       DateTime @default(now()) @db.Timestamp(6)
+  /// [{ field, from, to }]
+  changes  Json
+
+  @@index([guild_id, at])
 }
 
 /// Dashboard page views: the route pattern (never the URL), per user and UTC day

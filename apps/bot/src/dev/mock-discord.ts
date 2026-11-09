@@ -30,6 +30,8 @@ export type MockGuild = {
   /** Text channels (the seed puts messages here) */
   textChannels: MockChannel[];
   members: MockMember[];
+  /** Members with Manage Server (the settings page) */
+  managers: string[];
 };
 
 /** The user every mock login signs in as (an AuthUser, as /auth/status returns it). */
@@ -97,6 +99,7 @@ export const MOCK_GUILDS: MockGuild[] = [
       members.otto,
       members.sage,
     ],
+    managers: [MOCK_USER.id],
   },
   {
     id: '300000000000000002',
@@ -111,6 +114,8 @@ export const MOCK_GUILDS: MockGuild[] = [
       { id: '300000000000000252', name: 'raid-planning', type: 'GuildText' },
     ],
     members: [me, members.rex, members.finn, members.zoe, members.milo, members.sage],
+    // Not a manager here, so demo mode shows the page without settings too
+    managers: [],
   },
 ];
 

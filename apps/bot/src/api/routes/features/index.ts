@@ -1,6 +1,14 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
+import { isServerManager } from '../../utils/middleware/isServerManager';
+import { cardRateLimit } from '../../utils/middleware/cardRateLimit';
+import {
+  getGuildSettings,
+  getGuildSettingsHistory,
+  getServerAccess,
+  setGuildSettings,
+} from './guild-settings';
 import { getActiveServers } from './active-servers';
 import { getPrivacy, setPrivacy } from './privacy';
 import { trackPageView } from './track';
@@ -19,6 +27,7 @@ import {
   getUserGames,
   getActivityCalendar,
   getVoiceHabits,
+  getStatsCard,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -31,6 +40,32 @@ export default (router: Router) => {
 
   // Dashboard page views (route patterns) for the admin page
   router.post('/features/track', isAuthenticated, trackPageView);
+
+  // Whether the viewer may open the settings page (any member may ask)
+  router.get('/features/servers/:serverId/access', isAuthenticated, isServerMember, getServerAccess);
+
+  // Server settings: members with Manage Server only
+  router.get(
+    '/features/servers/:serverId/settings',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    getGuildSettings,
+  );
+  router.put(
+    '/features/servers/:serverId/settings',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    setGuildSettings,
+  );
+  router.get(
+    '/features/servers/:serverId/settings/history',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    getGuildSettingsHistory,
+  );
 
   // Voice Stats endpoints — all require real guild membership
   router.get(
@@ -56,6 +91,13 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getVoiceStatsUser,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/stats.png',
+    isAuthenticated,
+    cardRateLimit,
+    isServerMember,
+    getStatsCard,
   );
   router.get(
     '/features/voice-stats/:serverId/users/:userId/heatmap',

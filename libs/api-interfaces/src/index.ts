@@ -4,3 +4,4 @@ export * from './lib/auth.dto';
 export * from './lib/presence.dto';
 export * from './lib/games.dto';
 export * from './lib/admin.dto';
+export * from './lib/guild-settings.dto';

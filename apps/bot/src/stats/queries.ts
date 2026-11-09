@@ -156,18 +156,20 @@ export interface MemberSummary {
   voiceRank?: number;
   rankedMembers: number;
   favouriteChannelId?: string;
-  /** Who they shared a channel with most (members visible to them) */
+  /** Who they shared a channel with most (members visible to the viewer) */
   companions: { memberId: string; togetherMs: number }[];
   streak: { current: number; longest: number };
   /** All-time voice ms, for the next milestone */
   lifetimeMs: number;
 }
 
+/** `viewerId` is who looks at it (the member for /stats, anyone for the dashboard download) */
 export const getMemberSummary = async (
   db: QueryDb,
   guildId: string,
   memberId: string,
   period: StatsPeriod,
+  viewerId = memberId,
   now = new Date()
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
@@ -184,7 +186,7 @@ export const getMemberSummary = async (
           FROM voice_stats
           WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
             ${windowFilter('issued_on', current)}
-            ${visibleMembersOnly('member_id', memberId)}
+            ${visibleMembersOnly('member_id', viewerId)}
           GROUP BY member_id
         )
         SELECT
@@ -205,7 +207,7 @@ export const getMemberSummary = async (
          AND other.member_id <> me.member_id
          AND other.issued_on < COALESCE(me.ended_on, NOW())
          AND COALESCE(other.ended_on, NOW()) > me.issued_on
-         ${visibleMembersOnly('other.member_id', memberId)}
+         ${visibleMembersOnly('other.member_id', viewerId)}
         WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
           ${windowFilter('me.issued_on', current)}
         GROUP BY other.member_id
@@ -231,6 +233,58 @@ export const getMemberSummary = async (
     })),
     streak,
     lifetimeMs,
+  };
+};
+
+// ── /duo ────────────────────────────────────────────────────────────────────
+
+export interface Duo {
+  /** Time a and b were in the same channel at the same time */
+  togetherMs: number;
+  aVoiceMs: number;
+  bVoiceMs: number;
+  /** The channel they spent the most time in together */
+  topChannelId?: string;
+}
+
+/** Time two members spent together in voice (the caller checks a may see b) */
+export const getDuo = async (
+  db: QueryDb,
+  guildId: string,
+  aId: string,
+  bId: string,
+  period: StatsPeriod,
+  now = new Date()
+): Promise<Duo> => {
+  const { current } = periodWindows(period, now);
+  const [[top], a, b] = await Promise.all([
+    // Same join as the companions in getMemberSummary, for one pair, with both sessions in the window so it's symmetric;
+    // the pair's total rides along on the top channel
+    db.$queryRaw<{ channel_id: string; total: bigint }[]>`
+      SELECT a.channel_id, SUM(SUM(${overlapMs('a', 'b')})) OVER ()::bigint AS total
+      FROM voice_stats a
+      JOIN voice_stats b
+        ON b.guild_id = a.guild_id
+       AND b.channel_id = a.channel_id
+       AND b.type = ${VOICE_TYPE.VOICE}
+       AND b.member_id = ${bId}
+       AND b.issued_on < COALESCE(a.ended_on, NOW())
+       AND COALESCE(b.ended_on, NOW()) > a.issued_on
+       ${windowFilter('b.issued_on', current)}
+      WHERE a.guild_id = ${guildId} AND a.member_id = ${aId} AND a.type = ${VOICE_TYPE.VOICE}
+        ${windowFilter('a.issued_on', current)}
+      GROUP BY a.channel_id
+      ORDER BY SUM(${overlapMs('a', 'b')}) DESC
+      LIMIT 1
+    `,
+    voiceTotal(db, guildId, current, aId),
+    voiceTotal(db, guildId, current, bId),
+  ]);
+  return {
+    togetherMs: Number(top?.total ?? 0),
+    aVoiceMs: a.total,
+    bVoiceMs: b.total,
+    topChannelId: top?.channel_id,
   };
 };
 

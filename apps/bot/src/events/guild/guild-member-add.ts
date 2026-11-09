@@ -1,7 +1,8 @@
-import { Events, GuildMember, TextChannel } from 'discord.js';
+import { Events, GuildMember } from 'discord.js';
 import BaseEvent from '../../utils/structures/base-event';
 import DiscordClient from '../../client/client';
 import { Logger } from '../../utils/logger';
+import { welcomePost } from '../../utils/functions/member-messages';
 
 export default class GuildMemberAddEvent extends BaseEvent {
   constructor() {
@@ -16,12 +17,13 @@ export default class GuildMemberAddEvent extends BaseEvent {
       return;
     }
 
-    const channel = member.guild.channels.cache.get(channelId) as TextChannel;
+    const channel = member.guild.channels.cache.get(channelId);
 
-    if (!channel) {
+    // ,setwelcomechannel accepts any channel, a category included
+    if (!channel?.isSendable()) {
       return Logger.info('No welcome channel found');
     }
 
-    await channel.send(`Welcome ${member}`);
+    await channel.send(welcomePost(config.welcome_message, member.id));
   }
 }

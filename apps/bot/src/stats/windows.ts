@@ -36,7 +36,7 @@ export const periodWindows = (
 };
 
 /** Timestamp columns a window can filter on */
-type TimeColumn = 'issued_on' | 'created_at' | 'a.issued_on' | 'me.issued_on';
+type TimeColumn = 'issued_on' | 'created_at' | 'a.issued_on' | 'b.issued_on' | 'me.issued_on';
 
 /** `AND <column> >= from AND <column> < to` */
 export const windowFilter = (column: TimeColumn, window: TimeWindow) => {

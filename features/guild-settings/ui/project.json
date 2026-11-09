@@ -1,0 +1,15 @@
+{
+  "name": "ui-guild-settings",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "features/guild-settings/ui/src",
+  "prefix": "feature-guild-settings",
+  "projectType": "library",
+  "tags": [
+    "type:ui"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    }
+  }
+}

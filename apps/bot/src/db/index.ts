@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger';
 export interface Db {
   $queryRaw: PrismaClient['$queryRaw'];
   $executeRaw: PrismaClient['$executeRaw'];
+  $transaction: PrismaClient['$transaction'];
   guildConfigurations: PrismaClient['guild_configs'];
   voiceStats: PrismaClient['voice_stats'];
   messageStats: PrismaClient['message_stats'];
@@ -19,6 +20,7 @@ export interface Db {
   guildEvents: PrismaClient['guild_events'];
   pageViews: PrismaClient['page_views'];
   appNotice: PrismaClient['app_notice'];
+  settingsChanges: PrismaClient['guild_settings_changes'];
 }
 
 export let currentClient: PrismaClient;
@@ -57,6 +59,7 @@ export function getDb(): Db {
   return {
     $queryRaw: currentClient.$queryRaw.bind(currentClient),
     $executeRaw: currentClient.$executeRaw.bind(currentClient),
+    $transaction: currentClient.$transaction.bind(currentClient),
     guildConfigurations: currentClient.guild_configs,
     voiceStats: currentClient.voice_stats,
     messageStats: currentClient.message_stats,
@@ -72,6 +75,7 @@ export function getDb(): Db {
     guildEvents: currentClient.guild_events,
     pageViews: currentClient.page_views,
     appNotice: currentClient.app_notice,
+    settingsChanges: currentClient.guild_settings_changes,
   };
 }
 

@@ -41,6 +41,7 @@ The schema has a `user_activities` table (activity + start/end) that appears com
 ## 2. Social & insight features — the dashboard's killer content
 
 ### 2.1 Voice social graph — "who hangs out with whom" 🟡
+> Duo stats done (2026-11-09) as `/duo member [period]`: a public card with the time you spent in the same channel as that member, each one's share of their voice time and the channel you meet in most (`getDuo` in `apps/bot/src/stats/queries.ts`). `/stats` already lists your top 3 companions. Not done: the friend graph and bridge members.
 You have everything needed: overlapping `voice_stats` intervals in the same channel = time spent together. Compute pairwise co-presence and render:
 - A **force-directed graph** of the server's friend clusters (ECharts `graph` type — the charting stack is already there).
 - Per-user "**duo stats**": most-shared-VC partner, total hours together.
@@ -95,7 +96,9 @@ Classic bot feature: join a hub channel → bot creates a personal channel, dele
 
 ## 4. Dashboard platform features
 
-### 4.1 Guild settings page 🟡
+### 4.1 Guild settings page 🟡 — ✅ done (2026-11-09), except reminder thresholds
+> Shipped at `overview/detail/:id/settings`: prefix, welcome channel and message, goodbye message (posted in the welcome channel), feature toggles and the weekly recap channel, for members with Manage Server. The OAuth tokens aren't stored, so Manage Server is checked in the bot's gateway cache (`canManage` in the Discord directory) rather than with the viewer's token. Reminder thresholds still need their own plan.
+
 Settings currently change via chat commands (`set-prefix`, `set-welcomechannel`, toggle flags). A dashboard settings page — prefix, welcome/goodbye messages, feature toggles, reminder thresholds, digest channel — is table stakes for a bot with a web app. Requires proper authorization (verify the user has "Manage Server" on the guild via their OAuth token, not just membership), which is worth building carefully because every admin feature after this reuses it.
 
 ### 4.2 Live "now" view 🟡
