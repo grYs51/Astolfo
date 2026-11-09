@@ -3,6 +3,7 @@ import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { getActiveServers } from './active-servers';
 import { getPrivacy, setPrivacy } from './privacy';
+import { trackPageView } from './track';
 import {
   getVoiceStatsOverview,
   getVoiceStatsLeaderboard,
@@ -27,6 +28,9 @@ export default (router: Router) => {
   // The viewer's own privacy setting
   router.get('/features/me/privacy', isAuthenticated, getPrivacy);
   router.put('/features/me/privacy', isAuthenticated, setPrivacy);
+
+  // Dashboard page views (route patterns) for the admin page
+  router.post('/features/track', isAuthenticated, trackPageView);
 
   // Voice Stats endpoints — all require real guild membership
   router.get(
