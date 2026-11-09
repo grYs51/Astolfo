@@ -11,6 +11,7 @@ import passport from 'passport';
 import { errorHandler } from './utils/middleware/error-handler';
 import { registerDiscordStrategy } from './utils/strategies/discordStrategy';
 import { isMockDiscord } from '../dev/mock-discord';
+import { requestMetrics } from './utils/middleware/requestMetrics';
 collectDefaultMetrics();
 
 const DEFAULT_CORS_ORIGINS = [
@@ -53,6 +54,8 @@ function createExpress() {
     }
     next();
   });
+
+  app.use(requestMetrics);
 
   app.use(
     cors({

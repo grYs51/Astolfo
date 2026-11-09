@@ -10,17 +10,23 @@ export default class GuildCreateEvent extends BaseEvent {
     super(Events.GuildCreate);
   }
 
+  // Only real joins: discord.js doesn't emit GuildCreate for the servers it loads at startup
   async event(client: DiscordClient, guild: Guild) {
-    const config = await client.dataSource.guildConfigurations.upsert({
-      where: {
-        guild_id: guild.id,
-      },
-      update: {},
-      create: {
-        guild_id: guild.id,
-        prefix: defaultPrefix(),
-      },
-    });
+    const [config] = await Promise.all([
+      client.dataSource.guildConfigurations.upsert({
+        where: {
+          guild_id: guild.id,
+        },
+        update: {},
+        create: {
+          guild_id: guild.id,
+          prefix: defaultPrefix(),
+        },
+      }),
+      client.dataSource.guildEvents.create({
+        data: { guild_id: guild.id, type: 'join' },
+      }),
+    ]);
 
     client.guildConfigs.set(guild.id, config);
 

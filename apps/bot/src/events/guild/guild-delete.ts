@@ -16,7 +16,12 @@ export default class GuildDeleteEvent extends BaseEvent {
   }
 
   async event(client: DiscordClient, guild: Guild) {
-    const closed = await closeGuildVoiceSessions(guild.id, new Date());
+    const [closed] = await Promise.all([
+      closeGuildVoiceSessions(guild.id, new Date()),
+      client.dataSource.guildEvents.create({
+        data: { guild_id: guild.id, type: 'leave' },
+      }),
+    ]);
     if (closed > 0) {
       Logger.info(`Left guild ${guild.id}: closed ${closed} open voice sessions`);
     }

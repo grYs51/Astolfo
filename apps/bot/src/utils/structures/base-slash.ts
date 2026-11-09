@@ -7,7 +7,7 @@ import {
   SlashCommandSubcommandsOnlyBuilder,
   InteractionResponse,
 } from 'discord.js';
-import { slashCount } from '../../api/utils/counter';
+import { commandErrorsCount, slashCount } from '../../api/utils/counter';
 
 export abstract class BaseSlash {
   constructor(
@@ -45,14 +45,19 @@ export abstract class BaseSlash {
 
   async run(client: DiscordClient, interaction: ChatInputCommandInteraction<CacheType>) {
     slashCount(this.name);
-    // Acknowledge first so slow commands (DB queries) don't miss Discord's
-    // 3-second reply deadline ("The application did not respond")
-    if (this._deferType !== SlashDeferTypes.NONE) {
-      await interaction.deferReply({
-        ephemeral: this._deferType === SlashDeferTypes.HIDDEN,
-      });
+    try {
+      // Acknowledge first so slow commands (DB queries) don't miss Discord's
+      // 3-second reply deadline ("The application did not respond")
+      if (this._deferType !== SlashDeferTypes.NONE) {
+        await interaction.deferReply({
+          ephemeral: this._deferType === SlashDeferTypes.HIDDEN,
+        });
+      }
+      return await this.slash(client, interaction);
+    } catch (error) {
+      commandErrorsCount(this.name);
+      throw error;
     }
-    return this.slash(client, interaction);
   }
 
   protected abstract slash(

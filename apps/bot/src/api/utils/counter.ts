@@ -1,4 +1,4 @@
-import { Counter } from 'prom-client';
+import { Counter, Histogram } from 'prom-client';
 
 // Define a Prometheus counter metric
 export const commandsCounter = new Counter({
@@ -19,6 +19,27 @@ export const slashCounter = new Counter({
   labelNames: ['slashName'],
 });
 
+export const commandErrorsCounter = new Counter({
+  name: 'discord_bot_command_errors_total',
+  help: 'Prefix and slash commands that threw',
+  labelNames: ['name'],
+});
+
+// `route` is the route pattern, never the URL, so ids don't explode the labels
+export const apiRequestsCounter = new Counter({
+  name: 'discord_api_requests_total',
+  help: 'API requests by route pattern and status',
+  labelNames: ['method', 'route', 'status'],
+});
+
+// No `discord_` prefix: not persisted, so it covers the time since the last restart
+export const apiRequestDuration = new Histogram({
+  name: 'api_request_duration_seconds',
+  help: 'API request duration by route pattern',
+  labelNames: ['method', 'route'],
+  buckets: [0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5],
+});
+
 const commandsCount = (commandName: string) => {
   commandsCounter.inc({ commandName });
 };
@@ -31,23 +52,13 @@ const slashCount = (slashName: string) => {
   slashCounter.inc({ slashName });
 };
 
-const commandsCountSet = (commandName: string, count: number) => {
-  commandsCounter.inc({ commandName }, count);
-};
-
-const eventsCountSet = (eventName: string, count: number) => {
-  eventsCounter.inc({ eventName }, count);
-};
-
-const slashsCountSet = (slashName: string, count: number) => {
-  slashCounter.inc({ slashName }, count);
+const commandErrorsCount = (name: string) => {
+  commandErrorsCounter.inc({ name });
 };
 
 export {
   commandsCount,
   eventsCount,
   slashCount,
-  commandsCountSet,
-  eventsCountSet,
-  slashsCountSet,
+  commandErrorsCount,
 };
