@@ -7,7 +7,7 @@ declare global {
     namespace Express {
         // The user_session row passport puts on req.user
         // eslint-disable-next-line @typescript-eslint/no-empty-interface, @typescript-eslint/no-empty-object-type
-        interface User extends AuthUser {}
+        interface User extends Omit<AuthUser, 'isOwner'> {}
         interface Request {
             /**
              * The request id.
