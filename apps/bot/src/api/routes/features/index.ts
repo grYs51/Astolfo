@@ -26,6 +26,7 @@ import {
   getUserGames,
   getActivityCalendar,
   getVoiceHabits,
+  getStatsCard,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -89,6 +90,12 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getVoiceStatsUser,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/stats.png',
+    isAuthenticated,
+    isServerMember,
+    getStatsCard,
   );
   router.get(
     '/features/voice-stats/:serverId/users/:userId/heatmap',
