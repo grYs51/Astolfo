@@ -4,6 +4,7 @@ export type {
   GuildSettings,
   GuildSettingsHistory,
   GuildToggle,
+  ServerAccess,
   SettingChange,
   SettingsChannel,
   SettingsHistoryEntry,

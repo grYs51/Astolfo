@@ -65,6 +65,12 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
               <option [value]="c.id" [selected]="c.id === s.welcomeChannelId">#{{ c.name }}</option>
             }
           </select>
+          @if (!canEditMessages()) {
+            <p class="mt-xs text-xs text-warning">
+              You can’t post in this channel, so you can’t change its messages. Pick another channel
+              to edit them.
+            </p>
+          }
         </div>
         <div>
           <label for="gs-welcome" class="block text-sm font-medium text-gray-300">Welcome message</label>
@@ -74,6 +80,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
             class="textarea textarea-bordered mt-xs w-full bg-base-200"
             placeholder="Welcome @member"
             aria-describedby="gs-welcome-count"
+            [disabled]="!canEditMessages()"
             [attr.maxlength]="maxMessage"
             [value]="s.welcomeMessage"
             (input)="set('welcomeMessage', value($event))"
@@ -90,6 +97,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
             class="textarea textarea-bordered mt-xs w-full bg-base-200"
             placeholder="Goodbye @member"
             aria-describedby="gs-goodbye-count"
+            [disabled]="!canEditMessages()"
             [attr.maxlength]="maxMessage"
             [value]="s.goodbyeMessage"
             (input)="set('goodbyeMessage', value($event))"
@@ -187,6 +195,12 @@ export class GuildSettingsFormComponent {
   protected digestOptions = computed(() =>
     this.settings().channels.filter((c) => c.postable || c.id === this.settings().digestChannelId)
   );
+
+  /** The bot posts the messages in the welcome channel; the API refuses edits for one the viewer can't post in */
+  protected canEditMessages = computed(() => {
+    const id = this.draft().welcomeChannelId;
+    return !id || this.draft().channels.some((c) => c.id === id && c.postable);
+  });
 
   /** Any edit replaces the draft object, so identity says whether it changed */
   protected dirty = computed(() => this.draft() !== this.settings());

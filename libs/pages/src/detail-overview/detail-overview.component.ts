@@ -177,8 +177,8 @@ export class DetailOverviewComponent {
     () => this.period()
   );
 
-  /** Only loads for members with Manage Server (403 otherwise), so it decides the settings link */
-  settingsResource = this.guildSettingsApi.fetchSettings(() => this.id());
+  /** Decides the settings link; a small call, not the whole settings object */
+  accessResource = this.guildSettingsApi.fetchAccess(() => this.id());
 
   /** Server name from the overview response; falls back while loading or if the bot can't see the guild */
   serverName = computed(

@@ -1,12 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
-import { GuildSettings, GuildSettingsHistory } from '@nx-stolfo/api-interfaces';
+import { GuildSettings, GuildSettingsHistory, ServerAccess } from '@nx-stolfo/api-interfaces';
 
 /** Server settings; the API answers 403 to members without Manage Server */
 export class GuildSettingsApi extends ApiBase {
   protected override host = inject(COMMON_BOT_API_URL);
   private http = inject(HttpClient);
+
+  /** Whether the viewer may open the settings page; any member may ask */
+  fetchAccess(guildId: () => string) {
+    return this.get<ServerAccess>(() => `/features/servers/${guildId()}/access`);
+  }
 
   fetchSettings(guildId: () => string) {
     return this.get<GuildSettings>(() => `/features/servers/${guildId()}/settings`);

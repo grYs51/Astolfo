@@ -14,7 +14,7 @@ const current = {
 const body = (overrides: Record<string, unknown> = {}) => ({
   prefix: 'astolfo!',
   welcomeChannelId: 'voice-1',
-  welcomeMessage: 'Hi @member',
+  welcomeMessage: '',
   goodbyeMessage: '',
   digestChannelId: null,
   toggles: [{ key: 'VOICE_CHANNEL_REMINDER', label: 'ignored', enabled: true }],
@@ -27,10 +27,12 @@ const parse = (overrides?: Record<string, unknown>) =>
 
 describe('parseSettings', () => {
   test('maps a valid body onto the config, keeping unknown toggle bits', () => {
-    expect(parse({ digestChannelId: 'news' })).toEqual({
+    expect(
+      parse({ digestChannelId: 'news', welcomeChannelId: 'general', welcomeMessage: 'Hi @member' })
+    ).toEqual({
       data: {
         prefix: 'astolfo!',
-        welcome_channel_id: 'voice-1',
+        welcome_channel_id: 'general',
         welcome_message: 'Hi @member',
         goodbye_message: '',
         toggles: 0b1001,
@@ -62,7 +64,19 @@ describe('parseSettings', () => {
 
   test('refuses a message over 200 characters', () => {
     expect(parse({ goodbyeMessage: 'x'.repeat(201) })).toHaveProperty('error');
-    expect(parse({ welcomeMessage: 'x'.repeat(200) })).toHaveProperty('data');
+    expect(
+      parse({ welcomeChannelId: 'general', welcomeMessage: 'x'.repeat(200) })
+    ).toHaveProperty('data');
+  });
+
+  // The bot posts the message there, so it must be a channel the viewer could post in
+  test('a message change needs a welcome channel the viewer can post in', () => {
+    expect(parse({ welcomeMessage: 'FREE NITRO' })).toEqual({
+      error: expect.stringContaining('welcome channel'),
+    });
+    expect(parse({ goodbyeMessage: 'Bye @member' })).toHaveProperty('error');
+    // No welcome channel, nothing posted
+    expect(parse({ welcomeChannelId: null, welcomeMessage: 'Hi' })).toHaveProperty('data');
   });
 
   test('refuses a new channel the bot cannot post in', () => {

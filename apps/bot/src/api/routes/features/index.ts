@@ -2,7 +2,12 @@ import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { isServerManager } from '../../utils/middleware/isServerManager';
-import { getGuildSettings, getGuildSettingsHistory, setGuildSettings } from './guild-settings';
+import {
+  getGuildSettings,
+  getGuildSettingsHistory,
+  getServerAccess,
+  setGuildSettings,
+} from './guild-settings';
 import { getActiveServers } from './active-servers';
 import { getPrivacy, setPrivacy } from './privacy';
 import { trackPageView } from './track';
@@ -33,6 +38,9 @@ export default (router: Router) => {
 
   // Dashboard page views (route patterns) for the admin page
   router.post('/features/track', isAuthenticated, trackPageView);
+
+  // Whether the viewer may open the settings page (any member may ask)
+  router.get('/features/servers/:serverId/access', isAuthenticated, isServerMember, getServerAccess);
 
   // Server settings: members with Manage Server only
   router.get(

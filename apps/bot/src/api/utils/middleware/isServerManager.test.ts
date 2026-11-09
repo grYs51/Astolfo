@@ -12,6 +12,8 @@ jest.mock('../discord-directory', () => ({
 }));
 
 const mockHas = jest.fn();
+/** Permissions postableChannels asked of the viewer */
+const mockViewerAsked: unknown[] = [];
 jest.mock('../../../client/instance', () => {
   const bot = { id: 'bot' };
   const viewer = { permissions: { has: (p: bigint) => mockHas(p) } };
@@ -21,7 +23,12 @@ jest.mock('../../../client/instance', () => {
     name: id,
     type,
     rawPosition,
-    permissionsFor: (who: unknown) => ({ has: () => (who === bot ? botCan : viewerCan) }),
+    permissionsFor: (who: unknown) => ({
+      has: (perms: unknown) => {
+        if (who !== bot) mockViewerAsked.push(perms);
+        return who === bot ? botCan : viewerCan;
+      },
+    }),
   });
   return {
     client: {
@@ -36,7 +43,7 @@ jest.mock('../../../client/instance', () => {
                   [
                     channel('news', 5, true, true, 2),
                     channel('general', 0, true, true, 1),
-                    channel('staff', 0, true, false, 3), // private to the viewer
+                    channel('staff', 0, true, false, 3), // the viewer can't post (or can't see)
                     channel('rules', 0, false, true, 4), // bot can't post
                     channel('lobby', 2, true, true, 5), // voice
                   ].map((c) => [c.id, c])
@@ -128,9 +135,14 @@ describe('live canManage', () => {
 describe('live postableChannels', () => {
   const { discordDirectory } = jest.requireActual('../discord-directory');
 
-  test('text and announcement channels the bot can post in and the viewer can see, in order', async () => {
+  test('text and announcement channels both the bot and the viewer can post in, in order', async () => {
     const channels = await discordDirectory().postableChannels('guild-1', 'member');
     expect(channels.map((c: { id: string }) => c.id)).toEqual(['general', 'news']);
+    // Seeing a channel isn't enough: the welcome message is the viewer's own text
+    expect(mockViewerAsked[0]).toEqual([
+      PermissionFlagsBits.ViewChannel,
+      PermissionFlagsBits.SendMessages,
+    ]);
   });
 
   test('nothing for someone outside the server', async () => {

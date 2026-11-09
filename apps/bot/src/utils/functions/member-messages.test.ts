@@ -19,7 +19,7 @@ describe('welcomePost', () => {
 });
 
 describe('goodbyePost', () => {
-  test('uses the escaped display name, literally', () => {
+  test('uses the escaped name, literally', () => {
     expect(goodbyePost('Bye @member', '*star* $&')?.content).toBe(String.raw`Bye \*star\* $&`);
   });
 

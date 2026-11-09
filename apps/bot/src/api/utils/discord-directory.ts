@@ -57,7 +57,7 @@ export interface DiscordDirectory {
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
   /** Ids of the guild's current human members */
   memberIds(guildId: string): Promise<string[]>;
-  /** Text and announcement channels the bot can post in and the viewer can see */
+  /** Text and announcement channels both the bot and the viewer can post in */
   postableChannels(guildId: string, viewerId: string): Promise<ChannelInfo[]>;
 }
 
@@ -169,13 +169,14 @@ const live: DiscordDirectory = {
     const viewer = await findMember(guildId, viewerId);
     if (!guild || !viewer) return [];
     const me = guild.members.me ?? (await guild.members.fetchMe());
-    // Manage Server doesn't grant every channel; don't list private ones the viewer can't see
+    // Manage Server doesn't grant every channel, and the welcome message is the viewer's own
+    // text: only offer channels where they could post it themselves
     return [...guild.channels.cache.values()]
       .filter(
         (c): c is TextChannel | NewsChannel =>
           (c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement) &&
           c.permissionsFor(me).has(POST_PERMISSIONS) &&
-          c.permissionsFor(viewer).has(PermissionFlagsBits.ViewChannel)
+          c.permissionsFor(viewer).has([PermissionFlagsBits.ViewChannel, PermissionFlagsBits.SendMessages])
       )
       .sort((a, b) => a.rawPosition - b.rawPosition)
       .map((c) => ({ id: c.id, name: c.name, type: ChannelType[c.type] }));

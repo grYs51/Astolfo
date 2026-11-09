@@ -45,6 +45,7 @@ export type SettingChange = {
 
 /** One save on the settings page */
 export interface SettingsHistoryEntry {
+  id: string;
   at: DateLike;
   member: DiscordMember;
   changes: SettingChange[];
@@ -53,4 +54,9 @@ export interface SettingsHistoryEntry {
 /** GET /features/servers/:serverId/settings/history — newest first (Manage Server only) */
 export interface GuildSettingsHistory {
   entries: SettingsHistoryEntry[];
+}
+
+/** GET /features/servers/:serverId/access — whether the viewer may open the settings page */
+export interface ServerAccess {
+  canManage: boolean;
 }

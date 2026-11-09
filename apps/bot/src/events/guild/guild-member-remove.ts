@@ -15,7 +15,8 @@ export default class GuildMemberRemoveEvent extends BaseEvent {
 
   async event(client: DiscordClient, member: GuildMember | PartialGuildMember) {
     const config = client.guildConfigs.get(member.guild.id);
-    const post = config && goodbyePost(config.goodbye_message, member.displayName);
+    // Username, not display name: nicknames are free text (links, slurs), usernames only a-z 0-9 _ .
+    const post = config && goodbyePost(config.goodbye_message, member.user.username);
     const channel = config?.welcome_channel_id
       ? member.guild.channels.cache.get(config.welcome_channel_id)
       : undefined;

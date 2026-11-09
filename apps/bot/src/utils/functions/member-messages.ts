@@ -13,8 +13,8 @@ export const welcomePost = (template: string, memberId: string): MessageCreateOp
 /** The goodbye post, or undefined when the message is empty (goodbye off) */
 export const goodbyePost = (
   template: string,
-  displayName: string
+  username: string
 ): MessageCreateOptions | undefined =>
   template
-    ? { content: fill(template, escapeMarkdown(displayName)), allowedMentions: { parse: [] } }
+    ? { content: fill(template, escapeMarkdown(username)), allowedMentions: { parse: [] } }
     : undefined;

@@ -1,7 +1,12 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { guild_configs } from '@prisma/client';
-import { GuildSettings, GuildSettingsHistory, SettingChange } from '@nx-stolfo/api-interfaces';
+import {
+  GuildSettings,
+  GuildSettingsHistory,
+  ServerAccess,
+  SettingChange,
+} from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { memberOrUnknown } from '../helpers';
@@ -64,6 +69,13 @@ export const parseSettings = (
         error: 'I can’t post in that channel. I need View Channel, Send Messages and Embed Links there.',
       };
     }
+  }
+  const messagesChanged =
+    welcomeMessage.trim() !== current.welcome_message ||
+    goodbyeMessage.trim() !== current.goodbye_message;
+  // The bot posts these words in the welcome channel, so only someone who could post there may write them
+  if (messagesChanged && isString(welcomeChannelId) && !postable.includes(welcomeChannelId)) {
+    return { error: 'You can’t post in the welcome channel, so you can’t change its messages.' };
   }
   if (!Array.isArray(toggles)) {
     return { error: '`toggles` must be a list.' };
@@ -204,9 +216,20 @@ export const getGuildSettingsHistory: RequestHandler<{ serverId: string }, Guild
     ]);
     res.send({
       entries: rows.map((row) => ({
+        id: row.id,
         at: row.at,
         member: memberOrUnknown(members, row.user_id),
         changes: row.changes as SettingChange[],
       })),
     });
   });
+
+/**
+ * GET /features/servers/:serverId/access — whether the viewer may open the settings page.
+ * Members only, but no 403 for non-managers: the detail page asks on every visit.
+ */
+export const getServerAccess: RequestHandler<{ serverId: string }, ServerAccess> = asyncHandler(
+  async (req, res) => {
+    res.send({ canManage: await discordDirectory().canManage(req.params.serverId, req.user.id) });
+  }
+);
