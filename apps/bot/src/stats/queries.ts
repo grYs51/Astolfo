@@ -256,7 +256,8 @@ export const getDuo = async (
 ): Promise<Duo> => {
   const { current } = periodWindows(period, now);
   const [[top], a, b] = await Promise.all([
-    // Same join as the companions in getMemberSummary, for one pair; the window total rides along on the top channel
+    // Same join as the companions in getMemberSummary, for one pair, with both sessions in the window so it's symmetric;
+    // the pair's total rides along on the top channel
     db.$queryRaw<{ channel_id: string; total: bigint }[]>`
       SELECT a.channel_id, SUM(SUM(${overlapMs('a', 'b')})) OVER ()::bigint AS total
       FROM voice_stats a
@@ -267,6 +268,7 @@ export const getDuo = async (
        AND b.member_id = ${bId}
        AND b.issued_on < COALESCE(a.ended_on, NOW())
        AND COALESCE(b.ended_on, NOW()) > a.issued_on
+       ${windowFilter('b.issued_on', current)}
       WHERE a.guild_id = ${guildId} AND a.member_id = ${aId} AND a.type = ${VOICE_TYPE.VOICE}
         ${windowFilter('a.issued_on', current)}
       GROUP BY a.channel_id

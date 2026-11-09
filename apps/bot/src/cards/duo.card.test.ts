@@ -5,7 +5,7 @@ import { THEMES } from './themes';
 const H = 60 * 60 * 1000;
 
 const data = (overrides: Partial<DuoCardData> = {}): DuoCardData => ({
-  duo: { togetherMs: 3 * H, aVoiceMs: 12 * H, bVoiceMs: 2 * H, topChannelId: 'vc1' },
+  duo: { togetherMs: 3 * H, aVoiceMs: 12 * H, bVoiceMs: 4 * H, topChannelId: 'vc1' },
   period: 'month',
   members: [{ name: 'Astolfo' }, { name: '<b>Roland</b>' }],
   serverName: 'Paladins',
@@ -21,8 +21,7 @@ describe('duoCard', () => {
     expect(svg).toContain('Share of Astolfo’s voice time');
     expect(svg).toContain('>25%<');
     expect(svg).toContain('of 12h');
-    // b's sessions can start before the window, so the share is capped
-    expect(svg).toContain('>100%<');
+    expect(svg).toContain('>75%<');
     expect(svg).toContain('Most time together in #general &amp; chill');
   });
 

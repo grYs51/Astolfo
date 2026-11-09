@@ -20,8 +20,8 @@ const AVATAR = 96;
 const TOP = 40;
 const NAMES_Y = TOP + AVATAR + 34;
 
-/** "42%" of a member's voice time; can't pass 100% (b's sessions may start before the window) */
-const share = (together: number, total: number) => (total > 0 ? `${Math.min(100, Math.round((100 * together) / total))}%` : '–');
+/** "42%" of a member's voice time */
+const share = (together: number, total: number) => (total > 0 ? `${Math.round((100 * together) / total)}%` : '–');
 
 /** /duo: both avatars, the time together, each one's share of it and where they meet most */
 export const duoCard = (d: DuoCardData, t: CardTheme) => {

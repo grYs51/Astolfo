@@ -28,7 +28,10 @@ describe('getDuo', () => {
     const pair = Prisma.sql(strings, ...values);
     // VOICE rows only, for this pair, open sessions counted until now
     expect(pair.values.filter((v) => v === 'VOICE')).toHaveLength(2);
-    expect(pair.values).toEqual(expect.arrayContaining(['g', 'a', 'b', new Date(now.getTime() - 7 * 24 * 3_600_000)]));
+    expect(pair.values).toEqual(expect.arrayContaining(['g', 'a', 'b']));
+    // Both sessions must start in the window, so a's and b's cards agree
+    const from = new Date(now.getTime() - 7 * 24 * 3_600_000).getTime();
+    expect(pair.values.filter((v) => v instanceof Date && v.getTime() === from)).toHaveLength(2);
     expect(pair.sql).toMatch(/COALESCE\(a\.ended_on, NOW\(\)\)/);
     expect(pair.sql).toMatch(/COALESCE\(b\.ended_on, NOW\(\)\)/);
   });
