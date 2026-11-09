@@ -9,10 +9,11 @@ import { MOCK_USER } from '../../../../dev/mock-discord';
  */
 export const mockLogin: RequestHandler = asyncHandler(async (req, res, next) => {
   const { id, username, global_name, avatar } = MOCK_USER;
-  const profile = { username, global_name, avatar };
+  const now = new Date();
+  const profile = { username, global_name, avatar, last_login_at: now };
   const user = await req.db.userSession.upsert({
     where: { id },
-    create: { id, ...profile },
+    create: { id, ...profile, created_at: now },
     update: profile,
   });
 
