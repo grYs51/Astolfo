@@ -21,6 +21,13 @@ interface ListRow {
   value: string;
 }
 
+/** A titled list of members; ranked lists show 1, 2, 3 in front */
+interface Section {
+  title: string;
+  rows: ListRow[];
+  ranked: boolean;
+}
+
 const ROW_H = 44;
 const GAP = 16;
 const LABEL_H = 28;
@@ -31,7 +38,7 @@ const dayMonth = (date: Date) => date.toLocaleDateString('en-GB', { day: 'numeri
 /** A titled panel of ranked members; its height is listHeight(rows) */
 const listHeight = (rows: ListRow[]) => (rows.length ? LABEL_H + rows.length * ROW_H + 16 : 0);
 
-const list = (key: string, x: number, y: number, title: string, rows: ListRow[], d: DigestCardData, t: CardTheme, ranked = true) => {
+const list = (key: string, x: number, y: number, { title, rows, ranked }: Section, d: DigestCardData, t: CardTheme) => {
   if (!rows.length) return '';
   const top = y + LABEL_H;
   return [
@@ -76,32 +83,27 @@ export const digestCard = (d: DigestCardData, t: CardTheme) => {
   y += TILE_H + 24;
 
   const right = PAD + TILE_W + GAP;
-  const pairs: [ListRow[], string, ListRow[], string, boolean][] = [
-    [
-      g.topVoice.map((m) => ({ memberId: m.memberId, value: formatDuration(m.ms) })),
-      'Most time in voice',
-      g.topMessages.map((m) => ({ memberId: m.memberId, value: m.count.toLocaleString('en-GB') })),
-      'Most messages',
-      true,
-    ],
-    [
-      g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })),
-      'Longest voice streaks',
-      g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })),
-      'Milestones reached',
-      false,
-    ],
+  const pairs: { key: string; left: Section; right: Section }[] = [
+    {
+      key: 'leaders',
+      left: { title: 'Most time in voice', ranked: true, rows: g.topVoice.map((m) => ({ memberId: m.memberId, value: formatDuration(m.ms) })) },
+      right: { title: 'Most messages', ranked: true, rows: g.topMessages.map((m) => ({ memberId: m.memberId, value: m.count.toLocaleString('en-GB') })) },
+    },
+    {
+      key: 'streaks',
+      left: { title: 'Longest voice streaks', ranked: true, rows: g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })) },
+      right: { title: 'Milestones reached', ranked: false, rows: g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })) },
+    },
   ];
-  pairs.forEach(([leftRows, leftTitle, rightRows, rightTitle, ranked], i) => {
-    const h = Math.max(listHeight(leftRows), listHeight(rightRows));
-    if (!h) return;
-    // Streaks are ranked, milestones aren't
+  for (const pair of pairs) {
+    const h = Math.max(listHeight(pair.left.rows), listHeight(pair.right.rows));
+    if (!h) continue;
     parts.push(
-      list(`l${i}`, PAD, y, leftTitle, leftRows, d, t, true),
-      list(`r${i}`, leftRows.length ? right : PAD, y, rightTitle, rightRows, d, t, ranked)
+      list(`${pair.key}L`, PAD, y, pair.left, d, t),
+      list(`${pair.key}R`, pair.left.rows.length ? right : PAD, y, pair.right, d, t)
     );
     y += h + GAP;
-  });
+  }
 
   if (g.bestDuo) {
     const a = d.members[g.bestDuo.a] ?? { name: 'Unknown member' };
