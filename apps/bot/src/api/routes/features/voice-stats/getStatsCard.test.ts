@@ -19,12 +19,13 @@ const get = async (userId: string, period?: string) => {
   const db = {
     userConfigs: { findFirst: jest.fn(async ({ where }: { where: { user_id: string } }) => (where.user_id === HIDDEN ? {} : null)) },
   };
+  const next = jest.fn();
   await getStatsCard(
     { params: { serverId: 'g', userId }, query: period ? { period } : {}, user: { id: 'viewer' }, db } as unknown as Request<{ serverId: string; userId: string }>,
     res as unknown as Response,
-    jest.fn()
+    next
   );
-  return res;
+  return Object.assign(res, { next });
 };
 
 beforeEach(() => jest.clearAllMocks());
@@ -53,6 +54,15 @@ describe('getStatsCard', () => {
     expect(res.attachment).toHaveBeenCalledWith('stats.png');
     const png: Buffer = res.send.mock.calls[0][0];
     expect(png.subarray(0, 8)).toEqual(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  });
+
+  test('a failed render sets no PNG headers, so the error handler answers with plain JSON', async () => {
+    jest.mocked(statsCardSvg).mockResolvedValueOnce('not an svg');
+    const res = await get('member', 'week');
+    expect(res.next).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('SVG') }));
+    expect(res.type).not.toHaveBeenCalled();
+    expect(res.attachment).not.toHaveBeenCalled();
+    expect(res.set).not.toHaveBeenCalled();
   });
 
   test('defaults to the past month, like /stats', async () => {

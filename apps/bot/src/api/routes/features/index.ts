@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
 import { isServerManager } from '../../utils/middleware/isServerManager';
+import { cardRateLimit } from '../../utils/middleware/cardRateLimit';
 import {
   getGuildSettings,
   getGuildSettingsHistory,
@@ -94,6 +95,7 @@ export default (router: Router) => {
   router.get(
     '/features/voice-stats/:serverId/users/:userId/stats.png',
     isAuthenticated,
+    cardRateLimit,
     isServerMember,
     getStatsCard,
   );

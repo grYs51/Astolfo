@@ -31,8 +31,6 @@ export const getStatsCard: RequestHandler<{ serverId: string; userId: string }> 
       period,
       theme: THEMES[DEFAULT_THEME],
     });
-    // Download even though the dashboard is on another origin, where <a download> is ignored
-    res.attachment('stats.png');
-    await sendPng(res, svg);
+    await sendPng(res, svg, 'stats.png');
   }
 );
