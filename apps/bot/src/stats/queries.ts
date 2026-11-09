@@ -4,9 +4,11 @@ import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { visibleMembersOnly } from '../utils/privacy';
 import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows';
 import { crossedMilestones, MILESTONE_HOURS } from './milestones';
+import { HABIT_SUMS, HabitRow, toHabits } from '../api/routes/features/voice-stats/habits-sql';
+import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 
 /**
- * Stats for the Discord-side features (/stats, weekly digest). Same rules as
+ * Stats for the Discord-side features (/stats, /profile, weekly digest). Same rules as
  * the dashboard API: voice totals count VOICE rows only (the other types
  * overlap them), open sessions count live, and lists that name members leave
  * out members who hide from others.
@@ -54,6 +56,20 @@ const messageCount = async (db: QueryDb, guildId: string, window: TimeWindow, me
       ${windowFilter('created_at', window)}
   `;
   return Number(row.count);
+};
+
+/** The channel a member spent the most voice time in */
+const favouriteChannel = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow) => {
+  const [row] = await db.$queryRaw<{ channel_id: string }[]>`
+    SELECT channel_id
+    FROM voice_stats
+    WHERE guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}
+      ${windowFilter('issued_on', window)}
+    GROUP BY channel_id
+    ORDER BY SUM(${durationMs()}) DESC
+    LIMIT 1
+  `;
+  return row?.channel_id;
 };
 
 // ── Streaks ─────────────────────────────────────────────────────────────────
@@ -156,7 +172,7 @@ export const getMemberSummary = async (
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
 
-  const [voice, previousVoice, messages, previousMessages, [rank], [favourite], companions, streak, lifetimeMs] =
+  const [voice, previousVoice, messages, previousMessages, [rank], favouriteChannelId, companions, streak, lifetimeMs] =
     await Promise.all([
       voiceTotal(db, guildId, current, memberId),
       previous ? voiceTotal(db, guildId, previous, memberId) : null,
@@ -178,15 +194,7 @@ export const getMemberSummary = async (
           )::bigint AS rank
         WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
       `,
-      db.$queryRaw<{ channel_id: string }[]>`
-        SELECT channel_id
-        FROM voice_stats
-        WHERE guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}
-          ${windowFilter('issued_on', current)}
-        GROUP BY channel_id
-        ORDER BY SUM(${durationMs()}) DESC
-        LIMIT 1
-      `,
+      favouriteChannel(db, guildId, memberId, current),
       db.$queryRaw<{ member_id: string; together: bigint }[]>`
         SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
         FROM voice_stats me
@@ -216,13 +224,74 @@ export const getMemberSummary = async (
     previousMessages,
     voiceRank: rank?.rank != null ? Number(rank.rank) : undefined,
     rankedMembers: rank ? Number(rank.members) : 0,
-    favouriteChannelId: favourite?.channel_id,
+    favouriteChannelId,
     companions: companions.map((row) => ({
       memberId: row.member_id,
       togetherMs: Number(row.together),
     })),
     streak,
     lifetimeMs,
+  };
+};
+
+// ── /profile ────────────────────────────────────────────────────────────────
+
+export interface MemberProfile {
+  /** First voice row anyone has on the server: when tracking began */
+  trackingSince?: Date;
+  sessions: number;
+  voiceMs: number;
+  longestSessionMs: number;
+  /** Capped to the voice time, like the dashboard's voice habits */
+  mutedMs: number;
+  streamingMs: number;
+  lastWeekMs: number;
+  favouriteChannelId?: string;
+  rps: { wins: number; ties: number; losses: number };
+}
+
+/** One member's all-time profile on a server (the caller checks they may see it) */
+export const getMemberProfile = async (
+  db: QueryDb,
+  guildId: string,
+  memberId: string,
+  now = new Date()
+): Promise<MemberProfile> => {
+  const weekAgo = new Date(now.getTime() - 7 * 24 * HOUR);
+  const [[voice], favouriteChannelId, [rps]] = await Promise.all([
+    db.$queryRaw<(HabitRow & { since: Date | null; sessions: bigint; longest: bigint; last_week: bigint })[]>`
+      SELECT
+        (SELECT MIN(issued_on) FROM voice_stats WHERE guild_id = ${guildId}) AS since,
+        COUNT(*) FILTER (WHERE type = ${VOICE_TYPE.VOICE})::bigint AS sessions,
+        COALESCE(MAX(${durationMs()}) FILTER (WHERE type = ${VOICE_TYPE.VOICE}), 0)::bigint AS longest,
+        COALESCE(SUM(${durationMs()}) FILTER (WHERE type = ${VOICE_TYPE.VOICE} AND issued_on >= ${weekAgo}), 0)::bigint AS last_week,
+        ${HABIT_SUMS}
+      FROM voice_stats
+      WHERE guild_id = ${guildId} AND member_id = ${memberId} AND issued_on < ${now}
+    `,
+    favouriteChannel(db, guildId, memberId, { to: now }),
+    db.$queryRaw<{ wins: bigint; ties: bigint; losses: bigint }[]>`
+      SELECT COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::bigint AS wins,
+             COUNT(*) FILTER (WHERE gp.result = ${SCORING.TIE})::bigint AS ties,
+             COUNT(*) FILTER (WHERE gp.result = ${SCORING.LOSS})::bigint AS losses
+      FROM game_player gp
+      JOIN game_result gr ON gr.id = gp.game_result_id
+      WHERE gp.user_id = ${memberId}
+        AND gr.guild_id = ${guildId}
+        AND gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS}
+    `,
+  ]);
+  const habits = toHabits(voice);
+  return {
+    trackingSince: voice?.since ?? undefined,
+    sessions: Number(voice?.sessions ?? 0),
+    voiceMs: habits.voice,
+    longestSessionMs: Number(voice?.longest ?? 0),
+    mutedMs: habits.muted,
+    streamingMs: habits.streaming,
+    lastWeekMs: Number(voice?.last_week ?? 0),
+    favouriteChannelId,
+    rps: { wins: Number(rps?.wins ?? 0), ties: Number(rps?.ties ?? 0), losses: Number(rps?.losses ?? 0) },
   };
 };
 
