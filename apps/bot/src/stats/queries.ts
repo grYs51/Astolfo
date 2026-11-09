@@ -4,7 +4,7 @@ import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { visibleMembersOnly } from '../utils/privacy';
 import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows';
 import { crossedMilestones, MILESTONE_HOURS } from './milestones';
-import { HABIT_SUMS, HabitRow, toHabits } from '../api/routes/features/voice-stats/habits-sql';
+import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 
 /**
