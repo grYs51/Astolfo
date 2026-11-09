@@ -97,8 +97,8 @@ describe('isServerManager', () => {
     const router = Router();
     registerFeatures(router);
     const routes = router.stack
-      .map((layer) => layer.route)
-      .filter((route) => route?.path.includes('/settings'));
+      .flatMap((layer) => layer.route ?? [])
+      .filter((route) => route.path.includes('/settings'));
 
     expect(routes.length).toBeGreaterThan(0);
     for (const route of routes) {
