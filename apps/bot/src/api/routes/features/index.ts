@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { isAuthenticated } from '../../utils/middleware/isAuthenticated';
 import { isServerMember } from '../../utils/middleware/isServerMember';
+import { isServerManager } from '../../utils/middleware/isServerManager';
+import { getGuildSettings, setGuildSettings } from './guild-settings';
 import { getActiveServers } from './active-servers';
 import { getPrivacy, setPrivacy } from './privacy';
 import { trackPageView } from './track';
@@ -31,6 +33,22 @@ export default (router: Router) => {
 
   // Dashboard page views (route patterns) for the admin page
   router.post('/features/track', isAuthenticated, trackPageView);
+
+  // Server settings: members with Manage Server only
+  router.get(
+    '/features/servers/:serverId/settings',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    getGuildSettings,
+  );
+  router.put(
+    '/features/servers/:serverId/settings',
+    isAuthenticated,
+    isServerMember,
+    isServerManager,
+    setGuildSettings,
+  );
 
   // Voice Stats endpoints — all require real guild membership
   router.get(
