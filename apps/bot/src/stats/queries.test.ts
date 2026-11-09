@@ -44,7 +44,7 @@ describe('getDuo', () => {
 });
 
 describe('getMemberSummary privacy', () => {
-  const queryRaw = jest.fn(async (..._args: unknown[]) => [{ total: 0n, sessions: 0n, count: 0n }]);
+  const queryRaw = jest.fn<Promise<object[]>, unknown[]>(async () => [{ total: 0n, sessions: 0n, count: 0n }]);
   const db = { $queryRaw: queryRaw } as never;
 
   /** For each query, the viewer its privacy filter lets through (`user_id <> viewer`) */
