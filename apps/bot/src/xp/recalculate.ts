@@ -1,8 +1,7 @@
-import type { Db } from '../db';
 import type DiscordClient from '../client/client';
 import { discordDirectory } from '../api/utils/discord-directory';
 import { Logger } from '../utils/logger';
-import { grantXp, Granted } from './grant';
+import { grantXp } from './grant';
 import { currentRules } from './rules';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -46,14 +45,27 @@ export const recalculateXp = async (client: DiscordClient, guildId: string) => {
 /** When each guild's last sweep started. The first sweep after a start covers all history, which is also the backfill. */
 const lastSweep = new Map<string, number>();
 
+let sweeping = false;
+
 /** Grant whatever the live path missed (sessions closed by shutdown, crash recovery or the missed-leave cleanup) and the weekly top 3 */
-export const sweepXp = async (client: DiscordClient, db: Pick<Db, '$queryRaw'> = client.dataSource) => {
+export const sweepXp = async (client: DiscordClient) => {
+  // A first sweep over a long history can outlast the hour; the next tick mustn't start a second one
+  if (sweeping) return;
+  sweeping = true;
+  try {
+    await sweepGuilds(client);
+  } finally {
+    sweeping = false;
+  }
+};
+
+const sweepGuilds = async (client: DiscordClient) => {
   for (const { id: guildId } of discordDirectory().guilds()) {
     if (isRecalculating(guildId)) continue;
     const start = Date.now();
     const last = lastSweep.get(guildId);
     try {
-      const granted: Granted = await grantXp(db, {
+      const granted = await grantXp(client.dataSource, {
         guildId,
         since: last ? new Date(last - SWEEP_OVERLAP_MS) : undefined,
         rules: currentRules(),

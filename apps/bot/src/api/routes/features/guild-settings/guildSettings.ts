@@ -45,8 +45,10 @@ export const parseSettings = (
   current: Config,
   postable: string[]
 ): { error: string } | { data: Config } => {
-  const { prefix, welcomeMessage, goodbyeMessage, welcomeChannelId, digestChannelId, levelUpChannelId, toggles } =
+  const { prefix, welcomeMessage, goodbyeMessage, welcomeChannelId, digestChannelId, toggles, ...rest } =
     (body ?? {}) as Partial<SettingsBody>;
+  // A page loaded before levels existed doesn't send it: keep the stored one
+  const levelUpChannelId = rest.levelUpChannelId === undefined ? current.level_up_channel_id : rest.levelUpChannelId;
 
   if (!isString(prefix) || (prefix !== current.prefix && !PREFIX.test(prefix))) {
     return { error: 'The prefix must be 1 to 5 characters, without spaces.' };

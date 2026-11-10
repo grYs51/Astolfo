@@ -146,9 +146,18 @@ describeDb('grantXp on seeded rows', () => {
 
   test("whoever is there for a newcomer's first session gets welcome, and starting it the starter bonus", async () => {
     expect((await rows('WELCOME')).map((r) => r.key)).toEqual([`welcome:${G}:xp-n:xp-e`]);
-    expect((await rows('STARTER')).map((r) => r.key)).toEqual(
-      expect.arrayContaining([`starter:${G}:xp-e:2026-02-14:1`])
-    );
+    expect((await rows('STARTER')).filter((r) => r.member_id === 'xp-e')).toHaveLength(1);
+  });
+
+  test('with voice XP off, a session is graded again but keeps its one starter bonus', async () => {
+    const voiceOff = { ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, voiceMinute: 0 } };
+    // No voice: rows, as when voice XP was off all along
+    await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-e', source: 'VOICE' } });
+    await grant({ memberId: 'xp-e', rules: voiceOff });
+    await grant({ memberId: 'xp-e', rules: voiceOff });
+    expect((await rows('STARTER')).filter((r) => r.member_id === 'xp-e')).toHaveLength(1);
+    // Put the voice rows back for the tests after
+    await grant({ memberId: 'xp-e' });
   });
 
   test('crossing 10 hours grants the milestone once, dated when it was crossed', async () => {
@@ -158,9 +167,9 @@ describeDb('grantXp on seeded rows', () => {
   });
 
   test("a finished week grants its top 3 once, ranked like the digest's top voice", async () => {
+    // The music bot ties C and D at 1 h and takes #3 by id, as in the digest, but earns nothing
     expect((await rows('WEEKLY')).filter((r) => r.key.includes(':2026-01-05:')).map((r) => [r.member_id, r.amount])).toEqual([
       ['xp-a', 30],
-      ['xp-c', 20],
       ['xp-f', 50],
     ]);
   });

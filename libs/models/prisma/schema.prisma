@@ -101,6 +101,9 @@ model game_result {
   metadata     Json?
   players      game_player[]
   game_type    game_type     @relation(fields: [game_type_id], references: [id])
+
+  // XP grants a member's games in a server on every live grant
+  @@index([guild_id, game_type_id])
 }
 
 model game_player {
@@ -110,6 +113,9 @@ model game_player {
   result         Int          // 0 = loss, 1 = win, 2 = tie
   move           String?
   game_result    game_result @relation(fields: [game_result_id], references: [id])
+
+  @@index([user_id])
+  @@index([game_result_id])
 }
 
 model session {
@@ -196,7 +202,8 @@ model xp_events {
   /// When it was earned
   created_at DateTime @db.Timestamp(6)
 
-  @@index([guild_id, member_id])
+  // A member's ledger, newest first (history, /xp) and their total
+  @@index([guild_id, member_id, created_at])
 }
 
 /// The owner's XP rules from /admin. One row (id 1) or none (= the defaults in code).

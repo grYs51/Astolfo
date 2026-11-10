@@ -3,6 +3,7 @@ import { Logger } from '../utils/logger';
 import { grantXp, totalXp } from './grant';
 import { currentRules, levelFor } from './rules';
 import { isRecalculating, xpLookups } from './recalculate';
+import { runSerialized } from '../utils/handlers/vc/voice-utils';
 
 /** The live path only looks this far back; the hourly sweep catches anything older */
 const LIVE_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
@@ -11,7 +12,12 @@ const LIVE_WINDOW_MS = 2 * 24 * 60 * 60 * 1000;
  * Grant a member's new XP after something they did (a message, leaving voice, a game) and post in the
  * server's level-up channel when it took them up a level. Never throws: it runs beside the handler.
  */
-export const awardAndAnnounce = async (client: DiscordClient, guildId: string, memberId: string, now = new Date()) => {
+export const awardAndAnnounce = (client: DiscordClient, guildId: string, memberId: string, now = new Date()) =>
+  // One member's grants one at a time: two at once (a message as a session closes) would each compare
+  // the level against a total that already holds the other's XP, and post twice or not at all
+  runSerialized(`xp:${guildId}:${memberId}`, () => award(client, guildId, memberId, now));
+
+const award = async (client: DiscordClient, guildId: string, memberId: string, now: Date) => {
   if (isRecalculating(guildId)) return;
   try {
     const rules = currentRules();

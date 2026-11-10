@@ -48,6 +48,10 @@ describe('parseSettings', () => {
     expect(parse({ levelUpChannelId: 'general' })).toMatchObject({ data: { level_up_channel_id: 'general' } });
     expect(parse({ levelUpChannelId: 'voice-2' })).toEqual({ error: expect.stringContaining('post in that channel') });
     expect(parse({ levelUpChannelId: 12 })).toHaveProperty('error');
+    // A page from before levels existed leaves it as it is
+    const stored = { ...current, level_up_channel_id: 'news' };
+    const { levelUpChannelId: _left, ...old } = body();
+    expect(parseSettings(old, stored, [])).toMatchObject({ data: { level_up_channel_id: 'news' } });
   });
 
   test('a toggle can be switched off', () => {

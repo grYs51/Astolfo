@@ -29,4 +29,13 @@ CREATE TABLE "xp_rules" (
 CREATE UNIQUE INDEX "xp_events_key_key" ON "xp_events"("key");
 
 -- CreateIndex
-CREATE INDEX "xp_events_guild_id_member_id_idx" ON "xp_events"("guild_id", "member_id");
+CREATE INDEX "xp_events_guild_id_member_id_created_at_idx" ON "xp_events"("guild_id", "member_id", "created_at");
+
+-- CreateIndex
+CREATE INDEX "game_result_guild_id_game_type_id_idx" ON "game_result"("guild_id", "game_type_id");
+
+-- CreateIndex
+CREATE INDEX "game_player_user_id_idx" ON "game_player"("user_id");
+
+-- CreateIndex
+CREATE INDEX "game_player_game_result_id_idx" ON "game_player"("game_result_id");

@@ -112,6 +112,13 @@ const subtract = (base: Interval, cuts: Interval[]) => {
   return out;
 };
 
+/** Append to a list in a map; copying the list on every append would be quadratic on a backfill */
+const append = <K, V>(map: Map<K, V[]>, key: K, ...values: V[]) => {
+  const list = map.get(key);
+  if (list) list.push(...values);
+  else map.set(key, values);
+};
+
 const interval = (row: VoiceRow) => ({ from: row.issued_on.getTime(), to: row.ended_on.getTime() });
 const overlaps = (a: Interval, b: Interval) => a.from < b.to && b.from < a.to;
 const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
@@ -119,7 +126,7 @@ const utcDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 /** Pieces sorted by start, with the longest one, so the ones overlapping a span are found without a full scan */
 const indexPieces = (pieces: OtherPiece[]) => {
   const sorted = [...pieces].sort((a, b) => a.from - b.from);
-  const longest = Math.max(0, ...sorted.map((p) => p.to - p.from));
+  const longest = sorted.reduce((max, p) => Math.max(max, p.to - p.from), 0);
   return (span: Interval) => {
     let lo = 0;
     let hi = sorted.length;
@@ -157,8 +164,9 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
     channelId: r.channel_id,
     ...interval(r),
   }));
-  const lo = new Date(Math.min(...sessions.map((s) => s.from)) - STAY_LOOKBACK_MS);
-  const hi = new Date(Math.max(...sessions.map((s) => s.to)));
+  // A loop, not Math.min(...list): spreading 100k+ sessions overflows the stack
+  const lo = new Date(sessions.reduce((min, s) => Math.min(min, s.from), Infinity) - STAY_LOOKBACK_MS);
+  const hi = new Date(sessions.reduce((max, s) => Math.max(max, s.to), -Infinity));
   const channels = [...new Set(sessions.map((s) => s.channelId))];
 
   // Everyone's VOICE and DEAF rows in those channels, and the members' own rows anywhere (camera,
@@ -173,10 +181,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   `;
   const humans = context.filter((r) => !opts.isBot(r.member_id));
   const byMemberChannel = new Map<string, VoiceRow[]>();
-  for (const row of humans) {
-    const key = `${row.member_id}|${row.channel_id}`;
-    byMemberChannel.set(key, [...(byMemberChannel.get(key) ?? []), row]);
-  }
+  for (const row of humans) append(byMemberChannel, `${row.member_id}|${row.channel_id}`, row);
   const ofType = (rows: VoiceRow[] | undefined, type: VOICE_TYPE) => (rows ?? []).filter((r) => r.type === type).map(interval);
 
   // Others' time in each channel, deafened stretches cut out
@@ -185,7 +190,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
     const deaf = ofType(rows, VOICE_TYPE.DEAF);
     for (const row of rows.filter((r) => r.type === VOICE_TYPE.VOICE)) {
       const pieces = subtract(interval(row), deaf).map((p) => ({ ...p, memberId: row.member_id, sessionId: row.id }));
-      piecesByChannel.set(row.channel_id, [...(piecesByChannel.get(row.channel_id) ?? []), ...pieces]);
+      append(piecesByChannel, row.channel_id, ...pieces);
     }
   }
   const findPieces = new Map([...piecesByChannel].map(([channel, pieces]) => [channel, indexPieces(pieces)]));
@@ -193,7 +198,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   const stay = new Map<string, number>();
   const ownSessions = new Map<string, Session[]>();
   for (const row of humans.filter((r) => r.type === VOICE_TYPE.VOICE)) {
-    ownSessions.set(row.member_id, [...(ownSessions.get(row.member_id) ?? []), { id: row.id, channelId: row.channel_id, ...interval(row) }]);
+    append(ownSessions, row.member_id, { id: row.id, channelId: row.channel_id, ...interval(row) });
   }
   for (const list of ownSessions.values()) stayStarts(list).forEach((start, id) => stay.set(id, start));
 
@@ -213,20 +218,22 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
     firsts.filter((f) => f.issued_on.getTime() >= welcomeFrom).map((f) => [f.member_id, f.id])
   );
 
-  // Starter bonuses already granted on those days
-  const taken = await db.$queryRaw<{ member_id: string; day: string; count: number }[]>`
-    SELECT member_id, split_part(key, ':', 4) AS day, COUNT(*)::int AS count
-    FROM xp_events
-    WHERE guild_id = ${guildId} AND source = 'STARTER' AND created_at >= ${lo}
-      ${memberFilter('member_id', memberId)}
-    GROUP BY 1, 2
+  // Starter bonuses already granted on those days (the day the session started), for the daily cap
+  const started = await db.$queryRaw<{ member_id: string; session_id: string; day: string }[]>`
+    SELECT x.member_id, v.id AS session_id, to_char(v.issued_on, 'YYYY-MM-DD') AS day
+    FROM xp_events x
+    -- 9: the session id after 'starter:'
+    JOIN voice_stats v ON v.id = substr(x.key, 9)
+    WHERE x.guild_id = ${guildId} AND x.source = 'STARTER' AND x.created_at >= ${lo}
+      ${memberFilter('x.member_id', memberId)}
   `;
+  const startedIds = new Set(started.map((s) => s.session_id));
 
   const rows: XpRow[] = [];
   const together = thresholds.togetherMin * MINUTE;
   const pairs: { session: Session & { memberId: string }; other: string }[] = [];
   const bySessionMember = new Map<string, (Session & { memberId: string })[]>();
-  sessions.forEach((s) => bySessionMember.set(s.memberId, [...(bySessionMember.get(s.memberId) ?? []), s]));
+  sessions.forEach((s) => append(bySessionMember, s.memberId, s));
 
   for (const [member, list] of bySessionMember) {
     const graded: { session: Session; others: OtherPiece[] }[] = [];
@@ -252,7 +259,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
       }
 
       const byOther = new Map<string, OtherPiece[]>();
-      others.forEach((p) => byOther.set(p.memberId, [...(byOther.get(p.memberId) ?? []), p]));
+      others.forEach((p) => append(byOther, p.memberId, p));
       for (const [other, pieces] of byOther) {
         if (togetherMs(session, pieces) < together) continue;
         pairs.push({ session, other });
@@ -272,14 +279,17 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
     }
 
     if (amounts.starter > 0) {
-      const takenDays = new Map(taken.filter((t) => t.member_id === member).map((t) => [t.day, t.count]));
-      for (const { session, day, n } of starterSessions(graded, rules, takenDays)) {
+      const takenDays = new Map<string, number>();
+      started.filter((s) => s.member_id === member).forEach((s) => takenDays.set(s.day, (takenDays.get(s.day) ?? 0) + 1));
+      // With the voice amount at 0 no voice: row marks a session as graded, so it comes round again; it keeps its one bonus
+      const candidates = graded.filter((g) => !startedIds.has(g.session.id));
+      for (const { session } of starterSessions(candidates, rules, takenDays)) {
         rows.push({
           memberId: member,
           source: 'STARTER',
           amount: amounts.starter,
           note: `Started the call in #${opts.channelName?.(session.channelId) ?? 'voice'}`,
-          key: `starter:${guildId}:${member}:${day}:${n}`,
+          key: `starter:${session.id}`,
           at: new Date(session.to),
         });
       }
@@ -290,42 +300,68 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   return insertRows(db, guildId, rows);
 };
 
-/** Pairs back in a call after `reconnectDays` apart; a first call together isn't a reconnect */
+/**
+ * Pairs back in a call after `reconnectDays` apart; a first call together isn't a reconnect. The pairs'
+ * voice history is swept once per channel in memory: a SQL self-join per pair grew with the cube of
+ * their sessions on a backfill.
+ */
 const reconnects = async (
   db: GrantDb,
   guildId: string,
   pairs: { session: Session & { memberId: string }; other: string }[],
   rules: XpRules
 ): Promise<XpRow[]> => {
-  const rows: XpRow[] = [];
-  for (let i = 0; i < pairs.length; i += CHUNK) {
-    const batch = pairs.slice(i, i + CHUNK);
-    const values = batch.map((p, j) => Prisma.sql`(${j}::int, ${p.session.memberId}, ${p.other}, ${new Date(p.session.from)}::timestamp)`);
-    // The end of each pair's last time together before the session
-    const lasts = await db.$queryRaw<{ i: number; last: Date }[]>`
-      SELECT p.i, MAX(LEAST(a.ended_on, COALESCE(b.ended_on, NOW()))) AS last
-      FROM (VALUES ${Prisma.join(values)}) AS p(i, member, other, before)
-      JOIN voice_stats a
-        ON a.guild_id = ${guildId} AND a.member_id = p.member AND a.type = ${VOICE_TYPE.VOICE} AND a.ended_on <= p.before
-      JOIN voice_stats b
-        ON b.guild_id = ${guildId} AND b.member_id = p.other AND b.type = ${VOICE_TYPE.VOICE}
-       AND b.channel_id = a.channel_id
-       AND b.issued_on < a.ended_on AND COALESCE(b.ended_on, NOW()) > a.issued_on
-      GROUP BY p.i
-    `;
-    for (const { i: j, last } of lasts) {
-      const { session, other } = batch[j];
-      const days = Math.floor((session.from - last.getTime()) / DAY);
-      if (days < rules.thresholds.reconnectDays) continue;
-      rows.push({
-        memberId: session.memberId,
-        source: 'RECONNECT',
-        amount: rules.amounts.reconnect,
-        note: `Back in a call with someone after ${days} days`,
-        key: `reconnect:${guildId}:${session.memberId}:${other}:${utcDay(session.from)}`,
-        at: new Date(session.to),
-      });
+  const members = [...new Set(pairs.flatMap((p) => [p.session.memberId, p.other]))];
+  const before = new Date(pairs.reduce((max, p) => Math.max(max, p.session.from), -Infinity));
+  const history = await db.$queryRaw<VoiceRow[]>`
+    SELECT id, member_id, channel_id, type, issued_on, COALESCE(ended_on, NOW()) AS ended_on
+    FROM voice_stats
+    WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${before}
+      AND member_id IN (${Prisma.join(members)})
+  `;
+
+  // When each pair's times together ended, oldest first
+  const byChannel = new Map<string, VoiceRow[]>();
+  history.forEach((row) => append(byChannel, row.channel_id, row));
+  const ends = new Map<string, number[]>();
+  for (const rows of byChannel.values()) {
+    rows.sort((a, b) => a.issued_on.getTime() - b.issued_on.getTime());
+    let open: VoiceRow[] = [];
+    for (const row of rows) {
+      open = open.filter((o) => o.ended_on > row.issued_on);
+      for (const o of open) {
+        if (o.member_id === row.member_id) continue;
+        const end = Math.min(o.ended_on.getTime(), row.ended_on.getTime());
+        append(ends, `${o.member_id}|${row.member_id}`, end);
+        append(ends, `${row.member_id}|${o.member_id}`, end);
+      }
+      open.push(row);
     }
+  }
+  ends.forEach((list) => list.sort((a, b) => a - b));
+
+  const rows: XpRow[] = [];
+  for (const { session, other } of pairs) {
+    // The last time together that had ended when this session started
+    const list = ends.get(`${session.memberId}|${other}`) ?? [];
+    let lo = 0;
+    let hi = list.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (list[mid] <= session.from) lo = mid + 1;
+      else hi = mid;
+    }
+    if (lo === 0) continue;
+    const days = Math.floor((session.from - list[lo - 1]) / DAY);
+    if (days < rules.thresholds.reconnectDays) continue;
+    rows.push({
+      memberId: session.memberId,
+      source: 'RECONNECT',
+      amount: rules.amounts.reconnect,
+      note: `Back in a call with someone after ${days} days`,
+      key: `reconnect:${guildId}:${session.memberId}:${other}:${utcDay(session.from)}`,
+      at: new Date(session.to),
+    });
   }
   return rows;
 };
@@ -450,7 +486,6 @@ const grantWeekly = (db: GrantDb, { guildId, since, rules, now = new Date() }: G
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
           AND issued_on < DATE_TRUNC('week', ${now}::timestamp)
           ${since ? Prisma.sql`AND issued_on >= DATE_TRUNC('week', ${since}::timestamp) - INTERVAL '7 days'` : Prisma.empty}
-          ${notBots('member_id', botIds)}
         GROUP BY 1, 2
       ),
       ranked AS (
@@ -467,7 +502,8 @@ const grantWeekly = (db: GrantDb, { guildId, since, rules, now = new Date() }: G
           || ' voice time in the week of ' || to_char(week, 'YYYY-MM-DD'),
         'weekly:' || ${guildId} || ':' || to_char(week, 'YYYY-MM-DD') || ':' || member_id, week + INTERVAL '7 days'
       FROM amounts
-      WHERE amount > 0`
+      -- Bots keep their place, so the names match the digest's, but earn nothing
+      WHERE amount > 0 ${notBots('member_id', botIds)}`
   );
 };
 

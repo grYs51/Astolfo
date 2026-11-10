@@ -81,10 +81,12 @@ export const voiceXp = (input: VoiceInput, rules: XpRules) => {
   [inSession, ownDeaf, ownVideo, ownStreaming].forEach(addEdges);
   const stayEvery = voice.stayEveryMin * MINUTE;
   if (voice.stayStep > 0) {
+    // Only the steps inside the session, so a tiny stayStep can't make this loop run for long
     const steps = Math.ceil((voice.stayCap - 1) / voice.stayStep);
-    for (let k = 1; k <= steps; k++) {
+    for (let k = Math.max(1, Math.floor((session.from - stayStart) / stayEvery) + 1); k <= steps; k++) {
       const t = stayStart + k * stayEvery;
-      if (t > session.from && t < session.to) edges.add(t);
+      if (t >= session.to) break;
+      if (t > session.from) edges.add(t);
     }
   }
   const times = [...edges].sort((a, b) => a - b);
