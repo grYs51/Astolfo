@@ -138,13 +138,16 @@ export class MemberActivityComponent {
 
   /** This period against the one before, as two bars */
   protected compare = computed(() => {
+    // Same cases as the headline: no bars when there's nothing to compare
+    if (!this.change()) return undefined;
     const labels = COMPARE_LABELS[this.period()];
     const summary = this.stats()?.summary;
-    if (!labels || !summary || summary.previousTotalDuration === null) return undefined;
-    const max = Math.max(summary.totalDuration, summary.previousTotalDuration, 1);
+    const previous = summary?.previousTotalDuration;
+    if (!labels || !summary || previous == null) return undefined;
+    const max = Math.max(summary.totalDuration, previous, 1);
     return [
       { label: labels[0], value: summary.totalDuration, current: true },
-      { label: labels[1], value: summary.previousTotalDuration, current: false },
+      { label: labels[1], value: previous, current: false },
     ].map((bar) => ({ ...bar, pct: (bar.value / max) * 100 }));
   });
 

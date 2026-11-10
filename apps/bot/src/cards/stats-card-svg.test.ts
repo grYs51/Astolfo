@@ -28,7 +28,7 @@ const H = 60 * 60 * 1000;
 
 const summary = (overrides = {}) => ({
   voiceMs: H, previousVoiceMs: null, sessions: 1, messages: 0, previousMessages: null,
-  rankedMembers: 1, streak: { current: 0, longest: 0 }, lifetimeMs: H, companions: [],
+  streak: { current: 0, longest: 0 }, lifetimeMs: H, companions: [],
   ...overrides,
 });
 
@@ -39,7 +39,7 @@ beforeEach(() => {
 
 test('draws the summary the viewer may see, with names from the Discord directory', async () => {
   (getMemberSummary as jest.Mock).mockResolvedValue(
-    summary({ rankedMembers: 2, companions: [{ memberId: 'roland', togetherMs: H }, { memberId: 'gone', togetherMs: H }] })
+    summary({ companions: [{ memberId: 'roland', togetherMs: H }, { memberId: 'gone', togetherMs: H }] })
   );
   (getVoiceNeighbours as jest.Mock).mockResolvedValue([
     { memberId: 'kai', voiceMs: 2 * H, rank: 1, members: 2 },

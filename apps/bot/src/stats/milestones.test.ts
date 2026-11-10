@@ -4,16 +4,11 @@ const H = 60 * 60 * 1000;
 
 describe('nextMilestone', () => {
   test('the first threshold above the total, with what is left', () => {
-    expect(nextMilestone(0)).toEqual({ hours: 10, remainingMs: 10 * H, progress: 0 });
-    expect(nextMilestone(88 * H)).toEqual({ hours: 100, remainingMs: 12 * H, progress: 38 / 50 });
+    expect(nextMilestone(0)).toEqual({ hours: 10, remainingMs: 10 * H });
+    expect(nextMilestone(88 * H)).toEqual({ hours: 100, remainingMs: 12 * H });
   });
   test('exactly on a threshold points at the next one', () => {
-    expect(nextMilestone(50 * H)).toEqual({ hours: 100, remainingMs: 50 * H, progress: 0 });
-  });
-  test('progress counts from the milestone just passed, not from 0h', () => {
-    expect(nextMilestone(501 * H)?.progress).toBeCloseTo(1 / 500);
-    expect(nextMilestone(750 * H)?.progress).toBe(0.5);
-    expect(nextMilestone(5 * H)?.progress).toBe(0.5);
+    expect(nextMilestone(50 * H)).toEqual({ hours: 100, remainingMs: 50 * H });
   });
   test('nothing after the last one', () => {
     expect(nextMilestone(1000 * H)).toBeUndefined();

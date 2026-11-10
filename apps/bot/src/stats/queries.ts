@@ -153,12 +153,8 @@ export interface MemberSummary {
   sessions: number;
   messages: number;
   previousMessages: number | null;
-  /** Rank by voice time among members the viewer can see (1 = most) */
-  voiceRank?: number;
-  rankedMembers: number;
-  /** Rank by messages among members the viewer can see */
+  /** Rank by messages among members the viewer can see (1 = most) */
   messageRank?: number;
-  favouriteChannelId?: string;
   /** Who they shared a channel with most (members visible to the viewer) */
   companions: { memberId: string; togetherMs: number }[];
   streak: { current: number; longest: number };
@@ -268,13 +264,12 @@ export const getMemberSummary = async (
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
 
-  const [voice, previousVoice, messages, previousMessages, [rank], [messageRank], favouriteChannelId, companions, streak, lifetimeMs] =
+  const [voice, previousVoice, messages, previousMessages, [messageRank], companions, streak, lifetimeMs] =
     await Promise.all([
       voiceTotal(db, guildId, current, memberId),
       previous ? voiceTotal(db, guildId, previous, memberId) : null,
       messageCount(db, guildId, current, memberId),
       previous ? messageCount(db, guildId, previous, memberId) : null,
-      rankIn(db, memberId, voiceTotals(guildId, current, viewerId)),
       rankIn(
         db,
         memberId,
@@ -286,7 +281,6 @@ export const getMemberSummary = async (
             ${visibleMembersOnly('user_id', viewerId)}
           GROUP BY user_id`
       ),
-      favouriteChannel(db, guildId, memberId, current),
       db.$queryRaw<{ member_id: string; together: bigint }[]>`
         SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
         FROM voice_stats me
@@ -314,10 +308,7 @@ export const getMemberSummary = async (
     sessions: voice.sessions,
     messages,
     previousMessages,
-    voiceRank: rank?.rank != null ? Number(rank.rank) : undefined,
-    rankedMembers: rank ? Number(rank.members) : 0,
     messageRank: messageRank?.rank != null ? Number(messageRank.rank) : undefined,
-    favouriteChannelId,
     companions: companions.map((row) => ({
       memberId: row.member_id,
       togetherMs: Number(row.together),
