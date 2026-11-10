@@ -16,7 +16,7 @@ const seg = (from: number, to: number, memberIds: string[], extra: Partial<XpSeg
   ...extra,
 });
 const people = {
-  alex: { id: 'alex', username: 'alex', displayName: 'Alex', avatar: null },
+  alex: { id: 'alex', username: 'alex', displayName: 'Alex', avatar: 'https://cdn.example/alex.png' },
   sam: { id: 'sam', username: 'sam', displayName: null, avatar: null },
 };
 
@@ -46,12 +46,16 @@ describe('sessionChartOption', () => {
     expect(series.step).toBe('end');
   });
 
-  it('marks every change in who is there, with their names', () => {
-    expect(series.markPoint.data).toEqual([
-      { name: 'Alex joined', coord: [5 * M, 1] },
-      { name: 'sam joined', coord: [10 * M, 1.12] },
-      { name: 'Alex left', coord: [25 * M, 1] },
+  it('marks every change in who is there: an avatar above for each join, below for each leave', () => {
+    const avatars = { alex: 'data:alex', sam: 'data:sam' };
+    const marks = sessionChartOption(segments, people, avatars).series[0].markPoint.data;
+    expect(marks.map((m) => [m.name, m.coord, m.symbol, m.symbolOffset[1] < 0 ? 'above' : 'below'])).toEqual([
+      ['Alex joined', [5 * M, 1], 'image://data:alex', 'above'],
+      ['sam joined', [10 * M, 1.12], 'image://data:sam', 'above'],
+      ['Alex left', [25 * M, 1], 'image://data:alex', 'below'],
     ]);
+    // Before the round avatars load: a dot
+    expect(series.markPoint.data[0]).toMatchObject({ symbol: 'circle' });
   });
 
   it('shades only the deafened stretches', () => {

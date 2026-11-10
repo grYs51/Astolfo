@@ -34,7 +34,7 @@ const ICONS: Record<XpTileKey, string[]> = {
             <span class="text-xs font-normal text-gray-500">· all time</span>
           </h3>
           <div
-            class="mt-xs h-1.5 max-w-md overflow-hidden rounded-full bg-base-100"
+            class="mt-xs h-1.5 overflow-hidden rounded-full bg-base-100"
             role="progressbar"
             [attr.aria-valuenow]="pct()"
             aria-valuemin="0"

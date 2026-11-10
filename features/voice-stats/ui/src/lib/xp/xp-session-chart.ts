@@ -10,17 +10,31 @@ const nameOf = (people: People, id: string) => {
 const escapeHtml = (text: string) =>
   text.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string);
 
-/** "Alex joined", "Sam left": one marker at each change in who's in the channel */
-export const memberChanges = (segments: XpSegment[], people: People) =>
+/** Who joined and who left at each change in who's in the channel */
+export const memberChanges = (segments: XpSegment[]) =>
   segments.slice(1).flatMap((segment, i) => {
     const before = new Set(segments[i].memberIds);
     const now = new Set(segment.memberIds);
-    const labels = [
-      ...segment.memberIds.filter((id) => !before.has(id)).map((id) => `${nameOf(people, id)} joined`),
-      ...segments[i].memberIds.filter((id) => !now.has(id)).map((id) => `${nameOf(people, id)} left`),
-    ];
-    return labels.length ? [{ at: segment.from, multiplier: segment.multiplier, label: labels.join(', ') }] : [];
+    const joined = segment.memberIds.filter((id) => !before.has(id));
+    const left = segments[i].memberIds.filter((id) => !now.has(id));
+    return joined.length || left.length ? [{ at: segment.from, multiplier: segment.multiplier, joined, left }] : [];
   });
+
+export const AVATAR = 22;
+
+/**
+ * One avatar per person at each change: just above the line for who joined, just below it for who
+ * left, side by side when several change at once. `avatars` are round images by member id; until they
+ * load, a plain dot marks the change.
+ */
+const avatarMarkers = (ids: string[], people: People, avatars: Record<string, string>, at: number, multiplier: number, verb: 'joined' | 'left') =>
+  ids.map((id, i) => ({
+    name: `${nameOf(people, id)} ${verb}`,
+    coord: [at, multiplier],
+    symbol: avatars[id] ? `image://${avatars[id]}` : 'circle',
+    symbolSize: avatars[id] ? AVATAR : 8,
+    symbolOffset: [(i - (ids.length - 1) / 2) * (AVATAR + 2), verb === 'joined' ? -(AVATAR / 2 + 4) : AVATAR / 2 + 4],
+  }));
 
 /** Deafened stretches, neighbours merged */
 export const deafRanges = (segments: XpSegment[]) =>
@@ -50,11 +64,12 @@ export const breakdown = (s: XpSegment, people: People) => {
 const AXIS = { axisLabel: { color: '#9ca3af' }, axisLine: { lineStyle: { color: '#374151' } } };
 
 /** The ECharts option for a voice session's multiplier over time: one point per segment and one at the end */
-export const sessionChartOption = (segments: XpSegment[], people: People) => {
+export const sessionChartOption = (segments: XpSegment[], people: People, avatars: Record<string, string> = {}) => {
   const last = segments[segments.length - 1];
   const time = (ms: number) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   return {
-    grid: { left: 8, right: 24, top: 40, bottom: 8, containLabel: true },
+    // Room above and below the line for the avatars
+    grid: { left: 8, right: 24, top: 44, bottom: 8, containLabel: true },
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#1f2937',
@@ -84,11 +99,12 @@ export const sessionChartOption = (segments: XpSegment[], people: People) => {
         areaStyle: { color: 'rgba(168, 85, 247, 0.12)' },
         data: [...segments.map((s) => [s.from, s.multiplier]), [last.to, last.multiplier]],
         markPoint: {
-          symbol: 'circle',
-          symbolSize: 8,
           itemStyle: { color: '#f3f4f6' },
-          label: { show: true, position: 'top', color: '#e5e7eb', fontSize: 11, formatter: '{b}' },
-          data: memberChanges(segments, people).map((c) => ({ name: c.label, coord: [c.at, c.multiplier] })),
+          label: { show: false },
+          data: memberChanges(segments).flatMap((c) => [
+            ...avatarMarkers(c.joined, people, avatars, c.at, c.multiplier, 'joined'),
+            ...avatarMarkers(c.left, people, avatars, c.at, c.multiplier, 'left'),
+          ]),
         },
         markArea: {
           silent: true,
