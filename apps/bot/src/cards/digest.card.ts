@@ -126,6 +126,6 @@ export const digestCard = (d: DigestCardData, t: CardTheme) => {
     y += 12;
   }
 
-  // The last section already ends with GAP below it: top it up to PAD
+  // PAD below the last panel (sections end with GAP); 28px below the busiest-day line
   return svgCard(y + PAD - GAP, t, parts);
 };
