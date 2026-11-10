@@ -470,7 +470,8 @@ export const getServerDigest = async (
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
           ${windowFilter('issued_on', window)}
         GROUP BY member_id
-        ORDER BY total DESC
+        -- Ties by id, like the weekly top 3 XP bonus (xp/grant.ts), so the names match
+        ORDER BY total DESC, member_id
         LIMIT 3
       `,
       db.$queryRaw<{ user_id: string; count: bigint }[]>`

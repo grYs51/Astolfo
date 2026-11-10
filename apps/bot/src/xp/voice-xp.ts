@@ -150,18 +150,17 @@ export const voiceXp = (input: VoiceInput, rules: XpRules) => {
 /**
  * Sessions that started a call: nobody else was in the channel when the member joined, and someone
  * spent `togetherMin` with them in it. At most `startersPerDay` per UTC day, in start order, counting
- * `taken` (starter bonuses already granted that day). Returns each with its number for the day.
+ * `taken` (starter bonuses already granted that day). Each session comes with the others' pieces that
+ * overlap it; returns each starter with its number for the day.
  */
 export const starterSessions = (
-  sessions: Session[],
-  othersByChannel: Map<string, OtherPiece[]>,
+  sessions: { session: Session; others: OtherPiece[] }[],
   rules: XpRules,
   taken: Map<string, number> = new Map()
 ) => {
   const counts = new Map(taken);
   const result: { session: Session; day: string; n: number }[] = [];
-  for (const session of [...sessions].sort((a, b) => a.from - b.from)) {
-    const others = othersByChannel.get(session.channelId) ?? [];
+  for (const { session, others } of [...sessions].sort((a, b) => a.session.from - b.session.from)) {
     if (covers(others, session.from)) continue;
     const byMember = new Map<string, OtherPiece[]>();
     others.forEach((p) => byMember.set(p.memberId, [...(byMember.get(p.memberId) ?? []), p]));

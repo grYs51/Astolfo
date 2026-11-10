@@ -91,28 +91,27 @@ describe('voiceXp', () => {
 });
 
 describe('starterSessions', () => {
-  const channel = (pieces: OtherPiece[]) => new Map([['vc', pieces]]);
+  const graded = (s: Session, others: OtherPiece[]) => [{ session: s, others }];
 
   test('needs 10 min together', () => {
-    expect(starterSessions([session(0, 30)], channel([other('a', 5, 14)]), DEFAULT_RULES)).toEqual([]);
-    expect(starterSessions([session(0, 30)], channel([other('a', 5, 15)]), DEFAULT_RULES)).toHaveLength(1);
+    expect(starterSessions(graded(session(0, 30), [other('a', 5, 14)]), DEFAULT_RULES)).toEqual([]);
+    expect(starterSessions(graded(session(0, 30), [other('a', 5, 15)]), DEFAULT_RULES)).toHaveLength(1);
   });
 
   test('joining someone already there is not starting', () => {
-    expect(starterSessions([session(5, 30)], channel([other('a', 0, 30)]), DEFAULT_RULES)).toEqual([]);
+    expect(starterSessions(graded(session(5, 30), [other('a', 0, 30)]), DEFAULT_RULES)).toEqual([]);
   });
 
   test('the fourth in a day earns nothing', () => {
-    const sessions = [0, 60, 120, 180].map((m, i) => session(m, m + 30, `s${i}`));
-    const pieces = [0, 60, 120, 180].map((m, i) => other('a', m + 5, m + 30, `a${i}`));
-    const result = starterSessions(sessions, channel(pieces), DEFAULT_RULES);
+    const sessions = [0, 60, 120, 180].map((m, i) => ({ session: session(m, m + 30, `s${i}`), others: [other('a', m + 5, m + 30, `a${i}`)] }));
+    const result = starterSessions(sessions, DEFAULT_RULES);
     expect(result.map((r) => [r.session.id, r.n])).toEqual([
       ['s0', 1],
       ['s1', 2],
       ['s2', 3],
     ]);
     // Two already granted that day: only one more
-    expect(starterSessions(sessions, channel(pieces), DEFAULT_RULES, new Map([['2026-11-10', 2]]))).toHaveLength(1);
+    expect(starterSessions(sessions, DEFAULT_RULES, new Map([['2026-11-10', 2]]))).toHaveLength(1);
   });
 });
 
