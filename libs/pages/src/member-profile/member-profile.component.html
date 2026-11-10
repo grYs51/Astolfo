@@ -22,14 +22,7 @@
         <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
         <!-- Not for members who hide from you: the API answers 403 -->
         @if (member()) {
-          <a
-            [href]="cardUrl()"
-            download="stats.png"
-            target="_blank"
-            class="rounded-lg border border-white/5 bg-base-100/60 px-sm py-xs text-xs font-medium text-gray-400 transition-colors hover:bg-white/5 hover:text-gray-200"
-          >
-            Download card
-          </a>
+          <pages-card-dialog [guildId]="id()" [memberId]="memberId()" [period]="period()" [name]="name()" />
         }
       </div>
     </div>

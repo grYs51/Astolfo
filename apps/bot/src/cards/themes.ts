@@ -1,3 +1,5 @@
+import type { StatsCardTheme } from '@nx-stolfo/api-interfaces';
+
 /**
  * Colours for the image cards. Add a theme here and pick it with DEFAULT_THEME;
  * `yarn nx run bot:card-preview` renders every card in every theme to tmp/cards/.
@@ -38,7 +40,7 @@ export const THEMES = {
     accent: '#FF69B4',
     track: '#4D2E40',
   },
-} satisfies Record<string, CardTheme>;
+} satisfies Record<StatsCardTheme, CardTheme>;
 
 export type ThemeName = keyof typeof THEMES;
 

@@ -1,0 +1,73 @@
+<button type="button" class="btn btn-ghost btn-sm" aria-haspopup="dialog" (click)="show()">Card</button>
+
+<dialog #dialog class="modal" aria-labelledby="card-dialog-title" (close)="closed()">
+  <div class="modal-box w-11/12 max-w-4xl border border-white/5 bg-base-300 p-lg">
+    <div class="flex items-start justify-between gap-md">
+      <div>
+        <h2 id="card-dialog-title" class="text-lg font-semibold text-gray-100">Stats card</h2>
+        <p class="text-sm text-gray-400">Over {{ periodLabel() }}. Change the period on the page.</p>
+      </div>
+      <form method="dialog">
+        <button class="btn btn-square btn-ghost btn-sm" aria-label="Close">✕</button>
+      </form>
+    </div>
+
+    <div class="mt-md grid gap-lg md:grid-cols-[1fr_15rem]">
+      <!-- Preview: the last card stays (dimmed) while the next one renders -->
+      <div class="flex max-h-[70vh] min-h-64 items-start justify-center overflow-auto rounded-lg bg-base-100/60 p-sm" aria-live="polite">
+        @if (errorText(); as error) {
+          <p class="self-center text-sm text-error">{{ error }}</p>
+        } @else if (!sections().length) {
+          <p class="self-center text-sm text-gray-400">Pick at least one part to show.</p>
+        } @else if (imageUrl()) {
+          <img
+            [src]="imageUrl()"
+            alt="Preview of the stats card"
+            class="w-full max-w-[800px] transition-opacity"
+            [class.opacity-50]="!ready()"
+          />
+        } @else {
+          <div class="h-96 w-full animate-pulse rounded-lg bg-base-200"></div>
+        }
+      </div>
+
+      <div class="space-y-md">
+        <lib-segmented-control label="Theme" [options]="themeOptions" [(value)]="theme" />
+
+        <fieldset>
+          <legend class="text-xs font-medium uppercase tracking-widest text-gray-500">Show</legend>
+          <div class="mt-xs space-y-xs">
+            @for (s of sectionOptions; track s.value) {
+              <label class="flex cursor-pointer items-center gap-sm text-sm text-gray-300">
+                <input
+                  type="checkbox"
+                  class="checkbox checkbox-primary checkbox-sm"
+                  [checked]="sections().includes(s.value)"
+                  (change)="toggle(s.value)"
+                />
+                {{ s.label }}
+              </label>
+            }
+          </div>
+        </fieldset>
+
+        <div class="flex flex-wrap gap-sm">
+          @if (ready()) {
+            <a class="btn btn-primary btn-sm" [href]="imageUrl()" [download]="fileName()">Download</a>
+          } @else {
+            <button type="button" class="btn btn-primary btn-sm" disabled>Download</button>
+          }
+          @if (canCopy()) {
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="!ready()" (click)="copy()">
+              {{ copyState() === 'copied' ? 'Copied' : 'Copy image' }}
+            </button>
+          }
+        </div>
+        @if (copyState() === 'failed') {
+          <p class="text-xs text-error" role="alert">Your browser didn’t allow copying. Download it instead.</p>
+        }
+      </div>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button tabindex="-1">Close</button></form>
+</dialog>

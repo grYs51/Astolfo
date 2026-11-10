@@ -1,0 +1,134 @@
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  ElementRef,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { debounceTime } from 'rxjs';
+import { DashboardPeriod, VoiceStatsApi } from '@nx-stolfo/data-access-voice-stats';
+import type { StatsCardSection, StatsCardTheme } from '@nx-stolfo/api-interfaces';
+import { SegmentedControlComponent, SegmentedControlOption } from '@nx-stolfo/components';
+
+/** In the order the card draws them */
+const SECTIONS: { value: StatsCardSection; label: string }[] = [
+  { value: 'totals', label: 'Totals and rank' },
+  { value: 'streak', label: 'Streak and milestone' },
+  { value: 'habits', label: 'Voice habits' },
+  { value: 'calendar', label: 'Past year' },
+  { value: 'heatmap', label: 'Weekly heatmap' },
+  { value: 'companions', label: 'Hangs out most with' },
+];
+
+const PERIOD_LABEL: Record<DashboardPeriod, string> = {
+  week: 'the past week',
+  month: 'the past month',
+  year: 'the past year',
+  all: 'all time',
+};
+
+/**
+ * A "Card" button and the dialog it opens: a live preview of a member's stats
+ * card with the theme and sections the viewer picks, to download or copy.
+ * Needs VoiceStatsApi from the page.
+ */
+@Component({
+  selector: 'pages-card-dialog',
+  imports: [SegmentedControlComponent],
+  templateUrl: './card-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class CardDialogComponent {
+  guildId = input.required<string>();
+  memberId = input.required<string>();
+  period = input.required<DashboardPeriod>();
+  /** For the file name */
+  name = input('stats');
+
+  private api = inject(VoiceStatsApi);
+  private dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+
+  readonly sectionOptions = SECTIONS;
+  readonly themeOptions: SegmentedControlOption<StatsCardTheme>[] = [
+    { value: 'stolfo', label: 'Astolfo' },
+    { value: 'dark', label: 'Dark' },
+    { value: 'light', label: 'Light' },
+  ];
+  theme = signal<StatsCardTheme>('stolfo');
+  sections = signal<StatsCardSection[]>(SECTIONS.map((s) => s.value));
+  protected open = signal(false);
+  protected periodLabel = computed(() => PERIOD_LABEL[this.period()]);
+
+  private options = computed(() =>
+    this.open() && this.sections().length
+      ? { guildId: this.guildId(), userId: this.memberId(), period: this.period(), theme: this.theme(), sections: this.sections() }
+      : undefined
+  );
+  // Every change is a render on the server (and counts towards its limit): wait until the clicking stops
+  private debounced = toSignal(toObservable(this.options).pipe(debounceTime(400)), { initialValue: undefined });
+  protected card = this.api.fetchStatsCard(this.debounced);
+
+  /** Object URL of the last card, kept while the next one loads */
+  protected imageUrl = signal<string | undefined>(undefined);
+  protected fileName = computed(() => `${this.name().replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-|-$/g, '') || 'member'}-stats.png`);
+  protected ready = computed(() => this.card.hasValue() && !this.card.isLoading() && !!this.imageUrl());
+  protected errorText = computed(() => {
+    const error = this.card.error();
+    if (!error) return undefined;
+    return error instanceof HttpErrorResponse && error.status === 429
+      ? 'That’s a lot of cards. Wait a minute and try again.'
+      : 'Couldn’t draw the card. Try again in a moment.';
+  });
+
+  /** Set after the first render: the server has no clipboard */
+  protected canCopy = signal(false);
+  protected copyState = signal<'idle' | 'copied' | 'failed'>('idle');
+
+  constructor() {
+    afterNextRender(() => this.canCopy.set(typeof ClipboardItem !== 'undefined' && !!navigator.clipboard?.write));
+    effect((onCleanup) => {
+      const blob = this.card.hasValue() ? this.card.value() : undefined;
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      this.imageUrl.set(url);
+      this.copyState.set('idle');
+      onCleanup(() => URL.revokeObjectURL(url));
+    });
+  }
+
+  show() {
+    this.open.set(true);
+    this.dialog().nativeElement.showModal();
+  }
+
+  protected closed() {
+    this.open.set(false);
+    this.copyState.set('idle');
+  }
+
+  protected toggle(section: StatsCardSection) {
+    this.sections.update((on) =>
+      on.includes(section)
+        ? on.filter((s) => s !== section)
+        : SECTIONS.map((s) => s.value).filter((s) => s === section || on.includes(s))
+    );
+  }
+
+  protected async copy() {
+    const blob = this.card.hasValue() ? this.card.value() : undefined;
+    if (!blob) return;
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+      this.copyState.set('copied');
+    } catch {
+      this.copyState.set('failed');
+    }
+  }
+}

@@ -14,11 +14,12 @@ import {
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 import { MemberActivityComponent } from '../member-activity/member-activity.component';
+import { CardDialogComponent } from '../card-dialog/card-dialog.component';
 
 /** Another member's activity on a server (/overview/detail/:id/members/:memberId). */
 @Component({
   selector: 'pages-member-profile',
-  imports: [MemberActivityComponent, SegmentedControlComponent, RouterLink],
+  imports: [MemberActivityComponent, SegmentedControlComponent, RouterLink, CardDialogComponent],
   templateUrl: './member-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [VoiceStatsApi],
@@ -78,8 +79,6 @@ export class MemberProfileComponent {
     () => this.id(),
     () => this.period()
   );
-
-  cardUrl = computed(() => this.api.statsCardUrl(this.id(), this.memberId(), this.period()));
 
   /** Viewing your own profile reads in the first person */
   isSelf = computed(() => this.memberId() === this.currentUser()?.id);

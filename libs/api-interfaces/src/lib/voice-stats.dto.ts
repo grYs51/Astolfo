@@ -360,3 +360,9 @@ export interface ActivityCalendar {
   /** Today, 'YYYY-MM-DD' in `tz` */
   end: string;
 }
+
+/** Parts of the stats card download (`…/users/:userId/stats.png?sections=`), in the order the card draws them */
+export type StatsCardSection = 'totals' | 'streak' | 'habits' | 'calendar' | 'heatmap' | 'companions';
+
+/** Colours of the image cards (`?theme=`) */
+export type StatsCardTheme = 'stolfo' | 'dark' | 'light';

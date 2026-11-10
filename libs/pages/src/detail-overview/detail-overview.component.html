@@ -11,6 +11,9 @@
           Server settings
         </a>
       }
+      @if (activeTab() === 'you' && currentUser(); as me) {
+        <pages-card-dialog [guildId]="id()" [memberId]="me.id" [period]="period()" [name]="me.global_name || me.username" />
+      }
       <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
     </div>
   </header>

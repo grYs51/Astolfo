@@ -1,4 +1,4 @@
-import type { ActivityCalendar, VoiceHabits } from '@nx-stolfo/api-interfaces';
+import type { ActivityCalendar, StatsCardSection, VoiceHabits } from '@nx-stolfo/api-interfaces';
 import { formatChange, formatDuration, PERIOD_LABEL, plural, PREVIOUS_LABEL } from '../stats/messages';
 import { nextMilestone } from '../stats/milestones';
 import type { MemberSummary } from '../stats/queries';
@@ -9,8 +9,8 @@ import { gridCell, header, level, PAD, panel, svgCard, text, tile, TILE_H, TILE_
 import { CardTheme } from './themes';
 
 /** The parts of the card a viewer can turn on, in the order they're drawn */
-export const STATS_CARD_SECTIONS = ['totals', 'streak', 'habits', 'calendar', 'heatmap', 'companions'] as const;
-export type StatsCardSection = (typeof STATS_CARD_SECTIONS)[number];
+export const STATS_CARD_SECTIONS: readonly StatsCardSection[] = ['totals', 'streak', 'habits', 'calendar', 'heatmap', 'companions'];
+export type { StatsCardSection };
 /** What /stats shows */
 export const DEFAULT_SECTIONS: readonly StatsCardSection[] = ['totals', 'streak', 'companions'];
 
