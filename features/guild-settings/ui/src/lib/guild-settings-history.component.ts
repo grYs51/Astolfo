@@ -12,6 +12,7 @@ const LABELS: Record<string, string> = {
   welcomeMessage: 'Welcome message',
   goodbyeMessage: 'Goodbye message',
   digestChannelId: 'Weekly recap channel',
+  levelUpChannelId: 'Level-up channel',
 };
 
 /** The audit log: who changed which settings on this page, newest first */

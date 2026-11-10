@@ -9,7 +9,10 @@ import {
   AdminServers,
   AdminUsage,
   AdminWeb,
+  AdminRecalculateQueued,
+  AdminXpRules,
   AppNotice,
+  XpRules,
 } from '@nx-stolfo/api-interfaces';
 
 /** Owner-only endpoints; the API answers 403 to everyone else. One resource per page section. */
@@ -37,6 +40,10 @@ export class AdminApi extends ApiBase {
     return this.get<AdminWeb>('/admin/web');
   }
 
+  fetchXpRules() {
+    return this.get<AdminXpRules>('/admin/xp-rules');
+  }
+
   // Actions: one-off requests, not resources
 
   postDigest(guildId: string) {
@@ -54,6 +61,15 @@ export class AdminApi extends ApiBase {
   /** null clears the notice */
   setNotice(text: string | null) {
     return this.http.put<AppNotice>(`${this.host}/admin/notice`, { text });
+  }
+
+  /** null goes back to the defaults */
+  setXpRules(rules: XpRules | null) {
+    return this.http.put<AdminXpRules>(`${this.host}/admin/xp-rules`, { rules });
+  }
+
+  recalculateXp(guildId: string) {
+    return this.http.post<AdminRecalculateQueued>(`${this.host}/admin/actions/recalculate-xp`, { guildId });
   }
 
   broadcast(text: string) {

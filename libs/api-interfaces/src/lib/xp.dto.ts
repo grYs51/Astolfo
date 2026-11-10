@@ -84,7 +84,11 @@ export interface XpSegment {
   /** The others in the channel who weren't deafened */
   memberIds: string[];
   deaf: boolean;
+  /** The factors at the time of the grant: crowd × (deafened) × stay × media = multiplier */
+  crowd: number;
   stay: number;
+  /** 1 + the camera and screen-share bonuses */
+  media: number;
   camera: boolean;
   streaming: boolean;
   multiplier: number;

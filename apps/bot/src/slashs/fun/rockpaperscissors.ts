@@ -150,7 +150,7 @@ export default class RockPaperScissors extends BaseSlash {
         // Saved before the card renders (saveGameResult logs its own errors)
         const saved = await this.saveGameResult(client, interaction, played, vsBot ? opponent.id : undefined);
         // Only a win against another member earns XP; not awaited, the card shouldn't wait on it
-        if (saved && !vsBot && played.winnerId) void awardAndAnnounce(client, interaction.guildId!, played.winnerId);
+        if (saved && !vsBot && played.winnerId && interaction.guildId) void awardAndAnnounce(client, interaction.guildId, played.winnerId);
 
         // The mentions stay as text: an image can't ping
         const members = await cardMembers(interaction.guild, [interaction.user.id, opponent.id]);

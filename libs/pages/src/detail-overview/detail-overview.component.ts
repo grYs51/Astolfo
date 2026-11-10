@@ -33,6 +33,7 @@ import {
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import { MemberActivityComponent } from '../member-activity/member-activity.component';
+import { PagesXpHistoryComponent } from '../xp-history/xp-history.component';
 import { CardDialogComponent } from '../card-dialog/card-dialog.component';
 
 type Tab = 'you' | 'server';
@@ -59,6 +60,7 @@ const PREVIOUS_LABEL: Record<DashboardPeriod, string | undefined> = {
     MemberActivityComponent,
     RouterLink,
     CardDialogComponent,
+    PagesXpHistoryComponent,
   ],
   templateUrl: './detail-overview.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

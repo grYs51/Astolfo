@@ -265,6 +265,14 @@ export class MemberActivityComponent {
     };
   });
 
+  /** Level with the share of the way to the next one (all time, like the streak) */
+  protected level = computed(() => {
+    const level = this.stats()?.level;
+    if (!level) return undefined;
+    const span = level.nextLevelXp - level.levelXp;
+    return { ...level, pct: span > 0 ? Math.round(((level.xp - level.levelXp) / span) * 100) : 0, toGo: level.nextLevelXp - level.xp };
+  });
+
   /** Next lifetime milestone with how far along it is (from 0h) */
   protected milestone = computed(() => {
     const stats = this.stats();

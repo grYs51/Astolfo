@@ -56,6 +56,7 @@
         [messageRank]="myMessageRank()"
         [memberLink]="memberLink"
       />
+      <pages-xp-history [guildId]="id()" [memberId]="currentUser()?.id" />
     </section>
   } @else {
     <!-- ── SERVER ──────────────────────────────────────────────────────── -->

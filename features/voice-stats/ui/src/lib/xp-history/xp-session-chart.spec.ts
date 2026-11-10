@@ -1,0 +1,69 @@
+import type { XpSegment } from '@nx-stolfo/data-access-voice-stats';
+import { breakdown, sessionChartOption } from './xp-session-chart';
+
+const M = 60_000;
+const seg = (from: number, to: number, memberIds: string[], extra: Partial<XpSegment> = {}): XpSegment => ({
+  from: from * M,
+  to: to * M,
+  memberIds,
+  deaf: false,
+  crowd: memberIds.length === 0 ? 0.5 : memberIds.length === 1 ? 1 : 1.12,
+  stay: 1,
+  media: 1,
+  camera: false,
+  streaming: false,
+  multiplier: memberIds.length === 0 ? 0.5 : memberIds.length === 1 ? 1 : 1.12,
+  ...extra,
+});
+const people = {
+  alex: { id: 'alex', username: 'alex', displayName: 'Alex', avatar: null },
+  sam: { id: 'sam', username: 'sam', displayName: null, avatar: null },
+};
+
+// The user's sketch: alone, Alex joins, Sam joins, deafened, undeafened
+const segments = [
+  seg(0, 5, []),
+  seg(5, 10, ['alex']),
+  seg(10, 15, ['alex', 'sam']),
+  seg(15, 20, ['alex', 'sam'], { deaf: true, multiplier: 0.28 }),
+  seg(20, 25, ['alex', 'sam']),
+  seg(25, 30, ['sam']),
+];
+
+describe('sessionChartOption', () => {
+  const series = sessionChartOption(segments, people).series[0];
+
+  it('builds one point per segment and one at the end', () => {
+    expect(series.data).toEqual([
+      [0, 0.5],
+      [5 * M, 1],
+      [10 * M, 1.12],
+      [15 * M, 0.28],
+      [20 * M, 1.12],
+      [25 * M, 1],
+      [30 * M, 1],
+    ]);
+    expect(series.step).toBe('end');
+  });
+
+  it('marks every change in who is there, with their names', () => {
+    expect(series.markPoint.data).toEqual([
+      { name: 'Alex joined', coord: [5 * M, 1] },
+      { name: 'sam joined', coord: [10 * M, 1.12] },
+      { name: 'Alex left', coord: [25 * M, 1] },
+    ]);
+  });
+
+  it('shades only the deafened stretches', () => {
+    expect(series.markArea.data).toEqual([[{ name: 'Deafened', xAxis: 15 * M }, { xAxis: 20 * M }]]);
+  });
+});
+
+describe('breakdown', () => {
+  it('names who was there and each factor', () => {
+    expect(breakdown(seg(0, 1, ['alex', 'sam'], { stay: 1.1, media: 1.1, camera: true, multiplier: 1.3552 }), people)).toBe(
+      'Alex, sam: 2 others 1.12× · stay 1.1× · camera +10% = 1.3552×'
+    );
+    expect(breakdown(seg(0, 1, [], { deaf: true, multiplier: 0.125 }), people)).toBe('Alone 0.5× · deafened 0.25× = 0.125×');
+  });
+});

@@ -15,11 +15,12 @@ import {
 } from '@nx-stolfo/components';
 import { MemberActivityComponent } from '../member-activity/member-activity.component';
 import { CardDialogComponent } from '../card-dialog/card-dialog.component';
+import { PagesXpHistoryComponent } from '../xp-history/xp-history.component';
 
 /** Another member's activity on a server (/overview/detail/:id/members/:memberId). */
 @Component({
   selector: 'pages-member-profile',
-  imports: [MemberActivityComponent, SegmentedControlComponent, RouterLink, CardDialogComponent],
+  imports: [MemberActivityComponent, SegmentedControlComponent, RouterLink, CardDialogComponent, PagesXpHistoryComponent],
   templateUrl: './member-profile.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [VoiceStatsApi],

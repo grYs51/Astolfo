@@ -3,7 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, PLATFORM_ID, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { NoticeState } from '@nx-stolfo/common/api';
-import { AdminApi, AdminServer } from '@nx-stolfo/data-access-admin';
+import { AdminApi, AdminServer, XpRules, XpRulesError } from '@nx-stolfo/data-access-admin';
 import {
   AdminAnnouncementsComponent,
   AdminHealthComponent,
@@ -12,6 +12,7 @@ import {
   AdminServersComponent,
   AdminUsageComponent,
   AdminWebComponent,
+  AdminXpRulesComponent,
 } from '@nx-stolfo/ui-admin';
 import { SkeletonLoaderComponent } from '@nx-stolfo/components';
 
@@ -28,6 +29,7 @@ const HEALTH_REFRESH_MS = 30_000;
     AdminUsageComponent,
     AdminPeopleComponent,
     AdminWebComponent,
+    AdminXpRulesComponent,
     SkeletonLoaderComponent,
   ],
   providers: [AdminApi],
@@ -42,6 +44,10 @@ export class AdminComponent {
   readonly usage = this.api.fetchUsage();
   readonly people = this.api.fetchPeople();
   readonly web = this.api.fetchWeb();
+  readonly xpRules = this.api.fetchXpRules();
+  /** The last XP rules save: its 400, or that it went through */
+  readonly xpRulesError = signal<XpRulesError | null>(null);
+  readonly xpRulesSaved = signal(false);
   // Shared with the banner, so a save or clear shows there at once
   readonly notice = inject(NoticeState).notice;
 
@@ -76,6 +82,30 @@ export class AdminComponent {
     });
   }
 
+  recalculateXp(server: AdminServer) {
+    if (
+      !confirm(
+        `Recalculate XP for ${server.name}? Its XP history is rebuilt with the current rules, so levels can go down. Nothing is posted.`
+      )
+    )
+      return;
+    this.run(this.api.recalculateXp(server.id), () => `Recalculating XP for ${server.name} in the background. The bot log has the result.`);
+  }
+
+  saveXpRules(rules: XpRules | null) {
+    this.xpRulesError.set(null);
+    this.xpRulesSaved.set(false);
+    this.run(
+      this.api.setXpRules(rules),
+      (saved) => {
+        this.xpRules.set(saved);
+        this.xpRulesSaved.set(true);
+        return rules ? 'XP rules saved' : 'XP rules back to the defaults';
+      },
+      (error) => this.xpRulesError.set(error)
+    );
+  }
+
   saveNotice(text: string | null) {
     this.run(this.api.setNotice(text), (notice) => {
       this.notice.set(notice);
@@ -93,7 +123,7 @@ ${text}`)) return;
   }
 
   /** One action at a time; the result (or the API's error) shows in the status toast */
-  private run<T>(request: Observable<T>, done: (value: T) => string) {
+  private run<T>(request: Observable<T>, done: (value: T) => string, failed?: (error: XpRulesError) => void) {
     this.busy.set(true);
     this.result.set(null);
     request.subscribe({
@@ -102,6 +132,7 @@ ${text}`)) return;
         this.busy.set(false);
       },
       error: (error: HttpErrorResponse) => {
+        if (error.error?.error) failed?.(error.error);
         this.result.set({ ok: false, text: error.error?.error ?? "That didn't work. Try again." });
         this.busy.set(false);
       },

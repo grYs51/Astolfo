@@ -12,5 +12,9 @@ export type {
   AdminClosedSessions,
   AdminBroadcastQueued,
   AppNotice,
+  AdminXpRules,
+  AdminRecalculateQueued,
+  XpRules,
+  XpRulesError,
 } from '@nx-stolfo/api-interfaces';
 export * from './lib/admin.api';

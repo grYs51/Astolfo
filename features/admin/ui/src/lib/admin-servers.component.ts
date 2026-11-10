@@ -74,6 +74,16 @@ const isInactive = (server: AdminServer) => server.voiceHours30d === 0 && server
                 </button>
                 <button
                   type="button"
+                  class="btn btn-ghost btn-xs"
+                  [disabled]="busy()"
+                  title="Rebuild the server's XP history with the current rules"
+                  [attr.aria-label]="'Recalculate XP for ' + server.name"
+                  (click)="recalculateXp.emit(server)"
+                >
+                  Recalculate XP
+                </button>
+                <button
+                  type="button"
                   class="btn btn-ghost btn-xs text-red-400"
                   [disabled]="busy()"
                   [attr.aria-label]="'Leave ' + server.name"
@@ -113,6 +123,7 @@ export class AdminServersComponent {
   /** An action is running: actions are disabled */
   busy = input(false);
   postDigest = output<AdminServer>();
+  recalculateXp = output<AdminServer>();
   leave = output<AdminServer>();
   protected readonly columns = COLUMNS;
   protected readonly inactive = isInactive;

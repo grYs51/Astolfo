@@ -104,8 +104,9 @@ export const voiceXp = (input: VoiceInput, rules: XpRules) => {
     const camera = covers(ownVideo, from);
     const streaming = covers(ownStreaming, from);
     const stay = round4(stayFactor(from - stayStart, voice));
-    const media = 1 + (camera ? voice.camera : 0) + (streaming && memberIds.length > 0 ? voice.screenShare : 0);
-    const multiplier = round4(crowdFactor(memberIds.length, voice) * (deaf ? voice.deafened : 1) * stay * media);
+    const media = round4(1 + (camera ? voice.camera : 0) + (streaming && memberIds.length > 0 ? voice.screenShare : 0));
+    const crowd = round4(crowdFactor(memberIds.length, voice));
+    const multiplier = round4(crowd * (deaf ? voice.deafened : 1) * stay * media);
     xp += (rules.amounts.voiceMinute * multiplier * (to - from)) / MINUTE;
 
     const ms = to - from;
@@ -125,7 +126,7 @@ export const voiceXp = (input: VoiceInput, rules: XpRules) => {
       last.multiplier === multiplier &&
       last.memberIds.join() === memberIds.join();
     if (same) last.to = to;
-    else segments.push({ from, to, memberIds, deaf, stay, camera, streaming, multiplier });
+    else segments.push({ from, to, memberIds, deaf, crowd, stay, media, camera, streaming, multiplier });
   }
 
   const parts = [...byCrowd.entries()]
