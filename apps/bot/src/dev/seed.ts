@@ -357,6 +357,8 @@ async function main() {
     const { count: removed } = await db.voice_stats.deleteMany({
       where: { guild_id: { in: guildIds } },
     });
+    // The XP ledger points at the rows being replaced; the bot's first sweep rebuilds it
+    await db.xp_events.deleteMany({ where: { guild_id: { in: guildIds } } });
     for (let i = 0; i < rows.length; i += 1000) {
       await db.voice_stats.createMany({ data: rows.slice(i, i + 1000) });
     }
