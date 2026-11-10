@@ -67,9 +67,9 @@ describe('statsCard', () => {
     expect(svg).toContain('best 7');
     expect(svg).toContain('>100h<');
     expect(svg).toContain('12h to go');
-    // 88 of 100 hours, on a bar as wide as the tile minus its padding
+    // 88h is 38 of the 50 hours from the 50h milestone to 100h, on a bar as wide as the tile minus its padding
     const barW = (800 - 64 - 16) / 2 - 48;
-    expect(svg).toContain(`width="${0.88 * barW}" height="8"`);
+    expect(svg).toContain(`width="${(38 / 50) * barW}" height="8"`);
   });
 
   it('leaves out the streak line when there is no streak and no milestone left', () => {
@@ -138,6 +138,13 @@ describe('statsCard', () => {
       THEMES.dark
     );
     expect(svg).toContain('Nothing to show in these parts over the past week.');
+  });
+
+  it('leaves out the heatmap without voice time, and says so when it was the only part', () => {
+    const svg = statsCard(data({ ...sections(), sections: ['heatmap'], heatmap: [], summary: summary({ sessions: 0, voiceMs: 0 }) }), THEMES.dark);
+    expect(svg).not.toContain('in voice<');
+    expect(svg.match(/rx="2"/g)).toBeNull();
+    expect(svg).toContain('Nothing to show in these parts');
   });
 
   it('shows the calendar even when the period is empty', () => {

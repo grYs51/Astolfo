@@ -81,14 +81,13 @@ const streak = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
     tiles.push((x, w) => tile(x, y, 'Voice streak', plural(s.streak.current, 'day'), `best ${s.streak.longest}`, t, w));
   }
   if (next) {
-    const share = 1 - next.remainingMs / (next.hours * H);
     tiles.push((x, w) => {
       const barW = w - 48;
       return (
         tile(x, y, 'Next milestone', `${next.hours}h`, undefined, t, w) +
         text(x + w - 24, y + 68, 14, t.muted, escapeXml(`${formatDuration(next.remainingMs)} to go`), 'text-anchor="end"') +
         `<rect x="${x + 24}" y="${y + 82}" width="${barW}" height="8" rx="4" fill="${t.track}"/>` +
-        `<rect x="${x + 24}" y="${y + 82}" width="${Math.max(8, share * barW)}" height="8" rx="4" fill="${t.accent}"/>`
+        `<rect x="${x + 24}" y="${y + 82}" width="${Math.max(8, next.progress * barW)}" height="8" rx="4" fill="${t.accent}"/>`
       );
     });
   }
@@ -226,7 +225,8 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
   // The calendar covers the past year whatever the period, so it shows even when the period is empty
   if (on.has('calendar') && d.calendar) add(calendar(d.calendar, y, t));
   if (!empty) {
-    if (on.has('heatmap') && d.heatmap) add(heatmap(d.heatmap, d.self !== false, y, t));
+    // No cells: messages but no voice in the period
+    if (on.has('heatmap') && d.heatmap?.length) add(heatmap(d.heatmap, d.self !== false, y, t));
     if (on.has('companions')) add(companions(d, y, t));
   }
   // Picked parts with nothing in them (habits without voice, no companions): say so instead of an empty card
