@@ -53,7 +53,7 @@ const roundAvatar = (member: DiscordMember) =>
   selector: 'feature-voice-stats-xp-session-chart',
   imports: [NgxEchartsDirective],
   providers: [provideEchartsCore({ echarts })],
-  template: `<div echarts [options]="option()" class="h-48" role="img" [attr.aria-label]="label()"></div>`,
+  template: `<div echarts [options]="option()" class="h-56" role="img" [attr.aria-label]="label()"></div>`,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })

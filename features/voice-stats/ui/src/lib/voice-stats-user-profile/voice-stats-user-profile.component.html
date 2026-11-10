@@ -1,4 +1,4 @@
-<div class="grid grid-cols-1 gap-md items-start" [class.lg:grid-cols-3]="showRecent()" [class.lg:grid-cols-2]="!showRecent()">
+<div class="grid grid-cols-1 gap-md items-start lg:grid-cols-2">
   <!-- Who they hang out with: overlapping time in the same channel -->
   <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
     <h3 class="mb-md text-base font-semibold text-gray-100">{{ name() ? name() + ' hangs out most with' : 'You hang out most with' }}</h3>
@@ -90,7 +90,8 @@
 
   <!-- Recent sessions (exact times — only on your own page) -->
   @if (showRecent()) {
-  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+  <!-- Its own row, so a session's XP chart has room -->
+  <div class="rounded-xl bg-base-300 border border-white/5 p-lg lg:col-span-2">
     <h3 class="mb-md text-base font-semibold text-gray-100">Recent sessions</h3>
     @if (recentSessions().length === 0) {
       <p class="py-md text-center text-sm text-gray-400">No sessions yet</p>
