@@ -18,7 +18,7 @@ Discord.js 14 bot with an Express server.
 - Exposes REST endpoints consumed by the web dashboard
 - Exposes Prometheus metrics
 
-**Slash commands:** `ping`, `uptime`, `rock-paper-scissors`, `tictactoe`, `avatar`, `profile`, and guild/utility commands.
+**Slash commands:** `ping`, `uptime`, `rock-paper-scissors`, `tictactoe`, `trivia`, `avatar`, `profile`, and guild/utility commands.
 
 **API routes:**
 - `GET /features/active-servers`
@@ -65,7 +65,7 @@ PostgreSQL via Prisma. Key models:
 | `user_statuses` | Discord presence status history |
 | `user_activities` | User activity/game history |
 | `message_stats` | Message records per guild/channel |
-| `game_type` / `game_result` / `game_player` | Game tracking (rock-paper-scissors, tic-tac-toe) |
+| `game_type` / `game_result` / `game_player` | Game tracking (rock-paper-scissors, tic-tac-toe, trivia) |
 | `session` / `user_session` | Express session store |
 | `metrics` | JSON metrics snapshots |
 
