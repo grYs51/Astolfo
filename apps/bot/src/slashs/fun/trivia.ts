@@ -6,7 +6,6 @@ import {
   CacheType,
   ChatInputCommandInteraction,
   ComponentType,
-  EmbedBuilder,
   InteractionContextType,
   SlashCommandBuilder,
 } from 'discord.js';
@@ -18,11 +17,14 @@ import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { currentRules } from '../../xp/rules';
 import { nextQuestion, TriviaQuestion } from '../../trivia/opentdb';
+import { cardMembers } from '../../cards/members';
+import { cardFile } from '../../cards/render';
+import { triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
+import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 export const ANSWER_MS = 20_000;
 const LETTERS = ['A', 'B', 'C', 'D'];
-const COLOUR = 0xf472b6;
-const ATTRIBUTION = 'Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
+const SECONDS = ANSWER_MS / 1000;
 
 /** Channels with a question running: one at a time per channel */
 const running = new Set<string>();
@@ -42,17 +44,24 @@ const buttons = (q: TriviaQuestion, over: boolean) =>
     )
   );
 
-const questionEmbed = (q: TriviaQuestion) => {
-  const factor = currentRules().trivia[q.difficulty];
-  return new EmbedBuilder()
-    .setColor(COLOUR)
-    .setTitle(q.question.slice(0, 256))
-    .setDescription(
-      `${q.category} · ${capitalise(q.difficulty)}: ×${factor} XP\n` +
-        `Everyone can answer: the quicker you're right, the more XP. ${ANSWER_MS / 1000} seconds!`
-    )
-    .setFooter({ text: ATTRIBUTION });
+/** The result as text: it goes next to the card (names there can't be clicked) and stands alone if the card fails */
+export const resultText = (q: TriviaQuestion, answered: number, correctOrder: string[], xp: Map<string, number>) => {
+  const head = `The answer was **${q.correct}**.`;
+  if (!answered) return `${head} Nobody answered!`;
+  if (!correctOrder.length) return `${head} Nobody got it right.`;
+  const places = correctOrder.map((id, i) => `${ordinal(i + 1)} <@${id}>${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`);
+  return `${head}\n${places.join(' · ')}`;
 };
+
+/** The licence asks for attribution: the card carries it, a text-only message needs it written out */
+const ATTRIBUTION_LINE = '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
+
+/** A card as a Discord attachment, or undefined when it can't be drawn (the message then falls back to text) */
+const card = (svg: () => string, name: string) =>
+  cardFile(svg(), name).catch((error) => {
+    Logger.error(`Failed to draw ${name}`, error);
+    return undefined;
+  });
 
 export default class Trivia extends BaseSlash {
   constructor() {
@@ -79,13 +88,20 @@ export default class Trivia extends BaseSlash {
     }
     running.add(channelId);
     try {
-      const fetched = await nextQuestion(guildId);
+      const fetched = await nextQuestion();
       if (!fetched.ok) {
         await InterActionUtils.editReply(interaction, { content: fetched.message });
         return;
       }
       const q = fetched.question;
-      await InterActionUtils.editReply(interaction, { embeds: [questionEmbed(q)], components: [buttons(q, false)] });
+      const factor = currentRules().trivia[q.difficulty];
+      const intro = `🎲 Trivia! ${capitalise(q.difficulty)} question: ×${factor} XP, ${SECONDS} seconds.`;
+      const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: SECONDS }, THEMES[DEFAULT_THEME]), 'trivia.png');
+      await InterActionUtils.editReply(interaction, {
+        content: questionCard ? intro : `${intro}\n**${q.question}**${ATTRIBUTION_LINE}`,
+        ...(questionCard && { files: [questionCard] }),
+        components: [buttons(q, false)],
+      });
 
       const answers = new Map<string, number>();
       const correctOrder: string[] = [];
@@ -107,10 +123,31 @@ export default class Trivia extends BaseSlash {
         void i.reply({ content, ephemeral: true }).catch(() => undefined);
       });
       await new Promise((resolve) => collector.on('end', resolve));
+      // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
+      await InterActionUtils.editReply(interaction, { components: [buttons(q, true)] });
 
       const xp = await this.saveAndGrant(client, guildId, q, answers, correctOrder);
+      const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
+      const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
+      const resultCard = await card(
+        () =>
+          triviaResultCard(
+            {
+              question: q.question,
+              answers: q.answers,
+              correct: q.correct,
+              picks,
+              winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id) })),
+            },
+            THEMES[DEFAULT_THEME]
+          ),
+        'trivia-result.png'
+      );
       await InterActionUtils.editReply(interaction, {
-        embeds: [this.resultEmbed(q, answers.size, correctOrder, xp)],
+        content: resultText(q, answers.size, correctOrder, xp) + (resultCard ? '' : ATTRIBUTION_LINE),
+        // The winners are named, but not pinged
+        allowedMentions: { parse: [] },
+        files: resultCard ? [resultCard] : [],
         components: [buttons(q, true)],
       });
     } catch (error) {
@@ -160,23 +197,5 @@ export default class Trivia extends BaseSlash {
       select: { member_id: true, amount: true },
     });
     return new Map(rows.map((row) => [row.member_id, row.amount]));
-  }
-
-  private resultEmbed(q: TriviaQuestion, answered: number, correctOrder: string[], xp: Map<string, number>) {
-    const lines = correctOrder.map((id, i) => {
-      const earned = xp.get(id);
-      return `${ordinal(i + 1)} <@${id}>${earned ? ` +${earned} XP` : ''}`;
-    });
-    const wrong = answered - correctOrder.length;
-    const summary = !answered
-      ? 'Nobody answered!'
-      : !correctOrder.length
-        ? `Nobody got it right (${answered} tried).`
-        : [...lines, ...(wrong ? [`${wrong} got it wrong.`] : [])].join('\n');
-    return new EmbedBuilder()
-      .setColor(COLOUR)
-      .setTitle(q.question.slice(0, 256))
-      .setDescription(`The answer was **${q.correct}**.\n\n${summary}`)
-      .setFooter({ text: ATTRIBUTION });
   }
 }

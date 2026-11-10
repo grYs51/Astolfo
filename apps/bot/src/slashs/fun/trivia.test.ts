@@ -2,6 +2,7 @@ import Trivia from './trivia';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { nextQuestion } from '../../trivia/opentdb';
+import { cardFile } from '../../cards/render';
 
 jest.mock('../../utils/interaction-utils', () => ({
   InterActionUtils: { editReply: jest.fn(async () => undefined) },
@@ -9,6 +10,8 @@ jest.mock('../../utils/interaction-utils', () => ({
 jest.mock('../../utils/logger', () => ({ Logger: { error: jest.fn() } }));
 jest.mock('../../xp/level-up', () => ({ awardAndAnnounce: jest.fn(async () => undefined) }));
 jest.mock('../../trivia/opentdb', () => ({ nextQuestion: jest.fn() }));
+jest.mock('../../cards/members', () => ({ cardMembers: jest.fn(async () => ({ a: { name: 'A' }, b: { name: 'B' } })) }));
+jest.mock('../../cards/render', () => ({ ...jest.requireActual('../../cards/render'), cardFile: jest.fn(async (_svg: string, name: string) => ({ name })) }));
 
 const question = { category: 'Science', difficulty: 'hard', question: 'Q?', correct: 'Right', answers: ['Wrong', 'Right', 'Nope', 'No'] };
 
@@ -60,6 +63,8 @@ describe('/trivia', () => {
     await game.done;
 
     expect(again.reply).toHaveBeenCalledWith({ content: 'You already answered.', ephemeral: true });
+    // The buttons close as soon as time is up, before the results are worked out
+    expect(InterActionUtils.editReply).toHaveBeenCalledWith(expect.anything(), { components: [expect.anything()] });
     const { data } = (game.create.mock.calls[0] as unknown as [{ data: { metadata: { correctOrder: string[]; difficulty: string }; players: { create: unknown[] } } }])[0];
     expect(data.metadata).toMatchObject({ correctOrder: ['a', 'b'], difficulty: 'hard' });
     expect(data.players.create).toEqual([
@@ -69,9 +74,11 @@ describe('/trivia', () => {
     ]);
     expect(awardAndAnnounce).toHaveBeenCalledTimes(2);
     expect(awardAndAnnounce).toHaveBeenCalledWith(expect.anything(), 'g', 'a', ['TRIVIA']);
-    expect(lastReply().embeds[0].data.description).toBe(
-      'The answer was **Right**.\n\n1st <@a> +30 XP\n2nd <@b> +20 XP\n1 got it wrong.'
-    );
+    expect(lastReply()).toMatchObject({
+      content: 'The answer was **Right**.\n1st <@a> +30 XP · 2nd <@b> +20 XP',
+      allowedMentions: { parse: [] },
+      files: [{ name: 'trivia-result.png' }],
+    });
   });
 
   test('one question at a time per channel', async () => {
@@ -110,6 +117,18 @@ describe('/trivia', () => {
     await game.done;
     expect(game.create).not.toHaveBeenCalled();
     expect(awardAndAnnounce).not.toHaveBeenCalled();
-    expect(lastReply().embeds[0].data.description).toBe('The answer was **Right**.\n\nNobody answered!');
+    expect(lastReply().content).toBe('The answer was **Right**. Nobody answered!');
+  });
+
+  test('the question still goes out as text when its card fails to draw', async () => {
+    (cardFile as jest.Mock).mockRejectedValueOnce(new Error('resvg'));
+    const game = start();
+    await game.ready();
+    expect(lastReply()).toMatchObject({
+      content: '🎲 Trivia! Hard question: ×2 XP, 20 seconds.\n**Q?**\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0',
+    });
+    expect(lastReply().files).toBeUndefined();
+    game.end();
+    await game.done;
   });
 });
