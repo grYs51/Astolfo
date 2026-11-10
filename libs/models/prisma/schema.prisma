@@ -74,11 +74,8 @@ model message_stats {
 }
 
 model user_configs {
-  user_id        String  @id @db.VarChar
-  mw_id          String? @unique @db.VarChar
-  /// Unused: the hide-from-members option is gone. Kept only until no deployed code
-  /// reads it, then dropped in its own migration. Don't read or write it.
-  privacy_hidden Boolean @default(false)
+  user_id String  @id @db.VarChar
+  mw_id   String? @unique @db.VarChar
 }
 
 model metrics {
