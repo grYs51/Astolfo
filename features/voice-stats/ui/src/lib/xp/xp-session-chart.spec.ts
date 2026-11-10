@@ -58,6 +58,11 @@ describe('sessionChartOption', () => {
     expect(series.markPoint.data[0]).toMatchObject({ symbol: 'circle' });
   });
 
+  it('an avatar has its own tooltip: who, what and when, the name escaped', () => {
+    const tip = series.markPoint.tooltip.formatter({ name: '<b>Alex</b> joined', data: { coord: [5 * M, 1] } });
+    expect(tip).toMatch(/^&lt;b&gt;Alex&lt;\/b&gt; joined at \d{1,2}[:.]\d{2}/);
+  });
+
   it('shades only the deafened stretches', () => {
     expect(series.markArea.data).toEqual([[{ name: 'Deafened', xAxis: 15 * M }, { xAxis: 20 * M }]]);
   });

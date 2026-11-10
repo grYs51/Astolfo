@@ -101,6 +101,12 @@ export const sessionChartOption = (segments: XpSegment[], people: People, avatar
         markPoint: {
           itemStyle: { color: '#f3f4f6' },
           label: { show: false },
+          // The chart's tooltip follows the axis; an avatar gets its own: "Kai joined at 21:57"
+          tooltip: {
+            trigger: 'item',
+            formatter: (p: { name: string; data: { coord: [number, number] } }) =>
+              `${escapeHtml(p.name)} at ${time(p.data.coord[0])}`,
+          },
           data: memberChanges(segments).flatMap((c) => [
             ...avatarMarkers(c.joined, people, avatars, c.at, c.multiplier, 'joined'),
             ...avatarMarkers(c.left, people, avatars, c.at, c.multiplier, 'left'),
