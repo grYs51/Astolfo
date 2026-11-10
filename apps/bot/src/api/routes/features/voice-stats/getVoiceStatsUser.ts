@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { VoiceActivityType, VoiceStatsUser } from '@nx-stolfo/api-interfaces';
+import { VoiceActivityType, VoiceStatsUser, XpSegment } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { Prisma } from '@prisma/client';
 import {
@@ -154,10 +154,24 @@ export const getVoiceStatsUser: RequestHandler<
     const previousTotalDuration = previousRows
       ? Number(previousRows[0]?.total_duration ?? 0)
       : null;
-    // One lookup for the member themselves and their companions
+    // The XP each recent session earned, with its step line for the session chart
+    const xpRows = recentSessions.length
+      ? await req.db.xpEvents.findMany({
+          where: { key: { in: recentSessions.map((s) => `voice:${s.id}`) } },
+          select: { key: true, amount: true, segments: true },
+        })
+      : [];
+    const sessionXp = new Map(
+      xpRows.map((row) => [
+        row.key.slice('voice:'.length),
+        { amount: row.amount, segments: (row.segments ?? []) as unknown as XpSegment[] },
+      ])
+    );
+    const segmentIds = [...sessionXp.values()].flatMap((x) => x.segments.flatMap((s) => s.memberIds));
+
+    // One lookup for the member themselves, their companions and everyone in those sessions
     const companionMembers = await discordDirectory().members(serverId, [
-      userId,
-      ...companionRows.map((row) => row.member_id),
+      ...new Set([userId, ...companionRows.map((row) => row.member_id), ...segmentIds]),
     ]);
     const member = memberOrUnknown(companionMembers, userId);
     const companions = companionRows.map((row) => ({
@@ -212,6 +226,7 @@ export const getVoiceStatsUser: RequestHandler<
     const favoriteChannelData = favoriteRow ? getChannelData(serverId, favoriteRow.channel_id) : null;
 
     const enrichedRecentSessions = recentSessions.map((session) => {
+      const xp = sessionXp.get(session.id);
       // Open session (still in voice): live duration, endedOn stays null
       const endedOn = session.ended_on ?? new Date();
       const duration = endedOn.getTime() - session.issued_on.getTime();
@@ -223,6 +238,12 @@ export const getVoiceStatsUser: RequestHandler<
         duration,
         durationMinutes: Math.floor(duration / (1000 * 60)),
         type: session.type as VoiceActivityType,
+        xp: xp && {
+          ...xp,
+          people: Object.fromEntries(
+            [...new Set(xp.segments.flatMap((s) => s.memberIds))].map((id) => [id, memberOrUnknown(companionMembers, id)])
+          ),
+        },
       };
     });
 

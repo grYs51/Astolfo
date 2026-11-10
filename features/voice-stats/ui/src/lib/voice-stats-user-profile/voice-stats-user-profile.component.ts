@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { VoiceStatsUser } from '@nx-stolfo/data-access-voice-stats';
 import {
@@ -8,6 +8,7 @@ import {
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
+import { XpSessionChartComponent } from '../xp-session/xp-session-chart.component';
 
 /**
  * A member's companions, top channels and (on their own page) recent
@@ -21,6 +22,8 @@ import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
     HumanizeDurationPipe,
     SegmentedControlComponent,
     RouterLink,
+    NgTemplateOutlet,
+    XpSessionChartComponent,
   ],
   templateUrl: './voice-stats-user-profile.component.html',
   styles: `
@@ -42,6 +45,9 @@ export class VoiceStatsUserProfileComponent {
 
   protected topChannels = computed(() => this.userStats().channelBreakdown.slice(0, 3));
   protected recentSessions = computed(() => this.userStats().recentSessions.slice(0, 5));
+
+  /** The recent session whose XP chart is open */
+  protected openSession = signal<string | null>(null);
 
   protected channelView = signal<'voice' | 'text'>('voice');
   protected readonly channelViewOptions: SegmentedControlOption<'voice' | 'text'>[] = [

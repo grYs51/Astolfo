@@ -96,20 +96,44 @@
       <p class="py-md text-center text-sm text-gray-400">No sessions yet</p>
     } @else {
       <ul class="divide-y divide-white/5">
+        <ng-template #sessionRow let-session>
+          <div class="min-w-0">
+            <p class="truncate text-sm text-gray-100">{{ session.channel.name }}</p>
+            <p class="text-xs text-gray-500">{{ session.issuedOn | date: 'EEE d MMM, HH:mm' }}</p>
+          </div>
+          <span class="shrink-0 text-right text-sm text-gray-300">
+            @if (!session.endedOn) {
+              <span class="mr-xs rounded bg-success/15 px-xs py-px text-[10px] font-semibold uppercase text-success">
+                Live
+              </span>
+            }
+            {{ session.duration | humanizeDuration: true }}
+            @if (session.xp) {
+              <span class="block text-xs font-semibold text-primary-300">+{{ session.xp.amount }} XP</span>
+            }
+          </span>
+        </ng-template>
         @for (session of recentSessions(); track session.id) {
-          <li class="flex items-center justify-between gap-md py-sm">
-            <div class="min-w-0">
-              <p class="truncate text-sm text-gray-100">{{ session.channel.name }}</p>
-              <p class="text-xs text-gray-500">{{ session.issuedOn | date: 'EEE d MMM, HH:mm' }}</p>
-            </div>
-            <span class="shrink-0 text-sm text-gray-300">
-              @if (!session.endedOn) {
-                <span class="mr-xs rounded bg-success/15 px-xs py-px text-[10px] font-semibold uppercase text-success">
-                  Live
-                </span>
+          <li class="py-sm">
+            <!-- A graded session opens its XP chart; an open one has no XP yet -->
+            @if (session.xp; as xp) {
+              <button
+                type="button"
+                class="flex w-full items-center justify-between gap-md rounded-lg text-left hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+                [attr.aria-expanded]="openSession() === session.id"
+                [attr.aria-controls]="'session-xp-' + session.id"
+                (click)="openSession.set(openSession() === session.id ? null : session.id)"
+              >
+                <ng-container *ngTemplateOutlet="sessionRow; context: { $implicit: session }" />
+              </button>
+              @if (openSession() === session.id) {
+                <feature-voice-stats-xp-session-chart [id]="'session-xp-' + session.id" class="mt-sm" [xp]="xp" />
               }
-              {{ session.duration | humanizeDuration: true }}
-            </span>
+            } @else {
+              <div class="flex items-center justify-between gap-md">
+                <ng-container *ngTemplateOutlet="sessionRow; context: { $implicit: session }" />
+              </div>
+            }
           </li>
         }
       </ul>

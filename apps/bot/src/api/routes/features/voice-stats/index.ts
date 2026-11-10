@@ -13,4 +13,3 @@ export * from './getUserGames';
 export * from './getActivityCalendar';
 export * from './getVoiceHabits';
 export * from './getStatsCard';
-export * from './getUserXp';

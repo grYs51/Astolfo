@@ -12,4 +12,3 @@ export * from './lib/online-time/online-time.component';
 export * from './lib/game-record/game-record.component';
 export * from './lib/activity-calendar/activity-calendar.component';
 export { HEATMAP_SEQUENTIAL_COLORS } from './lib/heatmap-grid';
-export * from './lib/xp-history/xp-history.component';

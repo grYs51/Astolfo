@@ -1,4 +1,4 @@
-import type { DateLike, DiscordChannel, DiscordMember } from './voice-stats.dto';
+import type { DateLike, DiscordMember } from './voice-stats.dto';
 
 /**
  * The XP rules: one global set, tuned on the owner's /admin panel (defaults in the bot's `xp/rules.ts`).
@@ -103,22 +103,10 @@ export interface XpLevel {
   nextLevelXp: number;
 }
 
-export interface XpHistoryEntry {
-  id: string;
-  source: XpSource;
+/** The XP a closed voice session earned, with its step line for the session chart */
+export interface VoiceSessionXp {
   amount: number;
-  note: string;
-  at: DateLike;
-  /** VOICE rows only */
-  channel?: DiscordChannel;
-  segments?: XpSegment[];
-}
-
-/** GET …/users/:userId/xp: newest first; pass `nextCursor` as `before` for the next page */
-export interface XpHistory {
-  level: XpLevel;
-  entries: XpHistoryEntry[];
-  /** Everyone named in the page's segments */
+  segments: XpSegment[];
+  /** Everyone named in the segments */
   people: Record<string, DiscordMember>;
-  nextCursor: string | null;
 }

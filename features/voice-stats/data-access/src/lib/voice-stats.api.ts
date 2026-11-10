@@ -24,7 +24,6 @@ import {
   VoiceHabitsLeaderboard,
   StatsCardSection,
   StatsCardTheme,
-  XpHistory,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -261,20 +260,6 @@ export class VoiceStatsApi extends ApiBase {
         return `/features/voice-stats/${guildId()}/users/${user}/games`;
       },
       () => ({ period: period() })
-    );
-  }
-
-  /** A page of the member's XP ledger, newest first; `before` is the previous page's nextCursor */
-  fetchUserXp(guildId: () => string, userId: () => string | undefined, before: () => string | null) {
-    return this.get<XpHistory>(
-      () => {
-        const user = userId();
-        return user ? `/features/voice-stats/${guildId()}/users/${user}/xp` : undefined;
-      },
-      (): Record<string, string> => {
-        const cursor = before();
-        return cursor ? { before: cursor } : {};
-      }
     );
   }
 

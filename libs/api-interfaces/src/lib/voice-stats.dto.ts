@@ -1,4 +1,4 @@
-import type { XpLevel } from './xp.dto';
+import type { VoiceSessionXp, XpLevel } from './xp.dto';
 
 /**
  * Wire types for the voice-stats endpoints
@@ -192,6 +192,8 @@ export interface VoiceSession {
   duration: number;
   durationMinutes: number;
   type: VoiceActivityType;
+  /** Once the session has closed and been graded */
+  xp?: VoiceSessionXp;
 }
 
 export interface VoiceChannelBreakdown {
