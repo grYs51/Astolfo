@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
   input,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -90,13 +92,18 @@ export class CardDialogComponent {
 
   constructor() {
     afterNextRender(() => this.canCopy.set(typeof ClipboardItem !== 'undefined' && !!navigator.clipboard?.write));
-    effect((onCleanup) => {
+    // The resource drops its value while the next card loads, so the old URL is revoked only once a new one replaces it
+    effect(() => {
       const blob = this.card.hasValue() ? this.card.value() : undefined;
       if (!blob) return;
-      const url = URL.createObjectURL(blob);
-      this.imageUrl.set(url);
+      const previous = untracked(this.imageUrl);
+      this.imageUrl.set(URL.createObjectURL(blob));
+      if (previous) URL.revokeObjectURL(previous);
       this.copyState.set('idle');
-      onCleanup(() => URL.revokeObjectURL(url));
+    });
+    inject(DestroyRef).onDestroy(() => {
+      const url = this.imageUrl();
+      if (url) URL.revokeObjectURL(url);
     });
   }
 

@@ -132,6 +132,14 @@ describe('statsCard', () => {
     expect(svg).toContain('>Jan<');
   });
 
+  it('says so when the picked parts have nothing to draw', () => {
+    const svg = statsCard(
+      data({ ...sections(), sections: ['habits', 'companions'], habits: { voice: 0, muted: 0, deafened: 0, video: 0, streaming: 0 }, summary: summary({ companions: [] }) }),
+      THEMES.dark
+    );
+    expect(svg).toContain('Nothing to show in these parts over the past week.');
+  });
+
   it('shows the calendar even when the period is empty', () => {
     const svg = statsCard(
       data({ ...sections(), sections: ['calendar', 'totals'], summary: summary({ sessions: 0, messages: 0, companions: [] }) }),

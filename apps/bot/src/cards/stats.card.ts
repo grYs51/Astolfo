@@ -229,6 +229,16 @@ export const statsCard = (d: StatsCardData, t: CardTheme) => {
     if (on.has('heatmap') && d.heatmap) add(heatmap(d.heatmap, d.self !== false, y, t));
     if (on.has('companions')) add(companions(d, y, t));
   }
+  // Picked parts with nothing in them (habits without voice, no companions): say so instead of an empty card
+  if (!parts.length) {
+    add([
+      [
+        panel(PAD, y, W - 2 * PAD, 72, t),
+        text(W / 2, y + 36, 17, t.muted, escapeXml(`Nothing to show in these parts over ${PERIOD_LABEL[d.period]}.`), 'dy="0.35em" text-anchor="middle"'),
+      ],
+      72,
+    ]);
+  }
   y -= GAP;
 
   return svgCard(y + 56, t, [
