@@ -8,7 +8,7 @@ import {
   SegmentedControlOption,
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
-import { XpSessionChartComponent } from '../xp-session/xp-session-chart.component';
+import { XpSessionChartComponent } from '../xp/xp-session-chart.component';
 
 /**
  * A member's companions, top channels and (on their own page) recent

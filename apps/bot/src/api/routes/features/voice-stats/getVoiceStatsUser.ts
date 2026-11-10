@@ -1,6 +1,6 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
-import { VoiceActivityType, VoiceStatsUser, XpSegment } from '@nx-stolfo/api-interfaces';
+import { VoiceActivityType, VoiceStatsUser, XpSegment, XpSource } from '@nx-stolfo/api-interfaces';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
 import { Prisma } from '@prisma/client';
 import {
@@ -15,7 +15,6 @@ import {
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getMemberHabits, getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
 import { nextMilestone } from '../../../../stats/milestones';
-import { totalXp } from '../../../../xp/grant';
 import { currentRules, levelProgress } from '../../../../xp/rules';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
@@ -48,7 +47,7 @@ export const getVoiceStatsUser: RequestHandler<
       streak,
       lifetimeMs,
       habits,
-      xp,
+      xpBySource,
     ] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
@@ -133,13 +132,27 @@ export const getVoiceStatsUser: RequestHandler<
       getMemberStreak(req.db, serverId, userId),
       lifetimeVoiceMs(req.db, serverId, userId),
       getMemberHabits(req.db, serverId, userId, period),
-      totalXp(req.db, serverId, userId),
+      // Per source, so the total is their sum
+      req.db.xpEvents.groupBy({
+        by: ['source'],
+        where: { guild_id: serverId, member_id: userId },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
     ]);
     const allTime = {
       streak,
       lifetimeMs,
       nextMilestone: nextMilestone(lifetimeMs) ?? null,
-      level: levelProgress(xp, currentRules()),
+      level: levelProgress(
+        xpBySource.reduce((sum, row) => sum + (row._sum.amount ?? 0), 0),
+        currentRules()
+      ),
+      xpSources: xpBySource.map((row) => ({
+        source: row.source as XpSource,
+        count: row._count._all,
+        xp: row._sum.amount ?? 0,
+      })),
     };
 
     const messages = {

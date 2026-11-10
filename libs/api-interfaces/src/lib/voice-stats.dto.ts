@@ -1,4 +1,4 @@
-import type { VoiceSessionXp, XpLevel } from './xp.dto';
+import type { VoiceSessionXp, XpLevel, XpSourceTotal } from './xp.dto';
 
 /**
  * Wire types for the voice-stats endpoints
@@ -251,6 +251,8 @@ export interface VoiceStatsUser {
   nextMilestone: { hours: number; remainingMs: number } | null;
   /** Level and XP on the server; all time */
   level: XpLevel;
+  /** Where the XP came from, per source; all time */
+  xpSources: XpSourceTotal[];
 }
 
 // Voice Stats Timeline Response

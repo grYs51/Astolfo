@@ -93,7 +93,7 @@
           </ul>
         }
 
-        @if (extras().length > 0 || streak() || level()) {
+        @if (extras().length > 0 || streak()) {
           <dl class="mt-lg grid grid-cols-2 gap-md border-t border-white/5 pt-md text-sm sm:grid-cols-4">
             @for (item of extras(); track item.label) {
               <div class="min-w-0">
@@ -106,28 +106,7 @@
                 </dd>
               </div>
             }
-            <!-- Level and streak are all time, whatever the period -->
-            @if (level(); as l) {
-              <div class="min-w-0">
-                <dt class="text-xs text-gray-500">Level</dt>
-                <dd class="font-medium tabular-nums text-gray-100">
-                  {{ l.level }}
-                  <span class="text-xs font-normal text-gray-500">· {{ l.xp.toLocaleString() }} XP</span>
-                </dd>
-                <dd class="mt-1">
-                  <div
-                    class="h-1.5 overflow-hidden rounded-full bg-base-100"
-                    role="progressbar"
-                    [attr.aria-valuenow]="l.pct"
-                    aria-valuemin="0"
-                    aria-valuemax="100"
-                    [attr.aria-label]="l.toGo.toLocaleString() + ' XP to level ' + (l.level + 1)"
-                  >
-                    <div class="h-full rounded-full bg-primary-400" [style.width.%]="l.pct"></div>
-                  </div>
-                </dd>
-              </div>
-            }
+            <!-- Streak is all time, whatever the period -->
             @if (streak(); as s) {
               <div class="min-w-0">
                 <dt class="flex items-center gap-xs text-xs text-gray-500">
@@ -245,6 +224,11 @@
     </div>
   }
 </section>
+
+<!-- Level and where the XP came from (all time) -->
+@if (stats(); as s) {
+  <feature-voice-stats-xp-card [level]="s.level" [sources]="s.xpSources" />
+}
 
 <!-- Past year, day by day -->
 @let calendar = calendarResource();

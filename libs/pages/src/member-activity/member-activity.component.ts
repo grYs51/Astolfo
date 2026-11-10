@@ -22,6 +22,7 @@ import {
   OnlineTimeComponent,
   VoiceStatsUserHeatmapComponent,
   VoiceStatsUserProfileComponent,
+  XpCardComponent,
 } from '@nx-stolfo/ui-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
@@ -81,6 +82,7 @@ const memberName = (member: DiscordMember) => member.displayName || member.usern
     OnlineTimeComponent,
     GameRecordComponent,
     HumanizeDurationPipe,
+    XpCardComponent,
   ],
   templateUrl: './member-activity.component.html',
   styles: `
@@ -125,7 +127,7 @@ export class MemberActivityComponent {
   protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
   protected previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
 
-  private stats = computed(() => {
+  protected stats = computed(() => {
     const resource = this.userResource();
     return resource.hasValue() ? resource.value() : undefined;
   });
@@ -263,14 +265,6 @@ export class MemberActivityComponent {
       ...streak,
       pips: Array.from({ length: pips }, (_, i) => i < filled),
     };
-  });
-
-  /** Level with the share of the way to the next one (all time, like the streak) */
-  protected level = computed(() => {
-    const level = this.stats()?.level;
-    if (!level) return undefined;
-    const span = level.nextLevelXp - level.levelXp;
-    return { ...level, pct: span > 0 ? Math.round(((level.xp - level.levelXp) / span) * 100) : 0, toGo: level.nextLevelXp - level.xp };
   });
 
   /** Next lifetime milestone with how far along it is (from 0h) */

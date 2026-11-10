@@ -94,6 +94,14 @@ export interface XpSegment {
   multiplier: number;
 }
 
+/** A member's grants of one source on a server, all time */
+export interface XpSourceTotal {
+  source: XpSource;
+  /** Grants: voice sessions, message minutes, streak days, games won, bonuses */
+  count: number;
+  xp: number;
+}
+
 /** Level progress for a total */
 export interface XpLevel {
   xp: number;
