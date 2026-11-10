@@ -190,18 +190,11 @@ export class DetailOverviewComponent {
   );
 
   // ── "You" summary ────────────────────────────────────────────────────────
-  private leaderboardEntries = computed(() =>
+  leaderboardEntries = computed(() =>
     this.leaderboardResource.hasValue()
       ? this.leaderboardResource.value()?.leaderboard ?? []
       : []
   );
-  memberCount = computed(() => this.leaderboardEntries().length);
-  myRank = computed(() => {
-    const index = this.leaderboardEntries().findIndex(
-      (entry) => entry.member.id === this.userId()
-    );
-    return index >= 0 ? index + 1 : undefined;
-  });
 
   /** Profile page of a member; your own row/name leads to the You tab */
   memberLink = (memberId: string) =>

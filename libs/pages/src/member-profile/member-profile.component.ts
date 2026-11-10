@@ -100,13 +100,9 @@ export class MemberProfileComponent {
     const index = ids.indexOf(this.memberId());
     return index >= 0 ? index + 1 : undefined;
   };
-  private voiceIds = computed(() =>
-    this.leaderboardResource.hasValue()
-      ? (this.leaderboardResource.value()?.leaderboard ?? []).map((e) => e.member.id)
-      : []
+  voiceLeaderboard = computed(() =>
+    this.leaderboardResource.hasValue() ? this.leaderboardResource.value()?.leaderboard ?? [] : []
   );
-  voiceRank = computed(() => this.rankIn(this.voiceIds()));
-  memberCount = computed(() => this.voiceIds().length);
   messageRank = computed(() =>
     this.messagesResource.hasValue()
       ? this.rankIn((this.messagesResource.value()?.topMembers ?? []).map((e) => e.member.id))
