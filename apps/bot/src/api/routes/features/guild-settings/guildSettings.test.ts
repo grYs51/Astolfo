@@ -9,6 +9,7 @@ const current = {
   goodbye_message: '',
   toggles: 0b1000, // a bit the page doesn't know
   digest_channel_id: null,
+  level_up_channel_id: null,
 };
 
 const body = (overrides: Record<string, unknown> = {}) => ({
@@ -17,6 +18,7 @@ const body = (overrides: Record<string, unknown> = {}) => ({
   welcomeMessage: '',
   goodbyeMessage: '',
   digestChannelId: null,
+  levelUpChannelId: null,
   toggles: [{ key: 'VOICE_CHANNEL_REMINDER', label: 'ignored', enabled: true }],
   channels: [],
   ...overrides,
@@ -37,8 +39,15 @@ describe('parseSettings', () => {
         goodbye_message: '',
         toggles: 0b1001,
         digest_channel_id: 'news',
+        level_up_channel_id: null,
       },
     });
+  });
+
+  test('a level-up channel must be one the bot can post in', () => {
+    expect(parse({ levelUpChannelId: 'general' })).toMatchObject({ data: { level_up_channel_id: 'general' } });
+    expect(parse({ levelUpChannelId: 'voice-2' })).toEqual({ error: expect.stringContaining('post in that channel') });
+    expect(parse({ levelUpChannelId: 12 })).toHaveProperty('error');
   });
 
   test('a toggle can be switched off', () => {

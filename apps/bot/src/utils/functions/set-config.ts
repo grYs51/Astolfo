@@ -95,6 +95,7 @@ export const checkForNewGuilds = async () => {
       toggles: 0,
       digest_channel_id: null,
       digest_last_sent_at: null,
+      level_up_channel_id: null,
     });
     await prismaClient.guildConfigurations.create({
       data: {

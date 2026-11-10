@@ -18,6 +18,8 @@ model guild_configs {
   /// Weekly digest: channel to post in (null = off) and when it last posted
   digest_channel_id   String?   @db.VarChar
   digest_last_sent_at DateTime? @db.Timestamp(6)
+  /// Channel for level-up posts (null = off)
+  level_up_channel_id String?   @db.VarChar
 }
 
 model voice_stats {
@@ -176,5 +178,30 @@ model page_views {
 model app_notice {
   id         Int      @id @default(1)
   text       String   @db.VarChar(300)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+}
+
+/// The XP ledger: one row per grant. `key` names what earned it, so every grant is idempotent.
+model xp_events {
+  id         String   @id @default(uuid()) @db.VarChar
+  guild_id   String   @db.VarChar
+  member_id  String   @db.VarChar
+  /// VOICE | STARTER | RECONNECT | WELCOME | MILESTONE | WEEKLY | MESSAGE | STREAK | GAME
+  source     String   @db.VarChar
+  amount     Int
+  note       String   @db.VarChar
+  /// VOICE rows only: the multiplier step line for the session chart
+  segments   Json?
+  key        String   @unique @db.VarChar
+  /// When it was earned
+  created_at DateTime @db.Timestamp(6)
+
+  @@index([guild_id, member_id])
+}
+
+/// The owner's XP rules from /admin. One row (id 1) or none (= the defaults in code).
+model xp_rules {
+  id         Int      @id @default(1)
+  rules      Json
   updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
 }
