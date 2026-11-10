@@ -55,10 +55,7 @@ const main = async () => {
         sessions: 23,
         messages: 1284,
         previousMessages: 1500,
-        voiceRank: 2,
-        rankedMembers: 14,
         messageRank: 3,
-        favouriteChannelId: '1',
         companions: [
           { memberId: '2', togetherMs: 30_000_000 },
           { memberId: '3', togetherMs: 18_500_000 },

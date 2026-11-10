@@ -148,7 +148,7 @@ const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
         : { label: 'In chat', value: plural(s.messages, 'message') }),
   ].filter((item): item is { label: string; value: string; sub?: string } => !!item);
   const colW = INNER_W / 3;
-  parts.push(`<rect x="${INNER_X}" y="${rowY + 26}" width="${INNER_W}" height="1" fill="${t.track}"/>`);
+  if (stats.length) parts.push(`<rect x="${INNER_X}" y="${rowY + 26}" width="${INNER_W}" height="1" fill="${t.track}"/>`);
   stats.forEach(({ label, value, sub }, i) => {
     const x = INNER_X + i * colW;
     parts.push(
@@ -163,7 +163,7 @@ const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
       )
     );
   });
-  const panelH = rowY + 106 - y;
+  const panelH = (stats.length ? rowY + 106 : rowY + 26) - y;
   parts.unshift(panel(PAD, y, W - 2 * PAD, panelH, t));
 
   if (!d.ranking?.rows.length) return [parts, panelH];

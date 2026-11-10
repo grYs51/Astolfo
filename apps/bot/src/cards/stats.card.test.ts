@@ -11,10 +11,7 @@ const summary = (overrides: Partial<MemberSummary> = {}): MemberSummary => ({
   sessions: 2,
   messages: 1234,
   previousMessages: 2000,
-  voiceRank: 1,
-  rankedMembers: 3,
   messageRank: 2,
-  favouriteChannelId: 'vc1',
   companions: [
     { memberId: '200', togetherMs: 2 * H },
     { memberId: '300', togetherMs: H },

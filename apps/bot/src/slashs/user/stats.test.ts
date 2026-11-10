@@ -26,7 +26,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   (getMemberSummary as jest.Mock).mockResolvedValue({
     voiceMs: 0, previousVoiceMs: 0, sessions: 0, messages: 0, previousMessages: 0,
-    rankedMembers: 0, companions: [], streak: { current: 0, longest: 0 }, lifetimeMs: 0,
+    companions: [], streak: { current: 0, longest: 0 }, lifetimeMs: 0,
   });
 });
 
