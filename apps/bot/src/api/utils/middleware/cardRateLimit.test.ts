@@ -22,11 +22,11 @@ beforeAll(async () => {
 
 afterAll(() => new Promise((resolve) => server.close(resolve)));
 
-test('10 cards a minute per user, counted per user and not per IP', async () => {
+test('30 cards a minute per user, counted per user and not per IP', async () => {
   const statuses = [];
-  for (let i = 0; i < 11; i++) statuses.push((await fetch(`${base}/card?user=a`)).status);
-  expect(statuses.slice(0, 10).every((s) => s === 200)).toBe(true);
-  expect(statuses[10]).toBe(429);
+  for (let i = 0; i < 31; i++) statuses.push((await fetch(`${base}/card?user=a`)).status);
+  expect(statuses.slice(0, 30).every((s) => s === 200)).toBe(true);
+  expect(statuses[30]).toBe(429);
   // same IP, another user: their own budget
   expect((await fetch(`${base}/card?user=b`)).status).toBe(200);
 });
