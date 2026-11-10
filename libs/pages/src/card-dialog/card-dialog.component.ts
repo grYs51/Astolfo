@@ -16,6 +16,7 @@ import { debounceTime } from 'rxjs';
 import { DashboardPeriod, VoiceStatsApi } from '@nx-stolfo/data-access-voice-stats';
 import type { StatsCardSection, StatsCardTheme } from '@nx-stolfo/api-interfaces';
 import { SegmentedControlComponent, SegmentedControlOption } from '@nx-stolfo/components';
+import { PERIOD_PHRASE } from '../member-activity/member-activity.component';
 
 /** In the order the card draws them */
 const SECTIONS: { value: StatsCardSection; label: string }[] = [
@@ -26,13 +27,6 @@ const SECTIONS: { value: StatsCardSection; label: string }[] = [
   { value: 'heatmap', label: 'Weekly heatmap' },
   { value: 'companions', label: 'Hangs out most with' },
 ];
-
-const PERIOD_LABEL: Record<DashboardPeriod, string> = {
-  week: 'the past week',
-  month: 'the past month',
-  year: 'the past year',
-  all: 'all time',
-};
 
 /**
  * A "Card" button and the dialog it opens: a live preview of a member's stats
@@ -64,7 +58,7 @@ export class CardDialogComponent {
   theme = signal<StatsCardTheme>('stolfo');
   sections = signal<StatsCardSection[]>(SECTIONS.map((s) => s.value));
   protected open = signal(false);
-  protected periodLabel = computed(() => PERIOD_LABEL[this.period()]);
+  protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
 
   private options = computed(() =>
     this.open() && this.sections().length
@@ -78,7 +72,10 @@ export class CardDialogComponent {
   /** Object URL of the last card, kept while the next one loads */
   protected imageUrl = signal<string | undefined>(undefined);
   protected fileName = computed(() => `${this.name().replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-|-$/g, '') || 'member'}-stats.png`);
-  protected ready = computed(() => this.card.hasValue() && !this.card.isLoading() && !!this.imageUrl());
+  // Not while a change waits out the debounce: the card on screen is the one before it
+  protected ready = computed(
+    () => this.debounced() === this.options() && this.card.hasValue() && !this.card.isLoading() && !!this.imageUrl()
+  );
   protected errorText = computed(() => {
     const error = this.card.error();
     if (!error) return undefined;

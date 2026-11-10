@@ -24,7 +24,7 @@ import {
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import { ProgressBarComponent } from '@nx-stolfo/components';
 
-const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
+export const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
   week: 'in the past week',
   month: 'in the past month',
   year: 'in the past year',
