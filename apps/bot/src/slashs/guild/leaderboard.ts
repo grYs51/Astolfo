@@ -135,7 +135,7 @@ export default class LeaderboardEvent extends BaseSlash {
               pageItems.map(async (x, i) => ({
                 rank: start + i + 1,
                 name: x.name,
-                value: formatDuration(x.count),
+                value: type === 'xp' ? `${x.count.toLocaleString('en-GB')} XP` : formatDuration(x.count),
                 fraction: x.count / (longestInVc || 1),
                 avatar: await avatarFor(x.id),
               }))
@@ -279,6 +279,11 @@ const leaderboardLabels: Record<
     title: 'Loner Leaderboard',
     description: 'Time spend in voice channels alone',
     empty: 'No loners found',
+  },
+  xp: {
+    title: 'XP Leaderboard',
+    description: 'XP from voice, messages, streaks and games',
+    empty: 'Nobody has earned XP yet',
   },
   inactive: {
     title: 'Inactive Leaderboard',

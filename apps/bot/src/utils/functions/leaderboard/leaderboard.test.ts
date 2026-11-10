@@ -260,3 +260,19 @@ describe('lonerboard', () => {
     ]);
   });
 });
+
+describe('xp leaderboard', () => {
+  test('sums XP per member still in the server', async () => {
+    const { getLeaderboard } = await import('./leaderboard');
+    const groupBy = jest.fn(async () => [
+      { member_id: '1', _sum: { amount: 120 } },
+      { member_id: 'gone', _sum: { amount: 999 } },
+    ]);
+    const client = {
+      dataSource: { xpEvents: { groupBy } },
+      guilds: { cache: new Map([['g', { members: { cache: { map: (f: (m: unknown) => unknown) => [memberOne].map(f) } } }]]) },
+    } as never;
+    expect(await getLeaderboard(client, 'g', 'xp', 'allTime')).toEqual([{ id: '1', name: 'user 1', count: 120 }]);
+    expect(groupBy).toHaveBeenCalledWith(expect.objectContaining({ where: { guild_id: 'g', created_at: undefined } }));
+  });
+});

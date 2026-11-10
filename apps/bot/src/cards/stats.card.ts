@@ -1,4 +1,4 @@
-import type { ActivityCalendar, StatsCardSection, VoiceHabits } from '@nx-stolfo/api-interfaces';
+import type { ActivityCalendar, StatsCardSection, VoiceHabits, XpLevel } from '@nx-stolfo/api-interfaces';
 import { formatDuration, PERIOD_LABEL, plural, PREVIOUS_LABEL } from '../stats/messages';
 import { nextMilestone } from '../stats/milestones';
 import type { MemberSummary } from '../stats/queries';
@@ -50,6 +50,8 @@ export interface StatsCardData {
   habits?: VoiceHabits;
   calendar?: ActivityCalendar;
   heatmap?: HeatmapCell[];
+  /** Level and XP on the server, drawn above the streak */
+  xp?: XpLevel;
 }
 
 const H = 60 * 60 * 1000;
@@ -213,14 +215,36 @@ const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: 
   return [parts, 28 + panelH];
 };
 
+const LEVEL_H = 108;
+
+/** Level, total XP and a bar to the next level, full width */
+const levelRow = (xp: XpLevel, y: number, t: CardTheme) => {
+  const w = W - 2 * PAD;
+  const barW = w - 48;
+  const span = xp.nextLevelXp - xp.levelXp;
+  const filled = span > 0 ? Math.max(0, Math.min(1, (xp.xp - xp.levelXp) / span)) : 0;
+  const n = (v: number) => v.toLocaleString('en-GB');
+  return [
+    panel(PAD, y, w, LEVEL_H, t),
+    text(PAD + 24, y + 32, 14, t.muted, 'Level'),
+    text(PAD + 24, y + 68, 30, t.text, `${xp.level}<tspan fill="${t.muted}" font-size="14" font-weight="400">&#160;· ${n(xp.xp)} XP</tspan>`, 'font-weight="700"'),
+    text(PAD + w - 24, y + 68, 14, t.muted, `${n(xp.nextLevelXp - xp.xp)} XP to level ${xp.level + 1}`, 'text-anchor="end"'),
+    `<rect x="${PAD + 24}" y="${y + 84}" width="${barW}" height="8" rx="4" fill="${t.track}"/>`,
+    filled > 0 ? `<rect x="${PAD + 24}" y="${y + 84}" width="${+(barW * filled).toFixed(2)}" height="8" rx="4" fill="${t.accent}"/>` : '',
+  ];
+};
+
 /** Most pips the streak row draws; longer streaks are scaled down to fit */
 const MAX_STREAK_PIPS = 14;
 
 /**
  * The voice streak with a pip per day against the best one, and the next
- * milestone as a square per hour, like the calendar (both all time).
+ * milestone as a square per hour, like the calendar (both all time), under the level.
  */
-const streak = (d: StatsCardData, y: number, t: CardTheme): [string[], number] => {
+const streak = (d: StatsCardData, top: number, t: CardTheme): [string[], number] => {
+  const level = d.xp ? levelRow(d.xp, top, t) : [];
+  const above = d.xp ? LEVEL_H + GAP : 0;
+  const y = top + above;
   const s = d.summary;
   const next = nextMilestone(s.lifetimeMs);
   const tiles: { height: (w: number) => number; draw: (x: number, w: number, h: number) => string[] }[] = [];
@@ -289,10 +313,10 @@ const streak = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
     });
   }
 
-  if (!tiles.length) return [[], -GAP];
+  if (!tiles.length) return [level, above - GAP];
   const w = tiles.length === 1 ? W - 2 * PAD : TILE_W;
   const h = Math.max(...tiles.map((tile) => tile.height(w)));
-  return [tiles.flatMap((tile, i) => tile.draw(PAD + i * (TILE_W + GAP), w, h)), h];
+  return [[...level, ...tiles.flatMap((tile, i) => tile.draw(PAD + i * (TILE_W + GAP), w, h))], above + h];
 };
 
 const METER_PARTS = 5;

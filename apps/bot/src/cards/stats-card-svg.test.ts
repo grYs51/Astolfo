@@ -10,6 +10,7 @@ jest.mock('../stats/queries', () => ({
   getVoiceNeighbours: jest.fn(),
 }));
 jest.mock('../api/routes/features/voice-stats/calendar-sql', () => ({ activityCalendar: jest.fn() }));
+jest.mock('../xp/grant', () => ({ totalXp: jest.fn(async () => 1001) }));
 jest.mock('../api/utils/discord-directory', () => ({
   discordDirectory: () => ({
     members: async (_guildId: string, ids: string[]) =>
