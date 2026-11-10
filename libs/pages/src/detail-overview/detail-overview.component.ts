@@ -195,6 +195,13 @@ export class DetailOverviewComponent {
       ? this.leaderboardResource.value()?.leaderboard ?? []
       : []
   );
+  private xpLeaderboardResource = this.voiceStatsApi.fetchXpLeaderboard(
+    () => this.id(),
+    () => this.period()
+  );
+  xpLeaderboard = computed(() =>
+    this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
+  );
 
   /** Profile page of a member; your own row/name leads to the You tab */
   memberLink = (memberId: string) =>

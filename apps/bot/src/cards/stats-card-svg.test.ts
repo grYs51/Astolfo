@@ -1,5 +1,5 @@
 import { activityCalendar } from '../api/routes/features/voice-stats/calendar-sql';
-import { getMemberHabits, getMemberOnline, getMemberSummary, getVoiceNeighbours } from '../stats/queries';
+import { getMemberHabits, getMemberOnline, getMemberSummary, getXpNeighbours } from '../stats/queries';
 import { statsCardSvg } from './stats-card-svg';
 import { THEMES } from './themes';
 
@@ -7,7 +7,7 @@ jest.mock('../stats/queries', () => ({
   getMemberSummary: jest.fn(),
   getMemberHabits: jest.fn(),
   getMemberOnline: jest.fn(),
-  getVoiceNeighbours: jest.fn(),
+  getXpNeighbours: jest.fn(),
 }));
 jest.mock('../api/routes/features/voice-stats/calendar-sql', () => ({ activityCalendar: jest.fn() }));
 jest.mock('../xp/grant', () => ({ totalXp: jest.fn(async () => 1001) }));
@@ -35,22 +35,22 @@ const summary = (overrides = {}) => ({
 
 beforeEach(() => {
   jest.clearAllMocks();
-  (getVoiceNeighbours as jest.Mock).mockResolvedValue([]);
+  (getXpNeighbours as jest.Mock).mockResolvedValue([]);
 });
 
 test('draws the summary with names from the Discord directory', async () => {
   (getMemberSummary as jest.Mock).mockResolvedValue(
     summary({ companions: [{ memberId: 'roland', togetherMs: H }, { memberId: 'gone', togetherMs: H }] })
   );
-  (getVoiceNeighbours as jest.Mock).mockResolvedValue([
-    { memberId: 'kai', voiceMs: 2 * H, rank: 1, members: 2 },
-    { memberId: 'me', voiceMs: H, rank: 2, members: 2 },
+  (getXpNeighbours as jest.Mock).mockResolvedValue([
+    { memberId: 'kai', xp: 200, rank: 1, members: 2 },
+    { memberId: 'me', xp: 100, rank: 2, members: 2 },
   ]);
   const svg = await statsCardSvg({ db: {} as never, guildId: 'g', memberId: 'me', viewerId: 'viewer', period: 'all', theme: THEMES.dark });
 
   expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all');
-  expect(getVoiceNeighbours).toHaveBeenCalledWith({}, 'g', 'me', 'all');
-  for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'Voice ranking · #2 of 2', 'kai-user']) {
+  expect(getXpNeighbours).toHaveBeenCalledWith({}, 'g', 'me', 'all');
+  for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'XP ranking · #2 of 2', 'kai-user']) {
     expect(svg).toContain(text);
   }
 });
@@ -72,7 +72,7 @@ test('runs only the picked sections’ queries, with the viewer’s time zone', 
 
   jest.clearAllMocks();
   const svg = await card(['habits', 'calendar', 'heatmap']);
-  expect(getVoiceNeighbours).not.toHaveBeenCalled();
+  expect(getXpNeighbours).not.toHaveBeenCalled();
   expect(getMemberHabits).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'week');
   expect(getMemberOnline).toHaveBeenCalledWith(expect.anything(), 'me', 'week');
   expect(activityCalendar).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'Europe/Brussels');

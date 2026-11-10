@@ -30,20 +30,20 @@ const data = (overrides: Partial<StatsCardData> = {}): StatsCardData => ({
   ...overrides,
 });
 
-/** Astolfo (4h) at `rank` of 5, between Roland and Oliver */
+/** Astolfo (400 XP) at `rank` of 5, between Roland and Oliver */
 const ranking = (rank: 1 | 2): NonNullable<StatsCardData['ranking']> => ({
   members: 5,
   rows:
     rank === 1
       ? [
-          { name: 'Astolfo', voiceMs: 4 * H, rank: 1, subject: true },
-          { name: 'Roland', voiceMs: 3 * H, rank: 2, subject: false },
-          { name: 'Oliver', voiceMs: 2 * H, rank: 3, subject: false },
+          { name: 'Astolfo', xp: 400, rank: 1, subject: true },
+          { name: 'Roland', xp: 300, rank: 2, subject: false },
+          { name: 'Oliver', xp: 200, rank: 3, subject: false },
         ]
       : [
-          { name: 'Roland', voiceMs: 5 * H, rank: 1, subject: false },
-          { name: 'Astolfo', voiceMs: 4 * H, rank: 2, subject: true },
-          { name: 'Oliver', voiceMs: 2 * H, rank: 3, subject: false },
+          { name: 'Roland', xp: 1500, rank: 1, subject: false },
+          { name: 'Astolfo', xp: 400, rank: 2, subject: true },
+          { name: 'Oliver', xp: 200, rank: 3, subject: false },
         ],
 });
 
@@ -97,21 +97,21 @@ describe('statsCard', () => {
 
   it('ranks the member between their neighbours, with the gap to the next rank', () => {
     const svg = statsCard(data({ ranking: ranking(2) }), THEMES.dark);
-    expect(svg).toContain('Voice ranking · #2 of 5');
+    expect(svg).toContain('XP ranking · #2 of 5');
     expect(svg).toContain('>You<');
     expect(svg).toContain('>Roland<');
-    expect(svg).toContain('>1h<');
+    expect(svg).toContain('>1,100 XP<');
     expect(svg).toContain('behind Roland for #1.');
   });
 
-  it('says how far ahead the top member is, or that nobody else was in voice', () => {
+  it('says how far ahead the top member is, or that nobody else earned XP', () => {
     expect(statsCard(data({ ranking: ranking(1) }), THEMES.dark)).toContain('ahead of Roland.');
-    const alone = { members: 1, rows: [{ name: 'Astolfo', voiceMs: 4 * H, rank: 1, subject: true }] };
-    expect(statsCard(data({ ranking: alone }), THEMES.dark)).toContain('Nobody else was in voice over the past week.');
+    const alone = { members: 1, rows: [{ name: 'Astolfo', xp: 400, rank: 1, subject: true }] };
+    expect(statsCard(data({ ranking: alone }), THEMES.dark)).toContain('Nobody else earned XP over the past week.');
   });
 
-  it('leaves out the ranking without voice time', () => {
-    expect(statsCard(data(), THEMES.dark)).not.toContain('Voice ranking');
+  it('leaves out the ranking without XP', () => {
+    expect(statsCard(data(), THEMES.dark)).not.toContain('XP ranking');
   });
 
   it('shows the voice streak with its pips and the next milestone as a square per hour', () => {

@@ -70,9 +70,9 @@ const main = async () => {
       ranking: {
         members: 14,
         rows: [
-          { name: NAMES[2], avatar: avatar(2), voiceMs: 72_400_000, rank: 1, subject: false },
-          { name: NAMES[0], avatar: avatar(0), voiceMs: 63_900_000, rank: 2, subject: true },
-          { name: NAMES[3], avatar: avatar(3), voiceMs: 41_200_000, rank: 3, subject: false },
+          { name: NAMES[2], avatar: avatar(2), xp: 2_350, rank: 1, subject: false },
+          { name: NAMES[0], avatar: avatar(0), xp: 1_840, rank: 2, subject: true },
+          { name: NAMES[3], avatar: avatar(3), xp: 1_120, rank: 3, subject: false },
         ],
       },
     };

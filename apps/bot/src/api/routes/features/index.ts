@@ -27,6 +27,7 @@ import {
   getActivityCalendar,
   getVoiceHabits,
   getStatsCard,
+  getXpLeaderboard,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -159,5 +160,11 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getVoiceHabits,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/xp-leaderboard',
+    isAuthenticated,
+    isServerMember,
+    getXpLeaderboard,
   );
 };

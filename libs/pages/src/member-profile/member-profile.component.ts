@@ -65,11 +65,10 @@ export class MemberProfileComponent {
     () => this.id(),
     () => this.memberId()
   );
-  // For the member's ranks and the server name in the back link
-  private leaderboardResource = this.api.fetchVoiceStatsLeaderboard(
+  // For the member's XP rank
+  private xpLeaderboardResource = this.api.fetchXpLeaderboard(
     () => this.id(),
-    () => this.period(),
-    () => 100
+    () => this.period()
   );
   private messagesResource = this.api.fetchServerMessages(
     () => this.id(),
@@ -100,8 +99,8 @@ export class MemberProfileComponent {
     const index = ids.indexOf(this.memberId());
     return index >= 0 ? index + 1 : undefined;
   };
-  voiceLeaderboard = computed(() =>
-    this.leaderboardResource.hasValue() ? this.leaderboardResource.value()?.leaderboard ?? [] : []
+  xpLeaderboard = computed(() =>
+    this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
   );
   messageRank = computed(() =>
     this.messagesResource.hasValue()

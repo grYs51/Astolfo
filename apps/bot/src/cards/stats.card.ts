@@ -17,7 +17,7 @@ export const DEFAULT_SECTIONS: readonly StatsCardSection[] = ['totals', 'streak'
 export interface RankingRow {
   name: string;
   avatar?: string;
-  voiceMs: number;
+  xp: number;
   rank: number;
   /** The member the card is about */
   subject: boolean;
@@ -38,7 +38,7 @@ export interface StatsCardData {
   serverName: string;
   /** Same order as summary.companions */
   companions: { name: string; avatar?: string }[];
-  /** The member and their neighbours by voice time (totals); left out when they have no voice time */
+  /** The member and their neighbours by XP earned in the period (totals); left out when they earned none */
   ranking?: { members: number; rows: RankingRow[] };
   /** Online time in the period and its share of it (habits); left out when unknown */
   online?: { ms: number; share: number };
@@ -88,7 +88,7 @@ const hoursAndMinutes = (ms: number) => `${Math.floor(ms / H)}h ${Math.floor((ms
 /**
  * The headline (the change against the previous period, or the totals for all
  * time), both periods as bars, then sessions, average session and chat rank.
- * Then the voice ranking: the member between whoever is just above and below.
+ * Then the XP ranking: the member between whoever is just above and below.
  */
 const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] => {
   const s = d.summary;
@@ -174,18 +174,19 @@ const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
 };
 
 const RANK_ROW_H = 56;
+const xpText = (xp: number) => `${xp.toLocaleString('en-GB')} XP`;
 
-/** Whoever is just above and below the member by voice time, and the gap to the next rank */
+/** Whoever is just above and below the member by XP, and the gap to the next rank */
 const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: number, t: CardTheme): [string[], number] => {
   const me = r.rows.findIndex((row) => row.subject);
   const you = r.rows[me];
   const ahead = r.rows[me - 1];
   const behind = r.rows[me + 1];
-  const max = Math.max(r.rows[0].voiceMs, 1);
+  const max = Math.max(r.rows[0].xp, 1);
   const name = (row: RankingRow) => (row.subject && d.self !== false ? 'You' : row.name);
   const panelH = r.rows.length * RANK_ROW_H + 8 + 40;
   const parts = [
-    heading(y + 14, `Voice ranking · #${you?.rank ?? '–'} of ${r.members}`, t),
+    heading(y + 14, `XP ranking · #${you?.rank ?? '–'} of ${r.members}`, t),
     panel(PAD, y + 28, W - 2 * PAD, panelH, t),
   ];
   r.rows.forEach((row, i) => {
@@ -199,18 +200,18 @@ const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: 
       text(PAD + 28, rowY + RANK_ROW_H / 2, 14, t.muted, `#${row.rank}`, 'dy="0.35em"'),
       avatarSvg({ id: `r${i}`, x: PAD + 72, y: rowY + 10, size: 36, name: row.name, image: row.avatar, theme: t }),
       text(PAD + 124, rowY + 24, 17, t.text, escapeXml(truncate(name(row), 32)), row.subject ? 'font-weight="700"' : ''),
-      text(W - PAD - 28, rowY + 24, 15, t.muted, escapeXml(formatDuration(row.voiceMs)), 'text-anchor="end"'),
-      bar(PAD + 124, rowY + 36, W - 2 * PAD - 152, 6, row.voiceMs / max, row.subject ? t.accent : t.muted, t, row.subject ? 1 : 0.6)
+      text(W - PAD - 28, rowY + 24, 15, t.muted, xpText(row.xp), 'text-anchor="end"'),
+      bar(PAD + 124, rowY + 36, W - 2 * PAD - 152, 6, row.xp / max, row.subject ? t.accent : t.muted, t, row.subject ? 1 : 0.6)
     );
   });
-  const gap = (ms: number) => `<tspan fill="${t.text}" font-weight="700">${escapeXml(formatDuration(ms))}</tspan>`;
+  const gap = (xp: number) => `<tspan fill="${t.text}" font-weight="700">${xpText(xp)}</tspan>`;
   const sentence = ahead
-    ? ahead.voiceMs - you.voiceMs < 60_000
+    ? ahead.xp === you.xp
       ? `Neck and neck with ${escapeXml(ahead.name)} for #${ahead.rank}.`
-      : `${gap(ahead.voiceMs - you.voiceMs)} behind ${escapeXml(truncate(ahead.name, 28))} for #${ahead.rank}.`
+      : `${gap(ahead.xp - you.xp)} behind ${escapeXml(truncate(ahead.name, 28))} for #${ahead.rank}.`
     : behind
-      ? `On top, ${gap(you.voiceMs - behind.voiceMs)} ahead of ${escapeXml(truncate(behind.name, 28))}.`
-      : `Nobody else was in voice over ${PERIOD_LABEL[d.period]}.`;
+      ? `On top, ${gap(you.xp - behind.xp)} ahead of ${escapeXml(truncate(behind.name, 28))}.`
+      : `Nobody else earned XP over ${PERIOD_LABEL[d.period]}.`;
   parts.push(text(INNER_X, y + 28 + r.rows.length * RANK_ROW_H + 30, 15, t.muted, sentence));
   return [parts, 28 + panelH];
 };

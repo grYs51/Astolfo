@@ -136,7 +136,7 @@
           @if (race(); as r) {
             <div>
               <h3 class="flex items-baseline justify-between gap-sm text-sm font-semibold text-gray-100">
-                Voice ranking
+                XP ranking
                 <span class="text-xs font-normal tabular-nums text-gray-500">#{{ r.rank }} of {{ r.count }}</span>
               </h3>
               <ol class="mt-sm space-y-xs">
@@ -157,7 +157,7 @@
                     <div class="min-w-0">
                       <div class="flex items-baseline justify-between gap-sm text-sm">
                         <span class="truncate" [class]="row.subject ? 'font-semibold text-gray-100' : 'text-gray-300'">{{ row.name }}</span>
-                        <span class="shrink-0 text-xs tabular-nums text-gray-400">{{ row.duration | humanizeDuration: true }}</span>
+                        <span class="shrink-0 text-xs tabular-nums text-gray-400">{{ row.xp | number }} XP</span>
                       </div>
                       <div class="mt-1 h-1 overflow-hidden rounded-full bg-base-100">
                         <div
@@ -173,18 +173,18 @@
               </ol>
               <p class="mt-sm text-sm text-gray-400">
                 @if (r.ahead; as a) {
-                  @if (a.gap < 60000) {
+                  @if (a.gap === 0) {
                     Neck and neck with {{ a.name }} for #{{ r.rank - 1 }}.
                   } @else {
-                    <strong class="font-semibold text-gray-100">{{ a.gap | humanizeDuration: true }}</strong>
+                    <strong class="font-semibold text-gray-100">{{ a.gap | number }} XP</strong>
                     behind {{ a.name }} for #{{ r.rank - 1 }}.
                   }
                 } @else if (r.lead; as l) {
                   On top,
-                  <strong class="font-semibold text-gray-100">{{ l.gap | humanizeDuration: true }}</strong>
+                  <strong class="font-semibold text-gray-100">{{ l.gap | number }} XP</strong>
                   ahead of {{ l.name }}.
                 } @else {
-                  Nobody else was in voice {{ periodPhrase() }}.
+                  Nobody else earned XP {{ periodPhrase() }}.
                 }
               </p>
             </div>
