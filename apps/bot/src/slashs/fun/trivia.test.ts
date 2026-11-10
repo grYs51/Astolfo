@@ -1,4 +1,4 @@
-import Trivia from './trivia';
+import Trivia, { resultText } from './trivia';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { nextQuestion } from '../../trivia/opentdb';
@@ -126,9 +126,15 @@ describe('/trivia', () => {
     await game.ready();
     expect(lastReply()).toMatchObject({
       content: '🎲 Trivia! Hard question: ×2 XP, 20 seconds.\n**Q?**\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0',
+      allowedMentions: { parse: [] },
     });
     expect(lastReply().files).toBeUndefined();
     game.end();
     await game.done;
+  });
+
+  test('Markdown in an answer from Open Trivia DB is escaped', () => {
+    const nsync = { ...question, correct: '*NSYNC' } as never;
+    expect(resultText(nsync, 0, [], new Map())).toBe('The answer was **\\*NSYNC**. Nobody answered!');
   });
 });

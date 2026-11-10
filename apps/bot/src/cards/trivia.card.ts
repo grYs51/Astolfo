@@ -31,15 +31,16 @@ export interface TriviaResultCardData {
   winners: TriviaPlayer[];
 }
 
-const LETTERS = ['A', 'B', 'C', 'D'];
+export const LETTERS = ['A', 'B', 'C', 'D'];
 const ATTRIBUTION = 'Question from Open Trivia DB (opentdb.com) · CC BY-SA 4.0';
 const SHOWN_WINNERS = 5;
 const ANSWER_H = 64;
 const GAP = 16;
 const ANSWER_W = (W - 2 * PAD - GAP) / 2;
 
-const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+export const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st */
+export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 
 /** Words into lines of at most `max` characters; the last line gets an ellipsis if there's more */
 export const wrap = (s: string, max: number, maxLines: number) => {

@@ -461,6 +461,8 @@ const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptio
 const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions) => {
   const { trivia: places, triviaCorrect } = rules.amounts;
   const { easy, medium, hard } = rules.trivia;
+  // The cap only needs the answers of the same UTC day as `since`; without `since` (a backfill) read them all
+  const dayStart = since && new Date(Math.floor(since.getTime() / DAY) * DAY);
   return counted(
     db,
     Prisma.sql`
@@ -475,6 +477,7 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
         JOIN game_result gr ON gr.id = gp.game_result_id
         WHERE gr.guild_id = ${guildId} AND gr.game_type_id = ${GAME_TYPES.TRIVIA} AND gp.result = ${SCORING.WIN}
           ${memberFilter('gp.user_id', memberId)}
+          ${sinceFilter('gr.created_at', dayStart)}
       ),
       scored AS (
         SELECT *,

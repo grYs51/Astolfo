@@ -183,6 +183,17 @@ describeDb('grantXp on seeded rows', () => {
       // The next day starts again
       [30, 'Trivia: 1st (hard ×2)'],
     ]);
+    // A live grant reads back only to the start of the day: the answer before `since` still counts towards the cap
+    await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-cap' } });
+    await grant({
+      memberId: 'xp-cap',
+      since: at(3, 20, 11),
+      rules: { ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, triviaDailyCap: 50 } },
+    });
+    expect(await capRows()).toEqual([
+      [20, 'Trivia: 1st (hard ×2), daily cap reached'],
+      [30, 'Trivia: 1st (hard ×2)'],
+    ]);
     // Put the default rows back for the tests after
     await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-cap' } });
     await grant({ memberId: 'xp-cap' });

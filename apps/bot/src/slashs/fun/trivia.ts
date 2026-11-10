@@ -8,6 +8,7 @@ import {
   ComponentType,
   InteractionContextType,
   SlashCommandBuilder,
+  escapeMarkdown,
 } from 'discord.js';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
@@ -19,18 +20,15 @@ import { currentRules } from '../../xp/rules';
 import { nextQuestion, TriviaQuestion } from '../../trivia/opentdb';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
-import { triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
+import { capitalise, LETTERS, ordinal, triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 export const ANSWER_MS = 20_000;
-const LETTERS = ['A', 'B', 'C', 'D'];
 const SECONDS = ANSWER_MS / 1000;
 
 /** Channels with a question running: one at a time per channel */
 const running = new Set<string>();
 
-const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
-const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
 const label = (q: TriviaQuestion, i: number) => (q.answers.length === 2 ? q.answers[i] : `${LETTERS[i]}: ${q.answers[i]}`).slice(0, 80);
 
 const buttons = (q: TriviaQuestion, over: boolean) =>
@@ -46,7 +44,8 @@ const buttons = (q: TriviaQuestion, over: boolean) =>
 
 /** The result as text: it goes next to the card (names there can't be clicked) and stands alone if the card fails */
 export const resultText = (q: TriviaQuestion, answered: number, correctOrder: string[], xp: Map<string, number>) => {
-  const head = `The answer was **${q.correct}**.`;
+  // Answers come from Open Trivia DB and can hold Markdown ("*NSYNC")
+  const head = `The answer was **${escapeMarkdown(q.correct)}**.`;
   if (!answered) return `${head} Nobody answered!`;
   if (!correctOrder.length) return `${head} Nobody got it right.`;
   const places = correctOrder.map((id, i) => `${ordinal(i + 1)} <@${id}>${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`);
@@ -98,7 +97,9 @@ export default class Trivia extends BaseSlash {
       const intro = `🎲 Trivia! ${capitalise(q.difficulty)} question: ×${factor} XP, ${SECONDS} seconds.`;
       const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: SECONDS }, THEMES[DEFAULT_THEME]), 'trivia.png');
       await InterActionUtils.editReply(interaction, {
-        content: questionCard ? intro : `${intro}\n**${q.question}**${ATTRIBUTION_LINE}`,
+        content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${ATTRIBUTION_LINE}`,
+        // The question is third-party text: it must never ping anyone
+        allowedMentions: { parse: [] },
         ...(questionCard && { files: [questionCard] }),
         components: [buttons(q, false)],
       });

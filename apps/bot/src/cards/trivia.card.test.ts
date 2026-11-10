@@ -1,5 +1,5 @@
 import { renderPng } from './render';
-import { triviaQuestionCard, triviaResultCard, wrap } from './trivia.card';
+import { ordinal, triviaQuestionCard, triviaResultCard, wrap } from './trivia.card';
 import { THEMES } from './themes';
 
 const question = {
@@ -53,4 +53,11 @@ describe('triviaResultCard', () => {
     expect(triviaResultCard({ ...result, picks: [0, 0, 0, 0], winners: [] }, THEMES.dark)).toContain('Nobody answered!');
     expect(triviaResultCard({ ...result, picks: [2, 0, 1, 0], winners: [] }, THEMES.dark)).toContain('Nobody got it right (3 tried).');
   });
+});
+
+describe('ordinal', () => {
+  test.each([[1, '1st'], [2, '2nd'], [3, '3rd'], [4, '4th'], [11, '11th'], [12, '12th'], [13, '13th'], [21, '21st'], [22, '22nd'], [111, '111th']])(
+    '%i is %s',
+    (n, word) => expect(ordinal(n)).toBe(word)
+  );
 });
