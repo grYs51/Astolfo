@@ -161,7 +161,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
         <div>
           <h2 class="text-base font-semibold text-gray-100">Levels</h2>
           <p class="mt-xs text-sm text-gray-400">
-            Members earn XP from voice, messages, streaks and rock-paper-scissors wins. Pick a channel to announce
+            Members earn XP from voice, messages, streaks and game wins. Pick a channel to announce
             level-ups.
           </p>
         </div>

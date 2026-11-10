@@ -99,6 +99,8 @@ describeDb('grantXp on seeded rows', () => {
     await game('xp-a', 'xp-c', 2);
     await game('xp-a', undefined, 3, GAME_TYPES.ROCK_PAPER_SCISSORS_ASTOLFO);
     await game('xp-a', 'xp-c', 4);
+    await game('xp-a', undefined, 5, GAME_TYPES.TIC_TAC_TOE_ASTOLFO);
+    await game('xp-a', 'xp-c', 6, GAME_TYPES.TIC_TAC_TOE);
   });
 
   afterAll(async () => {
@@ -122,12 +124,13 @@ describeDb('grantXp on seeded rows', () => {
     expect((await rows('MESSAGE')).map((r) => r.amount)).toEqual([2, 2]);
   });
 
-  test('wins against another member, more for a streak; a win against Astolfo earns nothing', async () => {
-    // The game against Astolfo between them doesn't break the streak either
+  test('wins against another member, more for a streak across both games; a win against Astolfo earns nothing', async () => {
+    // The games against Astolfo between them don't break the streak either
     expect((await rows('GAME')).map((r) => [r.member_id, r.amount, r.note])).toEqual([
       ['xp-a', 5, 'Won rock-paper-scissors'],
       ['xp-a', 7, 'Won rock-paper-scissors (2 in a row)'],
       ['xp-a', 9, 'Won rock-paper-scissors (3 in a row)'],
+      ['xp-a', 11, 'Won tic-tac-toe (4 in a row)'],
     ]);
   });
 

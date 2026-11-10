@@ -7,7 +7,7 @@ const TILES: { key: XpTileKey; label: string; hint: string; sources: XpSource[] 
   { key: 'voice', label: 'Voice sessions', hint: 'More with more people, staying longer, camera or screen share; a quarter while deafened', sources: ['VOICE'] },
   { key: 'messages', label: 'Messages', hint: 'One message a minute counts', sources: ['MESSAGE'] },
   { key: 'streak', label: 'Streak days', hint: 'A day with 10+ minutes in voice, when the day before had too', sources: ['STREAK'] },
-  { key: 'games', label: 'Games won', hint: 'Rock paper scissors against another member; more for a win streak', sources: ['GAME'] },
+  { key: 'games', label: 'Games won', hint: 'Rock paper scissors and tic-tac-toe against another member; more for a win streak', sources: ['GAME'] },
   {
     key: 'bonuses',
     label: 'Bonuses',

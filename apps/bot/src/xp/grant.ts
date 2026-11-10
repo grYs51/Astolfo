@@ -421,23 +421,24 @@ const grantStreaks = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpt
       WHERE n >= 2 ${sinceFilter('earned', since)}`
   );
 
-/** Rock-paper-scissors wins against another member, more for a win streak (games against Astolfo don't count) */
+/** Rock-paper-scissors and tic-tac-toe wins against another member, more for a win streak across both (games against Astolfo don't count) */
 const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions) => {
   const { gameWin, gameStreakStep, gameStreakCap } = rules.amounts;
   return counted(
     db,
     Prisma.sql`
       WITH games AS (
-        SELECT gp.user_id, gr.id AS game_id, gr.created_at, gp.result = ${SCORING.WIN} AS won,
+        SELECT gp.user_id, gr.id AS game_id, gr.game_type_id, gr.created_at, gp.result = ${SCORING.WIN} AS won,
           ROW_NUMBER() OVER (PARTITION BY gp.user_id ORDER BY gr.created_at, gr.id)
             - ROW_NUMBER() OVER (PARTITION BY gp.user_id, gp.result = ${SCORING.WIN} ORDER BY gr.created_at, gr.id) AS run
         FROM game_player gp
         JOIN game_result gr ON gr.id = gp.game_result_id
-        WHERE gr.guild_id = ${guildId} AND gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS}
+        WHERE gr.guild_id = ${guildId}
+          AND gr.game_type_id IN (${GAME_TYPES.ROCK_PAPER_SCISSORS}, ${GAME_TYPES.TIC_TAC_TOE})
           ${memberFilter('gp.user_id', memberId)}
       ),
       wins AS (
-        SELECT user_id, game_id, created_at,
+        SELECT user_id, game_id, game_type_id, created_at,
           ROW_NUMBER() OVER (PARTITION BY user_id, run ORDER BY created_at, game_id) AS in_a_row
         FROM games
         WHERE won
@@ -445,7 +446,8 @@ const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptio
       INSERT INTO xp_events (id, guild_id, member_id, source, amount, note, key, created_at)
       SELECT gen_random_uuid()::text, ${guildId}, user_id, 'GAME',
         ${gameWin} + LEAST(${gameStreakCap}, ${gameStreakStep} * (in_a_row - 1))::int,
-        'Won rock-paper-scissors' || CASE WHEN in_a_row > 1 THEN ' (' || in_a_row || ' in a row)' ELSE '' END,
+        CASE game_type_id WHEN ${GAME_TYPES.TIC_TAC_TOE} THEN 'Won tic-tac-toe' ELSE 'Won rock-paper-scissors' END
+          || CASE WHEN in_a_row > 1 THEN ' (' || in_a_row || ' in a row)' ELSE '' END,
         'game:' || game_id || ':' || user_id, created_at
       FROM wins
       WHERE TRUE ${sinceFilter('created_at', since)}`
