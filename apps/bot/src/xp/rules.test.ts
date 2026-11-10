@@ -1,4 +1,4 @@
-import { DEFAULT_RULES, levelFor, parseXpRules, xpForLevel } from './rules';
+import { DEFAULT_RULES, currentRules, levelFor, loadRules, parseXpRules, setRules, xpForLevel } from './rules';
 
 const withRules = (patch: object) => JSON.parse(JSON.stringify({ ...DEFAULT_RULES, ...patch }));
 
@@ -67,5 +67,27 @@ describe('parseXpRules', () => {
   test('drops unknown fields', () => {
     const parsed = parseXpRules({ ...DEFAULT_RULES, extra: 1 });
     expect(parsed).toEqual({ rules: DEFAULT_RULES });
+  });
+});
+
+describe('trivia rules', () => {
+  test('trivia needs four amounts and multipliers in range', () => {
+    expect(parseXpRules(withRules({ amounts: { ...DEFAULT_RULES.amounts, trivia: [15, 10, 7] } }))).toEqual({
+      field: 'amounts.trivia',
+      error: 'amounts.trivia must be four amounts',
+    });
+    expect(parseXpRules(withRules({ trivia: { easy: 1, medium: 1.5, hard: 6 } }))).toMatchObject({ field: 'trivia.hard' });
+    expect(parseXpRules(withRules({}))).toEqual({ rules: DEFAULT_RULES });
+  });
+
+  test('rules saved before trivia existed keep their values and get the trivia defaults', async () => {
+    const { trivia: _multipliers, ...older } = JSON.parse(JSON.stringify(DEFAULT_RULES));
+    delete older.amounts.trivia;
+    delete older.amounts.triviaCorrect;
+    delete older.thresholds.triviaDailyCap;
+    older.amounts.message = 7;
+    await loadRules({ xpRules: { findUnique: async () => ({ rules: older }) } } as never);
+    expect(currentRules()).toEqual({ ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, message: 7 } });
+    setRules(null);
   });
 });

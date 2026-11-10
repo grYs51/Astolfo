@@ -101,6 +101,25 @@ describeDb('grantXp on seeded rows', () => {
     await game('xp-a', 'xp-c', 4);
     await game('xp-a', undefined, 5, GAME_TYPES.TIC_TAC_TOE_ASTOLFO);
     await game('xp-a', 'xp-c', 6, GAME_TYPES.TIC_TAC_TOE);
+    const trivia = (day: number, minute: number, difficulty: string, order: string[], wrong: string[] = []) =>
+      db.game_result.create({
+        data: {
+          guild_id: G,
+          game_type_id: GAME_TYPES.TRIVIA,
+          created_at: at(day, 20, minute),
+          metadata: { difficulty, correctOrder: order },
+          players: {
+            create: [
+              ...order.map((user_id) => ({ user_id, result: SCORING.WIN })),
+              ...wrong.map((user_id) => ({ user_id, result: SCORING.LOSS })),
+            ],
+          },
+        },
+      });
+    await trivia(2, 0, 'hard', ['xp-t1', 'xp-t2'], ['xp-t3']);
+    await trivia(2, 1, 'medium', ['xp-p1', 'xp-p2', 'xp-p3', 'xp-p4', 'xp-t2']);
+    for (const minute of [10, 11, 12]) await trivia(3, minute, 'hard', ['xp-cap']);
+    await trivia(4, 0, 'hard', ['xp-cap']);
   });
 
   afterAll(async () => {
@@ -132,6 +151,41 @@ describeDb('grantXp on seeded rows', () => {
       ['xp-a', 9, 'Won rock-paper-scissors (3 in a row)'],
       ['xp-a', 11, 'Won tic-tac-toe (4 in a row)'],
     ]);
+  });
+
+  test('trivia: each place times the difficulty, rounded half up; a wrong answer earns nothing', async () => {
+    const trivia = (await rows('TRIVIA')).filter((r) => r.member_id !== 'xp-cap');
+    expect(trivia.map((r) => [r.member_id, r.amount, r.note])).toEqual([
+      ['xp-t1', 30, 'Trivia: 1st (hard ×2)'],
+      ['xp-t2', 20, 'Trivia: 2nd (hard ×2)'],
+      ['xp-p1', 23, 'Trivia: 1st (medium ×1.5)'],
+      ['xp-p2', 15, 'Trivia: 2nd (medium ×1.5)'],
+      ['xp-p3', 11, 'Trivia: 3rd (medium ×1.5)'],
+      ['xp-p4', 8, 'Trivia: 4th (medium ×1.5)'],
+      ['xp-t2', 5, 'Trivia: 5th (medium ×1.5)'],
+    ]);
+  });
+
+  test('the daily trivia cap cuts the grant that crosses it and skips the rest of that day', async () => {
+    const capRows = async () =>
+      (await rows('TRIVIA')).filter((r) => r.member_id === 'xp-cap').map((r) => [r.amount, r.note]);
+    expect(await capRows()).toEqual([
+      [30, 'Trivia: 1st (hard ×2)'],
+      [30, 'Trivia: 1st (hard ×2)'],
+      [30, 'Trivia: 1st (hard ×2)'],
+      [30, 'Trivia: 1st (hard ×2)'],
+    ]);
+    await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-cap' } });
+    await grant({ memberId: 'xp-cap', rules: { ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, triviaDailyCap: 50 } } });
+    expect(await capRows()).toEqual([
+      [30, 'Trivia: 1st (hard ×2)'],
+      [20, 'Trivia: 1st (hard ×2), daily cap reached'],
+      // The next day starts again
+      [30, 'Trivia: 1st (hard ×2)'],
+    ]);
+    // Put the default rows back for the tests after
+    await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-cap' } });
+    await grant({ memberId: 'xp-cap' });
   });
 
   test('a music bot in the channel does not raise the crowd, and earns nothing', async () => {

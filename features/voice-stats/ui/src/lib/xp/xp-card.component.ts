@@ -11,6 +11,7 @@ const ICONS: Record<XpTileKey, string[]> = {
     'M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z',
   ],
   games: ['M6 9H4.5a2.5 2.5 0 0 1 0-5H6', 'M18 9h1.5a2.5 2.5 0 0 0 0-5H18', 'M4 22h16', 'M18 2H6v7a6 6 0 0 0 12 0V2Z', 'M12 15v4'],
+  trivia: ['M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3', 'M12 17h.01', 'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Z'],
   bonuses: ['M12 3l1.9 5.8L20 10l-5 3.6L16.2 20 12 16.5 7.8 20 9 13.6 4 10l6.1-1.2Z'],
 };
 
@@ -51,7 +52,7 @@ const ICONS: Record<XpTileKey, string[]> = {
         </p>
       </div>
 
-      <dl class="mt-md grid grid-cols-2 gap-sm sm:grid-cols-3 lg:grid-cols-5">
+      <dl class="mt-md grid grid-cols-2 gap-sm sm:grid-cols-3 lg:grid-cols-6">
         @for (tile of tiles(); track tile.key) {
           <div class="rounded-lg border border-white/5 bg-base-200 p-sm text-center" [title]="tile.hint">
             <dt class="flex items-center justify-center gap-xs text-xs text-gray-400">
