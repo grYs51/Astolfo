@@ -64,7 +64,7 @@ const user = (id: string, bot = false) => ({ id, bot, toString: () => `<@${id}>`
 /** Starts a game of a vs `opponent` and returns a way to click its cells */
 const startGame = async (opponent = user('b'), difficulty?: string) => {
   const handlers: Record<string, (...args: never[]) => Promise<unknown>> = {};
-  const collector = { on: (event: string, handler: never) => (handlers[event] = handler), stop: jest.fn() };
+  const collector = { on: (event: string, handler: never) => (handlers[event] = handler), stop: jest.fn(), resetTimer: jest.fn() };
   const create = jest.fn(async () => ({}));
   const interaction = {
     id: 'int',
@@ -107,14 +107,16 @@ describe('/tictactoe', () => {
     expect(awardAndAnnounce).toHaveBeenCalledWith(expect.anything(), 'g', 'a', ['GAME']);
   });
 
-  test('a click out of turn, or by someone else, plays nothing', async () => {
-    const { click } = await startGame();
+  test('a click out of turn, or by someone else, plays nothing and does not keep the game alive', async () => {
+    const { click, collector } = await startGame();
     const early = await click('b', 0);
     const stranger = await click('c', 0);
     expect(early.reply).toHaveBeenCalledWith({ content: "It's not your turn.", ephemeral: true });
     expect(stranger.reply).toHaveBeenCalledWith({ content: "This isn't your game.", ephemeral: true });
+    expect(collector.resetTimer).not.toHaveBeenCalled();
     const first = await click('a', 0);
     expect(first.update).toHaveBeenCalledTimes(1);
+    expect(collector.resetTimer).toHaveBeenCalledTimes(1);
   });
 
   test('against Astolfo it answers each move, saves only the member, and earns no XP', async () => {
@@ -135,7 +137,7 @@ describe('/tictactoe', () => {
   test('a minute without a move cancels the game and saves nothing', async () => {
     const { click, create, end } = await startGame();
     await click('a', 0);
-    await end('idle');
+    await end('time');
     expect(create).not.toHaveBeenCalled();
     expect(InterActionUtils.editReply).toHaveBeenLastCalledWith(expect.anything(), {
       content: "Game cancelled: <@b> didn't move for a minute.",

@@ -144,9 +144,10 @@ export default class TicTacToe extends BaseSlash {
 
     const collector = interaction.channel.createMessageComponentCollector({
       filter: (i) =>
-        i.isButton() && i.customId.startsWith('ttt:') && i.message.interactionMetadata!.id.endsWith(interaction.id),
+        i.isButton() && i.customId.startsWith('ttt:') && i.message.interactionMetadata?.id.endsWith(interaction.id) === true,
       componentType: ComponentType.Button,
-      idle: 60_000,
+      // A plain timer, restarted on each move: `idle` would also restart on clicks that play nothing
+      time: 60_000,
     });
 
     const play = (mark: Mark, cell: number) => {
@@ -164,6 +165,7 @@ export default class TicTacToe extends BaseSlash {
         const notice = i.user.id === players[other(turn)].id ? "It's not your turn." : "This isn't your game.";
         return void i.reply({ content: notice, ephemeral: true }).catch(() => undefined);
       }
+      collector.resetTimer();
       result = play(turn, cell);
       if (!result && vsBot) result = play('O', astolfoMove(board, difficulty));
       const finished = result;
@@ -182,7 +184,7 @@ export default class TicTacToe extends BaseSlash {
     });
 
     collector.on('end', async (_collected, reason) => {
-      if (reason === 'idle') {
+      if (reason === 'time') {
         await InterActionUtils.editReply(interaction, {
           content: `Game cancelled: ${players[turn]} didn't move for a minute.`,
           components: [],
