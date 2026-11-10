@@ -15,6 +15,8 @@ import {
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getMemberHabits, getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
 import { nextMilestone } from '../../../../stats/milestones';
+import { totalXp } from '../../../../xp/grant';
+import { currentRules, levelProgress } from '../../../../xp/rules';
 
 type UserTotalsRow = { total_duration: bigint; session_count: bigint };
 type UserChannelRow = { channel_id: string; total_duration: bigint; session_count: bigint };
@@ -46,6 +48,7 @@ export const getVoiceStatsUser: RequestHandler<
       streak,
       lifetimeMs,
       habits,
+      xp,
     ] = await Promise.all([
       req.db.$queryRaw<UserTotalsRow[]>`
         SELECT
@@ -130,8 +133,14 @@ export const getVoiceStatsUser: RequestHandler<
       getMemberStreak(req.db, serverId, userId),
       lifetimeVoiceMs(req.db, serverId, userId),
       getMemberHabits(req.db, serverId, userId, period),
+      totalXp(req.db, serverId, userId),
     ]);
-    const allTime = { streak, lifetimeMs, nextMilestone: nextMilestone(lifetimeMs) ?? null };
+    const allTime = {
+      streak,
+      lifetimeMs,
+      nextMilestone: nextMilestone(lifetimeMs) ?? null,
+      level: levelProgress(xp, currentRules()),
+    };
 
     const messages = {
       count: messageChannelRows.reduce((sum, row) => sum + Number(row.count), 0),

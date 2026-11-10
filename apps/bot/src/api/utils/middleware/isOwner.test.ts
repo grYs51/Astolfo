@@ -41,7 +41,7 @@ describe('isOwner', () => {
     const routes = router.stack.flatMap((layer) => layer.route ?? []);
     const isPublic = (route: { path: string }) => route.path === '/notice';
 
-    expect(routes.length).toBe(11);
+    expect(routes.length).toBe(14);
     // Mounted ahead of the action routes, so they only take JSON
     expect(router.stack.some((layer) => !layer.route && layer.handle === jsonOnly)).toBe(true);
     expect(routes.filter(isPublic)).toHaveLength(1);

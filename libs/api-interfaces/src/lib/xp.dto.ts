@@ -1,4 +1,4 @@
-import type { DateLike } from './voice-stats.dto';
+import type { DateLike, DiscordChannel, DiscordMember } from './voice-stats.dto';
 
 /**
  * The XP rules: one global set, tuned on the owner's /admin panel (defaults in the bot's `xp/rules.ts`).
@@ -99,12 +99,6 @@ export interface XpLevel {
   nextLevelXp: number;
 }
 
-export interface XpPerson {
-  id: string;
-  name: string;
-  avatar: string | null;
-}
-
 export interface XpHistoryEntry {
   id: string;
   source: XpSource;
@@ -112,7 +106,7 @@ export interface XpHistoryEntry {
   note: string;
   at: DateLike;
   /** VOICE rows only */
-  channelId?: string;
+  channel?: DiscordChannel;
   segments?: XpSegment[];
 }
 
@@ -121,6 +115,6 @@ export interface XpHistory {
   level: XpLevel;
   entries: XpHistoryEntry[];
   /** Everyone named in the page's segments */
-  people: Record<string, XpPerson>;
+  people: Record<string, DiscordMember>;
   nextCursor: string | null;
 }

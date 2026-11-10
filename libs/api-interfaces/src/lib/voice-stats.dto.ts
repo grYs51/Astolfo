@@ -1,3 +1,5 @@
+import type { XpLevel } from './xp.dto';
+
 /**
  * Wire types for the voice-stats endpoints
  * (apps/bot/src/api/routes/features/voice-stats/*).
@@ -245,6 +247,8 @@ export interface VoiceStatsUser {
   lifetimeMs: number;
   /** Next lifetime voice-hours milestone; null once every milestone is reached */
   nextMilestone: { hours: number; remainingMs: number } | null;
+  /** Level and XP on the server; all time */
+  level: XpLevel;
 }
 
 // Voice Stats Timeline Response

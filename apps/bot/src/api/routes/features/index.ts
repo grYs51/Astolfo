@@ -27,6 +27,7 @@ import {
   getActivityCalendar,
   getVoiceHabits,
   getStatsCard,
+  getUserXp,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -141,6 +142,12 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getUserGames,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/xp',
+    isAuthenticated,
+    isServerMember,
+    getUserXp,
   );
   router.get(
     '/features/voice-stats/:serverId/calendar',
