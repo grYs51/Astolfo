@@ -12,6 +12,7 @@ describe('xpTiles', () => {
       ['voice', 12, 840],
       ['messages', 30, 60],
       ['streak', 0, 0],
+      ['trivia', 0, 0],
       ['games', 0, 0],
       ['bonuses', 3, 130],
     ]);

@@ -53,6 +53,21 @@ export const XP_RULE_GROUPS: { title: string; hint: string; fields: XpRuleField[
     ],
   },
   {
+    title: 'Trivia',
+    hint: 'The quickest right answers earn the most, times the difficulty multiplier. XP stops at the daily cap.',
+    fields: [
+      f('amounts.trivia.0', 'Trivia 1st'),
+      f('amounts.trivia.1', 'Trivia 2nd'),
+      f('amounts.trivia.2', 'Trivia 3rd'),
+      f('amounts.trivia.3', 'Trivia 4th'),
+      f('amounts.triviaCorrect', 'Every later right answer'),
+      f('trivia.easy', 'Easy ×', 0.01),
+      f('trivia.medium', 'Medium ×', 0.01),
+      f('trivia.hard', 'Hard ×', 0.01),
+      f('thresholds.triviaDailyCap', 'Daily cap per member'),
+    ],
+  },
+  {
     title: 'Thresholds',
     hint: 'When the bonuses count.',
     fields: [

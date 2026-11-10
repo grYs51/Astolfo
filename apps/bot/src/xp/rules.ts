@@ -30,6 +30,8 @@ export const DEFAULT_RULES: XpRules = {
     welcome: 20,
     milestone: 100,
     weekly: [50, 30, 20],
+    trivia: [15, 10, 7, 5],
+    triviaCorrect: 3,
   },
   thresholds: {
     togetherMin: 10,
@@ -37,7 +39,9 @@ export const DEFAULT_RULES: XpRules = {
     welcomeAfterDays: 30,
     startersPerDay: 3,
     milestoneHours: [...MILESTONE_HOURS],
+    triviaDailyCap: 500,
   },
+  trivia: { easy: 1, medium: 1.5, hard: 2 },
 };
 
 /** XP needed to reach `level` from 0: the sum of `levelStep·L + levelBase` for L below it */
@@ -98,13 +102,16 @@ const SHAPE: Record<string, Kind | Record<string, Kind>> = {
     reconnect: 'amount',
     welcome: 'amount',
     milestone: 'amount',
+    triviaCorrect: 'amount',
   },
   thresholds: {
     togetherMin: 'count',
     reconnectDays: 'count',
     welcomeAfterDays: 'count',
     startersPerDay: 'count',
+    triviaDailyCap: 'count',
   },
+  trivia: { easy: 'multiplier', medium: 'multiplier', hard: 'multiplier' },
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -141,15 +148,17 @@ export const parseXpRules = (body: unknown): { rules: XpRules } | { error: strin
     out[key] = copy;
   }
 
-  const amounts = (body['amounts'] as Record<string, unknown>)['weekly'];
-  if (!Array.isArray(amounts) || amounts.length !== 3) {
-    return { field: 'amounts.weekly', error: 'amounts.weekly must be three amounts' };
+  for (const [name, length, words] of [['weekly', 3, 'three'], ['trivia', 4, 'four']] as const) {
+    const amounts = (body['amounts'] as Record<string, unknown>)[name];
+    if (!Array.isArray(amounts) || amounts.length !== length) {
+      return { field: `amounts.${name}`, error: `amounts.${name} must be ${words} amounts` };
+    }
+    for (const [i, amount] of amounts.entries()) {
+      const error = checkNumber(amount, 'amount', `amounts.${name}.${i}`);
+      if (error) return error;
+    }
+    (out['amounts'] as Record<string, unknown>)[name] = [...amounts];
   }
-  for (const [i, amount] of amounts.entries()) {
-    const error = checkNumber(amount, 'amount', `amounts.weekly.${i}`);
-    if (error) return error;
-  }
-  (out['amounts'] as Record<string, unknown>)['weekly'] = [...amounts];
 
   const hours = (body['thresholds'] as Record<string, unknown>)['milestoneHours'];
   if (!Array.isArray(hours) || hours.length > 20) {
@@ -177,11 +186,21 @@ export const setRules = (rules: XpRules | null) => {
   current = rules ?? DEFAULT_RULES;
 };
 
+/** Saved rules with any group or field added since they were saved filled in from the defaults */
+const withDefaults = (saved: unknown) => {
+  if (!isObject(saved)) return saved;
+  const merged: Record<string, unknown> = { ...DEFAULT_RULES, ...saved };
+  for (const [key, value] of Object.entries(DEFAULT_RULES)) {
+    if (isObject(value) && isObject(saved[key])) merged[key] = { ...value, ...saved[key] };
+  }
+  return merged;
+};
+
 /** Load the saved rules at startup; a row that no longer parses (an older shape) falls back to the defaults */
 export const loadRules = async (db: Pick<Db, 'xpRules'>) => {
   const row = await db.xpRules.findUnique({ where: { id: 1 } });
   if (!row) return setRules(null);
-  const parsed = parseXpRules(row.rules);
+  const parsed = parseXpRules(withDefaults(row.rules));
   if ('error' in parsed) {
     Logger.warn(`Saved XP rules are invalid (${parsed.error}), using the defaults`);
     return setRules(null);
