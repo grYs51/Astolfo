@@ -29,9 +29,12 @@ export const DOWN_MESSAGE =
   "🔌 Open Trivia DB (opentdb.com) is down or not responding right now, so I can't ask a question. Try again later.";
 export const BUSY_MESSAGE = 'Open Trivia DB is busy. Try again in a few seconds.';
 
-// Ten questions per request, kept per guild: the API allows one request per 5 s per IP, so asking for one
-// at a time would hit that limit far more often (a session token would cost a second request, so no token)
-const queues = new Map<string, TriviaQuestion[]>();
+// Ten questions per request, in one queue for every server: the API allows one request per 5 s per IP, so
+// asking for one at a time would hit that limit far more often (a session token would cost a second request).
+// Questions asked while a request is out wait for it instead of sending another.
+let queue: TriviaQuestion[] = [];
+let inFlight: Promise<TriviaFetch> | undefined;
+const DIFFICULTIES: TriviaDifficulty[] = ['easy', 'medium', 'hard'];
 
 const shuffle = <T>(items: T[], random: () => number) => {
   const copy = [...items];
@@ -46,23 +49,36 @@ export const toQuestion = (raw: ApiQuestion, random = Math.random): TriviaQuesti
   const d = decodeURIComponent;
   const correct = d(raw.correct_answer);
   const answers = [correct, ...raw.incorrect_answers.map(d)];
+  const difficulty = d(raw.difficulty) as TriviaDifficulty;
   return {
     category: d(raw.category),
-    difficulty: d(raw.difficulty) as TriviaDifficulty,
+    // Anything unexpected counts as easy, the same as the XP grant does
+    difficulty: DIFFICULTIES.includes(difficulty) ? difficulty : 'easy',
     question: d(raw.question),
     correct,
     answers: d(raw.type) === 'boolean' ? ['True', 'False'] : shuffle(answers, random),
   };
 };
 
-/** The next question for a guild, or a message saying why Open Trivia DB couldn't give one */
-export const nextQuestion = async (guildId: string, fetchFn: typeof fetch = fetch): Promise<TriviaFetch> => {
-  const queued = queues.get(guildId);
-  if (queued?.length) return { ok: true, question: queued.shift() as TriviaQuestion };
+/** The next question, or a message saying why Open Trivia DB couldn't give one */
+export const nextQuestion = async (fetchFn: typeof fetch = fetch): Promise<TriviaFetch> => {
+  const queued = queue.shift();
+  if (queued) return { ok: true, question: queued };
+  inFlight ??= fetchBatch(fetchFn).finally(() => (inFlight = undefined));
+  const fetched = await inFlight;
+  if (!fetched.ok) return fetched;
+  // Everyone who waited shares the batch; if it ran out, ask again
+  const question = queue.shift();
+  return question ? { ok: true, question } : nextQuestion(fetchFn);
+};
 
+/** Fills the queue with ten questions */
+const fetchBatch = async (fetchFn: typeof fetch): Promise<TriviaFetch> => {
   let body: { response_code: number; results: ApiQuestion[] };
   try {
     const res = await fetchFn(API, { signal: AbortSignal.timeout(TIMEOUT_MS) });
+    // The rate limit comes as HTTP 429 (with response_code 5)
+    if (res.status === 429) return { ok: false, message: BUSY_MESSAGE };
     if (res.status >= 500) throw new Error(`HTTP ${res.status}`);
     if (!res.ok) {
       Logger.warn(`Open Trivia DB answered HTTP ${res.status}`);
@@ -79,10 +95,11 @@ export const nextQuestion = async (guildId: string, fetchFn: typeof fetch = fetc
     Logger.warn(`Open Trivia DB returned response code ${body.response_code}`);
     return { ok: false, message: `Open Trivia DB returned an error (code ${body.response_code}).` };
   }
-  const [first, ...rest] = body.results.map((raw) => toQuestion(raw));
-  queues.set(guildId, rest);
-  return { ok: true, question: first };
+  queue.push(...body.results.map((raw) => toQuestion(raw)));
+  return { ok: true, question: queue[0] };
 };
 
 /** For tests */
-export const clearQueues = () => queues.clear();
+export const clearQueue = () => {
+  queue = [];
+};

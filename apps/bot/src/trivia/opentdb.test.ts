@@ -1,4 +1,4 @@
-import { BUSY_MESSAGE, clearQueues, DOWN_MESSAGE, nextQuestion, toQuestion } from './opentdb';
+import { BUSY_MESSAGE, clearQueue, DOWN_MESSAGE, nextQuestion, toQuestion } from './opentdb';
 
 jest.mock('../utils/logger', () => ({ Logger: { warn: jest.fn() } }));
 
@@ -14,7 +14,7 @@ const raw = (n: number, type = 'multiple') => ({
 const reply = (status: number, body?: unknown) =>
   jest.fn(async () => ({ status, ok: status < 300, json: async () => body }) as Response);
 
-beforeEach(clearQueues);
+beforeEach(clearQueue);
 
 describe('toQuestion', () => {
   test('decodes every field and keeps the right answer among the answers', () => {
@@ -29,10 +29,10 @@ describe('toQuestion', () => {
 });
 
 describe('nextQuestion', () => {
-  test('one request gives ten questions, served in order for that guild', async () => {
+  test('one request gives ten questions, served in order', async () => {
     const fetchFn = reply(200, { response_code: 0, results: Array.from({ length: 10 }, (_, i) => raw(i)) });
-    const first = await nextQuestion('g', fetchFn);
-    const second = await nextQuestion('g', fetchFn);
+    const first = await nextQuestion(fetchFn);
+    const second = await nextQuestion(fetchFn);
     expect(fetchFn).toHaveBeenCalledTimes(1);
     expect(first).toMatchObject({ ok: true, question: { question: "What's question 0?" } });
     expect(second).toMatchObject({ ok: true, question: { question: "What's question 1?" } });
@@ -43,9 +43,23 @@ describe('nextQuestion', () => {
     ['a timeout', jest.fn(async () => { throw new DOMException('timed out', 'TimeoutError'); }), DOWN_MESSAGE],
     ['a 5xx', reply(503), DOWN_MESSAGE],
     ['another HTTP error', reply(404), 'Open Trivia DB returned an error (HTTP 404).'],
-    ['the rate limit', reply(200, { response_code: 5, results: [] }), BUSY_MESSAGE],
+    ['the rate limit (HTTP 429)', reply(429, { response_code: 5, results: [] }), BUSY_MESSAGE],
+    ['the rate limit code on a 200', reply(200, { response_code: 5, results: [] }), BUSY_MESSAGE],
     ['another response code', reply(200, { response_code: 2, results: [] }), 'Open Trivia DB returned an error (code 2).'],
   ])('%s says what went wrong', async (_case, fetchFn, message) => {
-    expect(await nextQuestion('g', fetchFn as unknown as typeof fetch)).toEqual({ ok: false, message });
+    expect(await nextQuestion(fetchFn as unknown as typeof fetch)).toEqual({ ok: false, message });
+  });
+});
+
+describe('questions asked at the same time', () => {
+  test('share one request and get different questions', async () => {
+    const fetchFn = reply(200, { response_code: 0, results: Array.from({ length: 10 }, (_, i) => raw(i)) });
+    const [a, b] = await Promise.all([nextQuestion(fetchFn), nextQuestion(fetchFn)]);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
+    expect(a.ok && b.ok && a.question.question !== b.question.question).toBe(true);
+  });
+
+  test('an unknown difficulty counts as easy', () => {
+    expect(toQuestion({ ...raw(1), difficulty: 'legendary' }).difficulty).toBe('easy');
   });
 });
