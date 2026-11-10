@@ -49,7 +49,6 @@ const main = async () => {
       memberName: 'Astolfo',
       avatar: avatar(0),
       serverName: 'Paladins of France',
-      favouriteChannelName: 'round-table',
       summary: {
         voiceMs: 63_900_000,
         previousVoiceMs: 55_000_000,
@@ -69,6 +68,15 @@ const main = async () => {
         lifetimeMs: 317_000_000, // 88h
       },
       companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+      // #2 of 14: Roland above, Oliver below
+      ranking: {
+        members: 14,
+        rows: [
+          { name: NAMES[2], avatar: avatar(2), voiceMs: 72_400_000, rank: 1, subject: false },
+          { name: NAMES[0], avatar: avatar(0), voiceMs: 63_900_000, rank: 2, subject: true },
+          { name: NAMES[3], avatar: avatar(3), voiceMs: 41_200_000, rank: 3, subject: false },
+        ],
+      },
     };
 
   const cards: Record<string, (theme: ThemeName) => string> = {
@@ -97,6 +105,7 @@ const main = async () => {
           ...stats,
           sections: STATS_CARD_SECTIONS,
           habits: { voice: 63_900_000, muted: 20_000_000, deafened: 6_000_000, video: 5_400_000, streaming: 12_600_000 },
+          online: { ms: 690_000_000, share: 0.27 },
           calendar: {
             start: '2025-11-10',
             end: '2026-11-10',

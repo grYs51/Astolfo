@@ -6,7 +6,8 @@ import { getMemberSummary } from '../../stats/queries';
 jest.mock('../../utils/interaction-utils', () => ({
   InterActionUtils: { send: jest.fn() },
 }));
-jest.mock('../../stats/queries', () => ({ getMemberSummary: jest.fn() }));
+// No neighbours: the totals section draws without the ranking
+jest.mock('../../stats/queries', () => ({ getMemberSummary: jest.fn(), getVoiceNeighbours: jest.fn().mockResolvedValue([]) }));
 
 const interactionWith = (period?: string) =>
   ({
