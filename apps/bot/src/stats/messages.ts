@@ -1,7 +1,6 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import type { ServerDigest } from './queries';
 import type { StatsPeriod } from './windows';
-import { nextMilestone } from './milestones';
 
 /** Text helpers the image cards and the Discord replies share. Pure functions, easy to test. */
 
@@ -58,16 +57,6 @@ export const dashboardButton = (url: string, label: string) =>
   new ActionRowBuilder<ButtonBuilder>().addComponents(
     new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel(label).setURL(url)
   );
-
-/** "3 days · best 7"; undefined before the first voice day */
-export const formatStreak = (streak: { current: number; longest: number }) =>
-  streak.longest > 0 ? `${plural(streak.current, 'day')} · best ${streak.longest}` : undefined;
-
-/** "100h (12h to go)"; undefined once every milestone is reached */
-export const formatNextMilestone = (lifetimeMs: number) => {
-  const next = nextMilestone(lifetimeMs);
-  return next ? `${next.hours}h (${formatDuration(next.remainingMs)} to go)` : undefined;
-};
 
 /** True when a digest has nothing worth posting */
 export const isEmptyDigest = (d: ServerDigest) => d.voiceMs === 0 && d.messages === 0;

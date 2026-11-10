@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, httpResource } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { ApiBase, COMMON_BOT_API_URL } from '@nx-stolfo/common/api';
 import {
@@ -23,6 +23,8 @@ import {
   ActivityCalendar,
   VoiceHabitMetric,
   VoiceHabitsLeaderboard,
+  StatsCardSection,
+  StatsCardTheme,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -50,9 +52,22 @@ export class VoiceStatsApi extends ApiBase {
     return this.http.put<MemberPrivacy>(`${this.host}/features/me/privacy`, { hidden });
   }
 
-  /** A member's stats card as a PNG, for a plain download link (the browser sends the session cookie) */
-  statsCardUrl(guildId: string, userId: string, period: DashboardPeriod) {
-    return `${this.host}/features/voice-stats/${guildId}/users/${userId}/stats.png?period=${period}`;
+  /**
+   * A member's stats card as a PNG blob, for the preview, the download and the clipboard.
+   * `card` returning undefined skips the request (the dialog is closed).
+   */
+  fetchStatsCard(
+    card: () =>
+      | { guildId: string; userId: string; period: DashboardPeriod; theme: StatsCardTheme; sections: StatsCardSection[] }
+      | undefined
+  ) {
+    return httpResource.blob(() => {
+      const c = card();
+      return c && {
+        url: `${this.host}/features/voice-stats/${c.guildId}/users/${c.userId}/stats.png`,
+        params: { period: c.period, theme: c.theme, sections: c.sections.join(','), tz: viewerTimeZone() },
+      };
+    });
   }
 
   /** Fetch overview statistics */

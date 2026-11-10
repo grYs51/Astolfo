@@ -17,7 +17,7 @@ import { profileCard } from '../cards/profile.card';
 import { reminderCard } from '../cards/reminder.card';
 import { rpsCard } from '../cards/rps.card';
 import { renderPng } from '../cards/render';
-import { statsCard } from '../cards/stats.card';
+import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
 import { Logger } from '../utils/logger';
 
@@ -44,6 +44,33 @@ const main = async () => {
   // Every third member has no avatar, to show the initial fallback
   const avatar = (i: number) => (i % 3 === 2 ? undefined : avatars[i % avatars.length]);
 
+  const stats: StatsCardData = {
+      period: 'month',
+      memberName: 'Astolfo',
+      avatar: avatar(0),
+      serverName: 'Paladins of France',
+      favouriteChannelName: 'round-table',
+      summary: {
+        voiceMs: 63_900_000,
+        previousVoiceMs: 55_000_000,
+        sessions: 23,
+        messages: 1284,
+        previousMessages: 1500,
+        voiceRank: 2,
+        rankedMembers: 14,
+        messageRank: 3,
+        favouriteChannelId: '1',
+        companions: [
+          { memberId: '2', togetherMs: 30_000_000 },
+          { memberId: '3', togetherMs: 18_500_000 },
+          { memberId: '4', togetherMs: 4_000_000 },
+        ],
+        streak: { current: 12, longest: 31 },
+        lifetimeMs: 317_000_000, // 88h
+      },
+      companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+    };
+
   const cards: Record<string, (theme: ThemeName) => string> = {
     leaderboard: (theme) =>
       leaderboardCard(
@@ -63,32 +90,28 @@ const main = async () => {
         },
         THEMES[theme]
       ),
-    stats: (theme) =>
+    stats: (theme) => statsCard(stats, THEMES[theme]),
+    'stats-all-sections': (theme) =>
       statsCard(
         {
-          period: 'month',
-          memberName: 'Astolfo',
-          avatar: avatar(0),
-          serverName: 'Paladins of France',
-          favouriteChannelName: 'round-table',
-          summary: {
-            voiceMs: 63_900_000,
-            previousVoiceMs: 55_000_000,
-            sessions: 23,
-            messages: 1284,
-            previousMessages: 1500,
-            voiceRank: 2,
-            rankedMembers: 14,
-            favouriteChannelId: '1',
-            companions: [
-              { memberId: '2', togetherMs: 30_000_000 },
-              { memberId: '3', togetherMs: 18_500_000 },
-              { memberId: '4', togetherMs: 4_000_000 },
-            ],
-            streak: { current: 12, longest: 31 },
-            lifetimeMs: 317_000_000, // 88h
+          ...stats,
+          sections: STATS_CARD_SECTIONS,
+          habits: { voice: 63_900_000, muted: 20_000_000, deafened: 6_000_000, video: 5_400_000, streaming: 12_600_000 },
+          calendar: {
+            start: '2025-11-10',
+            end: '2026-11-10',
+            // A busy evening rhythm with quiet weeks, and some message-only days
+            days: Array.from({ length: 366 }, (_, i) => ({
+              date: new Date(Date.UTC(2025, 10, 10 + i)).toISOString().substring(0, 10),
+              minutes: i % 7 < 2 || i % 45 < 9 ? 0 : (i * 37) % 300,
+              messages: (i * 13) % 11,
+            })).filter((day) => day.minutes > 0 || day.messages > 0),
           },
-          companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+          heatmap: Array.from({ length: 7 * 24 }, (_, i) => ({
+            day: Math.floor(i / 24),
+            hour: i % 24,
+            minutes: i % 24 >= 19 || i % 24 < 1 ? 20 + ((i * 17) % 40) : i % 24 >= 12 && i % 5 === 0 ? 10 : 0,
+          })),
         },
         THEMES[theme]
       ),

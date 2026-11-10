@@ -155,6 +155,8 @@ export interface MemberSummary {
   /** Rank by voice time among members the viewer can see (1 = most) */
   voiceRank?: number;
   rankedMembers: number;
+  /** Rank by messages among members the viewer can see */
+  messageRank?: number;
   favouriteChannelId?: string;
   /** Who they shared a channel with most (members visible to the viewer) */
   companions: { memberId: string; togetherMs: number }[];
@@ -162,6 +164,29 @@ export interface MemberSummary {
   /** All-time voice ms, for the next milestone */
   lifetimeMs: number;
 }
+
+/** The member's rank in `totals` (rows of member_id, total), and how many members it has; no row when they aren't in it */
+const rankIn = (db: QueryDb, memberId: string, totals: Prisma.Sql) =>
+  db.$queryRaw<{ members: bigint; rank: bigint | null }[]>`
+    WITH totals AS (${totals})
+    SELECT
+      (SELECT COUNT(*) FROM totals)::bigint AS members,
+      (SELECT COUNT(*) + 1 FROM totals
+        WHERE total > (SELECT total FROM totals WHERE member_id = ${memberId})
+      )::bigint AS rank
+    WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
+  `;
+
+/** Camera, streaming, muted and deafened time in the period (dashboard profile and the stats card) */
+export const getMemberHabits = async (db: QueryDb, guildId: string, memberId: string, period: StatsPeriod, now = new Date()) => {
+  const [row] = await db.$queryRaw<HabitRow[]>`
+    SELECT ${HABIT_SUMS}
+    FROM voice_stats
+    WHERE guild_id = ${guildId} AND member_id = ${memberId}
+      ${windowFilter('issued_on', periodWindows(period, now).current)}
+  `;
+  return toHabits(row);
+};
 
 /** `viewerId` is who looks at it (the member for /stats, anyone for the dashboard download) */
 export const getMemberSummary = async (
@@ -174,28 +199,34 @@ export const getMemberSummary = async (
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
 
-  const [voice, previousVoice, messages, previousMessages, [rank], favouriteChannelId, companions, streak, lifetimeMs] =
+  const [voice, previousVoice, messages, previousMessages, [rank], [messageRank], favouriteChannelId, companions, streak, lifetimeMs] =
     await Promise.all([
       voiceTotal(db, guildId, current, memberId),
       previous ? voiceTotal(db, guildId, previous, memberId) : null,
       messageCount(db, guildId, current, memberId),
       previous ? messageCount(db, guildId, previous, memberId) : null,
-      db.$queryRaw<{ members: bigint; rank: bigint | null }[]>`
-        WITH totals AS (
+      rankIn(
+        db,
+        memberId,
+        Prisma.sql`
           SELECT member_id, SUM(${durationMs()}) AS total
           FROM voice_stats
           WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
             ${windowFilter('issued_on', current)}
             ${visibleMembersOnly('member_id', viewerId)}
-          GROUP BY member_id
-        )
-        SELECT
-          (SELECT COUNT(*) FROM totals)::bigint AS members,
-          (SELECT COUNT(*) + 1 FROM totals
-            WHERE total > (SELECT total FROM totals WHERE member_id = ${memberId})
-          )::bigint AS rank
-        WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
-      `,
+          GROUP BY member_id`
+      ),
+      rankIn(
+        db,
+        memberId,
+        Prisma.sql`
+          SELECT user_id AS member_id, COUNT(*) AS total
+          FROM message_stats
+          WHERE guild_id = ${guildId}
+            ${windowFilter('created_at', current)}
+            ${visibleMembersOnly('user_id', viewerId)}
+          GROUP BY user_id`
+      ),
       favouriteChannel(db, guildId, memberId, current),
       db.$queryRaw<{ member_id: string; together: bigint }[]>`
         SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
@@ -226,6 +257,7 @@ export const getMemberSummary = async (
     previousMessages,
     voiceRank: rank?.rank != null ? Number(rank.rank) : undefined,
     rankedMembers: rank ? Number(rank.members) : 0,
+    messageRank: messageRank?.rank != null ? Number(messageRank.rank) : undefined,
     favouriteChannelId,
     companions: companions.map((row) => ({
       memberId: row.member_id,

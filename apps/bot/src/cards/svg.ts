@@ -36,3 +36,13 @@ export const svgCard = (height: number, t: CardTheme, parts: string[]) =>
     ...parts,
     `</svg>`,
   ].join('');
+
+const LEVEL_OPACITY = [0, 0.3, 0.5, 0.75, 1];
+
+/** 0 for nothing, otherwise 1–4 by share of the busiest value (calendar and heatmap squares) */
+export const level = (value: number, max: number) =>
+  value > 0 && max > 0 ? Math.min(4, Math.max(1, Math.ceil((value / max) * 4))) : 0;
+
+/** One square of a calendar or heatmap: `track` when empty, `accent` stronger with the level */
+export const gridCell = (x: number, y: number, size: number, lvl: number, t: CardTheme) =>
+  `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="2" fill="${lvl ? t.accent : t.track}"${lvl ? ` fill-opacity="${LEVEL_OPACITY[lvl]}"` : ''}/>`;

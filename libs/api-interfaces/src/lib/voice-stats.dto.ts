@@ -249,8 +249,11 @@ export interface VoiceStatsUser {
   streak: { current: number; longest: number };
   /** All-time voice ms */
   lifetimeMs: number;
-  /** Next lifetime voice-hours milestone; null once every milestone is reached */
-  nextMilestone: { hours: number; remainingMs: number } | null;
+  /**
+   * Next lifetime voice-hours milestone; null once every milestone is reached.
+   * `progress` (0–1) counts from the milestone already passed (0h before the first).
+   */
+  nextMilestone: { hours: number; remainingMs: number; progress: number } | null;
 }
 
 // Voice Stats Timeline Response
@@ -360,3 +363,9 @@ export interface ActivityCalendar {
   /** Today, 'YYYY-MM-DD' in `tz` */
   end: string;
 }
+
+/** Parts of the stats card download (`…/users/:userId/stats.png?sections=`), in the order the card draws them */
+export type StatsCardSection = 'totals' | 'streak' | 'habits' | 'calendar' | 'heatmap' | 'companions';
+
+/** Colours of the image cards (`?theme=`) */
+export type StatsCardTheme = 'stolfo' | 'dark' | 'light';

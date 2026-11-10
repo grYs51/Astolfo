@@ -24,7 +24,7 @@ import {
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import { ProgressBarComponent } from '@nx-stolfo/components';
 
-const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
+export const PERIOD_PHRASE: Record<DashboardPeriod, string> = {
   week: 'in the past week',
   month: 'in the past month',
   year: 'in the past year',
@@ -89,13 +89,11 @@ export class MemberActivityComponent {
     return error instanceof HttpErrorResponse && error.status === 403;
   });
 
-  /** Next lifetime milestone with how far along it is (from 0h) */
+  /** Next lifetime milestone with how far along it is (from the milestone already passed) */
   protected milestone = computed(() => {
     const resource = this.userResource();
     const next = resource.hasValue() ? resource.value()?.nextMilestone : null;
-    if (!next) return undefined;
-    const target = next.hours * 3_600_000;
-    return { ...next, percentage: Math.floor(((target - next.remainingMs) / target) * 100) };
+    return next ? { ...next, percentage: Math.floor(next.progress * 100) } : undefined;
   });
 
   /** "↑ 2h 10m more than the month before" */
