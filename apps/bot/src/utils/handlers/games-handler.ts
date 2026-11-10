@@ -7,6 +7,8 @@ export enum GAME_TYPES {
   TIC_TAC_TOE = 'tic-tac-toe',
   /** Against the bot: kept apart so it never earns XP */
   TIC_TAC_TOE_ASTOLFO = 'tic-tac-toe-astolfo',
+  /** One question to the channel: a row per member who answered; the order of correct answers is in metadata */
+  TRIVIA = 'trivia',
 }
 
 export enum SCORING {
@@ -26,6 +28,7 @@ const games: { id: GAME_TYPES; name: string }[] = [
   },
   { id: GAME_TYPES.TIC_TAC_TOE, name: 'Tic-Tac-Toe' },
   { id: GAME_TYPES.TIC_TAC_TOE_ASTOLFO, name: 'Tic-Tac-Toe vs Astolfo' },
+  { id: GAME_TYPES.TRIVIA, name: 'Trivia' },
 ];
 
 export const saveGamesToDb = async () => {

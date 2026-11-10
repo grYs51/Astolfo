@@ -16,6 +16,7 @@ import { leaderboardCard } from '../cards/leaderboard.card';
 import { profileCard } from '../cards/profile.card';
 import { reminderCard } from '../cards/reminder.card';
 import { rpsCard } from '../cards/rps.card';
+import { triviaQuestionCard, triviaResultCard } from '../cards/trivia.card';
 import { renderPng } from '../cards/render';
 import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
@@ -180,6 +181,34 @@ const main = async () => {
           ],
           winner: 0,
         },
+        THEMES[theme]
+      ),
+    'trivia-question': (theme) =>
+      triviaQuestionCard(
+        {
+          category: 'Entertainment: Video Games',
+          difficulty: 'hard',
+          factor: 2,
+          question: 'In the game "Paladins: Champions of the Realm", which champion rides into battle on a giant mechanical horse named Bucket?',
+          answers: ['Fernando', 'Astolfo the Unbreakable', 'Barik', 'Ruckus'],
+          seconds: 20,
+        },
+        THEMES[theme]
+      ),
+    'trivia-result': (theme) =>
+      triviaResultCard(
+        {
+          question: 'Which planet in our solar system has the most moons?',
+          answers: ['Jupiter', 'Saturn', 'Uranus', 'Neptune'],
+          correct: 'Saturn',
+          picks: [3, 6, 0, 1],
+          winners: [0, 1, 2, 3, 4, 5].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [30, 20, 14, 10, 6, 6][i] })),
+        },
+        THEMES[theme]
+      ),
+    'trivia-true-false': (theme) =>
+      triviaQuestionCard(
+        { category: 'Science & Nature', difficulty: 'easy', factor: 1, question: 'The human body has four lungs.', answers: ['True', 'False'], seconds: 20 },
         THEMES[theme]
       ),
     reminder: (theme) =>

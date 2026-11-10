@@ -41,6 +41,10 @@ export interface XpRules {
     milestone: number;
     /** The week's top 3 by voice time */
     weekly: [number, number, number];
+    /** The first four correct answers to a trivia question, before the difficulty multiplier */
+    trivia: [number, number, number, number];
+    /** Every correct answer after the fourth */
+    triviaCorrect: number;
   };
   thresholds: {
     /** Minutes together for the starter, reconnect and welcome bonuses */
@@ -52,6 +56,14 @@ export interface XpRules {
     startersPerDay: number;
     /** Lifetime voice hours that earn the milestone bonus, rising */
     milestoneHours: number[];
+    /** Trivia XP a member can earn per UTC day on a server */
+    triviaDailyCap: number;
+  };
+  /** Trivia XP is multiplied by the question's difficulty */
+  trivia: {
+    easy: number;
+    medium: number;
+    hard: number;
   };
 }
 
@@ -74,7 +86,7 @@ export interface AdminRecalculateQueued {
   queued: true;
 }
 
-export type XpSource = 'VOICE' | 'STARTER' | 'RECONNECT' | 'WELCOME' | 'MILESTONE' | 'WEEKLY' | 'MESSAGE' | 'STREAK' | 'GAME';
+export type XpSource = 'VOICE' | 'STARTER' | 'RECONNECT' | 'WELCOME' | 'MILESTONE' | 'WEEKLY' | 'MESSAGE' | 'STREAK' | 'GAME' | 'TRIVIA';
 
 /** One stretch of a voice session where the multiplier and the people present hold still */
 export interface XpSegment {

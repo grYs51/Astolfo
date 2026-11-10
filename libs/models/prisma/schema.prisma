@@ -192,7 +192,7 @@ model xp_events {
   id         String   @id @default(uuid()) @db.VarChar
   guild_id   String   @db.VarChar
   member_id  String   @db.VarChar
-  /// VOICE | STARTER | RECONNECT | WELCOME | MILESTONE | WEEKLY | MESSAGE | STREAK | GAME
+  /// VOICE | STARTER | RECONNECT | WELCOME | MILESTONE | WEEKLY | MESSAGE | STREAK | GAME | TRIVIA
   source     String   @db.VarChar
   amount     Int
   note       String   @db.VarChar
