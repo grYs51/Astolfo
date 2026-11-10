@@ -1,9 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import { grantXp } from './grant';
-import { DEFAULT_RULES } from './rules';
+import { DEFAULT_RULES, setRules } from './rules';
+import { recalculateXp } from './recalculate';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 
 jest.mock('../client/instance', () => ({ client: {} }));
+jest.mock('../api/utils/discord-directory', () => ({ discordDirectory: () => ({ channel: () => undefined }) }));
 
 // No test database in this repo: this runs against a real Postgres only when XP_TEST_DATABASE_URL points
 // at one with the migrations applied (a throwaway copy of the dev database). It works in its own guild id
@@ -160,5 +162,23 @@ describeDb('grantXp on seeded rows', () => {
       ['xp-c', 20],
       ['xp-f', 50],
     ]);
+  });
+
+  test('after a rule change, a recalculation gives the new amounts, and again the same total', async () => {
+    const client = { dataSource: db, users: { cache: new Map([['xp-bot', { bot: true }]]) } } as never;
+    const sumXp = async () => (await db.xp_events.aggregate({ where: { guild_id: G }, _sum: { amount: true } }))._sum.amount;
+    setRules({ ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, message: 4 } });
+    try {
+      // Without a recalculation the old messages keep their amount
+      expect((await rows('MESSAGE')).map((r) => r.amount)).toEqual([2, 2]);
+      const before = await sumXp();
+      const first = await recalculateXp(client, G);
+      expect((await rows('MESSAGE')).map((r) => r.amount)).toEqual([4, 4]);
+      expect(await sumXp()).toBe((before ?? 0) + 4);
+      expect(first.xp).toBe(await sumXp());
+      expect((await recalculateXp(client, G)).xp).toBe(first.xp);
+    } finally {
+      setRules(null);
+    }
   });
 });
