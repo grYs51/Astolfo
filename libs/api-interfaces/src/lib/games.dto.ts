@@ -28,7 +28,6 @@ export interface GameMatchup {
 /** Rock-paper-scissors in a server (GET …/:serverId/games) */
 export interface ServerGames {
   period: DashboardPeriod;
-  /** Games and players, hidden members included */
   games: number;
   players: number;
   /** Best win rate first, at least 3 games, top 10 */
@@ -40,7 +39,7 @@ export interface ServerGames {
 
 /** Games against the bot, which cheats, so they're kept out of the leaderboard and records above */
 export interface AstolfoGames extends GameRecord {
-  /** Games and players, hidden members included; wins, losses and ties are the members' */
+  /** Wins, losses and ties are the members' */
   games: number;
   players: number;
   /** Best win rate against Astolfo first, at least 3 games, top 10 */

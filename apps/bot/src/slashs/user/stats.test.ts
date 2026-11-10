@@ -33,7 +33,7 @@ beforeEach(() => {
 describe('/stats', () => {
   test('sends your stats for the past month as a PNG card by default, only to you', async () => {
     await run(interactionWith());
-    expect(getMemberSummary).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'month', 'me');
+    expect(getMemberSummary).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'month');
     const [, message, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
     expect(message.embeds).toBeUndefined();
     expect(message.files).toHaveLength(1);
@@ -43,7 +43,7 @@ describe('/stats', () => {
 
   test('uses the chosen period', async () => {
     await run(interactionWith('year'));
-    expect(getMemberSummary).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'year', 'me');
+    expect(getMemberSummary).toHaveBeenCalledWith(expect.anything(), 'g', 'me', 'year');
   });
 });
 

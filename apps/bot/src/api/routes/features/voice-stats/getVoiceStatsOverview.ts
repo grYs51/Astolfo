@@ -12,7 +12,6 @@ import {
   periodFilter,
   previousPeriodFilter,
   toDurationParts,
-  visibleMembersOnly,
 } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 
@@ -106,7 +105,6 @@ export const getVoiceStatsOverview: RequestHandler<
     WHERE guild_id = ${serverId}
       AND type = ${VOICE_TYPE.VOICE}
       AND ended_on IS NULL
-      ${visibleMembersOnly('member_id', req.user?.id ?? '')}
     ORDER BY issued_on ASC
   `,
   ]);

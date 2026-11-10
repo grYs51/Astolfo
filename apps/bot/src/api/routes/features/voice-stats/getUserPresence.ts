@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { Prisma } from '@prisma/client';
 import { DashboardPeriod, UserPresence } from '@nx-stolfo/api-interfaces';
-import { getTimeZone, isHiddenFrom, parsePeriod } from '../helpers';
+import { getTimeZone, parsePeriod } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 import {
   endsAfter,
@@ -25,14 +25,9 @@ export const getUserPresence: RequestHandler<
 > = asyncHandler(async (req, res) => {
   const { serverId, userId } = req.params;
   // Statuses have no guild: without this, any server's members could read
-  // the status history of anyone the bot sees. Checked first, so outsiders
-  // can't tell who is hidden either.
+  // the status history of anyone the bot sees.
   if (!(await discordDirectory().isMember(serverId, userId))) {
     res.status(404).send({ error: 'not a member of this server' });
-    return;
-  }
-  if (await isHiddenFrom(req.db, userId, req.user?.id ?? '')) {
-    res.status(403).send({ error: 'private' });
     return;
   }
   const period: DashboardPeriod = parsePeriod(

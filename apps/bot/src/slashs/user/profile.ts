@@ -2,7 +2,6 @@ import { CacheType, ChatInputCommandInteraction, InteractionContextType, SlashCo
 import DiscordClient from '../../client/client';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
-import { isHiddenFrom } from '../../utils/privacy';
 import { getMemberProfile } from '../../stats/queries';
 import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
 import { profileCard } from '../../cards/profile.card';
@@ -36,17 +35,6 @@ export default class ProfileSlash extends BaseSlash {
     const guildId = interaction.guildId;
     const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
     const userId = memberToGetProfileFor.id;
-
-    // Members can hide from other members (dashboard privacy setting); this
-    // reply is public, so don't post their stats — tell only the asker
-    if (await isHiddenFrom(client.dataSource, userId, interaction.user.id)) {
-      await InterActionUtils.send(
-        interaction,
-        'This member keeps their stats private.',
-        true
-      );
-      return;
-    }
 
     const now = new Date();
     const profile = await getMemberProfile(client.dataSource, guildId, userId, now);

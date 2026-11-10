@@ -112,12 +112,6 @@ export class VoiceStatsServerOverviewComponent {
       names.push(live.member.displayName || live.member.username);
       byChannel.set(live.channel.name, names);
     }
-    const named = [...byChannel].map(
-      ([channel, names]) => `${names.join(', ')} in ${channel}`
-    );
-    // Members who hide from others are counted but not named
-    const unnamed = this.overview().server.activeSessions - this.overview().liveNow.length;
-    if (unnamed > 0) named.push(`+${unnamed} more`);
-    return named.join(' · ');
+    return [...byChannel].map(([channel, names]) => `${names.join(', ')} in ${channel}`).join(' · ');
   });
 }

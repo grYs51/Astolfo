@@ -20,7 +20,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-sm">
         <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
-        <!-- Not for members who hide from you: the API answers 403 -->
+        <!-- Once the member has loaded -->
         @if (member()) {
           <pages-card-dialog [guildId]="id()" [memberId]="memberId()" [period]="period()" [name]="name()" />
         }

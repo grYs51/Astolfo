@@ -15,8 +15,8 @@ const app = express();
 const angularApp = new AngularNodeAppEngine();
 
 /**
- * Baseline security headers. Framing is denied so settings like the privacy
- * toggle can't be clickjacked.
+ * Baseline security headers. Framing is denied so settings pages can't be
+ * clickjacked.
  */
 app.disable('x-powered-by');
 app.use((req, res, next) => {

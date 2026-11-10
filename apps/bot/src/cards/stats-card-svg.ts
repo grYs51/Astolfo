@@ -10,10 +10,9 @@ import { DEFAULT_SECTIONS, statsCard, StatsCardSection } from './stats.card';
 import { CardTheme } from './themes';
 
 /**
- * A member's stats card as `viewerId` may see it (/stats and the dashboard
- * download). Names, avatars and the channel come from the Discord directory,
- * so it also works in demo mode. Only the picked sections' queries run.
- * The caller checks the member doesn't hide from the viewer.
+ * A member's stats card (/stats and the dashboard download); `viewerId` marks
+ * the viewer's own row. Names, avatars and the channel come from the Discord
+ * directory, so it also works in demo mode. Only the picked sections' queries run.
  */
 export const statsCardSvg = async (opts: {
   db: Pick<Db, '$queryRaw'>;
@@ -31,10 +30,10 @@ export const statsCardSvg = async (opts: {
   // Statuses have no guild: only read them for someone who is in this server
   const withOnline = sections.includes('habits') && (await directory.isMember(guildId, memberId));
   const [summary, habits, online, neighbours, calendar, heatmap] = await Promise.all([
-    getMemberSummary(db, guildId, memberId, period, viewerId),
+    getMemberSummary(db, guildId, memberId, period),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
-    sections.includes('totals') ? getVoiceNeighbours(db, guildId, memberId, period, viewerId) : [],
+    sections.includes('totals') ? getVoiceNeighbours(db, guildId, memberId, period) : [],
     sections.includes('calendar') ? activityCalendar(db, guildId, memberId, tz) : undefined,
     sections.includes('heatmap')
       ? db.$queryRaw<{ hour: number; day_of_week: number; total_minutes: number }[]>(

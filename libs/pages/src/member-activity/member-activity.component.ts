@@ -4,7 +4,7 @@ import {
   computed,
   input,
 } from '@angular/core';
-import { HttpErrorResponse, HttpResourceRef } from '@angular/common/http';
+import { HttpResourceRef } from '@angular/common/http';
 import {
   ActivityCalendar,
   DashboardPeriod,
@@ -124,12 +124,6 @@ export class MemberActivityComponent {
   protected self = computed(() => !this.name());
   protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
   protected previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
-
-  /** The member hides their stats from the viewer (API answers 403) */
-  protected isPrivate = computed(() => {
-    const error = this.userResource().error();
-    return error instanceof HttpErrorResponse && error.status === 403;
-  });
 
   private stats = computed(() => {
     const resource = this.userResource();

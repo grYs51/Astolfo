@@ -1,7 +1,7 @@
 import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { DashboardPeriod, RpsMove, UserGames } from '@nx-stolfo/api-interfaces';
-import { isHiddenFrom, parsePeriod, periodFilter } from '../helpers';
+import { parsePeriod, periodFilter } from '../helpers';
 import { GAME_TYPES, SCORING } from '../../../../utils/handlers/games-handler';
 
 type RecordRow = {
@@ -21,14 +21,10 @@ type AstolfoRow = { games: bigint; wins: bigint; losses: bigint; ties: bigint };
 /** One member's rock-paper-scissors record in a server, and how they do against the viewer. */
 export const getUserGames: RequestHandler<
   { serverId: string; userId: string },
-  UserGames | { error: string }
+  UserGames
 > = asyncHandler(async (req, res) => {
   const { serverId, userId } = req.params;
   const viewerId = req.user?.id ?? '';
-  if (await isHiddenFrom(req.db, userId, viewerId)) {
-    res.status(403).send({ error: 'private' });
-    return;
-  }
   const period: DashboardPeriod = parsePeriod(
     req.query.period,
     ['week', 'month', 'year', 'all'],

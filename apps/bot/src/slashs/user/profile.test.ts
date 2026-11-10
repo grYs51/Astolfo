@@ -8,18 +8,8 @@ jest.mock('../../utils/interaction-utils', () => ({
 jest.mock('../../stats/queries', () => ({ getMemberProfile: jest.fn() }));
 
 const ME = 'me';
-const HIDDEN = 'hidden-member';
 
-const clientWith = () =>
-  ({
-    dataSource: {
-      userConfigs: {
-        findFirst: jest.fn(async ({ where }: { where: { user_id: string } }) =>
-          where.user_id === HIDDEN ? { user_id: HIDDEN } : null
-        ),
-      },
-    },
-  }) as never;
+const clientWith = () => ({ dataSource: {} }) as never;
 
 /** /profile [user] invoked by ME */
 const interactionFor = (targetId?: string) =>
@@ -39,38 +29,6 @@ const run = (client: never, interaction: never) =>
 beforeEach(() => {
   jest.clearAllMocks();
   (getMemberProfile as jest.Mock).mockResolvedValue({ sessions: 0, rps: { wins: 0, ties: 0, losses: 0 } });
-});
-
-describe('/profile and member privacy', () => {
-  test("refuses, privately, to show a hidden member's stats", async () => {
-    const client = clientWith();
-    await run(client, interactionFor(HIDDEN));
-
-    expect(InterActionUtils.send).toHaveBeenCalledWith(
-      expect.anything(),
-      'This member keeps their stats private.',
-      true // ephemeral: only the asker sees it
-    );
-    // Their stats are never even queried
-    expect(getMemberProfile).not.toHaveBeenCalled();
-  });
-
-  test('your own profile works even when you are hidden', async () => {
-    const client = clientWith();
-    const asHidden = {
-      ...(interactionFor() as object),
-      user: { id: HIDDEN },
-      member: { id: HIDDEN },
-    } as never;
-    await run(client, asHidden);
-
-    expect(getMemberProfile).toHaveBeenCalledWith(expect.anything(), 'guild', HIDDEN, expect.any(Date));
-    expect(InterActionUtils.send).not.toHaveBeenCalledWith(
-      expect.anything(),
-      'This member keeps their stats private.',
-      true
-    );
-  });
 });
 
 test('/profile in a DM answers instead of leaving the reply pending', async () => {

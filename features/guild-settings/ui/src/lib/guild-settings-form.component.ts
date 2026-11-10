@@ -139,8 +139,7 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
         <div>
           <h2 class="text-base font-semibold text-gray-100">Weekly recap</h2>
           <p class="mt-xs text-sm text-gray-400">
-            A summary of last week, posted every Monday at 08:00 UTC. Members who hide their stats
-            aren’t named in it.
+            A summary of last week, posted every Monday at 08:00 UTC.
           </p>
         </div>
         <div class="max-w-sm">

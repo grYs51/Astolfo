@@ -3,7 +3,7 @@ import type { Request, Response } from 'express';
 import { HeatmapPeriod, VoiceStatsUserHeatmap } from '@nx-stolfo/api-interfaces';
 import { Prisma } from '@prisma/client';
 import { VOICE_TYPE } from '../../../../utils/handlers/vc';
-import { getStartDateForPeriod, getTimeZone, isHiddenFrom } from '../helpers';
+import { getStartDateForPeriod, getTimeZone } from '../helpers';
 import { voiceHeatmapCells } from './heatmap-sql';
 
 type HeatmapCellRow = {
@@ -15,12 +15,8 @@ type HeatmapCellRow = {
 };
 
 export const getVoiceStatsUserHeatmap = asyncHandler(
-  async (req: Request, res: Response<VoiceStatsUserHeatmap | { error: string }>) => {
+  async (req: Request, res: Response<VoiceStatsUserHeatmap>) => {
     const { serverId, userId } = req.params;
-    if (await isHiddenFrom(req.db, userId, req.user?.id ?? '')) {
-      res.status(403).send({ error: 'private' });
-      return;
-    }
     const rawPeriod = req.query.period;
     const period: HeatmapPeriod =
       rawPeriod === 'week' || rawPeriod === 'year' || rawPeriod === 'all'

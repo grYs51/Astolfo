@@ -94,8 +94,6 @@ export const memberOrUnknown = (
 ): DiscordMember =>
   members.get(id) ?? { id, username: 'Unknown User', displayName: null, avatar: null };
 
-export { isHiddenFrom, visibleMembersOnly } from '../../../utils/privacy';
-
 /** Resolves a channel id to display data, with an "Unknown Channel" fallback. */
 export const getChannelData = (guildId: string, channelId: string) =>
   discordDirectory().channel(guildId, channelId) ?? {

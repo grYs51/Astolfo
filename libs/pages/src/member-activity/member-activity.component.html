@@ -2,289 +2,282 @@
 @let heatmap = heatmapResource();
 @let subject = name() || 'You';
 
-@if (isPrivate()) {
-  <div class="rounded-xl border border-white/5 bg-base-300 p-lg text-center">
-    <p class="text-lg text-gray-300">{{ name() || 'This member' }} keeps their stats private.</p>
-    <p class="mt-xs text-sm text-gray-500">Their time still counts towards the server totals.</p>
-  </div>
-} @else {
-  <!-- Summary: the period at a glance, where they stand, then what's next -->
-  <section class="rounded-xl border border-white/5 bg-base-300 p-lg" aria-label="Summary">
-    @if (user.isLoading() && !user.hasValue()) {
-      <div class="space-y-sm animate-pulse">
-        <div class="h-8 w-2/3 rounded bg-base-200"></div>
-        <div class="h-4 w-1/2 rounded bg-base-200"></div>
-        <div class="h-4 w-1/3 rounded bg-base-200"></div>
-      </div>
-    } @else if (user.error()) {
-      <p class="text-sm text-error">Failed to load activity</p>
-    } @else if (user.hasValue()) {
-      @let stats = user.value()!.summary;
-      @let sent = user.value()!.messages.count;
-      <div class="grid gap-lg lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div class="min-w-0">
-          <h2 class="max-w-[30ch] text-balance text-2xl font-semibold leading-snug tracking-tight text-gray-100 sm:text-[1.75rem]">
-            <!-- Against the previous period the change leads; the bars below carry both totals -->
-            @if (change(); as c) {
-              @if (c.same) {
-                {{ subject }} spent about as long in voice as {{ c.label }}.
-              } @else {
-                {{ subject }} spent
-                <span [class]="c.up ? 'text-success' : 'text-primary-300'">
-                  {{ c.amount | humanizeDuration: true }} {{ c.up ? 'more' : 'less' }}
-                </span>
-                in voice than {{ c.label }}.
-              }
-            } @else if (stats.sessionCount > 0 || sent > 0) {
-              @if (stats.sessionCount > 0) {
-                {{ subject }} spent
-                <span class="text-primary-300">{{ stats.totalDuration | humanizeDuration: true }}</span>
-                in voice
-              } @else {
-                {{ subject }} {{ self() ? 'weren’t' : 'wasn’t' }} in voice
-              }
-              and sent
-              <span class="text-primary-300">{{ sent }} {{ sent === 1 ? 'message' : 'messages' }}</span>
-              {{ periodPhrase() }}.
+<!-- Summary: the period at a glance, where they stand, then what's next -->
+<section class="rounded-xl border border-white/5 bg-base-300 p-lg" aria-label="Summary">
+  @if (user.isLoading() && !user.hasValue()) {
+    <div class="space-y-sm animate-pulse">
+      <div class="h-8 w-2/3 rounded bg-base-200"></div>
+      <div class="h-4 w-1/2 rounded bg-base-200"></div>
+      <div class="h-4 w-1/3 rounded bg-base-200"></div>
+    </div>
+  } @else if (user.error()) {
+    <p class="text-sm text-error">Failed to load activity</p>
+  } @else if (user.hasValue()) {
+    @let stats = user.value()!.summary;
+    @let sent = user.value()!.messages.count;
+    <div class="grid gap-lg lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div class="min-w-0">
+        <h2 class="max-w-[30ch] text-balance text-2xl font-semibold leading-snug tracking-tight text-gray-100 sm:text-[1.75rem]">
+          <!-- Against the previous period the change leads; the bars below carry both totals -->
+          @if (change(); as c) {
+            @if (c.same) {
+              {{ subject }} spent about as long in voice as {{ c.label }}.
             } @else {
-              {{ subject }} {{ self() ? 'haven’t' : 'hasn’t' }} been in voice or sent messages {{ periodPhrase() }}.
+              {{ subject }} spent
+              <span [class]="c.up ? 'text-success' : 'text-primary-300'">
+                {{ c.amount | humanizeDuration: true }} {{ c.up ? 'more' : 'less' }}
+              </span>
+              in voice than {{ c.label }}.
             }
-          </h2>
-
-          @if (compare(); as bars) {
-            <div class="mt-lg max-w-md space-y-sm">
-              @for (bar of bars; track bar.label; let i = $index) {
-                <div class="grid grid-cols-[6.5rem_minmax(0,1fr)_4.5rem] items-center gap-sm text-sm">
-                  <span [class]="bar.current ? 'text-gray-200' : 'text-gray-500'">{{ bar.label }}</span>
-                  <div class="h-2 overflow-hidden rounded-full bg-base-100">
-                    <div
-                      class="grow-in h-full rounded-full transition-[width] duration-500"
-                      [class]="bar.current ? 'bg-primary-400' : 'bg-gray-600'"
-                      [style.width.%]="bar.pct"
-                      [style.animation-delay.ms]="i * 120"
-                    ></div>
-                  </div>
-                  <span class="text-right tabular-nums" [class]="bar.current ? 'text-gray-100' : 'text-gray-500'">
-                    {{ bar.value | humanizeDuration: true }}
-                  </span>
-                </div>
-              }
-            </div>
-          }
-
-          <!-- Habits: each share as a 5-part bar, one part per 20% -->
-          @if (meters().length > 0) {
-            <ul class="mt-lg grid grid-cols-2 gap-x-lg gap-y-md sm:grid-cols-4">
-              @for (m of meters(); track m.label; let i = $index) {
-                <li class="min-w-0">
-                  <div class="flex items-baseline justify-between gap-sm">
-                    <span class="text-xs text-gray-400">{{ m.label }}</span>
-                    <span class="text-sm font-semibold tabular-nums text-gray-100">{{ m.pct }}%</span>
-                  </div>
-                  <div class="mt-xs flex gap-1" aria-hidden="true">
-                    @for (fill of m.parts; track $index; let j = $index) {
-                      <span class="h-2 flex-1 overflow-hidden rounded-full bg-secondary-400/25">
-                        <span
-                          class="grow-in block h-full transition-[width] duration-500"
-                          [class]="m.color"
-                          [style.width.%]="fill"
-                          [style.animation-delay.ms]="200 + i * 80 + j * 60"
-                        ></span>
-                      </span>
-                    }
-                  </div>
-                  <p class="mt-xs truncate text-xs tabular-nums text-gray-500">{{ m.note }}</p>
-                </li>
-              }
-            </ul>
-          }
-
-          @if (extras().length > 0 || streak()) {
-            <dl class="mt-lg grid grid-cols-2 gap-md border-t border-white/5 pt-md text-sm sm:grid-cols-4">
-              @for (item of extras(); track item.label) {
-                <div class="min-w-0">
-                  <dt class="text-xs text-gray-500">{{ item.label }}</dt>
-                  <dd class="font-medium tabular-nums text-gray-100">
-                    {{ item.value }}
-                    @if (item.sub) {
-                      <span class="text-xs font-normal text-gray-500">· {{ item.sub }}</span>
-                    }
-                  </dd>
-                </div>
-              }
-              <!-- Streak is all time, whatever the period -->
-              @if (streak(); as s) {
-                <div class="min-w-0">
-                  <dt class="flex items-center gap-xs text-xs text-gray-500">
-                    <svg class="h-3.5 w-3.5 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
-                    </svg>
-                    Voice streak
-                  </dt>
-                  <dd class="font-medium tabular-nums text-gray-100">
-                    {{ s.current }} {{ s.current === 1 ? 'day' : 'days' }}
-                    <span class="text-xs font-normal text-gray-500">· best {{ s.longest }}</span>
-                  </dd>
-                  <dd class="mt-1 flex gap-1" aria-hidden="true">
-                    @for (on of s.pips; track $index) {
-                      <span class="h-1.5 max-w-6 flex-1 rounded-full" [class]="on ? 'bg-amber-400' : 'bg-base-100'"></span>
-                    }
-                  </dd>
-                </div>
-              }
-            </dl>
-          }
-        </div>
-
-        <!-- Where they stand, then the next lifetime milestone -->
-        @if (race() || milestone()) {
-          <div class="min-w-0 space-y-lg border-white/5 max-lg:border-t max-lg:pt-lg lg:border-l lg:pl-lg">
-            @if (race(); as r) {
-              <div>
-                <h3 class="flex items-baseline justify-between gap-sm text-sm font-semibold text-gray-100">
-                  Voice ranking
-                  <span class="text-xs font-normal tabular-nums text-gray-500">#{{ r.rank }} of {{ r.count }}</span>
-                </h3>
-                <ol class="mt-sm space-y-xs">
-                  @for (row of r.rows; track row.id; let i = $index) {
-                    <li
-                      class="grid grid-cols-[1.75rem_1.75rem_minmax(0,1fr)] items-center gap-sm rounded-lg px-sm py-sm"
-                      [class]="row.subject ? 'bg-primary-500/10 ring-1 ring-inset ring-primary-400/25' : ''"
-                      [attr.aria-current]="row.subject ? 'true' : null"
-                    >
-                      <span class="text-xs tabular-nums text-gray-500">#{{ row.rank }}</span>
-                      @if (row.avatar) {
-                        <img [src]="row.avatar" alt="" class="h-7 w-7 rounded-full ring-1 ring-white/10" />
-                      } @else {
-                        <span class="flex h-7 w-7 items-center justify-center rounded-full bg-base-100 text-xs font-semibold text-gray-300" aria-hidden="true">
-                          {{ row.name.charAt(0).toUpperCase() }}
-                        </span>
-                      }
-                      <div class="min-w-0">
-                        <div class="flex items-baseline justify-between gap-sm text-sm">
-                          <span class="truncate" [class]="row.subject ? 'font-semibold text-gray-100' : 'text-gray-300'">{{ row.name }}</span>
-                          <span class="shrink-0 text-xs tabular-nums text-gray-400">{{ row.duration | humanizeDuration: true }}</span>
-                        </div>
-                        <div class="mt-1 h-1 overflow-hidden rounded-full bg-base-100">
-                          <div
-                            class="grow-in h-full rounded-full transition-[width] duration-500"
-                            [class]="row.subject ? 'bg-primary-400' : 'bg-gray-600'"
-                            [style.width.%]="row.pct"
-                            [style.animation-delay.ms]="240 + i * 100"
-                          ></div>
-                        </div>
-                      </div>
-                    </li>
-                  }
-                </ol>
-                <p class="mt-sm text-sm text-gray-400">
-                  @if (r.ahead; as a) {
-                    @if (a.gap < 60000) {
-                      Neck and neck with {{ a.name }} for #{{ r.rank - 1 }}.
-                    } @else {
-                      <strong class="font-semibold text-gray-100">{{ a.gap | humanizeDuration: true }}</strong>
-                      behind {{ a.name }} for #{{ r.rank - 1 }}.
-                    }
-                  } @else if (r.lead; as l) {
-                    On top,
-                    <strong class="font-semibold text-gray-100">{{ l.gap | humanizeDuration: true }}</strong>
-                    ahead of {{ l.name }}.
-                  } @else {
-                    Nobody else was in voice {{ periodPhrase() }}.
-                  }
-                </p>
-              </div>
+          } @else if (stats.sessionCount > 0 || sent > 0) {
+            @if (stats.sessionCount > 0) {
+              {{ subject }} spent
+              <span class="text-primary-300">{{ stats.totalDuration | humanizeDuration: true }}</span>
+              in voice
+            } @else {
+              {{ subject }} {{ self() ? 'weren’t' : 'wasn’t' }} in voice
             }
-            @if (milestone(); as m) {
-              <div [class]="race() ? 'border-t border-white/5 pt-lg' : ''">
-                <h3 class="flex items-center gap-sm text-sm font-semibold text-gray-100">
-                  <svg class="h-4 w-4 shrink-0 text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                    <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-                    <path d="M4 22v-7" />
-                  </svg>
-                  {{ m.hours }} hours in voice
-                </h3>
-                <!-- One square per hour, drawn like the activity calendar's cells -->
-                <div
-                  class="mt-sm grid gap-0.5"
-                  [style.grid-template-columns]="'repeat(' + m.columns + ', minmax(0, 1fr))'"
-                  [style.max-width.px]="m.columns * 14"
-                  role="progressbar"
-                  [attr.aria-valuenow]="m.done"
-                  aria-valuemin="0"
-                  [attr.aria-valuemax]="m.hours"
-                  [attr.aria-label]="'Hours towards ' + m.hours + ' hours in voice'"
-                >
-                  @for (color of m.squares; track $index) {
-                    <span class="aspect-square rounded-sm" [style.background-color]="color"></span>
-                  }
+            and sent
+            <span class="text-primary-300">{{ sent }} {{ sent === 1 ? 'message' : 'messages' }}</span>
+            {{ periodPhrase() }}.
+          } @else {
+            {{ subject }} {{ self() ? 'haven’t' : 'hasn’t' }} been in voice or sent messages {{ periodPhrase() }}.
+          }
+        </h2>
+
+        @if (compare(); as bars) {
+          <div class="mt-lg max-w-md space-y-sm">
+            @for (bar of bars; track bar.label; let i = $index) {
+              <div class="grid grid-cols-[6.5rem_minmax(0,1fr)_4.5rem] items-center gap-sm text-sm">
+                <span [class]="bar.current ? 'text-gray-200' : 'text-gray-500'">{{ bar.label }}</span>
+                <div class="h-2 overflow-hidden rounded-full bg-base-100">
+                  <div
+                    class="grow-in h-full rounded-full transition-[width] duration-500"
+                    [class]="bar.current ? 'bg-primary-400' : 'bg-gray-600'"
+                    [style.width.%]="bar.pct"
+                    [style.animation-delay.ms]="i * 120"
+                  ></div>
                 </div>
-                <p class="mt-sm text-sm text-gray-400">
-                  <strong class="font-semibold text-gray-100">{{ m.toGo }}</strong>
-                  to go
-                </p>
+                <span class="text-right tabular-nums" [class]="bar.current ? 'text-gray-100' : 'text-gray-500'">
+                  {{ bar.value | humanizeDuration: true }}
+                </span>
               </div>
             }
           </div>
         }
+
+        <!-- Habits: each share as a 5-part bar, one part per 20% -->
+        @if (meters().length > 0) {
+          <ul class="mt-lg grid grid-cols-2 gap-x-lg gap-y-md sm:grid-cols-4">
+            @for (m of meters(); track m.label; let i = $index) {
+              <li class="min-w-0">
+                <div class="flex items-baseline justify-between gap-sm">
+                  <span class="text-xs text-gray-400">{{ m.label }}</span>
+                  <span class="text-sm font-semibold tabular-nums text-gray-100">{{ m.pct }}%</span>
+                </div>
+                <div class="mt-xs flex gap-1" aria-hidden="true">
+                  @for (fill of m.parts; track $index; let j = $index) {
+                    <span class="h-2 flex-1 overflow-hidden rounded-full bg-secondary-400/25">
+                      <span
+                        class="grow-in block h-full transition-[width] duration-500"
+                        [class]="m.color"
+                        [style.width.%]="fill"
+                        [style.animation-delay.ms]="200 + i * 80 + j * 60"
+                      ></span>
+                    </span>
+                  }
+                </div>
+                <p class="mt-xs truncate text-xs tabular-nums text-gray-500">{{ m.note }}</p>
+              </li>
+            }
+          </ul>
+        }
+
+        @if (extras().length > 0 || streak()) {
+          <dl class="mt-lg grid grid-cols-2 gap-md border-t border-white/5 pt-md text-sm sm:grid-cols-4">
+            @for (item of extras(); track item.label) {
+              <div class="min-w-0">
+                <dt class="text-xs text-gray-500">{{ item.label }}</dt>
+                <dd class="font-medium tabular-nums text-gray-100">
+                  {{ item.value }}
+                  @if (item.sub) {
+                    <span class="text-xs font-normal text-gray-500">· {{ item.sub }}</span>
+                  }
+                </dd>
+              </div>
+            }
+            <!-- Streak is all time, whatever the period -->
+            @if (streak(); as s) {
+              <div class="min-w-0">
+                <dt class="flex items-center gap-xs text-xs text-gray-500">
+                  <svg class="h-3.5 w-3.5 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.07-2.14-.22-4.05 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.15.43-2.29 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                  </svg>
+                  Voice streak
+                </dt>
+                <dd class="font-medium tabular-nums text-gray-100">
+                  {{ s.current }} {{ s.current === 1 ? 'day' : 'days' }}
+                  <span class="text-xs font-normal text-gray-500">· best {{ s.longest }}</span>
+                </dd>
+                <dd class="mt-1 flex gap-1" aria-hidden="true">
+                  @for (on of s.pips; track $index) {
+                    <span class="h-1.5 max-w-6 flex-1 rounded-full" [class]="on ? 'bg-amber-400' : 'bg-base-100'"></span>
+                  }
+                </dd>
+              </div>
+            }
+          </dl>
+        }
       </div>
-    }
-  </section>
 
-  <!-- Past year, day by day -->
-  @let calendar = calendarResource();
-  @if (calendar.error()) {
-    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-      Failed to load the past year
+      <!-- Where they stand, then the next lifetime milestone -->
+      @if (race() || milestone()) {
+        <div class="min-w-0 space-y-lg border-white/5 max-lg:border-t max-lg:pt-lg lg:border-l lg:pl-lg">
+          @if (race(); as r) {
+            <div>
+              <h3 class="flex items-baseline justify-between gap-sm text-sm font-semibold text-gray-100">
+                Voice ranking
+                <span class="text-xs font-normal tabular-nums text-gray-500">#{{ r.rank }} of {{ r.count }}</span>
+              </h3>
+              <ol class="mt-sm space-y-xs">
+                @for (row of r.rows; track row.id; let i = $index) {
+                  <li
+                    class="grid grid-cols-[1.75rem_1.75rem_minmax(0,1fr)] items-center gap-sm rounded-lg px-sm py-sm"
+                    [class]="row.subject ? 'bg-primary-500/10 ring-1 ring-inset ring-primary-400/25' : ''"
+                    [attr.aria-current]="row.subject ? 'true' : null"
+                  >
+                    <span class="text-xs tabular-nums text-gray-500">#{{ row.rank }}</span>
+                    @if (row.avatar) {
+                      <img [src]="row.avatar" alt="" class="h-7 w-7 rounded-full ring-1 ring-white/10" />
+                    } @else {
+                      <span class="flex h-7 w-7 items-center justify-center rounded-full bg-base-100 text-xs font-semibold text-gray-300" aria-hidden="true">
+                        {{ row.name.charAt(0).toUpperCase() }}
+                      </span>
+                    }
+                    <div class="min-w-0">
+                      <div class="flex items-baseline justify-between gap-sm text-sm">
+                        <span class="truncate" [class]="row.subject ? 'font-semibold text-gray-100' : 'text-gray-300'">{{ row.name }}</span>
+                        <span class="shrink-0 text-xs tabular-nums text-gray-400">{{ row.duration | humanizeDuration: true }}</span>
+                      </div>
+                      <div class="mt-1 h-1 overflow-hidden rounded-full bg-base-100">
+                        <div
+                          class="grow-in h-full rounded-full transition-[width] duration-500"
+                          [class]="row.subject ? 'bg-primary-400' : 'bg-gray-600'"
+                          [style.width.%]="row.pct"
+                          [style.animation-delay.ms]="240 + i * 100"
+                        ></div>
+                      </div>
+                    </div>
+                  </li>
+                }
+              </ol>
+              <p class="mt-sm text-sm text-gray-400">
+                @if (r.ahead; as a) {
+                  @if (a.gap < 60000) {
+                    Neck and neck with {{ a.name }} for #{{ r.rank - 1 }}.
+                  } @else {
+                    <strong class="font-semibold text-gray-100">{{ a.gap | humanizeDuration: true }}</strong>
+                    behind {{ a.name }} for #{{ r.rank - 1 }}.
+                  }
+                } @else if (r.lead; as l) {
+                  On top,
+                  <strong class="font-semibold text-gray-100">{{ l.gap | humanizeDuration: true }}</strong>
+                  ahead of {{ l.name }}.
+                } @else {
+                  Nobody else was in voice {{ periodPhrase() }}.
+                }
+              </p>
+            </div>
+          }
+          @if (milestone(); as m) {
+            <div [class]="race() ? 'border-t border-white/5 pt-lg' : ''">
+              <h3 class="flex items-center gap-sm text-sm font-semibold text-gray-100">
+                <svg class="h-4 w-4 shrink-0 text-primary-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+                  <path d="M4 22v-7" />
+                </svg>
+                {{ m.hours }} hours in voice
+              </h3>
+              <!-- One square per hour, drawn like the activity calendar's cells -->
+              <div
+                class="mt-sm grid gap-0.5"
+                [style.grid-template-columns]="'repeat(' + m.columns + ', minmax(0, 1fr))'"
+                [style.max-width.px]="m.columns * 14"
+                role="progressbar"
+                [attr.aria-valuenow]="m.done"
+                aria-valuemin="0"
+                [attr.aria-valuemax]="m.hours"
+                [attr.aria-label]="'Hours towards ' + m.hours + ' hours in voice'"
+              >
+                @for (color of m.squares; track $index) {
+                  <span class="aspect-square rounded-sm" [style.background-color]="color"></span>
+                }
+              </div>
+              <p class="mt-sm text-sm text-gray-400">
+                <strong class="font-semibold text-gray-100">{{ m.toGo }}</strong>
+                to go
+              </p>
+            </div>
+          }
+        </div>
+      }
     </div>
-  } @else if (calendar.hasValue()) {
-    <feature-voice-stats-activity-calendar [calendar]="calendar.value()!" />
-  } @else {
-    <div class="h-[340px] rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
   }
+</section>
 
-  <!-- When they're on -->
-  @if (heatmap.error()) {
-    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
-      Failed to load the weekly pattern
-    </div>
-  } @else if (heatmap.hasValue()) {
-    <feature-voice-stats-user-heatmap
-      [heatmap]="heatmap.value()!"
-      [loading]="heatmap.isLoading()"
-      [name]="name()"
-    />
-  } @else {
-    <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
-  }
-
-  <!-- Online time and rock-paper-scissors -->
-  @let presence = presenceResource();
-  @let games = gamesResource();
-  <div class="grid grid-cols-1 gap-md lg:grid-cols-2">
-    @if (presence.error()) {
-      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load online time</div>
-    } @else if (presence.hasValue()) {
-      <feature-voice-stats-online-time [presence]="presence.value()!" [name]="name()" [previousLabel]="previousLabel()" />
-    } @else {
-      <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
-    }
-    @if (games.error()) {
-      <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load games</div>
-    } @else if (games.hasValue()) {
-      <feature-voice-stats-game-record [games]="games.value()!" [name]="name()" />
-    } @else {
-      <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
-    }
+<!-- Past year, day by day -->
+@let calendar = calendarResource();
+@if (calendar.error()) {
+  <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+    Failed to load the past year
   </div>
+} @else if (calendar.hasValue()) {
+  <feature-voice-stats-activity-calendar [calendar]="calendar.value()!" />
+} @else {
+  <div class="h-[340px] rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+}
 
-  <!-- Companions, channels (and recent sessions on your own page) -->
-  @if (user.hasValue()) {
-    <feature-voice-stats-user-profile
-      [userStats]="user.value()!"
-      [name]="name()"
-      [showRecent]="self()"
-      [memberLink]="memberLink()"
-    />
+<!-- When they're on -->
+@if (heatmap.error()) {
+  <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">
+    Failed to load the weekly pattern
+  </div>
+} @else if (heatmap.hasValue()) {
+  <feature-voice-stats-user-heatmap
+    [heatmap]="heatmap.value()!"
+    [loading]="heatmap.isLoading()"
+    [name]="name()"
+  />
+} @else {
+  <div class="h-96 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+}
+
+<!-- Online time and rock-paper-scissors -->
+@let presence = presenceResource();
+@let games = gamesResource();
+<div class="grid grid-cols-1 gap-md lg:grid-cols-2">
+  @if (presence.error()) {
+    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load online time</div>
+  } @else if (presence.hasValue()) {
+    <feature-voice-stats-online-time [presence]="presence.value()!" [name]="name()" [previousLabel]="previousLabel()" />
+  } @else {
+    <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
   }
+  @if (games.error()) {
+    <div class="rounded-xl border border-error/30 bg-error/10 p-md text-sm text-error">Failed to load games</div>
+  } @else if (games.hasValue()) {
+    <feature-voice-stats-game-record [games]="games.value()!" [name]="name()" />
+  } @else {
+    <div class="h-72 rounded-xl border border-white/5 bg-base-300 animate-pulse"></div>
+  }
+</div>
+
+<!-- Companions, channels (and recent sessions on your own page) -->
+@if (user.hasValue()) {
+  <feature-voice-stats-user-profile
+    [userStats]="user.value()!"
+    [name]="name()"
+    [showRecent]="self()"
+    [memberLink]="memberLink()"
+  />
 }

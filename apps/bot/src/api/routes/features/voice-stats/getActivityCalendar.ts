@@ -1,7 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import type { Request, Response } from 'express';
 import { ActivityCalendar } from '@nx-stolfo/api-interfaces';
-import { getTimeZone, isHiddenFrom } from '../helpers';
+import { getTimeZone } from '../helpers';
 import { activityCalendar } from './calendar-sql';
 
 /**
@@ -10,12 +10,8 @@ import { activityCalendar } from './calendar-sql';
  * Days are in the viewer's time zone.
  */
 export const getActivityCalendar = asyncHandler(
-  async (req: Request, res: Response<ActivityCalendar | { error: string }>) => {
+  async (req: Request, res: Response<ActivityCalendar>) => {
     const { serverId, userId } = req.params;
-    if (userId && (await isHiddenFrom(req.db, userId, req.user?.id ?? ''))) {
-      res.status(403).send({ error: 'private' });
-      return;
-    }
     res.json(await activityCalendar(req.db, serverId, userId, getTimeZone(req.query.tz)));
   }
 );
