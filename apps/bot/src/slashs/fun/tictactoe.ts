@@ -117,7 +117,8 @@ export default class TicTacToe extends BaseSlash {
     const opponent = interaction.options.get('opponent')?.user;
     const difficulty = (interaction.options.get('difficulty')?.value as Difficulty | undefined) ?? 'normal';
     const vsBot = opponent?.id === client.user?.id;
-    if (!opponent || opponent.id === interaction.user.id || (opponent.bot && !vsBot)) {
+    const guildId = interaction.guildId;
+    if (!guildId || !opponent || opponent.id === interaction.user.id || (opponent.bot && !vsBot)) {
       await InterActionUtils.send(interaction, { content: 'Please choose a valid user to challenge!' }, true);
       return;
     }
@@ -176,10 +177,10 @@ export default class TicTacToe extends BaseSlash {
       await i.update(view).catch(() => InterActionUtils.editReply(interaction, view).catch(() => undefined));
       if (!finished) return;
 
-      const saved = await this.saveGameResult(client, interaction, finished, players, moves, vsBot, difficulty);
+      const saved = await this.saveGameResult(client, guildId, finished, players, moves, vsBot, difficulty);
       // Only a win against another member earns XP
-      if (saved && !vsBot && finished !== 'draw' && interaction.guildId) {
-        void awardAndAnnounce(client, interaction.guildId, players[finished.mark].id, ['GAME']);
+      if (saved && !vsBot && finished !== 'draw') {
+        void awardAndAnnounce(client, guildId, players[finished.mark].id, ['GAME']);
       }
     });
 
@@ -188,14 +189,14 @@ export default class TicTacToe extends BaseSlash {
         await InterActionUtils.editReply(interaction, {
           content: `Game cancelled: ${players[turn]} didn't move for a minute.`,
           components: [],
-        });
+        }).catch(() => undefined);
       }
     });
   }
 
   private async saveGameResult(
     client: Client,
-    interaction: ChatInputCommandInteraction,
+    guildId: string,
     result: Exclude<Result, null>,
     players: Record<Mark, User>,
     moves: Record<Mark, number[]>,
@@ -209,7 +210,7 @@ export default class TicTacToe extends BaseSlash {
       .create({
         data: {
           game_type: { connect: { id: vsBot ? GAME_TYPES.TIC_TAC_TOE_ASTOLFO : GAME_TYPES.TIC_TAC_TOE } },
-          guild_id: interaction.guildId!,
+          guild_id: guildId,
           ...(vsBot && { metadata: { astolfoMoves: moves.O.join(','), difficulty } }),
           players: {
             create: marks.map((mark) => ({ user_id: players[mark].id, result: scoreOf(mark), move: moves[mark].join(',') })),

@@ -36,7 +36,8 @@ describe("Astolfo's moves", () => {
         const r1 = winner(afterX);
         expect(r1 === null || r1 === 'draw').toBe(true);
         if (r1) { games++; continue; }
-        const afterO = afterX.map((c, i) => (i === astolfoMove(afterX, 'impossible') ? 'O' : c)) as Board;
+        const o = astolfoMove(afterX, 'impossible');
+        const afterO = afterX.map((c, i) => (i === o ? 'O' : c)) as Board;
         if (winner(afterO)) { games++; continue; }
         playAll(afterO);
       }
