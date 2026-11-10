@@ -136,7 +136,7 @@
           @if (race(); as r) {
             <div>
               <h3 class="flex items-baseline justify-between gap-sm text-sm font-semibold text-gray-100">
-                XP ranking
+                Level ranking
                 <span class="text-xs font-normal tabular-nums text-gray-500">#{{ r.rank }} of {{ r.count }}</span>
               </h3>
               <ol class="mt-sm space-y-xs">
@@ -157,7 +157,7 @@
                     <div class="min-w-0">
                       <div class="flex items-baseline justify-between gap-sm text-sm">
                         <span class="truncate" [class]="row.subject ? 'font-semibold text-gray-100' : 'text-gray-300'">{{ row.name }}</span>
-                        <span class="shrink-0 text-xs tabular-nums text-gray-400">{{ row.xp | number }} XP</span>
+                        <span class="shrink-0 text-xs tabular-nums text-gray-400">Level {{ row.level }}</span>
                       </div>
                       <div class="mt-1 h-1 overflow-hidden rounded-full bg-base-100">
                         <div
@@ -184,7 +184,7 @@
                   <strong class="font-semibold text-gray-100">{{ l.gap | number }} XP</strong>
                   ahead of {{ l.name }}.
                 } @else {
-                  Nobody else earned XP {{ periodPhrase() }}.
+                  Nobody else has XP on this server yet.
                 }
               </p>
             </div>

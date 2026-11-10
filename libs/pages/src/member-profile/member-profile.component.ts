@@ -65,11 +65,8 @@ export class MemberProfileComponent {
     () => this.id(),
     () => this.memberId()
   );
-  // For the member's XP rank
-  private xpLeaderboardResource = this.api.fetchXpLeaderboard(
-    () => this.id(),
-    () => this.period()
-  );
+  // For the member's level rank
+  private xpLeaderboardResource = this.api.fetchXpLeaderboard(() => this.id());
   private messagesResource = this.api.fetchServerMessages(
     () => this.id(),
     () => this.period()

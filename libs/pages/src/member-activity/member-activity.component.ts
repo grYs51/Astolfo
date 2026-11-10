@@ -117,7 +117,7 @@ export class MemberActivityComponent {
   period = input.required<DashboardPeriod>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);
-  /** The period's XP leaderboard, most first (for the rank race) */
+  /** The server's level leaderboard (all-time XP), highest first (for the rank race) */
   xpLeaderboard = input<XpLeaderboard['leaderboard']>([]);
   messageRank = input<number | undefined>(undefined);
   /** Router commands for a member's profile (companions become links) */
@@ -166,7 +166,7 @@ export class MemberActivityComponent {
     };
   });
 
-  /** The members just above and below on the XP leaderboard */
+  /** The members just above and below on the level leaderboard */
   protected race = computed(() => {
     const board = this.xpLeaderboard();
     const id = this.stats()?.userId;
@@ -186,7 +186,7 @@ export class MemberActivityComponent {
         rank: start + i + 1,
         name: entry.member.id === id && this.self() ? 'You' : memberName(entry.member),
         avatar: entry.member.avatar,
-        xp: entry.xp,
+        level: entry.level,
         pct: (entry.xp / max) * 100,
         subject: entry.member.id === id,
       })),

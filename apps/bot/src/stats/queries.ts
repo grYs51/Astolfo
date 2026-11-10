@@ -171,38 +171,33 @@ const rankIn = (db: QueryDb, memberId: string, totals: Prisma.Sql) =>
     WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
   `;
 
-/** Each member's XP earned in the window (member_id, total) */
-const xpTotals = (guildId: string, window: TimeWindow) => Prisma.sql`
-  SELECT member_id, SUM(amount) AS total
-  FROM xp_events
-  WHERE guild_id = ${guildId}
-    ${windowFilter('created_at', window)}
-  GROUP BY member_id
-  HAVING SUM(amount) > 0`;
-
 export interface XpNeighbour {
   memberId: string;
   xp: number;
-  /** 1 = most XP; ties broken by member id so the list is stable */
+  /** 1 = highest level (most XP); ties broken by member id so the list is stable */
   rank: number;
   /** Members on the leaderboard */
   members: number;
 }
 
 /**
- * The member and whoever is just above and below them by XP earned in the
- * period (three rows, or fewer on a short leaderboard), like the dashboard's
- * XP ranking. Empty when the member earned no XP.
+ * The member and whoever is just above and below them by level, i.e. all-time
+ * XP on the server (three rows, or fewer on a short leaderboard), like the
+ * dashboard's level ranking. Empty when the member has no XP.
  */
 export const getXpNeighbours = async (
   db: QueryDb,
   guildId: string,
-  memberId: string,
-  period: StatsPeriod,
-  now = new Date()
+  memberId: string
 ): Promise<XpNeighbour[]> => {
   const rows = await db.$queryRaw<{ member_id: string; total: number; rank: number; members: number }[]>`
-    WITH totals AS (${xpTotals(guildId, periodWindows(period, now).current)}),
+    WITH totals AS (
+      SELECT member_id, SUM(amount) AS total
+      FROM xp_events
+      WHERE guild_id = ${guildId}
+      GROUP BY member_id
+      HAVING SUM(amount) > 0
+    ),
     ranked AS (
       SELECT member_id, total,
         ROW_NUMBER() OVER (ORDER BY total DESC, member_id)::int AS rank,

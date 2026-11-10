@@ -248,12 +248,9 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /** Members ranked by XP earned in the period */
-  fetchXpLeaderboard(guildId: () => string, period: () => DashboardPeriod) {
-    return this.get<XpLeaderboard>(
-      () => `/features/voice-stats/${guildId()}/xp-leaderboard`,
-      () => ({ period: period() })
-    );
+  /** Members ranked by level (all-time XP) */
+  fetchXpLeaderboard(guildId: () => string) {
+    return this.get<XpLeaderboard>(() => `/features/voice-stats/${guildId()}/xp-leaderboard`);
   }
 
   /** One member's rock-paper-scissors record (and head-to-head with the viewer) */
