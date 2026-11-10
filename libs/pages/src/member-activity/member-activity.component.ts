@@ -5,15 +5,16 @@ import {
   input,
 } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
+import { DecimalPipe } from '@angular/common';
 import {
   ActivityCalendar,
   DashboardPeriod,
   DiscordMember,
   UserGames,
   UserPresence,
-  VoiceStatsLeaderboardEntry,
   VoiceStatsUser,
   VoiceStatsUserHeatmap,
+  XpLeaderboard,
 } from '@nx-stolfo/data-access-voice-stats';
 import {
   ActivityCalendarComponent,
@@ -82,6 +83,7 @@ const memberName = (member: DiscordMember) => member.displayName || member.usern
     OnlineTimeComponent,
     GameRecordComponent,
     HumanizeDurationPipe,
+    DecimalPipe,
     XpCardComponent,
   ],
   templateUrl: './member-activity.component.html',
@@ -115,8 +117,8 @@ export class MemberActivityComponent {
   period = input.required<DashboardPeriod>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);
-  /** The period's voice leaderboard, longest first (for the rank race) */
-  voiceLeaderboard = input<VoiceStatsLeaderboardEntry[]>([]);
+  /** The period's XP leaderboard, most first (for the rank race) */
+  xpLeaderboard = input<XpLeaderboard['leaderboard']>([]);
   messageRank = input<number | undefined>(undefined);
   /** Router commands for a member's profile (companions become links) */
   memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
@@ -164,15 +166,15 @@ export class MemberActivityComponent {
     };
   });
 
-  /** The members just above and below on the voice leaderboard */
+  /** The members just above and below on the XP leaderboard */
   protected race = computed(() => {
-    const board = this.voiceLeaderboard();
+    const board = this.xpLeaderboard();
     const id = this.stats()?.userId;
     const index = board.findIndex((entry) => entry.member.id === id);
     if (index < 0) return undefined;
     const start = Math.max(0, Math.min(index - 1, board.length - 3));
     const rows = board.slice(start, start + 3);
-    const max = Math.max(rows[0].totalDuration, 1);
+    const max = Math.max(rows[0].xp, 1);
     const you = board[index];
     const ahead = board[index - 1];
     const behind = board[index + 1];
@@ -184,16 +186,13 @@ export class MemberActivityComponent {
         rank: start + i + 1,
         name: entry.member.id === id && this.self() ? 'You' : memberName(entry.member),
         avatar: entry.member.avatar,
-        duration: entry.totalDuration,
-        pct: (entry.totalDuration / max) * 100,
+        xp: entry.xp,
+        pct: (entry.xp / max) * 100,
         subject: entry.member.id === id,
       })),
       // What it takes to move up, or the lead when already on top
-      ahead: ahead && { name: memberName(ahead.member), gap: ahead.totalDuration - you.totalDuration },
-      lead:
-        !ahead && behind
-          ? { name: memberName(behind.member), gap: you.totalDuration - behind.totalDuration }
-          : undefined,
+      ahead: ahead && { name: memberName(ahead.member), gap: ahead.xp - you.xp },
+      lead: !ahead && behind ? { name: memberName(behind.member), gap: you.xp - behind.xp } : undefined,
     };
   });
 

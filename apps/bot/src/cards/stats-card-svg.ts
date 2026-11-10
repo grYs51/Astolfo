@@ -3,7 +3,7 @@ import { activityCalendar } from '../api/routes/features/voice-stats/calendar-sq
 import { voiceHeatmapCells } from '../api/routes/features/voice-stats/heatmap-sql';
 import { discordDirectory } from '../api/utils/discord-directory';
 import type { Db } from '../db';
-import { getMemberHabits, getMemberOnline, getMemberSummary, getVoiceNeighbours } from '../stats/queries';
+import { getMemberHabits, getMemberOnline, getMemberSummary, getXpNeighbours } from '../stats/queries';
 import { periodWindows, StatsPeriod } from '../stats/windows';
 import { cardImageUrl, fetchImage } from './avatars';
 import { DEFAULT_SECTIONS, statsCard, StatsCardSection } from './stats.card';
@@ -35,7 +35,7 @@ export const statsCardSvg = async (opts: {
     getMemberSummary(db, guildId, memberId, period),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
-    sections.includes('totals') ? getVoiceNeighbours(db, guildId, memberId, period) : [],
+    sections.includes('totals') ? getXpNeighbours(db, guildId, memberId, period) : [],
     sections.includes('calendar') ? activityCalendar(db, guildId, memberId, tz) : undefined,
     sections.includes('heatmap')
       ? db.$queryRaw<{ hour: number; day_of_week: number; total_minutes: number }[]>(
@@ -75,7 +75,7 @@ export const statsCardSvg = async (opts: {
       ranking: neighbours.length
         ? {
             members: neighbours[0].members,
-            rows: neighbours.map((n) => ({ ...person(n.memberId), voiceMs: n.voiceMs, rank: n.rank, subject: n.memberId === memberId })),
+            rows: neighbours.map((n) => ({ ...person(n.memberId), xp: n.xp, rank: n.rank, subject: n.memberId === memberId })),
           }
         : undefined,
       online,

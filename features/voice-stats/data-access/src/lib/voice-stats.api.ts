@@ -22,6 +22,7 @@ import {
   ActivityCalendar,
   VoiceHabitMetric,
   VoiceHabitsLeaderboard,
+  XpLeaderboard,
   StatsCardSection,
   StatsCardTheme,
 } from '@nx-stolfo/api-interfaces';
@@ -244,6 +245,14 @@ export class VoiceStatsApi extends ApiBase {
     return this.get<VoiceHabitsLeaderboard>(
       () => `/features/voice-stats/${guildId()}/voice-habits`,
       () => ({ period: period(), metric: metric() })
+    );
+  }
+
+  /** Members ranked by XP earned in the period */
+  fetchXpLeaderboard(guildId: () => string, period: () => DashboardPeriod) {
+    return this.get<XpLeaderboard>(
+      () => `/features/voice-stats/${guildId()}/xp-leaderboard`,
+      () => ({ period: period() })
     );
   }
 

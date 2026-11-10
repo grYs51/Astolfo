@@ -171,37 +171,38 @@ const rankIn = (db: QueryDb, memberId: string, totals: Prisma.Sql) =>
     WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
   `;
 
-/** Each member's voice ms in the window (member_id, total) */
-const voiceTotals = (guildId: string, window: TimeWindow) => Prisma.sql`
-  SELECT member_id, SUM(${durationMs()}) AS total
-  FROM voice_stats
-  WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
-    ${windowFilter('issued_on', window)}
-  GROUP BY member_id`;
+/** Each member's XP earned in the window (member_id, total) */
+const xpTotals = (guildId: string, window: TimeWindow) => Prisma.sql`
+  SELECT member_id, SUM(amount) AS total
+  FROM xp_events
+  WHERE guild_id = ${guildId}
+    ${windowFilter('created_at', window)}
+  GROUP BY member_id
+  HAVING SUM(amount) > 0`;
 
-export interface VoiceNeighbour {
+export interface XpNeighbour {
   memberId: string;
-  voiceMs: number;
-  /** 1 = most voice time; ties broken by member id so the list is stable */
+  xp: number;
+  /** 1 = most XP; ties broken by member id so the list is stable */
   rank: number;
   /** Members on the leaderboard */
   members: number;
 }
 
 /**
- * The member and whoever is just above and below them by voice time in the
+ * The member and whoever is just above and below them by XP earned in the
  * period (three rows, or fewer on a short leaderboard), like the dashboard's
- * voice ranking. Empty when the member has no voice time.
+ * XP ranking. Empty when the member earned no XP.
  */
-export const getVoiceNeighbours = async (
+export const getXpNeighbours = async (
   db: QueryDb,
   guildId: string,
   memberId: string,
   period: StatsPeriod,
   now = new Date()
-): Promise<VoiceNeighbour[]> => {
+): Promise<XpNeighbour[]> => {
   const rows = await db.$queryRaw<{ member_id: string; total: number; rank: number; members: number }[]>`
-    WITH totals AS (${voiceTotals(guildId, periodWindows(period, now).current)}),
+    WITH totals AS (${xpTotals(guildId, periodWindows(period, now).current)}),
     ranked AS (
       SELECT member_id, total,
         ROW_NUMBER() OVER (ORDER BY total DESC, member_id)::int AS rank,
@@ -215,7 +216,7 @@ export const getVoiceNeighbours = async (
     WHERE rank BETWEEN me.first AND me.first + 2
     ORDER BY rank
   `;
-  return rows.map((row) => ({ memberId: row.member_id, voiceMs: Number(row.total), rank: row.rank, members: row.members }));
+  return rows.map((row) => ({ memberId: row.member_id, xp: Number(row.total), rank: row.rank, members: row.members }));
 };
 
 /**

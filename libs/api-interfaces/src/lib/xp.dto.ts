@@ -1,4 +1,4 @@
-import type { DateLike, DiscordMember } from './voice-stats.dto';
+import type { DashboardPeriod, DateLike, DiscordMember } from './voice-stats.dto';
 
 /**
  * The XP rules: one global set, tuned on the owner's /admin panel (defaults in the bot's `xp/rules.ts`).
@@ -117,4 +117,10 @@ export interface VoiceSessionXp {
   segments: XpSegment[];
   /** Everyone named in the segments */
   people: Record<string, DiscordMember>;
+}
+
+/** GET …/:serverId/xp-leaderboard: XP earned in the period, top first (up to 100, so the viewer's rank is known) */
+export interface XpLeaderboard {
+  period: DashboardPeriod;
+  leaderboard: { member: DiscordMember; xp: number }[];
 }

@@ -7,7 +7,7 @@ jest.mock('../../utils/interaction-utils', () => ({
   InterActionUtils: { send: jest.fn() },
 }));
 // No neighbours: the totals section draws without the ranking
-jest.mock('../../stats/queries', () => ({ getMemberSummary: jest.fn(), getVoiceNeighbours: jest.fn().mockResolvedValue([]) }));
+jest.mock('../../stats/queries', () => ({ getMemberSummary: jest.fn(), getXpNeighbours: jest.fn().mockResolvedValue([]) }));
 jest.mock('../../xp/grant', () => ({ totalXp: jest.fn(async () => 0) }));
 
 const interactionWith = (period?: string) =>
