@@ -102,6 +102,13 @@ describe('starterSessions', () => {
     expect(starterSessions(graded(session(5, 30), [other('a', 0, 30)]), DEFAULT_RULES)).toEqual([]);
   });
 
+  test('joining someone sitting deafened is not starting either', () => {
+    // a is deafened until minute 10, so their pieces start there, but they were in the channel from 0
+    const s = { session: session(5, 30), others: [other('a', 10, 30)], present: [other('a', 0, 30)] };
+    expect(starterSessions([s], DEFAULT_RULES)).toEqual([]);
+    expect(starterSessions([{ ...s, present: undefined }], DEFAULT_RULES)).toHaveLength(1);
+  });
+
   test('the fourth in a day earns nothing', () => {
     const sessions = [0, 60, 120, 180].map((m, i) => ({ session: session(m, m + 30, `s${i}`), others: [other('a', m + 5, m + 30, `a${i}`)] }));
     const result = starterSessions(sessions, DEFAULT_RULES);

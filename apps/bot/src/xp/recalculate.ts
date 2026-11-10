@@ -1,8 +1,9 @@
 import type DiscordClient from '../client/client';
 import { discordDirectory } from '../api/utils/discord-directory';
 import { Logger } from '../utils/logger';
-import { grantXp } from './grant';
-import { currentRules } from './rules';
+import { grantXp, guildTotals } from './grant';
+import { currentRules, levelFor } from './rules';
+import { postLevelUp } from './announce';
 
 const DAY = 24 * 60 * 60 * 1000;
 /** How far back each sweep looks before the previous one: late-closed sessions and the day before for streaks */
@@ -15,18 +16,22 @@ export const xpLookups = (client: DiscordClient, guildId: string) => ({
 });
 
 // shortcut: the lock is in memory, fine while API and bot are one process; move it to the database if they split
-const recalculating = new Set<string>();
+const busy = new Map<string, 'recalculating' | 'sweeping'>();
 
-/** While true, live grants and the sweep leave the guild alone, so no level-up compares against a half-rebuilt total */
-export const isRecalculating = (guildId: string) => recalculating.has(guildId);
+/** While true, live grants leave the guild alone, so no level-up compares against a half-rebuilt total */
+export const isRecalculating = (guildId: string) => busy.get(guildId) === 'recalculating';
+
+/** A recalculation or a sweep holds the guild. Never both at once: their inserts on the same keys can deadlock. */
+export const isXpBusy = (guildId: string) => busy.has(guildId);
 
 /**
  * Rebuild a guild's XP ledger with the current rules, posting nothing. In one transaction, so a failure
  * keeps the old ledger and readers see the old totals until the new ones are complete.
  */
 export const recalculateXp = async (client: DiscordClient, guildId: string) => {
-  if (recalculating.has(guildId)) throw new Error(`XP for guild ${guildId} is already being recalculated`);
-  recalculating.add(guildId);
+  const held = busy.get(guildId);
+  if (held) throw new Error(`XP for guild ${guildId} is already ${held === 'sweeping' ? 'being swept' : 'being recalculated'}`);
+  busy.set(guildId, 'recalculating');
   const start = Date.now();
   try {
     const granted = await client.dataSource.$transaction(
@@ -38,7 +43,7 @@ export const recalculateXp = async (client: DiscordClient, guildId: string) => {
     );
     return { ...granted, ms: Date.now() - start };
   } finally {
-    recalculating.delete(guildId);
+    busy.delete(guildId);
   }
 };
 
@@ -61,22 +66,43 @@ export const sweepXp = async (client: DiscordClient) => {
 
 const sweepGuilds = async (client: DiscordClient) => {
   for (const { id: guildId } of discordDirectory().guilds()) {
-    if (isRecalculating(guildId)) continue;
-    const start = Date.now();
-    const last = lastSweep.get(guildId);
+    if (busy.has(guildId)) continue;
+    busy.set(guildId, 'sweeping');
     try {
-      const granted = await grantXp(client.dataSource, {
-        guildId,
-        since: last ? new Date(last - SWEEP_OVERLAP_MS) : undefined,
-        rules: currentRules(),
-        ...xpLookups(client, guildId),
-      });
-      lastSweep.set(guildId, start);
-      if (granted.rows || !last) {
-        Logger.info(`XP sweep for guild ${guildId}: ${granted.rows} rows, ${granted.xp} XP in ${Date.now() - start} ms`);
-      }
+      await sweepGuild(client, guildId);
     } catch (error) {
       Logger.error(`XP sweep failed for guild ${guildId}`, error);
+    } finally {
+      busy.delete(guildId);
     }
+  }
+};
+
+const sweepGuild = async (client: DiscordClient, guildId: string) => {
+  const start = Date.now();
+  const last = lastSweep.get(guildId);
+  const rules = currentRules();
+  // The sweep's level-ups (the weekly top 3, sessions closed at shutdown) are posted too, but not on a
+  // guild without XP yet: that's the backfill. shortcut: a backfill that fails halfway posts the rest's
+  // level-ups on the next sweep (without pings); mark guilds as backfilled if that ever happens
+  const before = client.guildConfigs.get(guildId)?.level_up_channel_id ? await guildTotals(client.dataSource, guildId) : undefined;
+  const granted = await grantXp(client.dataSource, {
+    guildId,
+    since: last ? new Date(last - SWEEP_OVERLAP_MS) : undefined,
+    rules,
+    ...xpLookups(client, guildId),
+  });
+  lastSweep.set(guildId, start);
+  if (granted.rows || !last) {
+    Logger.info(`XP sweep for guild ${guildId}: ${granted.rows} rows, ${granted.xp} XP in ${Date.now() - start} ms`);
+  }
+  if (!before?.size || !granted.rows) return;
+  for (const [memberId, total] of await guildTotals(client.dataSource, guildId)) {
+    const level = levelFor(total, rules);
+    if (level <= levelFor(before.get(memberId) ?? 0, rules)) continue;
+    // One failed post shouldn't drop the rest
+    await postLevelUp(client, guildId, memberId, level).catch((error) =>
+      Logger.error(`Level-up post failed for ${memberId} in guild ${guildId}`, error)
+    );
   }
 };

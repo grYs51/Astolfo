@@ -19,7 +19,7 @@ import {
   setXpRules,
 } from './actions';
 import { currentRules, DEFAULT_RULES } from '../../../xp/rules';
-import { isRecalculating, recalculateXp } from '../../../xp/recalculate';
+import { isXpBusy, recalculateXp } from '../../../xp/recalculate';
 import { setVc } from '../../../utils/functions/set-vc';
 import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 
@@ -33,7 +33,7 @@ jest.mock('../../utils/discord-directory', () => ({
   }),
 }));
 jest.mock('../../../xp/recalculate', () => ({
-  isRecalculating: jest.fn(() => false),
+  isXpBusy: jest.fn(() => false),
   recalculateXp: jest.fn(async () => ({ rows: 1, xp: 2, ms: 3 })),
 }));
 const mockLeave = jest.fn();
@@ -272,7 +272,7 @@ describe('admin actions', () => {
   test('recalculate xp: 400, 404, 409 while running, otherwise 202 and runs in the background', async () => {
     expect((await act(recalculateXpNow, {})).status).toBe(400);
     expect((await act(recalculateXpNow, { guildId: 'g3' })).status).toBe(404);
-    (isRecalculating as jest.Mock).mockReturnValueOnce(true);
+    (isXpBusy as jest.Mock).mockReturnValueOnce(true);
     expect((await act(recalculateXpNow, { guildId: 'g1' })).status).toBe(409);
     expect(recalculateXp).not.toHaveBeenCalled();
     expect(await act(recalculateXpNow, { guildId: 'g1' })).toEqual({ status: 202, body: { queued: true } });

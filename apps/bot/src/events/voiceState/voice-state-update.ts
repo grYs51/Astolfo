@@ -13,7 +13,7 @@ import {
   userLeftVoiceChannel,
   voiceKey,
 } from '../../utils/handlers/vc';
-import { awardAndAnnounce } from '../../xp/level-up';
+import { VOICE_SOURCES, awardAndAnnounce } from '../../xp/level-up';
 
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   constructor() {
@@ -31,8 +31,8 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     // One member's events must not interleave (see runSerialized)
     return runSerialized(voiceKey(newState.guild.id, newState.id), async () => {
       const closed = await this.handleVoiceStateUpdate(oldState, newState, date);
-      // Voice XP lands when a session closes, in the same queue so the row is closed first
-      if (closed) await awardAndAnnounce(client, newState.guild.id, newState.id);
+      // Voice XP and what hangs on it land when a session closes, in the same queue so the row is closed first
+      if (closed) await awardAndAnnounce(client, newState.guild.id, newState.id, VOICE_SOURCES);
     });
   }
 

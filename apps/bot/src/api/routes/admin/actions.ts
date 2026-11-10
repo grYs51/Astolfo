@@ -20,7 +20,7 @@ import { closeLeftVoiceSessions } from '../../../utils/handlers/vc';
 import { setVc } from '../../../utils/functions/set-vc';
 import { discordDirectory } from '../../utils/discord-directory';
 import { currentRules, DEFAULT_RULES, parseXpRules, setRules } from '../../../xp/rules';
-import { isRecalculating, recalculateXp } from '../../../xp/recalculate';
+import { isXpBusy, recalculateXp } from '../../../xp/recalculate';
 
 type Failure = { error: string };
 
@@ -217,8 +217,9 @@ export const recalculateXpNow: RequestHandler<unknown, AdminRecalculateQueued | 
       res.status(404).send({ error: 'The bot is not in that server' });
       return;
     }
-    if (isRecalculating(guildId)) {
-      res.status(409).send({ error: 'Already recalculating that server' });
+    // A running sweep holds the guild too: both writing its ledger at once can deadlock
+    if (isXpBusy(guildId)) {
+      res.status(409).send({ error: 'That server’s XP is being recalculated or swept, try again in a minute' });
       return;
     }
     Logger.info(`Admin action: recalculate XP for guild ${guildId}`);

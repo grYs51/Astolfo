@@ -17,7 +17,7 @@ export default class MessageEvent extends BaseEvent {
     // instead of becoming context-free unhandled rejections
     await Promise.all([
       saveMessage(message).then(
-        (saved) => saved && awardAndAnnounce(client, saved.guild_id, saved.user_id)
+        (saved) => saved && awardAndAnnounce(client, saved.guild_id, saved.user_id, ['MESSAGE'])
       ),
       runCommand(client, message),
     ]);

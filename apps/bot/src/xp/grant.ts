@@ -19,6 +19,8 @@ export interface GrantOptions {
   memberId?: string;
   /** Only XP earned from here on; undefined = all history */
   since?: Date;
+  /** Only these sources (the live path: a message can only earn message XP); undefined = all */
+  sources?: XpSource[];
   rules: XpRules;
   isBot: (id: string) => boolean;
   channelName?: (channelId: string) => string | undefined;
@@ -184,16 +186,19 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   for (const row of humans) append(byMemberChannel, `${row.member_id}|${row.channel_id}`, row);
   const ofType = (rows: VoiceRow[] | undefined, type: VOICE_TYPE) => (rows ?? []).filter((r) => r.type === type).map(interval);
 
-  // Others' time in each channel, deafened stretches cut out
+  // Others' time in each channel, deafened stretches cut out, and whole (for who was already there)
   const piecesByChannel = new Map<string, OtherPiece[]>();
+  const presentByChannel = new Map<string, OtherPiece[]>();
   for (const rows of byMemberChannel.values()) {
     const deaf = ofType(rows, VOICE_TYPE.DEAF);
     for (const row of rows.filter((r) => r.type === VOICE_TYPE.VOICE)) {
       const pieces = subtract(interval(row), deaf).map((p) => ({ ...p, memberId: row.member_id, sessionId: row.id }));
       append(piecesByChannel, row.channel_id, ...pieces);
+      append(presentByChannel, row.channel_id, { ...interval(row), memberId: row.member_id, sessionId: row.id });
     }
   }
   const findPieces = new Map([...piecesByChannel].map(([channel, pieces]) => [channel, indexPieces(pieces)]));
+  const findPresent = new Map([...presentByChannel].map(([channel, pieces]) => [channel, indexPieces(pieces)]));
 
   const stay = new Map<string, number>();
   const ownSessions = new Map<string, Session[]>();
@@ -236,10 +241,11 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   sessions.forEach((s) => append(bySessionMember, s.memberId, s));
 
   for (const [member, list] of bySessionMember) {
-    const graded: { session: Session; others: OtherPiece[] }[] = [];
+    const graded: { session: Session; others: OtherPiece[]; present: OtherPiece[] }[] = [];
     for (const session of list) {
       const others = (findPieces.get(session.channelId)?.(session) ?? []).filter((p) => p.memberId !== member);
-      graded.push({ session, others });
+      const present = (findPresent.get(session.channelId)?.(session) ?? []).filter((p) => p.memberId !== member);
+      graded.push({ session, others, present });
       const own = byMemberChannel.get(`${member}|${session.channelId}`);
       const clip = (intervals: Interval[]) => intervals.filter((i) => overlaps(i, session));
       const voice = voiceXp(
@@ -512,8 +518,9 @@ const grantWeekly = (db: GrantDb, { guildId, since, rules, now = new Date() }: G
  * recalculation). The weekly top 3 is whole-guild only. Returns the rows and XP added.
  */
 export const grantXp = async (db: GrantDb, opts: GrantOptions): Promise<Granted> => {
-  const { guildId, memberId, rules, isBot } = opts;
+  const { guildId, memberId, rules, isBot, sources } = opts;
   if (memberId && isBot(memberId)) return { rows: 0, xp: 0 };
+  const wants = (...source: XpSource[]) => !sources || source.some((s) => sources.includes(s));
   // Bots are only in voice; the ids are needed to keep them out of the SQL-side grants
   const botIds = memberId
     ? []
@@ -526,13 +533,23 @@ export const grantXp = async (db: GrantDb, opts: GrantOptions): Promise<Granted>
   const { amounts, thresholds } = rules;
   const results: Granted[] = [];
   // One at a time: the grants are independent, but a backfill shouldn't take every pool connection
-  results.push(await grantVoice(db, opts, botIds));
-  if (amounts.message > 0) results.push(await grantMessages(db, opts));
-  if (amounts.streakDay > 0) results.push(await grantStreaks(db, opts, botIds));
-  if (amounts.gameWin > 0) results.push(await grantGames(db, opts));
-  if (amounts.milestone > 0 && thresholds.milestoneHours.length) results.push(await grantMilestones(db, opts, botIds));
-  if (!memberId && amounts.weekly.some((a) => a > 0)) results.push(await grantWeekly(db, opts, botIds));
+  if (wants('VOICE', 'STARTER', 'RECONNECT', 'WELCOME')) results.push(await grantVoice(db, opts, botIds));
+  if (wants('MESSAGE') && amounts.message > 0) results.push(await grantMessages(db, opts));
+  if (wants('STREAK') && amounts.streakDay > 0) results.push(await grantStreaks(db, opts, botIds));
+  if (wants('GAME') && amounts.gameWin > 0) results.push(await grantGames(db, opts));
+  if (wants('MILESTONE') && amounts.milestone > 0 && thresholds.milestoneHours.length) {
+    results.push(await grantMilestones(db, opts, botIds));
+  }
+  if (wants('WEEKLY') && !memberId && amounts.weekly.some((a) => a > 0)) results.push(await grantWeekly(db, opts, botIds));
   return sum(results);
+};
+
+/** XP total of every member on a server */
+export const guildTotals = async (db: GrantDb, guildId: string) => {
+  const rows = await db.$queryRaw<{ member_id: string; xp: number }[]>`
+    SELECT member_id, SUM(amount)::int AS xp FROM xp_events WHERE guild_id = ${guildId} GROUP BY member_id
+  `;
+  return new Map(rows.map((r) => [r.member_id, r.xp]));
 };
 
 /** XP total of a member on a server */

@@ -7,9 +7,9 @@ import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 jest.mock('../client/instance', () => ({ client: {} }));
 jest.mock('../api/utils/discord-directory', () => ({ discordDirectory: () => ({ channel: () => undefined }) }));
 
-// No test database in this repo: this runs against a real Postgres only when XP_TEST_DATABASE_URL points
-// at one with the migrations applied (a throwaway copy of the dev database). It works in its own guild id
-// and deletes its rows before and after.
+// Runs against a real Postgres only when XP_TEST_DATABASE_URL points at one with the migrations applied
+// (CI starts one; locally a throwaway database). It works in its own guild id and deletes its rows before
+// and after.
 const url = process.env.XP_TEST_DATABASE_URL;
 const describeDb = url ? describe : describe.skip;
 
