@@ -29,9 +29,25 @@ const data = (overrides: Partial<StatsCardData> = {}): StatsCardData => ({
   period: 'week',
   memberName: 'Astolfo',
   serverName: 'Paladins',
-  favouriteChannelName: 'general & chill',
   companions: [{ name: 'Roland' }, { name: '<b>Oliver</b>' }],
   ...overrides,
+});
+
+/** Astolfo (4h) at `rank` of 5, between Roland and Oliver */
+const ranking = (rank: 1 | 2): NonNullable<StatsCardData['ranking']> => ({
+  members: 5,
+  rows:
+    rank === 1
+      ? [
+          { name: 'Astolfo', voiceMs: 4 * H, rank: 1, subject: true },
+          { name: 'Roland', voiceMs: 3 * H, rank: 2, subject: false },
+          { name: 'Oliver', voiceMs: 2 * H, rank: 3, subject: false },
+        ]
+      : [
+          { name: 'Roland', voiceMs: 5 * H, rank: 1, subject: false },
+          { name: 'Astolfo', voiceMs: 4 * H, rank: 2, subject: true },
+          { name: 'Oliver', voiceMs: 2 * H, rank: 3, subject: false },
+        ],
 });
 
 /** The data the optional sections need */
@@ -49,33 +65,81 @@ const sections = (): Partial<StatsCardData> => ({
 });
 
 describe('statsCard', () => {
-  it('shows voice, messages, rank and sessions with the change', () => {
+  it('leads with the change in voice time, both periods as bars, then sessions and chat rank', () => {
     const svg = statsCard(data(), THEMES.dark);
+    expect(svg).toContain('>2h more<');
+    expect(svg).toContain('in voice than the week before.');
+    expect(svg).toContain('>Past week<');
+    expect(svg).toContain('>Week before<');
     expect(svg).toContain('>4h<');
-    expect(svg).toContain('↑ 100% vs the week before');
-    expect(svg).toContain('>1,234<');
-    expect(svg).toContain('↓ 38% vs the week before');
-    expect(svg).toContain('>#1<');
-    expect(svg).toContain('of 3 members · #2 in messages');
-    expect(svg).toContain('avg 2h · most in #general &amp; chill');
+    expect(svg).toContain('>Average session<');
+    expect(svg).toContain('>#2<');
+    expect(svg).toContain('1,234 messages');
   });
 
-  it('shows the voice streak and the next milestone with its progress', () => {
-    const svg = statsCard(data(), THEMES.dark);
+  it('says less, or about as long, against the previous period', () => {
+    expect(statsCard(data({ summary: summary({ voiceMs: H, previousVoiceMs: 3 * H }) }), THEMES.dark)).toContain('>2h less<');
+    const same = statsCard(data({ summary: summary({ voiceMs: 2 * H, previousVoiceMs: 2 * H + 30_000 }) }), THEMES.dark);
+    expect(same).toContain('spent about as long in voice');
+    expect(same).toContain('as the week before.');
+  });
+
+  it('gives the totals for all time, with no bars', () => {
+    const svg = statsCard(data({ period: 'all', summary: summary({ previousVoiceMs: null, previousMessages: null }) }), THEMES.dark);
+    expect(svg).toContain('>4h<');
+    expect(svg).toContain('>1,234 messages<');
+    expect(svg).toContain('over all time.');
+    expect(svg).not.toContain('Past week');
+  });
+
+  it('names the member, not "you", for someone else', () => {
+    const svg = statsCard(data({ self: false, memberName: 'Bradamante' }), THEMES.dark);
+    expect(svg).toContain('Bradamante spent');
+    expect(svg).not.toContain('You spent');
+  });
+
+  it('ranks the member between their neighbours, with the gap to the next rank', () => {
+    const svg = statsCard(data({ ranking: ranking(2) }), THEMES.dark);
+    expect(svg).toContain('Voice ranking · #2 of 5');
+    expect(svg).toContain('>You<');
+    expect(svg).toContain('>Roland<');
+    expect(svg).toContain('>1h<');
+    expect(svg).toContain('behind Roland for #1.');
+  });
+
+  it('says how far ahead the top member is, or that nobody else was in voice', () => {
+    expect(statsCard(data({ ranking: ranking(1) }), THEMES.dark)).toContain('ahead of Roland.');
+    const alone = { members: 1, rows: [{ name: 'Astolfo', voiceMs: 4 * H, rank: 1, subject: true }] };
+    expect(statsCard(data({ ranking: alone }), THEMES.dark)).toContain('Nobody else was in voice over the past week.');
+  });
+
+  it('leaves out the ranking without voice time', () => {
+    expect(statsCard(data(), THEMES.dark)).not.toContain('Voice ranking');
+  });
+
+  it('shows the voice streak with its pips and the next milestone as a square per hour', () => {
+    const svg = statsCard(data({ sections: ['streak'] }), THEMES.dark);
     expect(svg).toContain('>Voice streak<');
-    expect(svg).toContain('>3 days<');
-    expect(svg).toContain('best 7');
-    expect(svg).toContain('>100h<');
-    expect(svg).toContain('12h to go');
-    // 88h is 38 of the 50 hours from the 50h milestone to 100h, on a bar as wide as the tile minus its padding
-    const barW = (800 - 64 - 16) / 2 - 48;
-    expect(svg).toContain(`width="${(38 / 50) * barW}" height="8"`);
+    expect(svg).toContain('>3 days');
+    expect(svg).toContain('· best 7');
+    expect(svg).toContain('>100 hours in voice<');
+    expect(svg).toContain('>12h 0m');
+    expect(svg).toContain('to go<');
+    // 100 squares: the 88 hours done at full strength, the rest empty
+    expect(svg.match(/rx="2"/g)).toHaveLength(100);
+    expect(svg.match(/fill-opacity="1"/g)).toHaveLength(88);
+  });
+
+  it('marks the hour in progress', () => {
+    const svg = statsCard(data({ sections: ['streak'], summary: summary({ lifetimeMs: 88.5 * H }) }), THEMES.dark);
+    expect(svg.match(/fill-opacity="0.5"/g)).toHaveLength(1);
+    expect(svg).toContain('>11h 30m');
   });
 
   it('leaves out the streak line when there is no streak and no milestone left', () => {
     const svg = statsCard(data({ summary: summary({ streak: { current: 0, longest: 0 }, lifetimeMs: 1000 * H }) }), THEMES.dark);
     expect(svg).not.toContain('Voice streak');
-    expect(svg).not.toContain('Next milestone');
+    expect(svg).not.toContain('hours in voice');
   });
 
   it('lists companions with escaped names', () => {
@@ -86,37 +150,48 @@ describe('statsCard', () => {
     expect(svg).toContain('>2h<');
   });
 
-  it('leaves out the companions block and rank when there are none', () => {
-    const svg = statsCard(data({ summary: summary({ companions: [], voiceRank: undefined }), companions: [] }), THEMES.dark);
+  it('leaves out the companions block and the chat rank when there are none', () => {
+    const svg = statsCard(data({ summary: summary({ companions: [], messageRank: undefined }), companions: [] }), THEMES.dark);
     expect(svg).not.toContain('You hang out most with');
-    expect(svg).toContain('>–<');
+    expect(svg).toContain('>1,234 messages<');
   });
 
   it('says so when there was no activity', () => {
     const svg = statsCard(data({ summary: summary({ sessions: 0, messages: 0, companions: [] }), period: 'all' }), THEMES.light);
     expect(svg).toContain('over all time.');
-    expect(svg).not.toContain('Voice time');
+    expect(svg).not.toContain('Sessions');
   });
 
   it('draws only the default sections when none are picked (/stats)', () => {
     const svg = statsCard(data(sections()), THEMES.dark);
     expect(svg).not.toContain('Voice habits');
     expect(svg).not.toContain('Past year');
-    expect(svg).not.toContain('in voice<');
+    expect(svg).not.toContain('When you’re in voice');
   });
 
-  it('draws the voice habits', () => {
+  it('draws the voice habits as meters in five parts', () => {
     const svg = statsCard(data({ ...sections(), sections: ['habits'] }), THEMES.dark);
     expect(svg).toContain('Voice habits');
-    expect(svg).toContain('>Camera on<');
-    expect(svg).toContain('>30m<');
-    expect(svg).toContain('>3h<'); // listening: 4h of voice, 1h deafened
+    expect(svg).toContain('>Muted<');
     expect(svg).toContain('>50%<');
-    expect(svg).not.toContain('Voice time');
+    expect(svg).toContain('>Camera<');
+    expect(svg).toContain('>13%<'); // 30m of 4h
+    expect(svg).toContain('>Streaming<');
+    expect(svg).toContain('>0%<');
+    expect(svg).toContain('2h of voice');
+    expect(svg).not.toContain('>Online<');
+    expect(svg).not.toContain('Sessions');
     expect(svg).not.toContain('You hang out most with');
   });
 
-  it('leaves out the habits without voice time', () => {
+  it('adds the online meter when the online time is known', () => {
+    const svg = statsCard(data({ ...sections(), sections: ['habits'], online: { ms: 10 * H, share: 0.42 } }), THEMES.dark);
+    expect(svg).toContain('>Online<');
+    expect(svg).toContain('>42%<');
+    expect(svg).toContain('10h in total');
+  });
+
+  it('leaves out the habits without voice time or online time', () => {
     const svg = statsCard(data({ ...sections(), sections: ['habits'], habits: { voice: 0, muted: 0, deafened: 0, video: 0, streaming: 0 } }), THEMES.dark);
     expect(svg).not.toContain('Voice habits');
   });
@@ -153,7 +228,7 @@ describe('statsCard', () => {
       THEMES.dark
     );
     expect(svg).toContain('Past year');
-    expect(svg).not.toContain('Voice time');
+    expect(svg).not.toContain('Sessions');
   });
 
   it('draws the weekly heatmap in the viewer’s words', () => {

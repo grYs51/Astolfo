@@ -6,6 +6,7 @@ import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows'
 import { crossedMilestones, MILESTONE_HOURS } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
+import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
 
 /**
  * Stats for the Discord-side features (/stats, /profile, weekly digest). Same rules as
@@ -177,6 +178,74 @@ const rankIn = (db: QueryDb, memberId: string, totals: Prisma.Sql) =>
     WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
   `;
 
+/** Each member's voice ms in the window (member_id, total), members hidden from the viewer left out */
+const voiceTotals = (guildId: string, window: TimeWindow, viewerId: string) => Prisma.sql`
+  SELECT member_id, SUM(${durationMs()}) AS total
+  FROM voice_stats
+  WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
+    ${windowFilter('issued_on', window)}
+    ${visibleMembersOnly('member_id', viewerId)}
+  GROUP BY member_id`;
+
+export interface VoiceNeighbour {
+  memberId: string;
+  voiceMs: number;
+  /** 1 = most voice time; ties broken by member id so the list is stable */
+  rank: number;
+  /** Members on the leaderboard, as the viewer sees it */
+  members: number;
+}
+
+/**
+ * The member and whoever is just above and below them by voice time in the
+ * period (three rows, or fewer on a short leaderboard), like the dashboard's
+ * voice ranking. Empty when the member has no voice time.
+ */
+export const getVoiceNeighbours = async (
+  db: QueryDb,
+  guildId: string,
+  memberId: string,
+  period: StatsPeriod,
+  viewerId = memberId,
+  now = new Date()
+): Promise<VoiceNeighbour[]> => {
+  const rows = await db.$queryRaw<{ member_id: string; total: number; rank: number; members: number }[]>`
+    WITH totals AS (${voiceTotals(guildId, periodWindows(period, now).current, viewerId)}),
+    ranked AS (
+      SELECT member_id, total,
+        ROW_NUMBER() OVER (ORDER BY total DESC, member_id)::int AS rank,
+        COUNT(*) OVER ()::int AS members
+      FROM totals
+    ),
+    -- The first row shown: one above the member, kept inside the leaderboard
+    me AS (SELECT GREATEST(1, LEAST(rank - 1, members - 2)) AS first FROM ranked WHERE member_id = ${memberId})
+    SELECT member_id, total::float8 AS total, rank, members
+    FROM ranked, me
+    WHERE rank BETWEEN me.first AND me.first + 2
+    ORDER BY rank
+  `;
+  return rows.map((row) => ({ memberId: row.member_id, voiceMs: Number(row.total), rank: row.rank, members: row.members }));
+};
+
+/**
+ * Time spent online (online, idle or dnd) in the period and its share of the
+ * period, like the dashboard's online meter. Statuses have no guild: the
+ * caller checks the member is in the server before asking.
+ */
+export const getMemberOnline = async (db: QueryDb, memberId: string, period: StatsPeriod, now = new Date()) => {
+  const lo = await presenceWindowStart(db, period, [memberId]);
+  const [row] = await db.$queryRaw<{ ms: number | null }[]>`
+    SELECT SUM(EXTRACT(EPOCH FROM COALESCE(ended_at, ${NOW_UTC}) - GREATEST(created_at, ${lo}::timestamp)) * 1000)::float8 AS ms
+    FROM user_statuses
+    WHERE user_id = ${memberId}
+      AND ${ONLINE}
+      AND ${endsAfter(lo)}
+  `;
+  const ms = Number(row?.ms ?? 0);
+  const span = now.getTime() - lo.getTime();
+  return { ms, share: span > 0 ? Math.min(1, ms / span) : 0 };
+};
+
 /** Camera, streaming, muted and deafened time in the period (dashboard profile and the stats card) */
 export const getMemberHabits = async (db: QueryDb, guildId: string, memberId: string, period: StatsPeriod, now = new Date()) => {
   const [row] = await db.$queryRaw<HabitRow[]>`
@@ -205,17 +274,7 @@ export const getMemberSummary = async (
       previous ? voiceTotal(db, guildId, previous, memberId) : null,
       messageCount(db, guildId, current, memberId),
       previous ? messageCount(db, guildId, previous, memberId) : null,
-      rankIn(
-        db,
-        memberId,
-        Prisma.sql`
-          SELECT member_id, SUM(${durationMs()}) AS total
-          FROM voice_stats
-          WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
-            ${windowFilter('issued_on', current)}
-            ${visibleMembersOnly('member_id', viewerId)}
-          GROUP BY member_id`
-      ),
+      rankIn(db, memberId, voiceTotals(guildId, current, viewerId)),
       rankIn(
         db,
         memberId,
