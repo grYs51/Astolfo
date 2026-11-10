@@ -20,7 +20,8 @@ const isBot = (id: string) => id === 'xp-bot';
 const NOW = at(60, 0);
 
 describeDb('grantXp on seeded rows', () => {
-  const db = new PrismaClient({ datasources: { db: { url } } });
+  // Built only when the suite runs: a PrismaClient without a URL throws
+  const db = url ? new PrismaClient({ datasources: { db: { url } } }) : (undefined as unknown as PrismaClient);
   const grant = (opts: Partial<Parameters<typeof grantXp>[1]> = {}) =>
     grantXp(db as never, { guildId: G, rules: DEFAULT_RULES, isBot, now: NOW, ...opts });
   const rows = (source: string) =>
