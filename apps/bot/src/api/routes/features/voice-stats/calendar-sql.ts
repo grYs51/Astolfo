@@ -10,7 +10,6 @@ type DayRow = { day: Date; minutes: number; messages: number };
 /**
  * Daily voice minutes and messages over the last 12 months, for the whole
  * server or one member, in time zone `tz` (the calendar endpoint and the stats card).
- * The caller checks the member doesn't hide from the viewer.
  */
 export const activityCalendar = async (
   db: Pick<Db, '$queryRaw'>,

@@ -10,8 +10,7 @@ import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/f
 /**
  * Stats for the Discord-side features (/stats, /profile, weekly digest). Same rules as
  * the dashboard API: voice totals count VOICE rows only (the other types
- * overlap them), open sessions count live, and lists that name members leave
- * out members who hide from others.
+ * overlap them) and open sessions count live.
  */
 
 type QueryDb = Pick<Db, '$queryRaw'>;

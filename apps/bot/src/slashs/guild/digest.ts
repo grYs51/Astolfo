@@ -71,7 +71,7 @@ export default class DigestSlash extends BaseSlash {
         await saveGuildConfig(client, guild.id, digestChannelUpdate(config, channel.id));
         await InterActionUtils.send(
           interaction,
-          `The weekly recap will be posted in <#${channel.id}> ${SCHEDULE}. Members who hide their stats aren’t named in it.`,
+          `The weekly recap will be posted in <#${channel.id}> ${SCHEDULE}.`,
           true
         );
         return;

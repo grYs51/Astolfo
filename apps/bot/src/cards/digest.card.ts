@@ -126,6 +126,6 @@ export const digestCard = (d: DigestCardData, t: CardTheme) => {
     y += 12;
   }
 
-  parts.push(text(PAD, y + 34, 13, t.muted, 'Members who hide their stats aren’t named'));
-  return svgCard(y + 56, t, parts);
+  // The last section already ends with GAP below it: top it up to PAD
+  return svgCard(y + PAD - GAP, t, parts);
 };
