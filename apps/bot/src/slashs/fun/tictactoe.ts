@@ -41,12 +41,24 @@ export const winner = (board: Board): Result => {
   return board.every(Boolean) ? 'draw' : null;
 };
 
+// A position's value never changes and there are only about 5.5k, so each is searched once per process:
+// without this, Astolfo's first reply searches the whole tree and blocks the event loop for up to ~100 ms
+const values = new Map<string, number>();
+
 /** The board's value for the mark to move: negative when the last move won, more so the sooner it came */
 const negamax = (board: Board, mark: Mark): number => {
+  const key = board.map((cell) => cell ?? '.').join('') + mark;
+  const known = values.get(key);
+  if (known !== undefined) return known;
   const result = winner(board);
-  if (result === 'draw') return 0;
-  if (result) return -(1 + free(board).length);
-  return Math.max(...free(board).map((cell) => -negamax(played(board, cell, mark), other(mark))));
+  const value =
+    result === 'draw'
+      ? 0
+      : result
+        ? -(1 + free(board).length)
+        : Math.max(...free(board).map((cell) => -negamax(played(board, cell, mark), other(mark))));
+  values.set(key, value);
+  return value;
 };
 
 /** The best cell for `mark` (minimax; 9 cells is small enough to search it all) */
@@ -139,13 +151,13 @@ export default class TicTacToe extends BaseSlash {
       return `${intro}\n${EMOJI.X} ${players.X} vs ${EMOJI.O} ${players.O}. ${EMOJI[turn]} ${players[turn]}, your move.`;
     };
 
-    await InterActionUtils.send(interaction, { content: status(), components: grid(board, result) });
+    const message = await InterActionUtils.send(interaction, { content: status(), components: grid(board, result) });
+    // Discord refused the reply (send already ignored the error): there's no board to play on
+    if (!message) return;
 
-    if (!interaction.channel?.isSendable()) return;
-
-    const collector = interaction.channel.createMessageComponentCollector({
-      filter: (i) =>
-        i.isButton() && i.customId.startsWith('ttt:') && i.message.interactionMetadata?.id.endsWith(interaction.id) === true,
+    // Collected on the reply itself: it only sees this board's buttons and needs no cached channel
+    // (a private thread the bot hasn't joined would otherwise post a board nobody can play)
+    const collector = message.createMessageComponentCollector({
       componentType: ComponentType.Button,
       // A plain timer, restarted on each move: `idle` would also restart on clicks that play nothing
       time: 60_000,

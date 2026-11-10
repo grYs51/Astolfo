@@ -75,8 +75,10 @@ const startGame = async (opponent = user('b'), difficulty?: string) => {
       get: (name: string) =>
         name === 'opponent' ? { user: opponent } : difficulty ? { value: difficulty } : undefined,
     },
-    channel: { isSendable: () => true, createMessageComponentCollector: () => collector },
+    // No cached channel: the collector runs on the reply message
+    channel: null,
   };
+  (InterActionUtils.send as jest.Mock).mockResolvedValueOnce({ createMessageComponentCollector: () => collector });
   await (new TicTacToe() as unknown as { slash: (c: unknown, i: unknown) => Promise<void> }).slash(
     { user: { id: 'astolfo' }, dataSource: { gameResults: { create } } },
     interaction
