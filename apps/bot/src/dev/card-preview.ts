@@ -65,6 +65,7 @@ const main = async () => {
         lifetimeMs: 317_000_000, // 88h
       },
       companions: [1, 2, 3].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+      xp: { xp: 3912, level: 11, levelXp: 3850, nextLevelXp: 4500 },
       // #2 of 14: Roland above, Oliver below
       ranking: {
         members: 14,

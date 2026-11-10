@@ -157,6 +157,29 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
         </div>
       </section>
 
+      <section class="rounded-xl border border-white/5 bg-base-300 p-lg space-y-md">
+        <div>
+          <h2 class="text-base font-semibold text-gray-100">Levels</h2>
+          <p class="mt-xs text-sm text-gray-400">
+            Members earn XP from voice, messages, streaks and rock-paper-scissors wins. Pick a channel to announce
+            level-ups.
+          </p>
+        </div>
+        <div class="max-w-sm">
+          <label for="gs-level-up-channel" class="block text-sm font-medium text-gray-300">Level-up channel</label>
+          <select
+            id="gs-level-up-channel"
+            class="select select-bordered mt-xs w-full bg-base-200"
+            (change)="set('levelUpChannelId', value($event) || null)"
+          >
+            <option value="" [selected]="!s.levelUpChannelId">Off</option>
+            @for (c of levelUpOptions(); track c.id) {
+              <option [value]="c.id" [selected]="c.id === s.levelUpChannelId">#{{ c.name }}</option>
+            }
+          </select>
+        </div>
+      </section>
+
       <div class="flex flex-wrap items-center gap-md">
         <button type="submit" class="btn btn-primary" [disabled]="!dirty() || saving()">
           @if (saving()) {
@@ -193,6 +216,9 @@ export class GuildSettingsFormComponent {
   );
   protected digestOptions = computed(() =>
     this.settings().channels.filter((c) => c.postable || c.id === this.settings().digestChannelId)
+  );
+  protected levelUpOptions = computed(() =>
+    this.settings().channels.filter((c) => c.postable || c.id === this.settings().levelUpChannelId)
   );
 
   /** The bot posts the messages in the welcome channel; the API refuses edits for one the viewer can't post in */

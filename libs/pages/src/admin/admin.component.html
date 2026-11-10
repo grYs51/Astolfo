@@ -20,7 +20,7 @@
   <feature-admin-section id="servers" title="Servers" hint="Every server the bot is in. Faded: no voice or messages in 30 days"
     [loading]="servers.isLoading()" [error]="!!servers.error()" (refresh)="servers.reload()">
     @if (servers.value(); as value) {
-      <feature-admin-servers [servers]="value" [busy]="busy()" (postDigest)="postDigest($event)" (leave)="leave($event)" />
+      <feature-admin-servers [servers]="value" [busy]="busy()" (postDigest)="postDigest($event)" (recalculateXp)="recalculateXp($event)" (leave)="leave($event)" />
     } @else {
       <lib-skeleton-loader type="list" />
     }
@@ -33,6 +33,16 @@
         (saveNotice)="saveNotice($event)" (broadcast)="broadcast($event)" />
     } @else {
       <lib-skeleton-loader type="card" height="h-32" />
+    }
+  </feature-admin-section>
+
+  <feature-admin-section id="xp-rules" title="XP rules" hint="One set for every server"
+    [loading]="xpRules.isLoading()" [error]="!!xpRules.error()" (refresh)="xpRules.reload()">
+    @if (xpRules.value(); as value) {
+      <feature-admin-xp-rules [rules]="value.rules" [defaults]="value.defaults" [busy]="busy()"
+        [error]="xpRulesError()" [saved]="xpRulesSaved()" (save)="saveXpRules($event)" />
+    } @else {
+      <lib-skeleton-loader type="card" height="h-64" />
     }
   </feature-admin-section>
 

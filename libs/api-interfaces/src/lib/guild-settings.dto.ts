@@ -29,6 +29,8 @@ export interface GuildSettings {
   toggles: GuildToggle[];
   /** Weekly digest channel; null = off */
   digestChannelId: string | null;
+  /** Level-up posts; null = off */
+  levelUpChannelId: string | null;
   /** Channels the bot can post in and the viewer can see, plus the stored ones */
   channels: SettingsChannel[];
 }

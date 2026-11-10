@@ -5,7 +5,21 @@ import { getAdminPeople } from './getAdminPeople';
 import { getAdminUsage, p95FromBuckets } from './getAdminUsage';
 import { getAdminWeb } from './getAdminWeb';
 import { getAdminHealth } from './getAdminHealth';
-import { broadcast, closeStuckSessions, sendBroadcast, getNotice, jsonOnly, leaveGuild, postDigestNow, setNotice } from './actions';
+import {
+  broadcast,
+  closeStuckSessions,
+  sendBroadcast,
+  getNotice,
+  getXpRules,
+  jsonOnly,
+  leaveGuild,
+  postDigestNow,
+  recalculateXpNow,
+  setNotice,
+  setXpRules,
+} from './actions';
+import { currentRules, DEFAULT_RULES } from '../../../xp/rules';
+import { isXpBusy, recalculateXp } from '../../../xp/recalculate';
 import { setVc } from '../../../utils/functions/set-vc';
 import { postDigest } from '../../../utils/schedulers/digest.scheduler';
 
@@ -15,7 +29,12 @@ jest.mock('../../utils/discord-directory', () => ({
       { id: 'g1', name: 'Café', icon: null, memberCount: 10, joinedAt: new Date('2026-01-01T00:00:00Z') },
       { id: 'g2', name: 'Quiet', icon: null, memberCount: 3, joinedAt: null },
     ],
+    guild: (id: string) => (['g1', 'g2'].includes(id) ? { name: id, icon: null } : undefined),
   }),
+}));
+jest.mock('../../../xp/recalculate', () => ({
+  isXpBusy: jest.fn(() => false),
+  recalculateXp: jest.fn(async () => ({ rows: 1, xp: 2, ms: 3 })),
 }));
 const mockLeave = jest.fn();
 const mockSend = jest.fn();
@@ -219,6 +238,45 @@ describe('admin actions', () => {
     expect(appNotice.deleteMany).toHaveBeenCalledTimes(2);
 
     expect((await act(getNotice, undefined, { appNotice })).body).toEqual({ text: null });
+  });
+
+  test('xp rules: a bad rule is a 400 naming the field, and nothing is saved', async () => {
+    const xpRules = { upsert: jest.fn(), deleteMany: jest.fn() };
+    const bad = { ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, message: -1 } };
+    expect(await act(setXpRules, { rules: bad }, { xpRules })).toEqual({
+      status: 400,
+      body: { field: 'amounts.message', error: expect.any(String) },
+    });
+    expect((await act(setXpRules, {}, { xpRules })).status).toBe(400);
+    expect(xpRules.upsert).not.toHaveBeenCalled();
+    expect(currentRules()).toBe(DEFAULT_RULES);
+  });
+
+  test('xp rules: a save applies at once, a reset goes back to the defaults', async () => {
+    const updatedAt = new Date('2026-11-10T12:00:00Z');
+    const xpRules = {
+      upsert: jest.fn().mockResolvedValue({ updated_at: updatedAt }),
+      deleteMany: jest.fn(),
+      findUnique: jest.fn().mockResolvedValue({ updated_at: updatedAt }),
+    };
+    const doubled = { ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, message: 4 } };
+    expect((await act(setXpRules, { rules: doubled }, { xpRules })).body).toMatchObject({ rules: doubled, updatedAt });
+    expect(currentRules().amounts.message).toBe(4);
+    expect((await act(getXpRules, undefined, { xpRules })).body).toEqual({ rules: doubled, defaults: DEFAULT_RULES, updatedAt });
+
+    expect((await act(setXpRules, { rules: null }, { xpRules })).body).toEqual({ rules: DEFAULT_RULES, defaults: DEFAULT_RULES, updatedAt: null });
+    expect(xpRules.deleteMany).toHaveBeenCalledWith({ where: { id: 1 } });
+    expect(currentRules()).toBe(DEFAULT_RULES);
+  });
+
+  test('recalculate xp: 400, 404, 409 while running, otherwise 202 and runs in the background', async () => {
+    expect((await act(recalculateXpNow, {})).status).toBe(400);
+    expect((await act(recalculateXpNow, { guildId: 'g3' })).status).toBe(404);
+    (isXpBusy as jest.Mock).mockReturnValueOnce(true);
+    expect((await act(recalculateXpNow, { guildId: 'g1' })).status).toBe(409);
+    expect(recalculateXp).not.toHaveBeenCalled();
+    expect(await act(recalculateXpNow, { guildId: 'g1' })).toEqual({ status: 202, body: { queued: true } });
+    expect(recalculateXp).toHaveBeenCalledWith(expect.anything(), 'g1');
   });
 
   test('broadcast: 1 to 1,000 characters', async () => {

@@ -8,6 +8,8 @@ import { periodWindows, StatsPeriod } from '../stats/windows';
 import { cardImageUrl, fetchImage } from './avatars';
 import { DEFAULT_SECTIONS, statsCard, StatsCardSection } from './stats.card';
 import { CardTheme } from './themes';
+import { totalXp } from '../xp/grant';
+import { currentRules, levelProgress } from '../xp/rules';
 
 /**
  * A member's stats card (/stats and the dashboard download); `viewerId` marks
@@ -29,7 +31,7 @@ export const statsCardSvg = async (opts: {
   const directory = discordDirectory();
   // Statuses have no guild: only read them for someone who is in this server
   const withOnline = sections.includes('habits') && (await directory.isMember(guildId, memberId));
-  const [summary, habits, online, neighbours, calendar, heatmap] = await Promise.all([
+  const [summary, habits, online, neighbours, calendar, heatmap, xp] = await Promise.all([
     getMemberSummary(db, guildId, memberId, period),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
@@ -40,6 +42,7 @@ export const statsCardSvg = async (opts: {
           voiceHeatmapCells(guildId, tz, periodWindows(period).current.from, Prisma.sql`AND member_id = ${memberId}`)
         )
       : undefined,
+    sections.includes('streak') ? totalXp(db, guildId, memberId) : undefined,
   ]);
 
   // One lookup and one avatar fetch per person, whoever they appear as
@@ -81,6 +84,7 @@ export const statsCardSvg = async (opts: {
       habits,
       calendar,
       heatmap: heatmap?.map((row) => ({ day: row.day_of_week, hour: row.hour, minutes: row.total_minutes })),
+      xp: xp === undefined ? undefined : levelProgress(xp, currentRules()),
     },
     theme
   );

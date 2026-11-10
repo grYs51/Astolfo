@@ -117,6 +117,8 @@ Pick two members (or two channels, or two time periods) and see stats side by si
 
 If you want to go full engagement loop: XP from voice minutes + messages, levels, seasonal leaderboards that reset monthly with end-of-season awards, badges for achievements (streaks, milestones, "night owl", "channel hopper"). This is a big system (new tables, balancing, anti-idle-farming rules like ignoring muted-alone-in-channel time — which you can already detect from your voice types!) but it's the proven retention model of MEE6/Arcane-style bots, and your data quality is better than theirs.
 
+> Partly done (2026-11-10): XP from voice (crowd, deafened, stay and camera multipliers), messages, streaks and rock-paper-scissors wins, plus starter, reconnect, welcome, milestone and weekly top-3 bonuses; levels, `/xp`, an XP leaderboard, level-up posts, an XP chart on each recent session, and the rules tunable on `/admin`. Still open: seasons and monthly resets, badges and achievements, level roles (3.2).
+
 Anti-farm note: you're uniquely positioned here — most XP bots can't tell AFK-in-channel from real activity. You track mute/deafen/alone states, so your XP can require *actual participation*. That's a genuine differentiator worth marketing.
 
 ---

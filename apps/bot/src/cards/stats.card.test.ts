@@ -127,6 +127,15 @@ describe('statsCard', () => {
     expect(svg.match(/fill-opacity="1"/g)).toHaveLength(88);
   });
 
+  it('shows the level above the streak, with a bar to the next one', () => {
+    const svg = statsCard(data({ sections: ['streak'], xp: { xp: 1250, level: 5, levelXp: 1000, nextLevelXp: 1500 } }), THEMES.dark);
+    expect(svg).toContain('>Level<');
+    expect(svg).toContain('>5<tspan');
+    expect(svg).toContain('· 1,250 XP');
+    expect(svg).toContain('>250 XP to level 6<');
+    expect(svg.indexOf('>Level<')).toBeLessThan(svg.indexOf('>Voice streak<'));
+  });
+
   it('marks the hour in progress', () => {
     const svg = statsCard(data({ sections: ['streak'], summary: summary({ lifetimeMs: 88.5 * H }) }), THEMES.dark);
     expect(svg.match(/fill-opacity="0.5"/g)).toHaveLength(1);

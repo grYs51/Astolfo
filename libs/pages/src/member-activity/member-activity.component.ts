@@ -22,6 +22,7 @@ import {
   OnlineTimeComponent,
   VoiceStatsUserHeatmapComponent,
   VoiceStatsUserProfileComponent,
+  XpCardComponent,
 } from '@nx-stolfo/ui-voice-stats';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 
@@ -81,6 +82,7 @@ const memberName = (member: DiscordMember) => member.displayName || member.usern
     OnlineTimeComponent,
     GameRecordComponent,
     HumanizeDurationPipe,
+    XpCardComponent,
   ],
   templateUrl: './member-activity.component.html',
   styles: `
@@ -125,7 +127,7 @@ export class MemberActivityComponent {
   protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);
   protected previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
 
-  private stats = computed(() => {
+  protected stats = computed(() => {
     const resource = this.userResource();
     return resource.hasValue() ? resource.value() : undefined;
   });

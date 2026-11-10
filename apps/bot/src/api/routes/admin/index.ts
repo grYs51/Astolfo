@@ -10,10 +10,13 @@ import {
   broadcast,
   closeStuckSessions,
   getNotice,
+  getXpRules,
   jsonOnly,
   leaveGuild,
   postDigestNow,
+  recalculateXpNow,
   setNotice,
+  setXpRules,
 } from './actions';
 
 // Owner only: isOwner is the lock, the web guard only hides the page
@@ -30,7 +33,10 @@ export default (router: Router) => {
   router.post('/admin/actions/leave', isAuthenticated, isOwner, leaveGuild);
   router.post('/admin/actions/close-stuck-sessions', isAuthenticated, isOwner, closeStuckSessions);
   router.post('/admin/actions/broadcast', isAuthenticated, isOwner, broadcast);
+  router.post('/admin/actions/recalculate-xp', isAuthenticated, isOwner, recalculateXpNow);
   router.put('/admin/notice', isAuthenticated, isOwner, setNotice);
+  router.get('/admin/xp-rules', isAuthenticated, isOwner, getXpRules);
+  router.put('/admin/xp-rules', isAuthenticated, isOwner, jsonOnly, setXpRules);
 
   // The only public route here: the notice banner shows on the login page too
   router.get('/notice', getNotice);

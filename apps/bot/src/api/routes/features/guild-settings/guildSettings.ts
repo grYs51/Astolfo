@@ -45,8 +45,10 @@ export const parseSettings = (
   current: Config,
   postable: string[]
 ): { error: string } | { data: Config } => {
-  const { prefix, welcomeMessage, goodbyeMessage, welcomeChannelId, digestChannelId, toggles } =
+  const { prefix, welcomeMessage, goodbyeMessage, welcomeChannelId, digestChannelId, toggles, ...rest } =
     (body ?? {}) as Partial<SettingsBody>;
+  // A page loaded before levels existed doesn't send it: keep the stored one
+  const levelUpChannelId = rest.levelUpChannelId === undefined ? current.level_up_channel_id : rest.levelUpChannelId;
 
   if (!isString(prefix) || (prefix !== current.prefix && !PREFIX.test(prefix))) {
     return { error: 'The prefix must be 1 to 5 characters, without spaces.' };
@@ -62,6 +64,7 @@ export const parseSettings = (
   for (const [id, stored] of [
     [welcomeChannelId, current.welcome_channel_id],
     [digestChannelId, current.digest_channel_id],
+    [levelUpChannelId, current.level_up_channel_id],
   ]) {
     const ok = id === null || id === stored || (isString(id) && postable.includes(id));
     if (!ok) {
@@ -99,6 +102,7 @@ export const parseSettings = (
       goodbye_message: goodbyeMessage.trim(),
       toggles: bits,
       digest_channel_id: digestChannelId ?? null,
+      level_up_channel_id: levelUpChannelId ?? null,
     },
   };
 };
@@ -109,6 +113,7 @@ const FIELDS = [
   ['welcomeMessage', 'welcome_message'],
   ['goodbyeMessage', 'goodbye_message'],
   ['digestChannelId', 'digest_channel_id'],
+  ['levelUpChannelId', 'level_up_channel_id'],
 ] as const;
 
 /** What a save changed, for the audit log; empty when nothing did */
@@ -135,6 +140,7 @@ const loadConfig = (guildId: string): Config =>
     goodbye_message: '',
     toggles: 0,
     digest_channel_id: null,
+    level_up_channel_id: null,
   };
 
 const toSettings = async (
@@ -147,7 +153,7 @@ const toSettings = async (
   );
   // A stored channel that's no longer offered still shows, so the form can keep it.
   // No name: the viewer may not be allowed to see it.
-  for (const id of new Set([config.welcome_channel_id, config.digest_channel_id])) {
+  for (const id of new Set([config.welcome_channel_id, config.digest_channel_id, config.level_up_channel_id])) {
     if (id && !channels.some((c) => c.id === id)) {
       channels.push({ id, name: 'current channel (unavailable)', postable: false });
     }
@@ -163,6 +169,7 @@ const toSettings = async (
       enabled: isEnabled(config.toggles, SETTING_FLAGS[key as Settings]),
     })),
     digestChannelId: config.digest_channel_id,
+    levelUpChannelId: config.level_up_channel_id,
     channels,
   };
 };

@@ -1,60 +1,85 @@
 <div class="grid grid-cols-1 gap-md items-start" [class.lg:grid-cols-3]="showRecent()" [class.lg:grid-cols-2]="!showRecent()">
-  <!-- Who they hang out with: overlapping time in the same channel -->
-  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-    <h3 class="mb-md text-base font-semibold text-gray-100">{{ name() ? name() + ' hangs out most with' : 'You hang out most with' }}</h3>
-    @if (userStats().companions.length === 0) {
-      <p class="py-md text-center text-sm text-gray-400">Nobody shared a channel with {{ name() || 'you' }} in this period</p>
-    } @else {
-      <ul class="space-y-sm">
-        @for (companion of userStats().companions; track companion.member.id) {
-          <li class="flex items-center gap-sm">
-            @if (companion.member.avatar) {
-              <img [src]="companion.member.avatar" alt="" class="h-8 w-8 shrink-0 rounded-full ring-1 ring-white/10" />
-            } @else {
-              <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-base-200 text-xs text-gray-400" aria-hidden="true">?</span>
-            }
-            @if (memberLink(); as link) {
-              <a
-                [routerLink]="link(companion.member.id)"
-                class="min-w-0 flex-1 truncate text-sm text-gray-100 hover:text-primary-300 hover:underline"
-              >
-                {{ companion.member.displayName || companion.member.username }}
-              </a>
-            } @else {
-              <span class="min-w-0 flex-1 truncate text-sm text-gray-100">
-                {{ companion.member.displayName || companion.member.username }}
-              </span>
-            }
-            <span class="shrink-0 text-sm text-primary-300">{{ companion.togetherDuration | humanizeDuration: true }}</span>
-          </li>
-        }
-      </ul>
-      <p class="mt-md text-xs text-gray-500">Time in the same channel at the same time</p>
-    }
-  </div>
-
-  <!-- Their channels -->
-  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
-    <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
-      <h3 class="text-base font-semibold text-gray-100">{{ name() ? name() + '’s channels' : 'Your channels' }}</h3>
-      <lib-segmented-control label="Channel type" [options]="channelViewOptions" [(value)]="channelView" />
+  <!-- With recent sessions, companions and channels stack in the first column; without, each is a column -->
+  <div [class]="showRecent() ? 'space-y-md' : 'contents'">
+    <!-- Who they hang out with: overlapping time in the same channel -->
+    <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+      <h3 class="mb-md text-base font-semibold text-gray-100">{{ name() ? name() + ' hangs out most with' : 'You hang out most with' }}</h3>
+      @if (userStats().companions.length === 0) {
+        <p class="py-md text-center text-sm text-gray-400">Nobody shared a channel with {{ name() || 'you' }} in this period</p>
+      } @else {
+        <ul class="space-y-sm">
+          @for (companion of userStats().companions; track companion.member.id) {
+            <li class="flex items-center gap-sm">
+              @if (companion.member.avatar) {
+                <img [src]="companion.member.avatar" alt="" class="h-8 w-8 shrink-0 rounded-full ring-1 ring-white/10" />
+              } @else {
+                <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-base-200 text-xs text-gray-400" aria-hidden="true">?</span>
+              }
+              @if (memberLink(); as link) {
+                <a
+                  [routerLink]="link(companion.member.id)"
+                  class="min-w-0 flex-1 truncate text-sm text-gray-100 hover:text-primary-300 hover:underline"
+                >
+                  {{ companion.member.displayName || companion.member.username }}
+                </a>
+              } @else {
+                <span class="min-w-0 flex-1 truncate text-sm text-gray-100">
+                  {{ companion.member.displayName || companion.member.username }}
+                </span>
+              }
+              <span class="shrink-0 text-sm text-primary-300">{{ companion.togetherDuration | humanizeDuration: true }}</span>
+            </li>
+          }
+        </ul>
+        <p class="mt-md text-xs text-gray-500">Time in the same channel at the same time</p>
+      }
     </div>
-    @if (channelView() === 'text') {
-      @if (userStats().messages.topChannels.length === 0) {
-        <p class="py-md text-center text-sm text-gray-400">No messages in this period</p>
+
+    <!-- Their channels -->
+    <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+      <div class="mb-md flex flex-wrap items-center justify-between gap-sm">
+        <h3 class="text-base font-semibold text-gray-100">{{ name() ? name() + '’s channels' : 'Your channels' }}</h3>
+        <lib-segmented-control label="Channel type" [options]="channelViewOptions" [(value)]="channelView" />
+      </div>
+      @if (channelView() === 'text') {
+        @if (userStats().messages.topChannels.length === 0) {
+          <p class="py-md text-center text-sm text-gray-400">No messages in this period</p>
+        } @else {
+          <ul class="space-y-md">
+            @for (item of userStats().messages.topChannels; track item.channel.id) {
+              <li>
+                <div class="mb-xs flex items-baseline justify-between gap-md">
+                  <span class="truncate text-sm font-medium text-gray-100"># {{ item.channel.name }}</span>
+                  <span class="shrink-0 text-sm text-primary-300">
+                    {{ item.count }}
+                    <span class="text-xs text-gray-500">· {{ textShare(item.count) }}%</span>
+                  </span>
+                </div>
+                <lib-progress-bar
+                  [percentage]="textShare(item.count)"
+                  [showLabel]="false"
+                  barColor="bg-primary-500"
+                  height="h-1.5 bg-base-100"
+                />
+              </li>
+            }
+          </ul>
+        }
+      } @else if (topChannels().length === 0) {
+        <p class="py-md text-center text-sm text-gray-400">No voice activity in this period</p>
       } @else {
         <ul class="space-y-md">
-          @for (item of userStats().messages.topChannels; track item.channel.id) {
+          @for (item of topChannels(); track item.channel.id) {
             <li>
               <div class="mb-xs flex items-baseline justify-between gap-md">
-                <span class="truncate text-sm font-medium text-gray-100"># {{ item.channel.name }}</span>
+                <span class="truncate text-sm font-medium text-gray-100">{{ item.channel.name }}</span>
                 <span class="shrink-0 text-sm text-primary-300">
-                  {{ item.count }}
-                  <span class="text-xs text-gray-500">· {{ textShare(item.count) }}%</span>
+                  {{ item.totalDuration | humanizeDuration: true }}
+                  <span class="text-xs text-gray-500">· {{ item.percentage }}%</span>
                 </span>
               </div>
               <lib-progress-bar
-                [percentage]="textShare(item.count)"
+                [percentage]="item.percentage"
                 [showLabel]="false"
                 barColor="bg-primary-500"
                 height="h-1.5 bg-base-100"
@@ -63,53 +88,56 @@
           }
         </ul>
       }
-    } @else if (topChannels().length === 0) {
-      <p class="py-md text-center text-sm text-gray-400">No voice activity in this period</p>
-    } @else {
-      <ul class="space-y-md">
-        @for (item of topChannels(); track item.channel.id) {
-          <li>
-            <div class="mb-xs flex items-baseline justify-between gap-md">
-              <span class="truncate text-sm font-medium text-gray-100">{{ item.channel.name }}</span>
-              <span class="shrink-0 text-sm text-primary-300">
-                {{ item.totalDuration | humanizeDuration: true }}
-                <span class="text-xs text-gray-500">· {{ item.percentage }}%</span>
-              </span>
-            </div>
-            <lib-progress-bar
-              [percentage]="item.percentage"
-              [showLabel]="false"
-              barColor="bg-primary-500"
-              height="h-1.5 bg-base-100"
-            />
-          </li>
-        }
-      </ul>
-    }
+    </div>
+
   </div>
 
-  <!-- Recent sessions (exact times — only on your own page) -->
+  <!-- Recent sessions (exact times — only on your own page), two columns wide so a session's XP chart has room -->
   @if (showRecent()) {
-  <div class="rounded-xl bg-base-300 border border-white/5 p-lg">
+  <div class="rounded-xl bg-base-300 border border-white/5 p-lg lg:col-span-2">
     <h3 class="mb-md text-base font-semibold text-gray-100">Recent sessions</h3>
     @if (recentSessions().length === 0) {
       <p class="py-md text-center text-sm text-gray-400">No sessions yet</p>
     } @else {
       <ul class="divide-y divide-white/5">
+        <ng-template #sessionRow let-session>
+          <div class="min-w-0">
+            <p class="truncate text-sm text-gray-100">{{ session.channel.name }}</p>
+            <p class="text-xs text-gray-500">{{ session.issuedOn | date: 'EEE d MMM, HH:mm' }}</p>
+          </div>
+          <span class="shrink-0 text-right text-sm text-gray-300">
+            @if (!session.endedOn) {
+              <span class="mr-xs rounded bg-success/15 px-xs py-px text-[10px] font-semibold uppercase text-success">
+                Live
+              </span>
+            }
+            {{ session.duration | humanizeDuration: true }}
+            @if (session.xp) {
+              <span class="block text-xs font-semibold text-primary-300">+{{ session.xp.amount }} XP</span>
+            }
+          </span>
+        </ng-template>
         @for (session of recentSessions(); track session.id) {
-          <li class="flex items-center justify-between gap-md py-sm">
-            <div class="min-w-0">
-              <p class="truncate text-sm text-gray-100">{{ session.channel.name }}</p>
-              <p class="text-xs text-gray-500">{{ session.issuedOn | date: 'EEE d MMM, HH:mm' }}</p>
-            </div>
-            <span class="shrink-0 text-sm text-gray-300">
-              @if (!session.endedOn) {
-                <span class="mr-xs rounded bg-success/15 px-xs py-px text-[10px] font-semibold uppercase text-success">
-                  Live
-                </span>
+          <li class="py-sm">
+            <!-- A graded session opens its XP chart; an open one has no XP yet -->
+            @if (session.xp; as xp) {
+              <button
+                type="button"
+                class="flex w-full items-center justify-between gap-md rounded-lg text-left hover:bg-white/5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+                [attr.aria-expanded]="openSession() === session.id"
+                [attr.aria-controls]="'session-xp-' + session.id"
+                (click)="openSession.set(openSession() === session.id ? null : session.id)"
+              >
+                <ng-container *ngTemplateOutlet="sessionRow; context: { $implicit: session }" />
+              </button>
+              @if (openSession() === session.id) {
+                <feature-voice-stats-xp-session-chart [id]="'session-xp-' + session.id" class="mt-sm" [xp]="xp" />
               }
-              {{ session.duration | humanizeDuration: true }}
-            </span>
+            } @else {
+              <div class="flex items-center justify-between gap-md">
+                <ng-container *ngTemplateOutlet="sessionRow; context: { $implicit: session }" />
+              </div>
+            }
           </li>
         }
       </ul>

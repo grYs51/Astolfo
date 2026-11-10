@@ -13,6 +13,7 @@ import {
   userLeftVoiceChannel,
   voiceKey,
 } from '../../utils/handlers/vc';
+import { VOICE_SOURCES, awardAndAnnounce } from '../../xp/level-up';
 
 export default class VoiceDurationUpdateEvent extends BaseEvent {
   constructor() {
@@ -28,37 +29,44 @@ export default class VoiceDurationUpdateEvent extends BaseEvent {
     const date = new Date();
 
     // One member's events must not interleave (see runSerialized)
-    return runSerialized(voiceKey(newState.guild.id, newState.id), () =>
-      this.handleVoiceStateUpdate(oldState, newState, date)
-    );
+    return runSerialized(voiceKey(newState.guild.id, newState.id), async () => {
+      const closed = await this.handleVoiceStateUpdate(oldState, newState, date);
+      // Voice XP and what hangs on it land when a session closes, in the same queue so the row is closed first
+      if (closed) await awardAndAnnounce(client, newState.guild.id, newState.id, VOICE_SOURCES);
+    });
   }
 
+  /** True when a session closed (a leave or a channel move) */
   private async handleVoiceStateUpdate(
     oldState: VoiceState,
     newState: VoiceState,
     date: Date
-  ) {
+  ): Promise<boolean> {
     if (userJoinedVoiceChannel(oldState, newState)) {
-      return handleUserJoinedVoiceChannel(newState, date);
+      await handleUserJoinedVoiceChannel(newState, date);
+      return false;
     }
 
     if (userLeftVoiceChannel(oldState, newState)) {
-      return handleUserLeftVoiceChannel(oldState, date);
+      await handleUserLeftVoiceChannel(oldState, date);
+      return true;
     }
 
     if (userChangedVoiceChannel(oldState, newState)) {
-      return handleUserChangeVoiceChannel(oldState, newState, date);
+      await handleUserChangeVoiceChannel(oldState, newState, date);
+      return true;
     }
 
     // user changed voice states (mute, deaf, streaming, etc)
     const changedVoiceStates = getChangedUserVoiceStates(oldState, newState);
     if (Object.values(changedVoiceStates).length > 0) {
-      return handleUserChangeVoiceStates(
+      await handleUserChangeVoiceStates(
         oldState,
         newState,
         date,
         changedVoiceStates
       );
     }
+    return false;
   }
 }

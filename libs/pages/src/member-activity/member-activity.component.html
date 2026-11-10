@@ -225,6 +225,11 @@
   }
 </section>
 
+<!-- Level and where the XP came from (all time) -->
+@if (stats(); as s) {
+  <feature-voice-stats-xp-card [level]="s.level" [sources]="s.xpSources" />
+}
+
 <!-- Past year, day by day -->
 @let calendar = calendarResource();
 @if (calendar.error()) {

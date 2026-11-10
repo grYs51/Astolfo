@@ -33,6 +33,7 @@ export const leaderboardTypesLabels = {
   current: 'Current',
   loner: 'Loner',
   inactive: 'Inactive',
+  xp: 'XP',
 } as const;
 
 export type LeaderboardTypes = keyof typeof leaderboardTypesLabels;
@@ -54,7 +55,7 @@ type GetLeaderBoardType = {
 };
 
 const getVoiceStatsAndLeaderboard: Record<
-  LeaderboardTypes,
+  Exclude<LeaderboardTypes, 'xp'>,
   GetLeaderBoardType
 > = {
   current: {
@@ -81,8 +82,6 @@ export const getLeaderboard = async (
   type: LeaderboardTypes,
   timeRange: LeaderboardTimeRanges
 ) => {
-  const { getVoiceStats, getLeaderboard } = getVoiceStatsAndLeaderboard[type];
-
   let startDate: Date | undefined;
 
   switch (timeRange) {
@@ -105,14 +104,40 @@ export const getLeaderboard = async (
       startDate = undefined;
   }
 
+  const members =
+    client.guilds.cache.get(guildId)?.members.cache.map((x) => x) ?? [];
+
+  if (type === 'xp') {
+    return getXpLeaderboard(client, guildId, members, startDate);
+  }
+
+  const { getVoiceStats, getLeaderboard } = getVoiceStatsAndLeaderboard[type];
   const voiceStats = await getVoiceStats(client, guildId, startDate);
 
   if (!voiceStats.length) {
     return null;
   }
 
-  const members =
-    client.guilds.cache.get(guildId)?.members.cache.map((x) => x) ?? [];
-
   return getLeaderboard(members, voiceStats);
+};
+
+/** XP earned in the range (all time by default); `count` is XP, not ms */
+const getXpLeaderboard = async (
+  client: DiscordClient,
+  guildId: string,
+  members: SimpleGuildMember[],
+  from?: Date
+): Promise<Leaderboard[] | null> => {
+  const sums = await client.dataSource.xpEvents.groupBy({
+    by: ['member_id'],
+    where: { guild_id: guildId, created_at: from ? { gte: from } : undefined },
+    _sum: { amount: true },
+  });
+  const membersById = new Map(members.map((member) => [member.id, member]));
+  const rows = sums.flatMap(({ member_id, _sum }) => {
+    const member = membersById.get(member_id);
+    // Members no longer in the guild (or not cached) are skipped, like the voice boards
+    return member && _sum.amount ? [{ id: member_id, name: member.displayName ?? member.user.username, count: _sum.amount }] : [];
+  });
+  return rows.length ? rows : null;
 };

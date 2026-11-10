@@ -8,6 +8,7 @@ import { digestCard } from '../../cards/digest.card';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
+import { sweepXp } from '../../xp/recalculate';
 
 /**
  * Weekly digest: every Monday 08:00 UTC each server with a digest channel
@@ -152,10 +153,13 @@ export function startDigestScheduler(client: DiscordClient) {
       .then((posted) => {
         if (posted.length) Logger.info(`Weekly digest posted to ${posted.length} server(s)`);
       })
-      .catch((error) => Logger.error('Weekly digest run failed', error));
+      .catch((error) => Logger.error('Weekly digest run failed', error))
+      // The XP sweep shares the tick: the first run after a start is also the backfill
+      .then(() => sweepXp(client))
+      .catch((error) => Logger.error('XP sweep failed', error));
 
   // Hourly at :05, plus once now to catch up after downtime
   schedule.scheduleJob('5 * * * *', run);
   void run();
-  Logger.info('Weekly digest scheduler started (Mondays 08:00 UTC)');
+  Logger.info('Weekly digest scheduler started (Mondays 08:00 UTC), with the hourly XP sweep');
 }

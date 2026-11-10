@@ -21,6 +21,8 @@ export interface Db {
   pageViews: PrismaClient['page_views'];
   appNotice: PrismaClient['app_notice'];
   settingsChanges: PrismaClient['guild_settings_changes'];
+  xpEvents: PrismaClient['xp_events'];
+  xpRules: PrismaClient['xp_rules'];
 }
 
 export let currentClient: PrismaClient;
@@ -76,6 +78,8 @@ export function getDb(): Db {
     pageViews: currentClient.page_views,
     appNotice: currentClient.app_notice,
     settingsChanges: currentClient.guild_settings_changes,
+    xpEvents: currentClient.xp_events,
+    xpRules: currentClient.xp_rules,
   };
 }
 

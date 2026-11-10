@@ -6,7 +6,7 @@ import {
 } from './utils/registry';
 import { client } from './client/instance';
 import type { Server } from 'http';
-import { assertUtcTimeZone, createPrismaClient } from './db';
+import { assertUtcTimeZone, createPrismaClient, getDb } from './db';
 import { Logger } from './utils/logger';
 import { validateEnv } from './utils/validate-env';
 import { setConfigs } from './utils/functions/set-config';
@@ -19,6 +19,8 @@ import { closeDanglingVoiceSessions } from './utils/handlers/vc';
 import { closeDanglingStatuses } from './utils/handlers/presence/status-save';
 import { isMockDiscord } from './dev/mock-discord';
 import { startupStats } from './utils/startup-stats';
+import { loadRules } from './xp/rules';
+import { startDigestScheduler } from './utils/schedulers/digest.scheduler';
 
 
 process.on('uncaughtException', (err) => {
@@ -58,6 +60,7 @@ const main = () =>
     .then(() => createPrismaClient())
     .then((db) => assertUtcTimeZone(db))
     .then(() => setConfigs())
+    .then(() => loadRules(getDb()))
     .then(() => recoverDanglingVoiceSessions())
     .then(() => saveGamesToDb())
     .then(() => registerCommands())
@@ -74,6 +77,8 @@ const main = () =>
         Logger.warn(
           'MOCK_DISCORD=true: not connecting to Discord. The API serves fixture servers/channels/members and /api/auth/login signs in as the mock user. Seed data with `yarn nx run bot:seed`.'
         );
+        // No ready event without Discord: start it here for the XP sweep (no digest can post without a gateway)
+        startDigestScheduler(client);
         return;
       }
       return client.login(process.env.DISCORD_BOT_TOKEN);

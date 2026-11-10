@@ -18,6 +18,8 @@ model guild_configs {
   /// Weekly digest: channel to post in (null = off) and when it last posted
   digest_channel_id   String?   @db.VarChar
   digest_last_sent_at DateTime? @db.Timestamp(6)
+  /// Channel for level-up posts (null = off)
+  level_up_channel_id String?   @db.VarChar
 }
 
 model voice_stats {
@@ -99,6 +101,9 @@ model game_result {
   metadata     Json?
   players      game_player[]
   game_type    game_type     @relation(fields: [game_type_id], references: [id])
+
+  // XP grants a member's games in a server on every live grant
+  @@index([guild_id, game_type_id])
 }
 
 model game_player {
@@ -108,6 +113,9 @@ model game_player {
   result         Int          // 0 = loss, 1 = win, 2 = tie
   move           String?
   game_result    game_result @relation(fields: [game_result_id], references: [id])
+
+  @@index([user_id])
+  @@index([game_result_id])
 }
 
 model session {
@@ -176,5 +184,31 @@ model page_views {
 model app_notice {
   id         Int      @id @default(1)
   text       String   @db.VarChar(300)
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
+}
+
+/// The XP ledger: one row per grant. `key` names what earned it, so every grant is idempotent.
+model xp_events {
+  id         String   @id @default(uuid()) @db.VarChar
+  guild_id   String   @db.VarChar
+  member_id  String   @db.VarChar
+  /// VOICE | STARTER | RECONNECT | WELCOME | MILESTONE | WEEKLY | MESSAGE | STREAK | GAME
+  source     String   @db.VarChar
+  amount     Int
+  note       String   @db.VarChar
+  /// VOICE rows only: the multiplier step line for the session chart
+  segments   Json?
+  key        String   @unique @db.VarChar
+  /// When it was earned
+  created_at DateTime @db.Timestamp(6)
+
+  // A member's ledger, newest first (history, /xp) and their total
+  @@index([guild_id, member_id, created_at])
+}
+
+/// The owner's XP rules from /admin. One row (id 1) or none (= the defaults in code).
+model xp_rules {
+  id         Int      @id @default(1)
+  rules      Json
   updated_at DateTime @default(now()) @updatedAt @db.Timestamp(6)
 }
