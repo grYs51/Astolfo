@@ -11,3 +11,4 @@ export * from './lib/server-pulse/server-pulse.component';
 export * from './lib/online-time/online-time.component';
 export * from './lib/game-record/game-record.component';
 export * from './lib/activity-calendar/activity-calendar.component';
+export { HEATMAP_SEQUENTIAL_COLORS } from './lib/heatmap-grid';
