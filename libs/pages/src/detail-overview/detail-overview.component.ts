@@ -195,10 +195,7 @@ export class DetailOverviewComponent {
       ? this.leaderboardResource.value()?.leaderboard ?? []
       : []
   );
-  private xpLeaderboardResource = this.voiceStatsApi.fetchXpLeaderboard(
-    () => this.id(),
-    () => this.period()
-  );
+  private xpLeaderboardResource = this.voiceStatsApi.fetchXpLeaderboard(() => this.id());
   xpLeaderboard = computed(() =>
     this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
   );

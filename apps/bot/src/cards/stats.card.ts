@@ -18,6 +18,7 @@ export interface RankingRow {
   name: string;
   avatar?: string;
   xp: number;
+  level: number;
   rank: number;
   /** The member the card is about */
   subject: boolean;
@@ -38,7 +39,7 @@ export interface StatsCardData {
   serverName: string;
   /** Same order as summary.companions */
   companions: { name: string; avatar?: string }[];
-  /** The member and their neighbours by XP earned in the period (totals); left out when they earned none */
+  /** The member and their neighbours by level, all time (totals); left out when they have no XP */
   ranking?: { members: number; rows: RankingRow[] };
   /** Online time in the period and its share of it (habits); left out when unknown */
   online?: { ms: number; share: number };
@@ -88,7 +89,7 @@ const hoursAndMinutes = (ms: number) => `${Math.floor(ms / H)}h ${Math.floor((ms
 /**
  * The headline (the change against the previous period, or the totals for all
  * time), both periods as bars, then sessions, average session and chat rank.
- * Then the XP ranking: the member between whoever is just above and below.
+ * Then the level ranking: the member between whoever is just above and below.
  */
 const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] => {
   const s = d.summary;
@@ -176,7 +177,7 @@ const totals = (d: StatsCardData, y: number, t: CardTheme): [string[], number] =
 const RANK_ROW_H = 56;
 const xpText = (xp: number) => `${xp.toLocaleString('en-GB')} XP`;
 
-/** Whoever is just above and below the member by XP, and the gap to the next rank */
+/** Whoever is just above and below the member by level, and the XP gap to the next rank */
 const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: number, t: CardTheme): [string[], number] => {
   const me = r.rows.findIndex((row) => row.subject);
   const you = r.rows[me];
@@ -186,7 +187,7 @@ const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: 
   const name = (row: RankingRow) => (row.subject && d.self !== false ? 'You' : row.name);
   const panelH = r.rows.length * RANK_ROW_H + 8 + 40;
   const parts = [
-    heading(y + 14, `XP ranking · #${you?.rank ?? '–'} of ${r.members}`, t),
+    heading(y + 14, `Level ranking · #${you?.rank ?? '–'} of ${r.members}`, t),
     panel(PAD, y + 28, W - 2 * PAD, panelH, t),
   ];
   r.rows.forEach((row, i) => {
@@ -200,7 +201,7 @@ const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: 
       text(PAD + 28, rowY + RANK_ROW_H / 2, 14, t.muted, `#${row.rank}`, 'dy="0.35em"'),
       avatarSvg({ id: `r${i}`, x: PAD + 72, y: rowY + 10, size: 36, name: row.name, image: row.avatar, theme: t }),
       text(PAD + 124, rowY + 24, 17, t.text, escapeXml(truncate(name(row), 32)), row.subject ? 'font-weight="700"' : ''),
-      text(W - PAD - 28, rowY + 24, 15, t.muted, xpText(row.xp), 'text-anchor="end"'),
+      text(W - PAD - 28, rowY + 24, 15, t.muted, `Level ${row.level}`, 'text-anchor="end"'),
       bar(PAD + 124, rowY + 36, W - 2 * PAD - 152, 6, row.xp / max, row.subject ? t.accent : t.muted, t, row.subject ? 1 : 0.6)
     );
   });
@@ -211,7 +212,7 @@ const ranking = (d: StatsCardData, r: NonNullable<StatsCardData['ranking']>, y: 
       : `${gap(ahead.xp - you.xp)} behind ${escapeXml(truncate(ahead.name, 28))} for #${ahead.rank}.`
     : behind
       ? `On top, ${gap(you.xp - behind.xp)} ahead of ${escapeXml(truncate(behind.name, 28))}.`
-      : `Nobody else earned XP over ${PERIOD_LABEL[d.period]}.`;
+      : 'Nobody else has XP on this server yet.';
   parts.push(text(INNER_X, y + 28 + r.rows.length * RANK_ROW_H + 30, 15, t.muted, sentence));
   return [parts, 28 + panelH];
 };

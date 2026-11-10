@@ -9,7 +9,7 @@ import { cardImageUrl, fetchImage } from './avatars';
 import { DEFAULT_SECTIONS, statsCard, StatsCardSection } from './stats.card';
 import { CardTheme } from './themes';
 import { totalXp } from '../xp/grant';
-import { currentRules, levelProgress } from '../xp/rules';
+import { currentRules, levelFor, levelProgress } from '../xp/rules';
 
 /**
  * A member's stats card (/stats and the dashboard download); `viewerId` marks
@@ -35,7 +35,7 @@ export const statsCardSvg = async (opts: {
     getMemberSummary(db, guildId, memberId, period),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
-    sections.includes('totals') ? getXpNeighbours(db, guildId, memberId, period) : [],
+    sections.includes('totals') ? getXpNeighbours(db, guildId, memberId) : [],
     sections.includes('calendar') ? activityCalendar(db, guildId, memberId, tz) : undefined,
     sections.includes('heatmap')
       ? db.$queryRaw<{ hour: number; day_of_week: number; total_minutes: number }[]>(
@@ -63,6 +63,7 @@ export const statsCardSvg = async (opts: {
   );
   const person = (id: string) => people.get(id) ?? { name: 'Unknown member', avatar: undefined };
   const member = person(memberId);
+  const rules = currentRules();
 
   return statsCard(
     {
@@ -75,7 +76,7 @@ export const statsCardSvg = async (opts: {
       ranking: neighbours.length
         ? {
             members: neighbours[0].members,
-            rows: neighbours.map((n) => ({ ...person(n.memberId), xp: n.xp, rank: n.rank, subject: n.memberId === memberId })),
+            rows: neighbours.map((n) => ({ ...person(n.memberId), xp: n.xp, level: levelFor(n.xp, rules), rank: n.rank, subject: n.memberId === memberId })),
           }
         : undefined,
       online,
@@ -84,7 +85,7 @@ export const statsCardSvg = async (opts: {
       habits,
       calendar,
       heatmap: heatmap?.map((row) => ({ day: row.day_of_week, hour: row.hour, minutes: row.total_minutes })),
-      xp: xp === undefined ? undefined : levelProgress(xp, currentRules()),
+      xp: xp === undefined ? undefined : levelProgress(xp, rules),
     },
     theme
   );

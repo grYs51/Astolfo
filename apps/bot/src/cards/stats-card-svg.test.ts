@@ -49,8 +49,8 @@ test('draws the summary with names from the Discord directory', async () => {
   const svg = await statsCardSvg({ db: {} as never, guildId: 'g', memberId: 'me', viewerId: 'viewer', period: 'all', theme: THEMES.dark });
 
   expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all');
-  expect(getXpNeighbours).toHaveBeenCalledWith({}, 'g', 'me', 'all');
-  for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'XP ranking · #2 of 2', 'kai-user']) {
+  expect(getXpNeighbours).toHaveBeenCalledWith({}, 'g', 'me');
+  for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'Level ranking · #2 of 2', 'kai-user']) {
     expect(svg).toContain(text);
   }
 });
