@@ -2,7 +2,6 @@ import { CacheType, ChatInputCommandInteraction, InteractionContextType, SlashCo
 import DiscordClient from '../../client/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
-import { isHiddenFrom } from '../../utils/privacy';
 import { getDuo } from '../../stats/queries';
 import { PERIOD_CHOICES } from '../../stats/messages';
 import { StatsPeriod } from '../../stats/windows';
@@ -45,11 +44,6 @@ export default class DuoSlash extends BaseSlash {
     const other = interaction.options.getMember('member');
     if (!other || other.id === me || other.user.bot) {
       await InterActionUtils.send(interaction, 'Pick another member of this server (not yourself or a bot).', true);
-      return;
-    }
-    // The reply is public, so a hidden member's time is never posted
-    if (await isHiddenFrom(client.dataSource, other.id, me)) {
-      await InterActionUtils.send(interaction, 'This member keeps their stats private.', true);
       return;
     }
 

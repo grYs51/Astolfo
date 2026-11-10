@@ -8,7 +8,6 @@ import {
   getStartDateForPeriod,
   parsePeriod,
   toDurationParts,
-  visibleMembersOnly,
 } from '../helpers';
 
 export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, VoiceStatsLeaderboard> =
@@ -50,7 +49,6 @@ export const getVoiceStatsLeaderboard: RequestHandler<{ serverId: string }, Voic
         FROM voice_stats
         WHERE guild_id = ${serverId}
           AND type = ${VOICE_TYPE.VOICE}
-          ${visibleMembersOnly('member_id', req.user?.id ?? '')}
         ${dateFilter}
         GROUP BY member_id
         ORDER BY total_duration DESC

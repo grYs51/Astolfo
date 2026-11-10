@@ -52,7 +52,6 @@ const run = async (handler: unknown, results: unknown[][], extra: object = {}) =
   const db = {
     $queryRaw: queryRaw,
     guildConfigurations: { findMany: jest.fn().mockResolvedValue([]) },
-    userConfigs: { count: jest.fn().mockResolvedValue(0) },
     ...extra,
   };
   const res = { send: jest.fn(), status: jest.fn().mockReturnThis() };
@@ -102,7 +101,7 @@ describe('admin people', () => {
 
   test('empty tables', async () => {
     const { body } = await run(getAdminPeople, [[], [{ dau: 0, wau: 0, mau: 0, churned: 0 }], [], [{ last7d: 0, last30d: 0, total: 0, before_tracking: 0 }], [{ users: 0 }]]);
-    expect(body).toMatchObject({ dau: 0, churned: 0, signIns: { total: 0, beforeTracking: 0 }, liveWebUsers: 0, hiddenMembers: 0 });
+    expect(body).toMatchObject({ dau: 0, churned: 0, signIns: { total: 0, beforeTracking: 0 }, liveWebUsers: 0 });
   });
 });
 

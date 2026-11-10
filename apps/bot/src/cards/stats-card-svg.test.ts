@@ -37,7 +37,7 @@ beforeEach(() => {
   (getVoiceNeighbours as jest.Mock).mockResolvedValue([]);
 });
 
-test('draws the summary the viewer may see, with names from the Discord directory', async () => {
+test('draws the summary with names from the Discord directory', async () => {
   (getMemberSummary as jest.Mock).mockResolvedValue(
     summary({ companions: [{ memberId: 'roland', togetherMs: H }, { memberId: 'gone', togetherMs: H }] })
   );
@@ -47,8 +47,8 @@ test('draws the summary the viewer may see, with names from the Discord director
   ]);
   const svg = await statsCardSvg({ db: {} as never, guildId: 'g', memberId: 'me', viewerId: 'viewer', period: 'all', theme: THEMES.dark });
 
-  expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all', 'viewer');
-  expect(getVoiceNeighbours).toHaveBeenCalledWith({}, 'g', 'me', 'all', 'viewer');
+  expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all');
+  expect(getVoiceNeighbours).toHaveBeenCalledWith({}, 'g', 'me', 'all');
   for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'Voice ranking · #2 of 2', 'kai-user']) {
     expect(svg).toContain(text);
   }

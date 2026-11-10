@@ -82,7 +82,6 @@ export interface AdminPeople {
   signIns: { last7d: number; last30d: number; total: number; beforeTracking: number };
   /** Distinct logged-in users with an unexpired dashboard session */
   liveWebUsers: number;
-  hiddenMembers: number;
 }
 
 export interface AdminWeb {

@@ -10,9 +10,7 @@ import {
   parsePeriod,
   periodFilter,
   previousPeriodFilter,
-  isHiddenFrom,
   toDurationParts,
-  visibleMembersOnly,
 } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getMemberHabits, getMemberStreak, lifetimeVoiceMs } from '../../../../stats/queries';
@@ -33,10 +31,6 @@ export const getVoiceStatsUser: RequestHandler<
 
     if (!userId) {
       res.status(400).send({ error: 'Missing userId' });
-      return;
-    }
-    if (await isHiddenFrom(req.db, userId, req.user?.id ?? '')) {
-      res.status(403).send({ error: 'private' });
       return;
     }
 
@@ -107,7 +101,6 @@ export const getVoiceStatsUser: RequestHandler<
          AND other.member_id <> me.member_id
          AND other.issued_on < COALESCE(me.ended_on, NOW())
          AND COALESCE(other.ended_on, NOW()) > me.issued_on
-         ${visibleMembersOnly('other.member_id', req.user?.id ?? '')}
         WHERE me.guild_id = ${serverId}
           AND me.member_id = ${userId}
           AND me.type = ${VOICE_TYPE.VOICE}

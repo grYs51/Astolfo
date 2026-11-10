@@ -23,7 +23,6 @@ import { dailyLineOption, echarts } from './charts';
         [subtitle]="p.signIns.last7d + ' in 7 days · ' + p.signIns.total + ' ever' + (p.signIns.beforeTracking ? ', ' + p.signIns.beforeTracking + ' before tracking' : '')"
       />
       <lib-stat-card [dense]="true" label="Signed in now" [value]="p.liveWebUsers" subtitle="People with a live dashboard session" />
-      <lib-stat-card [dense]="true" label="Hidden members" [value]="p.hiddenMembers" subtitle="Privacy setting on" />
     </div>
 
     <h3 class="mb-xs mt-md text-sm font-semibold text-gray-100">Active members per day, all servers</h3>

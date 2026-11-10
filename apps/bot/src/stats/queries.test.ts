@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getDuo, getMemberSummary, getVoiceNeighbours } from './queries';
+import { getDuo, getMemberSummary } from './queries';
 
 // No test database in this repo: the SQL was checked once against the dev database
 // (overlap in one channel, no overlap in another, an open session, MUTED rows ignored).
@@ -43,40 +43,13 @@ describe('getDuo', () => {
   });
 });
 
-describe('getMemberSummary privacy', () => {
-  const queryRaw = jest.fn<Promise<object[]>, unknown[]>(async () => [{ total: 0n, sessions: 0n, count: 0n }]);
+describe('getMemberSummary', () => {
+  const queryRaw = jest.fn<Promise<object[]>, unknown[]>();
   const db = { $queryRaw: queryRaw } as never;
-
-  /** For each query, the viewer its privacy filter lets through (`user_id <> viewer`) */
-  const viewersSeen = () =>
-    queryRaw.mock.calls.flatMap(([strings, ...values]) => {
-      const sql = Prisma.sql(strings as TemplateStringsArray, ...values);
-      return sql.strings.flatMap((s, i) => (/user_id <> $/.test(s) ? [sql.values[i]] : []));
-    });
-
-  beforeEach(() => queryRaw.mockClear());
-
-  // message rank, companions and the streak each filter hidden members
-  test('/stats: every filter lets the member through (they always see themselves)', async () => {
-    await getMemberSummary(db, 'g', 'member', 'month');
-    expect(viewersSeen()).toEqual(['member', 'member', 'member']);
-  });
-
-  test('another viewer: the message rank and companions leave out members hidden from the viewer', async () => {
-    await getMemberSummary(db, 'g', 'member', 'month', 'viewer');
-    // the streak is the member's own, so it stays theirs
-    expect(viewersSeen().sort()).toEqual(['member', 'viewer', 'viewer']);
-  });
-
-  test('getVoiceNeighbours leaves out members hidden from the viewer', async () => {
-    await getVoiceNeighbours(db, 'g', 'member', 'month', 'viewer');
-    expect(viewersSeen()).toEqual(['viewer']);
-  });
 
   test('message rank counts messages in the period', async () => {
     queryRaw.mockResolvedValue([{ total: 0n, sessions: 0n, count: 0n, members: 5n, rank: 2n }]);
-    const summary = await getMemberSummary(db, 'g', 'member', 'month', 'viewer');
-    queryRaw.mockImplementation(async () => [{ total: 0n, sessions: 0n, count: 0n }]);
+    const summary = await getMemberSummary(db, 'g', 'member', 'month');
     expect(summary).toMatchObject({ messageRank: 2 });
     const messageRank = queryRaw.mock.calls
       .map(([strings, ...values]) => Prisma.sql(strings as TemplateStringsArray, ...values))

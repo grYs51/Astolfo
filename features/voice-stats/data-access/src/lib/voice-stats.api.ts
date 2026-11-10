@@ -15,7 +15,6 @@ import {
   HeatmapPeriod,
   DashboardPeriod,
   ServerMessageStats,
-  MemberPrivacy,
   ServerPresence,
   UserPresence,
   ServerGames,
@@ -41,16 +40,6 @@ const viewerTimeZone = () => Intl.DateTimeFormat().resolvedOptions().timeZone;
 export class VoiceStatsApi extends ApiBase {
   protected override host = inject(COMMON_BOT_API_URL);
   private http = inject(HttpClient);
-
-  /** The viewer's own privacy setting */
-  fetchPrivacy() {
-    return this.get<MemberPrivacy>('/features/me/privacy');
-  }
-
-  /** Change the viewer's privacy setting (one-off request, not a resource) */
-  setPrivacy(hidden: boolean) {
-    return this.http.put<MemberPrivacy>(`${this.host}/features/me/privacy`, { hidden });
-  }
 
   /**
    * A member's stats card as a PNG blob, for the preview, the download and the clipboard.

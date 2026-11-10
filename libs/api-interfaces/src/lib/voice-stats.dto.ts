@@ -34,12 +34,6 @@ export interface LiveVoiceMember {
   since: DateLike;
 }
 
-/** GET/PUT /features/me/privacy */
-export interface MemberPrivacy {
-  /** Hidden from other members' views (leaderboards, companions, live list, profile) */
-  hidden: boolean;
-}
-
 /** A channel with a message count */
 export interface ChannelMessageCount {
   channel: DiscordChannel;

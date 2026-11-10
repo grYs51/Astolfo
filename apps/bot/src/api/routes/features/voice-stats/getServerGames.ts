@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { Prisma } from '@prisma/client';
 import { DashboardPeriod, ServerGames } from '@nx-stolfo/api-interfaces';
-import { memberOrUnknown, parsePeriod, periodFilter, visibleMembersOnly } from '../helpers';
+import { memberOrUnknown, parsePeriod, periodFilter } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { GAME_TYPES, SCORING } from '../../../../utils/handlers/games-handler';
 
@@ -27,7 +27,6 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
       ['week', 'month', 'year', 'all'],
       'all'
     );
-    const viewerId = req.user?.id ?? '';
     // created_at only exists on game_result, so the filter is unambiguous
     const gamesOf = (type: GAME_TYPES) => Prisma.sql`
       gr.guild_id = ${serverId}
@@ -46,7 +45,6 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
       FROM game_result gr
       JOIN game_player gp ON gp.game_result_id = gr.id
       WHERE ${where}
-        ${visibleMembersOnly('user_id', viewerId)}
       GROUP BY gp.user_id
       HAVING COUNT(*) >= 3
       ORDER BY COUNT(*) FILTER (WHERE gp.result = ${SCORING.WIN})::float8 / COUNT(*) DESC, games DESC
@@ -71,8 +69,6 @@ export const getServerGames: RequestHandler<{ serverId: string }, ServerGames> =
         JOIN game_player a ON a.game_result_id = gr.id
         JOIN game_player b ON b.game_result_id = gr.id AND a.user_id < b.user_id
         WHERE ${games}
-          ${visibleMembersOnly('a.user_id', viewerId)}
-          ${visibleMembersOnly('b.user_id', viewerId)}
         GROUP BY 1, 2
         ORDER BY games DESC
         LIMIT 5

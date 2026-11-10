@@ -17,7 +17,7 @@ export interface PresenceRhythmMember {
   onlineHours: number;
 }
 
-/** Server pulse: when members are online. Anonymous totals include hidden members. */
+/** Server pulse: when members are online */
 export interface ServerPresence {
   period: DashboardPeriod;
   /** Current members counted */

@@ -8,8 +8,6 @@ jest.mock('../../../../cards/stats-card-svg', () => ({
   statsCardSvg: jest.fn(async () => '<svg xmlns="http://www.w3.org/2000/svg" width="4" height="4"/>'),
 }));
 
-const HIDDEN = 'hidden';
-
 const get = async (userId: string, period?: string, extra: Record<string, string> = {}) => {
   const res = {
     status: jest.fn().mockReturnThis(),
@@ -18,9 +16,7 @@ const get = async (userId: string, period?: string, extra: Record<string, string
     attachment: jest.fn().mockReturnThis(),
     send: jest.fn(),
   };
-  const db = {
-    userConfigs: { findFirst: jest.fn(async ({ where }: { where: { user_id: string } }) => (where.user_id === HIDDEN ? {} : null)) },
-  };
+  const db = {};
   const next = jest.fn();
   await getStatsCard(
     { params: { serverId: 'g', userId }, query: { ...(period ? { period } : {}), ...extra }, user: { id: 'viewer' }, db } as unknown as Request<{ serverId: string; userId: string }>,
@@ -39,13 +35,7 @@ describe('getStatsCard', () => {
     expect(statsCardSvg).not.toHaveBeenCalled();
   });
 
-  test('403 when the member hides from the viewer', async () => {
-    const res = await get(HIDDEN, 'week');
-    expect(res.status).toHaveBeenCalledWith(403);
-    expect(statsCardSvg).not.toHaveBeenCalled();
-  });
-
-  test('a private PNG download of the card the viewer may see', async () => {
+  test('a private PNG download of the card', async () => {
     const res = await get('member', 'year');
     expect(statsCardSvg).toHaveBeenCalledWith(
       expect.objectContaining({ guildId: 'g', memberId: 'member', viewerId: 'viewer', period: 'year' })

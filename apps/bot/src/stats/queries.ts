@@ -1,7 +1,6 @@
 import { Prisma } from '@prisma/client';
 import type { Db } from '../db';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
-import { visibleMembersOnly } from '../utils/privacy';
 import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows';
 import { crossedMilestones, MILESTONE_HOURS } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
@@ -95,7 +94,7 @@ export interface Streak {
 export const getStreaks = async (
   db: QueryDb,
   guildId: string,
-  opts: { viewerId: string; memberIds?: string[]; limit?: number },
+  opts: { memberIds?: string[]; limit?: number },
   now = new Date()
 ): Promise<Streak[]> => {
   if (opts.memberIds?.length === 0) return [];
@@ -109,7 +108,6 @@ export const getStreaks = async (
       FROM voice_stats
       WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${now}
         ${members}
-        ${visibleMembersOnly('member_id', opts.viewerId)}
       GROUP BY member_id, issued_on::date
       HAVING SUM(${durationMs()}) >= ${VOICE_DAY_MS}
     ),
@@ -134,9 +132,9 @@ export const getStreaks = async (
   return rows.map((row) => ({ memberId: row.member_id, current: row.current, longest: row.longest }));
 };
 
-/** One member's streak (for themselves, or after the caller checked they may see it) */
+/** One member's streak */
 export const getMemberStreak = async (db: QueryDb, guildId: string, memberId: string, now = new Date()) => {
-  const [streak] = await getStreaks(db, guildId, { viewerId: memberId, memberIds: [memberId] }, now);
+  const [streak] = await getStreaks(db, guildId, { memberIds: [memberId] }, now);
   return { current: streak?.current ?? 0, longest: streak?.longest ?? 0 };
 };
 
@@ -153,9 +151,9 @@ export interface MemberSummary {
   sessions: number;
   messages: number;
   previousMessages: number | null;
-  /** Rank by messages among members the viewer can see (1 = most) */
+  /** Rank by messages among the server's members (1 = most) */
   messageRank?: number;
-  /** Who they shared a channel with most (members visible to the viewer) */
+  /** Who they shared a channel with most */
   companions: { memberId: string; togetherMs: number }[];
   streak: { current: number; longest: number };
   /** All-time voice ms, for the next milestone */
@@ -174,13 +172,12 @@ const rankIn = (db: QueryDb, memberId: string, totals: Prisma.Sql) =>
     WHERE EXISTS (SELECT 1 FROM totals WHERE member_id = ${memberId})
   `;
 
-/** Each member's voice ms in the window (member_id, total), members hidden from the viewer left out */
-const voiceTotals = (guildId: string, window: TimeWindow, viewerId: string) => Prisma.sql`
+/** Each member's voice ms in the window (member_id, total) */
+const voiceTotals = (guildId: string, window: TimeWindow) => Prisma.sql`
   SELECT member_id, SUM(${durationMs()}) AS total
   FROM voice_stats
   WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
     ${windowFilter('issued_on', window)}
-    ${visibleMembersOnly('member_id', viewerId)}
   GROUP BY member_id`;
 
 export interface VoiceNeighbour {
@@ -188,7 +185,7 @@ export interface VoiceNeighbour {
   voiceMs: number;
   /** 1 = most voice time; ties broken by member id so the list is stable */
   rank: number;
-  /** Members on the leaderboard, as the viewer sees it */
+  /** Members on the leaderboard */
   members: number;
 }
 
@@ -202,11 +199,10 @@ export const getVoiceNeighbours = async (
   guildId: string,
   memberId: string,
   period: StatsPeriod,
-  viewerId = memberId,
   now = new Date()
 ): Promise<VoiceNeighbour[]> => {
   const rows = await db.$queryRaw<{ member_id: string; total: number; rank: number; members: number }[]>`
-    WITH totals AS (${voiceTotals(guildId, periodWindows(period, now).current, viewerId)}),
+    WITH totals AS (${voiceTotals(guildId, periodWindows(period, now).current)}),
     ranked AS (
       SELECT member_id, total,
         ROW_NUMBER() OVER (ORDER BY total DESC, member_id)::int AS rank,
@@ -253,13 +249,11 @@ export const getMemberHabits = async (db: QueryDb, guildId: string, memberId: st
   return toHabits(row);
 };
 
-/** `viewerId` is who looks at it (the member for /stats, anyone for the dashboard download) */
 export const getMemberSummary = async (
   db: QueryDb,
   guildId: string,
   memberId: string,
   period: StatsPeriod,
-  viewerId = memberId,
   now = new Date()
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
@@ -278,7 +272,6 @@ export const getMemberSummary = async (
           FROM message_stats
           WHERE guild_id = ${guildId}
             ${windowFilter('created_at', current)}
-            ${visibleMembersOnly('user_id', viewerId)}
           GROUP BY user_id`
       ),
       db.$queryRaw<{ member_id: string; together: bigint }[]>`
@@ -291,7 +284,6 @@ export const getMemberSummary = async (
          AND other.member_id <> me.member_id
          AND other.issued_on < COALESCE(me.ended_on, NOW())
          AND COALESCE(other.ended_on, NOW()) > me.issued_on
-         ${visibleMembersOnly('other.member_id', viewerId)}
         WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
           ${windowFilter('me.issued_on', current)}
         GROUP BY other.member_id
@@ -329,7 +321,7 @@ export interface Duo {
   topChannelId?: string;
 }
 
-/** Time two members spent together in voice (the caller checks a may see b) */
+/** Time two members spent together in voice */
 export const getDuo = async (
   db: QueryDb,
   guildId: string,
@@ -386,7 +378,7 @@ export interface MemberProfile {
   rps: { wins: number; ties: number; losses: number };
 }
 
-/** One member's all-time profile on a server (the caller checks they may see it) */
+/** One member's all-time profile on a server */
 export const getMemberProfile = async (
   db: QueryDb,
   guildId: string,
@@ -451,19 +443,13 @@ export interface ServerDigest {
   milestones: { memberId: string; hours: number }[];
 }
 
-/**
- * A server's week (or any window) for a public channel post: hidden members
- * are counted in totals but never named.
- */
+/** A server's week (or any window) for a public channel post */
 export const getServerDigest = async (
   db: QueryDb,
   guildId: string,
   window: Required<TimeWindow>,
   previous: Required<TimeWindow>
 ): Promise<ServerDigest> => {
-  // Public output: no viewer exception, every hidden member is left out
-  const everyone = '';
-
   const [voice, previousVoice, messages, previousMessages, [active], topVoice, topMessages, [duo], [day], streaks, lifetimes] =
     await Promise.all([
       voiceTotal(db, guildId, window),
@@ -484,7 +470,6 @@ export const getServerDigest = async (
         FROM voice_stats
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
           ${windowFilter('issued_on', window)}
-          ${visibleMembersOnly('member_id', everyone)}
         GROUP BY member_id
         ORDER BY total DESC
         LIMIT 3
@@ -494,7 +479,6 @@ export const getServerDigest = async (
         FROM message_stats
         WHERE guild_id = ${guildId}
           ${windowFilter('created_at', window)}
-          ${visibleMembersOnly('user_id', everyone)}
         GROUP BY user_id
         ORDER BY count DESC
         LIMIT 3
@@ -512,8 +496,6 @@ export const getServerDigest = async (
          AND COALESCE(b.ended_on, NOW()) > a.issued_on
         WHERE a.guild_id = ${guildId} AND a.type = ${VOICE_TYPE.VOICE}
           ${windowFilter('a.issued_on', window)}
-          ${visibleMembersOnly('a.member_id', everyone)}
-          ${visibleMembersOnly('b.member_id', everyone)}
         GROUP BY a.member_id, b.member_id
         ORDER BY together DESC
         LIMIT 1
@@ -528,7 +510,7 @@ export const getServerDigest = async (
         LIMIT 1
       `,
       // As of the end of the week, so a late post or a mid-week preview still shows that week
-      getStreaks(db, guildId, { viewerId: everyone, limit: 3 }, window.to),
+      getStreaks(db, guildId, { limit: 3 }, window.to),
       // Lifetime voice before and at the end of the window, for milestones crossed in it
       db.$queryRaw<{ member_id: string; before: bigint; after: bigint }[]>`
         SELECT member_id,
@@ -536,7 +518,6 @@ export const getServerDigest = async (
           SUM(${durationBeforeMs(window.to)})::bigint AS after
         FROM voice_stats
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${window.to}
-          ${visibleMembersOnly('member_id', everyone)}
         GROUP BY member_id
         HAVING SUM(${durationBeforeMs(window.to)}) >= ${MILESTONE_HOURS[0] * HOUR}
       `,

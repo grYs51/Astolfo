@@ -13,17 +13,8 @@ jest.mock('../../cards/duo.card', () => {
 });
 
 const ME = 'me';
-const HIDDEN = 'hidden-member';
 
-const client = {
-  dataSource: {
-    userConfigs: {
-      findFirst: jest.fn(async ({ where }: { where: { user_id: string } }) =>
-        where.user_id === HIDDEN ? { user_id: HIDDEN } : null
-      ),
-    },
-  },
-} as never;
+const client = { dataSource: {} } as never;
 
 const member = (id: string) => [id, { displayName: id, displayAvatarURL: () => undefined }] as const;
 
@@ -87,7 +78,6 @@ describe('/duo', () => {
   });
 
   test.each([
-    ['a hidden member', { id: HIDDEN }, 'This member keeps their stats private.'],
     ['yourself', { id: ME }, 'Pick another member of this server (not yourself or a bot).'],
     ['a bot', { id: 'bot', bot: true }, 'Pick another member of this server (not yourself or a bot).'],
     ['someone who left the server', null, 'Pick another member of this server (not yourself or a bot).'],

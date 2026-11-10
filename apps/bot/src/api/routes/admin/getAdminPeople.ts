@@ -22,7 +22,7 @@ const ACTIVITY = Prisma.sql`
 
 export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler(
   async (req, res) => {
-    const [daily, [counts], firstSeenPerWeek, [signIns], [live], hiddenMembers] =
+    const [daily, [counts], firstSeenPerWeek, [signIns], [live]] =
       await Promise.all([
         req.db.$queryRaw<AdminPeople['daily']>`
           WITH ${ACTIVITY}
@@ -69,8 +69,6 @@ export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler
         req.db.$queryRaw<[{ users: number }]>`
           SELECT COUNT(DISTINCT data::jsonb #>> '{passport,user}')::int AS users
           FROM session WHERE "expiresAt" > NOW()`,
-        // Anonymous total: counting hidden members doesn't name them
-        req.db.userConfigs.count({ where: { privacy_hidden: true } }),
       ]);
 
     res.send({
@@ -84,7 +82,6 @@ export const getAdminPeople: RequestHandler<unknown, AdminPeople> = asyncHandler
         beforeTracking: signIns.before_tracking,
       },
       liveWebUsers: live.users,
-      hiddenMembers,
     });
   }
 );

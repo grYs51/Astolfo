@@ -1,6 +1,5 @@
 import { ClosedVoiceStat } from './intervals';
 import DiscordClient from '../../../client/client';
-import { hiddenMemberIds } from '../../privacy';
 import { getCurrentLeaderboard, getCurrentVoiceStats } from './currentLeaderboard';
 import { getActiveLeaderboard, getActiveVoiceStats } from './activeLeaderboard';
 import { getLonerLeaderboard, getLonerVoiceStats } from './lonerLeaderboard';
@@ -114,9 +113,6 @@ export const getLeaderboard = async (
 
   const members =
     client.guilds.cache.get(guildId)?.members.cache.map((x) => x) ?? [];
-  // Members who hide from other members (dashboard privacy setting) stay
-  // off this public, in-channel leaderboard too
-  const hidden = await hiddenMemberIds(client.dataSource);
 
-  return getLeaderboard(members, voiceStats).filter((entry) => !hidden.has(entry.id));
+  return getLeaderboard(members, voiceStats);
 };

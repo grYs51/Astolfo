@@ -10,7 +10,6 @@ import {
   setGuildSettings,
 } from './guild-settings';
 import { getActiveServers } from './active-servers';
-import { getPrivacy, setPrivacy } from './privacy';
 import { trackPageView } from './track';
 import {
   getVoiceStatsOverview,
@@ -33,10 +32,6 @@ import {
 export default (router: Router) => {
   // Features
   router.get('/features/active-servers', isAuthenticated, getActiveServers);
-
-  // The viewer's own privacy setting
-  router.get('/features/me/privacy', isAuthenticated, getPrivacy);
-  router.put('/features/me/privacy', isAuthenticated, setPrivacy);
 
   // Dashboard page views (route patterns) for the admin page
   router.post('/features/track', isAuthenticated, trackPageView);

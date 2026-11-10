@@ -74,7 +74,7 @@ For admins: week-over-week trends in active users, new-vs-returning voice partic
 The dashboard is pull; these push, which is what keeps a bot visible in a server.
 
 ### 3.1 Weekly digest post 🟢 — ✅ done (2026-10-10)
-> Shipped as `/digest channel|off|preview` (Manage Server): Mondays 08:00 UTC, recap of the Monday–Sunday week — voice hours and messages vs the week before, active members, top 3 in voice and messages, duo of the week, busiest day, dashboard button. Hidden members are counted but never named. Config lives in `guild_configs.digest_channel_id` rather than a toggle bit, since it needs a channel anyway.
+> Shipped as `/digest channel|off|preview` (Manage Server): Mondays 08:00 UTC, recap of the Monday–Sunday week — voice hours and messages vs the week before, active members, top 3 in voice and messages, duo of the week, busiest day, dashboard button. Config lives in `guild_configs.digest_channel_id` rather than a toggle bit, since it needs a channel anyway.
 
 A scheduled job (node-schedule is already in place) that posts a summary embed to a configured channel: top 3 voice users, total server hours, biggest gainer, current streak leaders. One new guild-config toggle (`SETTING_FLAGS` bitfield is built for exactly this) + one embed builder. This single feature markets the dashboard inside every server, every week.
 
@@ -82,7 +82,7 @@ A scheduled job (node-schedule is already in place) that posts a summary embed t
 Auto-assign roles at configurable hour thresholds ("Regular" at 50h, "No-Lifer" at 500h). Config lives in the dashboard (see §4.1), the bot enforces on a schedule. This is one of the most-requested features in activity-bot ecosystems, and it drives users to check their progress on your dashboard.
 
 ### 3.3 Personal stats slash command 🟢 — ✅ done (2026-10-10)
-> Shipped as `/stats [period]` (only you see the reply): voice time and messages vs the previous period, rank, favourite channel, top companions, dashboard button. Looking up someone else stays with `/profile [user]`, which respects privacy. Voice streak and next milestone added with §2.3.
+> Shipped as `/stats [period]` (only you see the reply): voice time and messages vs the previous period, rank, favourite channel, top companions, dashboard button. Looking up someone else stays with `/profile [user]`. Voice streak and next milestone added with §2.3.
 
 `/stats [user]` replying with an embed of the user's voice profile — hours, rank, favorite channel, streak — plus a link to their dashboard page. The queries all exist in the API handlers; refactor them into shared functions (CODE_REVIEW §2.2 helps here) and the command is thin.
 
@@ -128,6 +128,8 @@ Once digests/reminders/role-rewards exist, users need opt-outs (`user_configs` t
 
 ### 6.2 Privacy controls 🟡
 An activity tracker should offer: per-user opt-out of tracking (bot ignores their voice/presence events), data deletion request, and the export from §4.4. Beyond ethics, this preempts the #1 complaint pattern for tracking bots and is required territory if the bot ever grows beyond friends' servers.
+
+> Hiding from other members (the dashboard's "Show me to other members" toggle) was removed on purpose on 2026-11-10: every query that named members had to filter on it, every per-member endpoint had to answer 403, and that cost landed on each new feature. Members of a server you share always see you; only members see anyone. Opting out of tracking altogether is still open (above).
 
 ### 6.3 Multi-server aggregate profile 🟢
 The active-servers page lists a user's servers; a natural next step is a cross-server personal profile — total hours everywhere, favorite server, global streak. All data exists; it's one aggregation without the `guild_id` filter.

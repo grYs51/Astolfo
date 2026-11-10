@@ -2,7 +2,7 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { Prisma } from '@prisma/client';
 import { VoiceHabitMetric, VoiceHabitsLeaderboard } from '@nx-stolfo/api-interfaces';
-import { memberOrUnknown, parsePeriod, periodFilter, visibleMembersOnly } from '../helpers';
+import { memberOrUnknown, parsePeriod, periodFilter } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { HABIT_SUMS, HabitRow, toHabits } from '../../../../stats/habits-sql';
 
@@ -31,7 +31,6 @@ export const getVoiceHabits: RequestHandler<{ serverId: string }, VoiceHabitsLea
         FROM voice_stats
         WHERE guild_id = ${serverId}
           ${periodFilter(period)}
-          ${visibleMembersOnly('member_id', req.user?.id ?? '')}
         GROUP BY member_id
       ) habits
       WHERE ${rankBy} > 0

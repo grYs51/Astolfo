@@ -6,7 +6,7 @@ import {
   PresenceRhythmMember,
   ServerPresence,
 } from '@nx-stolfo/api-interfaces';
-import { getTimeZone, memberOrUnknown, parsePeriod, visibleMembersOnly } from '../helpers';
+import { getTimeZone, memberOrUnknown, parsePeriod } from '../helpers';
 import { discordDirectory } from '../../../utils/discord-directory';
 import {
   hourSlots,
@@ -59,11 +59,7 @@ export const getServerPresence: RequestHandler<{ serverId: string }, ServerPrese
         LEFT JOIN cells USING (dow, hour)
       `,
       req.db.$queryRaw<RhythmRow[]>`
-        WITH pieces AS (${onlinePieces(
-          Prisma.sql`user_id = ANY(${ids}) ${visibleMembersOnly('user_id', req.user?.id ?? '')}`,
-          lo,
-          hi
-        )})
+        WITH pieces AS (${onlinePieces(Prisma.sql`user_id = ANY(${ids})`, lo, hi)})
         SELECT user_id,
                SUM(secs)::float8 AS total,
                COALESCE(SUM(secs) FILTER (WHERE EXTRACT(HOUR FROM ${local}) < 5), 0)::float8 AS night,

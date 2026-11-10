@@ -210,7 +210,6 @@ export const getGuildSettingsHistory: RequestHandler<{ serverId: string }, Guild
       orderBy: { at: 'desc' },
       take: 50,
     });
-    // Named even when hidden by the privacy setting: this logs admin actions, not activity
     const members = await discordDirectory().members(serverId, [
       ...new Set(rows.map((r) => r.user_id)),
     ]);
