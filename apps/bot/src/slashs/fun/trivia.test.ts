@@ -54,12 +54,17 @@ beforeEach(() => {
 
 describe('/trivia', () => {
   test('places follow the click order; a second click does not count; XP comes from the grant', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
     const game = start();
     await game.ready();
+    now.mockReturnValue(2_000);
     game.click('c', 0); // wrong
+    now.mockReturnValue(3_400);
     game.click('a', 1);
     const again = game.click('a', 0);
+    now.mockReturnValue(5_000);
     game.click('b', 1);
+    now.mockRestore();
     game.end();
     await game.done;
 
@@ -67,7 +72,7 @@ describe('/trivia', () => {
     // The buttons close as soon as time is up, before the results are worked out
     expect(InterActionUtils.editReply).toHaveBeenCalledWith(expect.anything(), { components: [expect.anything()] });
     const { data } = (game.create.mock.calls[0] as unknown as [{ data: { metadata: { correctOrder: string[]; difficulty: string }; players: { create: unknown[] } } }])[0];
-    expect(data.metadata).toMatchObject({ correctOrder: ['a', 'b'], difficulty: 'hard' });
+    expect(data.metadata).toMatchObject({ correctOrder: ['a', 'b'], difficulty: 'hard', answerMs: { c: 1000, a: 2400, b: 4000 } });
     expect(data.players.create).toEqual([
       { user_id: 'c', result: 0, move: 'Wrong' },
       { user_id: 'a', result: 1, move: 'Right' },
@@ -76,7 +81,7 @@ describe('/trivia', () => {
     expect(awardAndAnnounce).toHaveBeenCalledTimes(2);
     expect(awardAndAnnounce).toHaveBeenCalledWith(expect.anything(), 'g', 'a', ['TRIVIA']);
     expect(lastReply()).toMatchObject({
-      content: 'The answer was **Right**.\n1st <@a> +30 XP · 2nd <@b> +20 XP',
+      content: 'The answer was **Right**.\n1st <@a> 2.4 s +30 XP · 2nd <@b> 4.0 s +20 XP',
       allowedMentions: { parse: [] },
       files: [{ name: 'trivia-result.png' }],
     });

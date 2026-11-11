@@ -49,6 +49,12 @@ describe('triviaResultCard', () => {
     expect((await renderPng(svg)).length).toBeGreaterThan(0);
   });
 
+  test('shows how long each winner took, and leaves it out when unknown', () => {
+    const svg = triviaResultCard({ ...result, winners: [{ name: 'Quick', xp: 30, ms: 2340 }, { name: 'Old', xp: 20 }] }, THEMES.dark);
+    expect(svg).toContain('>2.3 s<');
+    expect(svg.match(/ s</g)).toHaveLength(1);
+  });
+
   test('says so when nobody answered or nobody was right', () => {
     expect(triviaResultCard({ ...result, picks: [0, 0, 0, 0], winners: [] }, THEMES.dark)).toContain('Nobody answered!');
     expect(triviaResultCard({ ...result, picks: [2, 0, 1, 0], winners: [] }, THEMES.dark)).toContain('Nobody got it right (3 tried).');

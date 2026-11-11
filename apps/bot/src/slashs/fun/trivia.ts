@@ -20,7 +20,7 @@ import { currentRules } from '../../xp/rules';
 import { CATEGORIES, nextQuestion, TriviaDifficulty, TriviaQuestion } from '../../trivia/opentdb';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
-import { capitalise, LETTERS, ordinal, triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
+import { capitalise, LETTERS, ordinal, seconds, triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 export const ANSWER_MS = 20_000;
@@ -43,12 +43,21 @@ const buttons = (q: TriviaQuestion, over: boolean) =>
   );
 
 /** The result as text: it goes next to the card (names there can't be clicked) and stands alone if the card fails */
-export const resultText = (q: TriviaQuestion, answered: number, correctOrder: string[], xp: Map<string, number>) => {
+export const resultText = (
+  q: TriviaQuestion,
+  answered: number,
+  correctOrder: string[],
+  xp: Map<string, number>,
+  times = new Map<string, number>()
+) => {
   // Answers come from Open Trivia DB and can hold Markdown ("*NSYNC")
   const head = `The answer was **${escapeMarkdown(q.correct)}**.`;
   if (!answered) return `${head} Nobody answered!`;
   if (!correctOrder.length) return `${head} Nobody got it right.`;
-  const places = correctOrder.map((id, i) => `${ordinal(i + 1)} <@${id}>${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`);
+  const places = correctOrder.map((id, i) => {
+    const ms = times.get(id);
+    return `${ordinal(i + 1)} <@${id}>${ms !== undefined ? ` ${seconds(ms)}` : ''}${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`;
+  });
   return `${head}\n${places.join(' · ')}`;
 };
 
@@ -116,8 +125,11 @@ export default class Trivia extends BaseSlash {
         ...(questionCard && { files: [questionCard] }),
         components: [buttons(q, false)],
       });
+      // Answer times count from when the question is on screen
+      const shownAt = Date.now();
 
       const answers = new Map<string, number>();
+      const times = new Map<string, number>();
       const correctOrder: string[] = [];
       const collector = interaction.channel.createMessageComponentCollector({
         filter: (i) =>
@@ -131,6 +143,7 @@ export default class Trivia extends BaseSlash {
         const already = answers.has(i.user.id);
         if (!already) {
           answers.set(i.user.id, index);
+          times.set(i.user.id, Date.now() - shownAt);
           if (q.answers[index] === q.correct) correctOrder.push(i.user.id);
         }
         const content = already ? 'You already answered.' : `Locked in: ${label(q, index)}`;
@@ -140,7 +153,7 @@ export default class Trivia extends BaseSlash {
       // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
       await InterActionUtils.editReply(interaction, { components: [buttons(q, true)] });
 
-      const xp = await this.saveAndGrant(client, guildId, q, answers, correctOrder);
+      const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder);
       const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
       const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
       const resultCard = await card(
@@ -151,14 +164,14 @@ export default class Trivia extends BaseSlash {
               answers: q.answers,
               correct: q.correct,
               picks,
-              winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id) })),
+              winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id), ms: times.get(id) })),
             },
             THEMES[DEFAULT_THEME]
           ),
         'trivia-result.png'
       );
       await InterActionUtils.editReply(interaction, {
-        content: resultText(q, answers.size, correctOrder, xp) + (resultCard ? '' : ATTRIBUTION_LINE),
+        content: resultText(q, answers.size, correctOrder, xp, times) + (resultCard ? '' : ATTRIBUTION_LINE),
         // The winners are named, but not pinged
         allowedMentions: { parse: [] },
         files: resultCard ? [resultCard] : [],
@@ -180,6 +193,7 @@ export default class Trivia extends BaseSlash {
     guildId: string,
     q: TriviaQuestion,
     answers: Map<string, number>,
+    times: Map<string, number>,
     correctOrder: string[]
   ): Promise<Map<string, number>> {
     if (!answers.size) return new Map();
@@ -189,7 +203,15 @@ export default class Trivia extends BaseSlash {
           game_type: { connect: { id: GAME_TYPES.TRIVIA } },
           guild_id: guildId,
           // XP is rebuilt from this, so a recalculation keeps the places and the difficulty
-          metadata: { question: q.question, category: q.category, difficulty: q.difficulty, correct: q.correct, correctOrder },
+          metadata: {
+            question: q.question,
+            category: q.category,
+            difficulty: q.difficulty,
+            correct: q.correct,
+            correctOrder,
+            // Milliseconds from the question showing to each member's click, for /trivia-stats
+            answerMs: Object.fromEntries(times),
+          },
           players: {
             create: [...answers].map(([user_id, index]) => ({
               user_id,

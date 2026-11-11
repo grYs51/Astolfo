@@ -19,6 +19,8 @@ export interface TriviaPlayer {
   avatar?: string;
   /** XP earned; undefined when none was granted */
   xp?: number;
+  /** How long they took to answer; undefined for questions saved before times were kept */
+  ms?: number;
 }
 
 export interface TriviaResultCardData {
@@ -38,6 +40,8 @@ const ANSWER_H = 64;
 const GAP = 16;
 const ANSWER_W = (W - 2 * PAD - GAP) / 2;
 
+/** 2300 → "2.3 s" */
+export const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 export const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st */
 export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
@@ -117,6 +121,7 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
       text(PAD + 8, y + 28, 18, i === 0 ? t.accent : t.muted, ordinal(i + 1), 'dy="0.35em" font-weight="700"') +
       avatarSvg({ id: `w${i}`, x: PAD + 64, y: y + 8, size: 40, name: p.name, image: p.avatar, theme: t }) +
       text(PAD + 120, y + 28, 18, t.text, escapeXml(truncate(p.name, 36)), 'dy="0.35em" font-weight="600"') +
+      (p.ms !== undefined ? text(W - PAD - 130, y + 28, 16, t.muted, seconds(p.ms), 'dy="0.35em" text-anchor="end"') : '') +
       (p.xp ? text(W - PAD - 8, y + 28, 18, t.accent, `+${p.xp} XP`, 'dy="0.35em" text-anchor="end" font-weight="700"') : '')
     );
   });
