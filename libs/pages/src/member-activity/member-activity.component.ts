@@ -132,9 +132,9 @@ export class MemberActivityComponent {
 
   constructor() {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
-    // Only while a session is open: reload() keeps the current value, so nothing flickers
+    // Only while a session is open and the tab is visible: reload() keeps the current value, so nothing flickers
     const timer = setInterval(() => {
-      if (this.stats()?.recentSessions.some((s) => !s.endedOn)) this.userResource().reload();
+      if (!document.hidden && this.stats()?.recentSessions.some((s) => !s.endedOn)) this.userResource().reload();
     }, LIVE_REFRESH_MS);
     inject(DestroyRef).onDestroy(() => clearInterval(timer));
   }

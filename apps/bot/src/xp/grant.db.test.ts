@@ -341,13 +341,19 @@ describeDb('grantXp during a call (checkpoints)', () => {
     expect(await checkpoint(at(70, 13))).toEqual({ rows: 0, xp: 0 });
   });
 
-  test('a recalculation keeps the voice row of a call still going', async () => {
+  test('a recalculation keeps the voice row of a call still going, not its starter', async () => {
     const client = { dataSource: db, users: { cache: new Map() } } as never;
     await db.voice_stats.create({ data: session('live-open-3', 'xp-l3', at(70, 14), null) });
     await grantXp(db as never, { guildId: L, memberId: 'xp-l3', rules: DEFAULT_RULES, isBot: () => false, now: at(70, 14, 10) });
     const before = await db.xp_events.findUniqueOrThrow({ where: { key: 'voice:live-open-3' } });
+    // As if the call had earned a starter bonus at an old amount
+    await db.xp_events.create({
+      data: { id: 'live-starter-3', guild_id: L, member_id: 'xp-l3', source: 'STARTER', amount: 5, note: 'old', key: 'starter:live-open-3', created_at: at(70, 14, 10) },
+    });
     await recalculateXp(client, L);
     expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open-3' } })).toEqual(before);
+    // Gone: the next checkpoint grants it again at the current amount
+    expect(await db.xp_events.findUnique({ where: { key: 'starter:live-open-3' } })).toBeNull();
     // Closed sessions were rebuilt
     expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open' } })).toMatchObject({ amount: 60 });
   });

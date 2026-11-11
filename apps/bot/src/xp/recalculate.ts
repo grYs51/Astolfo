@@ -37,15 +37,17 @@ export const recalculateXp = async (client: DiscordClient, guildId: string) => {
   try {
     const granted = await client.dataSource.$transaction(
       async (tx) => {
-        // Calls still going keep their voice and starter rows: the rebuild skips open sessions (only the member's
-        // own checkpoint grades them), and the next checkpoint reprices them with the current rules
+        // Calls still going keep their voice row: the rebuild skips open sessions (only the member's own checkpoint
+        // grades them), and the next checkpoint reprices it with the current rules. Not their starter: a session
+        // with a starter row never gets another, so a kept one would keep the old amount. It and welcome come
+        // back at the next checkpoint.
         await tx.$executeRaw`
           DELETE FROM xp_events x
           WHERE x.guild_id = ${guildId}
             AND NOT EXISTS (
               SELECT 1 FROM voice_stats v
               WHERE v.guild_id = ${guildId} AND v.type = ${VOICE_TYPE.VOICE} AND v.ended_on IS NULL
-                AND x.key IN ('voice:' || v.id, 'starter:' || v.id)
+                AND x.key = 'voice:' || v.id
             )
         `;
         return grantXp(tx, { guildId, rules: currentRules(), ...xpLookups(client, guildId) });
