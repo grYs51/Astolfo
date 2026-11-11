@@ -62,23 +62,46 @@ const counted = async (db: GrantDb, insert: Prisma.Sql): Promise<Granted> => {
   return { rows: row?.rows ?? 0, xp: row?.xp ?? 0 };
 };
 
+const insertXp = (guildId: string, rows: XpRow[]) =>
+  Prisma.sql`INSERT INTO xp_events (id, guild_id, member_id, source, amount, note, segments, key, created_at) VALUES ${Prisma.join(
+    rows.map(
+      (r) =>
+        Prisma.sql`(gen_random_uuid()::text, ${guildId}, ${r.memberId}, ${r.source}, ${r.amount}, ${r.note}, ${
+          r.segments ? JSON.stringify(r.segments) : null
+        }::jsonb, ${r.key}, ${r.at}::timestamp)`
+    )
+  )}`;
+
+/**
+ * VOICE rows are graded again while their session is open (checkpoints) and once more when it closes, so
+ * they replace the row in place. The XP added is the new amount minus the old: every CTE reads the same
+ * snapshot, so `old` holds the amounts from before the upsert. An unchanged row isn't rewritten or counted.
+ */
+const upserted = async (db: GrantDb, guildId: string, rows: XpRow[]): Promise<Granted> => {
+  const [row] = await db.$queryRaw<{ rows: number; xp: number }[]>`
+    WITH old AS (SELECT key, amount FROM xp_events WHERE key IN (${Prisma.join(rows.map((r) => r.key))})),
+    added AS (
+      ${insertXp(guildId, rows)}
+      ON CONFLICT (key) DO UPDATE SET amount = EXCLUDED.amount, note = EXCLUDED.note, segments = EXCLUDED.segments,
+        created_at = EXCLUDED.created_at
+      WHERE (xp_events.amount, xp_events.note, xp_events.segments, xp_events.created_at)
+        IS DISTINCT FROM (EXCLUDED.amount, EXCLUDED.note, EXCLUDED.segments, EXCLUDED.created_at)
+      RETURNING key, amount
+    )
+    SELECT COUNT(*)::int AS rows, COALESCE(SUM(a.amount - COALESCE(o.amount, 0)), 0)::int AS xp
+    FROM added a LEFT JOIN old o USING (key)
+  `;
+  return { rows: row?.rows ?? 0, xp: row?.xp ?? 0 };
+};
+
 const insertRows = async (db: GrantDb, guildId: string, rows: XpRow[]): Promise<Granted> => {
   const results: Granted[] = [];
   for (let i = 0; i < rows.length; i += CHUNK) {
-    const values = rows
-      .slice(i, i + CHUNK)
-      .map(
-        (r) =>
-          Prisma.sql`(gen_random_uuid()::text, ${guildId}, ${r.memberId}, ${r.source}, ${r.amount}, ${r.note}, ${
-            r.segments ? JSON.stringify(r.segments) : null
-          }::jsonb, ${r.key}, ${r.at}::timestamp)`
-      );
-    results.push(
-      await counted(
-        db,
-        Prisma.sql`INSERT INTO xp_events (id, guild_id, member_id, source, amount, note, segments, key, created_at) VALUES ${Prisma.join(values)}`
-      )
-    );
+    const chunk = rows.slice(i, i + CHUNK);
+    const voice = chunk.filter((r) => r.source === 'VOICE');
+    const rest = chunk.filter((r) => r.source !== 'VOICE');
+    if (voice.length) results.push(await upserted(db, guildId, voice));
+    if (rest.length) results.push(await counted(db, insertXp(guildId, rest)));
   }
   return sum(results);
 };
@@ -99,6 +122,8 @@ interface VoiceRow {
   type: string;
   issued_on: Date;
   ended_on: Date;
+  /** Still in the call: ended_on is `now` */
+  open?: boolean;
 }
 
 /** `base` with the `cuts` taken out */
@@ -146,24 +171,28 @@ const indexPieces = (pieces: OtherPiece[]) => {
 };
 
 const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Promise<Granted> => {
-  const { guildId, memberId, since, rules } = opts;
+  const { guildId, memberId, since, rules, now = new Date() } = opts;
   const { amounts, thresholds } = rules;
 
-  // Closed sessions not graded yet
+  // Open sessions (graded up to now: a checkpoint) and closed ones not graded to their end yet. A final
+  // voice row is dated at the session's end, a checkpoint at the checkpoint.
   const sessionRows = await db.$queryRaw<VoiceRow[]>`
-    SELECT v.id, v.member_id, v.channel_id, v.type, v.issued_on, v.ended_on
+    SELECT v.id, v.member_id, v.channel_id, v.type, v.issued_on, COALESCE(v.ended_on, ${now}::timestamp) AS ended_on,
+      v.ended_on IS NULL AS open
     FROM voice_stats v
-    WHERE v.guild_id = ${guildId} AND v.type = ${VOICE_TYPE.VOICE} AND v.ended_on IS NOT NULL
+    LEFT JOIN xp_events x ON x.key = 'voice:' || v.id
+    WHERE v.guild_id = ${guildId} AND v.type = ${VOICE_TYPE.VOICE} AND v.issued_on < ${now}::timestamp
+      AND (v.ended_on IS NULL OR x.created_at IS DISTINCT FROM v.ended_on)
       ${memberFilter('v.member_id', memberId)}
       ${notBots('v.member_id', botIds)}
-      ${sinceFilter('v.ended_on', since)}
-      AND NOT EXISTS (SELECT 1 FROM xp_events x WHERE x.key = 'voice:' || v.id)
+      ${since ? Prisma.sql`AND (v.ended_on IS NULL OR v.ended_on >= ${since})` : Prisma.empty}
   `;
   if (!sessionRows.length) return { rows: 0, xp: 0 };
-  const sessions: (Session & { memberId: string })[] = sessionRows.map((r) => ({
+  const sessions: (Session & { memberId: string; open: boolean })[] = sessionRows.map((r) => ({
     id: r.id,
     memberId: r.member_id,
     channelId: r.channel_id,
+    open: !!r.open,
     ...interval(r),
   }));
   // A loop, not Math.min(...list): spreading 100k+ sessions overflows the stack
@@ -174,11 +203,11 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   // Everyone's VOICE and DEAF rows in those channels, and the members' own rows anywhere (camera,
   // screen share, and the sessions before for the stay)
   const context = await db.$queryRaw<VoiceRow[]>`
-    SELECT id, member_id, channel_id, type, issued_on, COALESCE(ended_on, NOW()) AS ended_on
+    SELECT id, member_id, channel_id, type, issued_on, COALESCE(ended_on, ${now}::timestamp) AS ended_on
     FROM voice_stats
     WHERE guild_id = ${guildId}
       AND type IN (${Prisma.join([VOICE_TYPE.VOICE, VOICE_TYPE.DEAF, VOICE_TYPE.VIDEO, VOICE_TYPE.STREAMING])})
-      AND issued_on < ${hi} AND COALESCE(ended_on, NOW()) > ${lo}
+      AND issued_on < ${hi} AND COALESCE(ended_on, ${now}::timestamp) > ${lo}
       ${memberId ? Prisma.sql`AND (channel_id IN (${Prisma.join(channels)}) OR member_id = ${memberId})` : Prisma.empty}
   `;
   const humans = context.filter((r) => !opts.isBot(r.member_id));
@@ -237,7 +266,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   const rows: XpRow[] = [];
   const together = thresholds.togetherMin * MINUTE;
   const pairs: { session: Session & { memberId: string }; other: string }[] = [];
-  const bySessionMember = new Map<string, (Session & { memberId: string })[]>();
+  const bySessionMember = new Map<string, (Session & { memberId: string; open: boolean })[]>();
   sessions.forEach((s) => append(bySessionMember, s.memberId, s));
 
   for (const [member, list] of bySessionMember) {
@@ -257,6 +286,7 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
           stayStart: stay.get(session.id) ?? session.from,
           others,
           channelName: opts.channelName?.(session.channelId),
+          open: session.open,
         },
         rules
       );
@@ -268,7 +298,8 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
       others.forEach((p) => append(byOther, p.memberId, p));
       for (const [other, pieces] of byOther) {
         if (togetherMs(session, pieces) < together) continue;
-        pairs.push({ session, other });
+        // Reconnect waits for the close: its query loads both members' whole voice history, too much for every checkpoint
+        if (!session.open) pairs.push({ session, other });
         const firstId = newcomerSession.get(other);
         const atFirst = pieces.filter((p) => p.sessionId === firstId);
         if (amounts.welcome > 0 && firstId && togetherMs(session, atFirst) >= together) {
@@ -505,15 +536,16 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
 };
 
 /** Each lifetime voice-hour milestone, dated when the running total crossed it */
-const grantMilestones = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions, botIds: string[]) =>
+const grantMilestones = (db: GrantDb, { guildId, memberId, since, rules, now = new Date() }: GrantOptions, botIds: string[]) =>
   counted(
     db,
     Prisma.sql`
       WITH running AS (
-        SELECT member_id, ended_on,
-          SUM(EXTRACT(EPOCH FROM (ended_on - issued_on)) * 1000) OVER (PARTITION BY member_id ORDER BY ended_on, id) AS total
+        SELECT member_id, COALESCE(ended_on, ${now}::timestamp) AS ended_on,
+          SUM(EXTRACT(EPOCH FROM (COALESCE(ended_on, ${now}::timestamp) - issued_on)) * 1000)
+            OVER (PARTITION BY member_id ORDER BY COALESCE(ended_on, ${now}::timestamp), id) AS total
         FROM voice_stats
-        WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND ended_on IS NOT NULL
+        WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${now}::timestamp
           ${memberFilter('member_id', memberId)}
           ${notBots('member_id', botIds)}
       ),
