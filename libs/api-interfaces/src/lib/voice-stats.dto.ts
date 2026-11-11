@@ -248,7 +248,15 @@ export interface VoiceStatsUser {
   /** All-time voice ms */
   lifetimeMs: number;
   /** Next lifetime voice-hours milestone; null once every milestone is reached */
-  nextMilestone: { hours: number; remainingMs: number } | null;
+  nextMilestone: {
+    hours: number;
+    remainingMs: number;
+    /** The grid to draw: `squares` (at most 100, 10 a row) of `perSquare` hours each, `done` full and the next one `partial` */
+    squares: number;
+    perSquare: number;
+    done: number;
+    partial: boolean;
+  } | null;
   /** Level and XP on the server; all time */
   level: XpLevel;
   /** Where the XP came from, per source; all time */

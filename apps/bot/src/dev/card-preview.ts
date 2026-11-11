@@ -99,7 +99,7 @@ const main = async () => {
         THEMES[theme]
       ),
     stats: (theme) => statsCard(stats, THEMES[theme]),
-    // An admin-set 2000h milestone at 1200h: past 1000h the grid shows 2h a square
+    // An admin-set 2000h milestone at 1200h: past 100h the grid is 10×10, 20h a square
     'stats-admin-milestone': (theme) => {
       setRules({ ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, milestoneHours: [100, 1000, 2000] } });
       try {
