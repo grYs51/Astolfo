@@ -97,7 +97,8 @@ const upserted = async (db: GrantDb, guildId: string, rows: XpRow[]): Promise<Gr
 const insertRows = async (db: GrantDb, guildId: string, rows: XpRow[]): Promise<Granted> => {
   const results: Granted[] = [];
   for (let i = 0; i < rows.length; i += CHUNK) {
-    const chunk = rows.slice(i, i + CHUNK);
+    // Sorted by key, so two statements upserting the same rows lock them in the same order and can't deadlock
+    const chunk = rows.slice(i, i + CHUNK).sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
     const voice = chunk.filter((r) => r.source === 'VOICE');
     const rest = chunk.filter((r) => r.source !== 'VOICE');
     if (voice.length) results.push(await upserted(db, guildId, voice));
@@ -175,14 +176,17 @@ const grantVoice = async (db: GrantDb, opts: GrantOptions, botIds: string[]): Pr
   const { amounts, thresholds } = rules;
 
   // Open sessions (graded up to now: a checkpoint) and closed ones not graded to their end yet. A final
-  // voice row is dated at the session's end, a checkpoint at the checkpoint.
+  // voice row is dated at the session's end, a checkpoint at the checkpoint. Only a member's own run grades
+  // open sessions: it runs in their voice queue with the close, while a sweep that read a session as open
+  // could land after the close and overwrite the final row.
   const sessionRows = await db.$queryRaw<VoiceRow[]>`
     SELECT v.id, v.member_id, v.channel_id, v.type, v.issued_on, COALESCE(v.ended_on, ${now}::timestamp) AS ended_on,
       v.ended_on IS NULL AS open
     FROM voice_stats v
     LEFT JOIN xp_events x ON x.key = 'voice:' || v.id
     WHERE v.guild_id = ${guildId} AND v.type = ${VOICE_TYPE.VOICE} AND v.issued_on < ${now}::timestamp
-      AND (v.ended_on IS NULL OR x.created_at IS DISTINCT FROM v.ended_on)
+      AND ${memberId ? Prisma.sql`(v.ended_on IS NULL OR` : Prisma.sql`(v.ended_on IS NOT NULL AND`}
+        x.created_at IS DISTINCT FROM v.ended_on)
       ${memberFilter('v.member_id', memberId)}
       ${notBots('v.member_id', botIds)}
       ${since ? Prisma.sql`AND (v.ended_on IS NULL OR v.ended_on >= ${since})` : Prisma.empty}

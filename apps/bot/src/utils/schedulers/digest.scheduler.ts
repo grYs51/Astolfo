@@ -162,8 +162,8 @@ export function startDigestScheduler(client: DiscordClient) {
   // Hourly at :05, plus once now to catch up after downtime
   schedule.scheduleJob('5 * * * *', run);
   void run();
-  // Calls still going earn their XP as they go (checkpointXp catches its own errors)
-  schedule.scheduleJob(`*/${CHECKPOINT_EVERY_MIN} * * * *`, () => checkpointXp(client));
+  // Calls still going earn their XP as they go (checkpointXp catches its own errors). Starts at :01, off the sweep's :05.
+  schedule.scheduleJob(`1-59/${CHECKPOINT_EVERY_MIN} * * * *`, () => checkpointXp(client));
   Logger.info(
     `Weekly digest scheduler started (Mondays 08:00 UTC), with the hourly XP sweep and XP checkpoints every ${CHECKPOINT_EVERY_MIN} min`
   );

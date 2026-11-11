@@ -301,6 +301,12 @@ describeDb('grantXp during a call (checkpoints)', () => {
     await db.$disconnect();
   });
 
+  test('a whole-guild run (the sweep) leaves the open call to the checkpoint', async () => {
+    await grantXp(db as never, { guildId: L, rules: DEFAULT_RULES, isBot: () => false, now: at(70, 10, 8) });
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open' } })).toBeNull();
+    await db.xp_events.deleteMany({ where: { guild_id: L } });
+  });
+
   test('a checkpoint grades the open call up to now', async () => {
     // 5 min alone at 0.5× and 3 with one other: 5.5
     expect(await checkpoint(at(70, 10, 8))).toEqual({ rows: 1, xp: 5 });
@@ -313,9 +319,13 @@ describeDb('grantXp during a call (checkpoints)', () => {
     expect(await checkpoint(at(70, 10, 30))).toEqual({ rows: 3, xp: 137 });
     expect(await db.xp_events.count({ where: { guild_id: L, source: 'VOICE' } })).toBe(1);
     expect(await voiceRow()).toMatchObject({ amount: 27, created_at: at(70, 10, 30) });
-    expect(await db.xp_events.findMany({ where: { guild_id: L, source: { in: ['STARTER', 'MILESTONE', 'RECONNECT'] } } })).toEqual([
-      expect.objectContaining({ source: 'STARTER', amount: 15 }),
+    const bonuses = await db.xp_events.findMany({
+      where: { guild_id: L, source: { in: ['STARTER', 'MILESTONE', 'RECONNECT'] } },
+      orderBy: { source: 'asc' },
+    });
+    expect(bonuses).toEqual([
       expect.objectContaining({ source: 'MILESTONE', amount: 100, created_at: at(70, 10, 10) }),
+      expect.objectContaining({ source: 'STARTER', amount: 15 }),
     ]);
     expect(await checkpoint(at(70, 10, 30))).toEqual({ rows: 0, xp: 0 });
   });
