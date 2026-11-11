@@ -1,4 +1,4 @@
-import { CacheType, ChatInputCommandInteraction, InteractionContextType, SlashCommandBuilder } from 'discord.js';
+import { CacheType, ChatInputCommandInteraction, escapeMarkdown, InteractionContextType, SlashCommandBuilder } from 'discord.js';
 import DiscordClient from '../../client/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
@@ -38,7 +38,7 @@ export default class TriviaStatsSlash extends BaseSlash {
     const guild = interaction.guild;
     const stats = await getTriviaStats(client.dataSource, guild.id, member.id);
     if (!stats.answered) {
-      const who = member.id === interaction.user.id ? 'You have' : `${member.displayName} has`;
+      const who = member.id === interaction.user.id ? 'You have' : `${escapeMarkdown(member.displayName)} has`;
       await InterActionUtils.send(interaction, { content: `${who} no trivia answers here yet. Try /trivia!`, allowedMentions: { parse: [] } });
       return;
     }

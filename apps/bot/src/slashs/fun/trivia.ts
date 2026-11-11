@@ -10,7 +10,6 @@ import {
   InteractionEditReplyOptions,
   InteractionReplyOptions,
   SlashCommandBuilder,
-  WebhookMessageEditOptions,
   escapeMarkdown,
 } from 'discord.js';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
@@ -198,8 +197,9 @@ export default class Trivia extends BaseSlash {
     if (!message) return undefined;
     // Answer times count from when the question is on screen
     const shownAt = Date.now();
-    // Round 1 is the deferred reply; later rounds are follow-ups, edited by id
-    const edit = (options: WebhookMessageEditOptions) => interaction.editReply({ ...options, message });
+    // Round 1 is the deferred reply; later rounds are follow-ups, edited by id. Through InterActionUtils, so a
+    // question deleted mid-round still saves its answers
+    const edit = (options: InteractionEditReplyOptions) => InterActionUtils.editReply(interaction, { ...options, message });
 
     const answers = new Map<string, number>();
     const times = new Map<string, number>();
@@ -274,7 +274,7 @@ export default class Trivia extends BaseSlash {
       'trivia-scores.png'
     );
     await say(interaction, {
-      content: `${head}\n${shown.map(([id, s], i) => `${ordinal(i + 1)} <@${id}> ${s.correct}/${played} +${s.xp} XP`).join(' · ')}`,
+      content: `${head}\n${shown.map(([id, s], i) => `${ordinal(i + 1)} <@${id}> ${s.correct}/${played}${s.xp ? ` +${s.xp} XP` : ''}`).join(' · ')}`,
       // The players are named, but not pinged
       allowedMentions: { parse: [] },
       files: scoreboard ? [scoreboard] : [],

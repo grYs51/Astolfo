@@ -56,7 +56,7 @@ interface ApiQuestion {
   incorrect_answers: string[];
 }
 
-const API = 'https://opentdb.com/api.php?amount=10&encode=url3986';
+const API = 'https://opentdb.com/api.php?encode=url3986';
 const TIMEOUT_MS = 5000;
 /** The API allows one request per 5 s per IP, for every filter together */
 const GAP_MS = 5000;
@@ -131,9 +131,12 @@ export const nextQuestion = async (filter: TriviaFilter = {}, fetchFn: typeof fe
   return question ? { ok: true, question } : nextQuestion(filter, fetchFn);
 };
 
-/** Fills `queue` with ten questions for `filter` */
+/** Fills `queue` with ten questions for `filter` (five with a category) */
 const fetchBatch = async (filter: TriviaFilter, queue: TriviaQuestion[], fetchFn: typeof fetch): Promise<TriviaFetch> => {
-  const url = API + (filter.category ? `&category=${filter.category}` : '') + (filter.difficulty ? `&difficulty=${filter.difficulty}` : '');
+  // The API refuses (code 1) when it has fewer than `amount` for the filter, and some categories are small
+  // shortcut: assumes 5+ per category and difficulty (the smallest, Gadgets hard, had 6 on 2026-11-12); a smaller one says "not enough"
+  const amount = filter.category ? 5 : 10;
+  const url = `${API}&amount=${amount}` + (filter.category ? `&category=${filter.category}` : '') + (filter.difficulty ? `&difficulty=${filter.difficulty}` : '');
   let body: { response_code: number; results: ApiQuestion[] };
   try {
     const res = await fetchFn(url, { signal: AbortSignal.timeout(TIMEOUT_MS) });

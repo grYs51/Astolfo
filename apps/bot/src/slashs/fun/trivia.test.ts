@@ -90,7 +90,7 @@ describe('/trivia', () => {
 
     expect(again.reply).toHaveBeenCalledWith({ content: 'You already answered.', ephemeral: true });
     // The buttons close as soon as time is up, before the results are worked out
-    expect(game.interaction.editReply).toHaveBeenCalledWith({ components: [expect.anything()], message: { id: 'm1' } });
+    expect(InterActionUtils.editReply).toHaveBeenCalledWith(expect.anything(), { components: [expect.anything()], message: { id: 'm1' } });
     const { data } = (game.create.mock.calls[0] as unknown as [{ data: { metadata: { correctOrder: string[]; difficulty: string }; players: { create: unknown[] } } }])[0];
     expect(data.metadata).toMatchObject({ correctOrder: ['a', 'b'], difficulty: 'hard', answerMs: { c: 1000, a: 2400, b: 4000 } });
     expect(data.players.create).toEqual([
@@ -149,6 +149,18 @@ describe('/trivia', () => {
     expect(nextQuestion).toHaveBeenLastCalledWith({ category: undefined, difficulty: undefined });
   });
 
+  test('a question deleted mid-round still saves its answers', async () => {
+    const game = start('deleted');
+    await game.ready();
+    game.click('a', 1);
+    // InterActionUtils swallows Unknown Message and returns nothing
+    (InterActionUtils.editReply as jest.Mock).mockResolvedValueOnce(undefined).mockResolvedValueOnce(undefined);
+    game.end();
+    await game.done;
+    expect(game.create).toHaveBeenCalledTimes(1);
+    expect(awardAndAnnounce).toHaveBeenCalledWith(expect.anything(), 'g', 'a', ['TRIVIA']);
+  });
+
   test('nobody answering saves nothing and grants nothing', async () => {
     const game = start();
     await game.ready();
@@ -203,7 +215,7 @@ describe('/trivia rounds', () => {
     game.click('b', 1);
     game.click('a', 0);
     await nextRound(game);
-    expect(game.interaction.editReply).toHaveBeenLastCalledWith(expect.objectContaining({ message: { id: 'f1' }, files: [{ name: 'trivia-result.png' }] }));
+    expect(InterActionUtils.editReply).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ message: { id: 'f1' }, files: [{ name: 'trivia-result.png' }] }));
     // The channel stays taken until the game is over
     await start('rounds').done;
     expect(lastReply()).toEqual({ content: 'A question is already running here. Answer that one first!' });

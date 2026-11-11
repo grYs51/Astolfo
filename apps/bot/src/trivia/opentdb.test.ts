@@ -72,10 +72,10 @@ describe('filters', () => {
   test('go in the URL; no filter asks for anything', async () => {
     const fetchFn = ten();
     await nextQuestion({ category: 17, difficulty: 'hard' }, fetchFn);
-    expect(url(fetchFn)).toBe('https://opentdb.com/api.php?amount=10&encode=url3986&category=17&difficulty=hard');
+    expect(url(fetchFn)).toBe('https://opentdb.com/api.php?encode=url3986&amount=5&category=17&difficulty=hard');
     clearQueue();
     await nextQuestion({}, fetchFn);
-    expect(url(fetchFn, 1)).toBe('https://opentdb.com/api.php?amount=10&encode=url3986');
+    expect(url(fetchFn, 1)).toBe('https://opentdb.com/api.php?encode=url3986&amount=10');
   });
 
   test('each filter has its own queue, and a second request waits until 5 s have passed', async () => {
@@ -90,7 +90,7 @@ describe('filters', () => {
       expect(await other).toMatchObject({ ok: true });
       expect(fetchFn).toHaveBeenCalledTimes(2);
       expect(url(fetchFn, 1)).toContain('&category=10');
-      // Category 9 still has nine questions queued, so no request
+      // Category 9 still has questions queued, so no request
       await nextQuestion({ category: 9 }, fetchFn);
       expect(fetchFn).toHaveBeenCalledTimes(2);
     } finally {

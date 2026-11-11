@@ -161,7 +161,7 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
 export const triviaScoreboardCard = (d: TriviaScoreboardCardData, t: CardTheme) => {
   const listY = 84;
   return svgCard(listY + d.players.length * ROW_H + 32, t, [
-    text(PAD, 52, 24, t.text, escapeXml(`Trivia · final scores after ${d.rounds} rounds`), 'font-weight="700"'),
+    text(PAD, 52, 24, t.text, escapeXml(`Trivia · final scores after ${d.rounds} round${d.rounds === 1 ? '' : 's'}`), 'font-weight="700"'),
     ...d.players.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, `${p.correct}/${d.rounds} right`)),
   ]);
 };
