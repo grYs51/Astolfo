@@ -9,6 +9,7 @@ import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 import { sweepXp } from '../../xp/recalculate';
+import { CHECKPOINT_EVERY_MIN, checkpointXp } from '../../xp/checkpoint';
 
 /**
  * Weekly digest: every Monday 08:00 UTC each server with a digest channel
@@ -161,5 +162,9 @@ export function startDigestScheduler(client: DiscordClient) {
   // Hourly at :05, plus once now to catch up after downtime
   schedule.scheduleJob('5 * * * *', run);
   void run();
-  Logger.info('Weekly digest scheduler started (Mondays 08:00 UTC), with the hourly XP sweep');
+  // Calls still going earn their XP as they go (checkpointXp catches its own errors)
+  schedule.scheduleJob(`*/${CHECKPOINT_EVERY_MIN} * * * *`, () => checkpointXp(client));
+  Logger.info(
+    `Weekly digest scheduler started (Mondays 08:00 UTC), with the hourly XP sweep and XP checkpoints every ${CHECKPOINT_EVERY_MIN} min`
+  );
 }
