@@ -21,6 +21,7 @@ import { renderPng } from '../cards/render';
 import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
 import { Logger } from '../utils/logger';
+import { DEFAULT_RULES, setRules } from '../xp/rules';
 
 const OUT_DIR = path.join(process.cwd(), 'tmp/cards');
 
@@ -98,6 +99,15 @@ const main = async () => {
         THEMES[theme]
       ),
     stats: (theme) => statsCard(stats, THEMES[theme]),
+    // An admin-set 2000h milestone at 1200h: past 1000h the grid shows 2h a square
+    'stats-admin-milestone': (theme) => {
+      setRules({ ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, milestoneHours: [100, 1000, 2000] } });
+      try {
+        return statsCard({ ...stats, summary: { ...stats.summary, lifetimeMs: 1200 * 3_600_000 } }, THEMES[theme]);
+      } finally {
+        setRules(null);
+      }
+    },
     'stats-all-sections': (theme) =>
       statsCard(
         {

@@ -1,6 +1,5 @@
 import type { XpLevel, XpRules } from '@nx-stolfo/api-interfaces';
 import type { Db } from '../db';
-import { MILESTONE_HOURS } from '../stats/milestones';
 import { Logger } from '../utils/logger';
 
 export const DEFAULT_RULES: XpRules = {
@@ -38,7 +37,7 @@ export const DEFAULT_RULES: XpRules = {
     reconnectDays: 30,
     welcomeAfterDays: 30,
     startersPerDay: 3,
-    milestoneHours: [...MILESTONE_HOURS],
+    milestoneHours: [10, 50, 100, 250, 500, 1000],
     triviaDailyCap: 500,
   },
   trivia: { easy: 1, medium: 1.5, hard: 2 },

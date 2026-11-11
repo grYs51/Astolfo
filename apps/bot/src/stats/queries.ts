@@ -2,7 +2,7 @@ import { Prisma } from '@prisma/client';
 import type { Db } from '../db';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows';
-import { crossedMilestones, MILESTONE_HOURS } from './milestones';
+import { crossedMilestones, firstMilestoneMs } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
@@ -515,7 +515,7 @@ export const getServerDigest = async (
         FROM voice_stats
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${window.to}
         GROUP BY member_id
-        HAVING SUM(${durationBeforeMs(window.to)}) >= ${MILESTONE_HOURS[0] * HOUR}
+        HAVING SUM(${durationBeforeMs(window.to)}) >= ${firstMilestoneMs()}
       `,
     ]);
 
