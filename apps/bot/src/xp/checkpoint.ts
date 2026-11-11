@@ -15,8 +15,10 @@ let running = false;
  * Open sessions come from the database, not `client.voiceUsers`, so this also works right after a start
  * and in demo mode. Each member runs in their voice queue, so a checkpoint never interleaves with the close.
  * shortcut: one grantXp per member in voice per tick, including the streak, milestone and welcome (`firsts`)
- * scans over history, and the open-session query has no partial index; batch per guild (or index
- * `ended_on IS NULL`) if the slow-tick warning starts showing up.
+ * scans over history, and the open-session query has no partial index. Each tick also grades an open session
+ * again from its start (its channel's rows since then, and the whole `segments` JSON rewritten), so a member
+ * idling in voice for days costs more every tick. If the slow-tick warning shows up, suspect long sessions
+ * first; then batch per guild, index `ended_on IS NULL`, or grade only from the last checkpoint.
  */
 export const checkpointXp = async (client: DiscordClient) => {
   // A slow tick mustn't overlap the next one

@@ -341,6 +341,17 @@ describeDb('grantXp during a call (checkpoints)', () => {
     expect(await checkpoint(at(70, 13))).toEqual({ rows: 0, xp: 0 });
   });
 
+  test('a recalculation keeps the voice row of a call still going', async () => {
+    const client = { dataSource: db, users: { cache: new Map() } } as never;
+    await db.voice_stats.create({ data: session('live-open-3', 'xp-l3', at(70, 14), null) });
+    await grantXp(db as never, { guildId: L, memberId: 'xp-l3', rules: DEFAULT_RULES, isBot: () => false, now: at(70, 14, 10) });
+    const before = await db.xp_events.findUniqueOrThrow({ where: { key: 'voice:live-open-3' } });
+    await recalculateXp(client, L);
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open-3' } })).toEqual(before);
+    // Closed sessions were rebuilt
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open' } })).toMatchObject({ amount: 60 });
+  });
+
   test('a checkpoint that landed after the close is graded again, down to the final amount', async () => {
     await db.xp_events.update({ where: { key: 'voice:live-open' }, data: { amount: 62, created_at: at(70, 11, 2) } });
     expect(await checkpoint(at(70, 13))).toEqual({ rows: 1, xp: -2 });

@@ -135,7 +135,7 @@
               @if (openSession() === session.id) {
                 <feature-voice-stats-xp-session-chart [id]="'session-xp-' + session.id" class="mt-sm" [xp]="xp" />
                 @if (!session.endedOn) {
-                  <p class="mt-xs text-xs text-gray-500">Still going: the XP and chart update every 5 minutes.</p>
+                  <p class="mt-xs text-xs text-gray-500">Still going: the XP and chart are updated every 5 minutes. Reload the page to see the latest.</p>
                 }
               }
             } @else {

@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger';
 import { grantXp, guildTotals } from './grant';
 import { currentRules, levelFor } from './rules';
 import { postLevelUp } from './announce';
+import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 
 const DAY = 24 * 60 * 60 * 1000;
 /** How far back each sweep looks before the previous one: late-closed sessions and the day before for streaks */
@@ -36,7 +37,17 @@ export const recalculateXp = async (client: DiscordClient, guildId: string) => {
   try {
     const granted = await client.dataSource.$transaction(
       async (tx) => {
-        await tx.$executeRaw`DELETE FROM xp_events WHERE guild_id = ${guildId}`;
+        // Calls still going keep their voice and starter rows: the rebuild skips open sessions (only the member's
+        // own checkpoint grades them), and the next checkpoint reprices them with the current rules
+        await tx.$executeRaw`
+          DELETE FROM xp_events x
+          WHERE x.guild_id = ${guildId}
+            AND NOT EXISTS (
+              SELECT 1 FROM voice_stats v
+              WHERE v.guild_id = ${guildId} AND v.type = ${VOICE_TYPE.VOICE} AND v.ended_on IS NULL
+                AND x.key IN ('voice:' || v.id, 'starter:' || v.id)
+            )
+        `;
         return grantXp(tx, { guildId, rules: currentRules(), ...xpLookups(client, guildId) });
       },
       { timeout: 10 * 60 * 1000 }
