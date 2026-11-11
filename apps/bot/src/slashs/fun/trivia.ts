@@ -17,7 +17,7 @@ import { Logger } from '../../utils/logger';
 import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { currentRules } from '../../xp/rules';
-import { nextQuestion, TriviaQuestion } from '../../trivia/opentdb';
+import { CATEGORIES, nextQuestion, TriviaDifficulty, TriviaQuestion } from '../../trivia/opentdb';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { capitalise, LETTERS, ordinal, triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
@@ -72,6 +72,16 @@ export default class Trivia extends BaseSlash {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
+      .addIntegerOption((option) =>
+        option.setName('category').setDescription('Only questions from this category').setRequired(false).setChoices(...CATEGORIES)
+      )
+      .addStringOption((option) =>
+        option
+          .setName('difficulty')
+          .setDescription('Only questions this hard (harder earns more XP)')
+          .setRequired(false)
+          .setChoices({ name: 'Easy', value: 'easy' }, { name: 'Medium', value: 'medium' }, { name: 'Hard', value: 'hard' })
+      )
       .setContexts(InteractionContextType.Guild);
   }
 
@@ -87,7 +97,10 @@ export default class Trivia extends BaseSlash {
     }
     running.add(channelId);
     try {
-      const fetched = await nextQuestion();
+      const fetched = await nextQuestion({
+        category: interaction.options.getInteger('category') ?? undefined,
+        difficulty: (interaction.options.getString('difficulty') as TriviaDifficulty | null) ?? undefined,
+      });
       if (!fetched.ok) {
         await InterActionUtils.editReply(interaction, { content: fetched.message });
         return;

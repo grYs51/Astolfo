@@ -16,7 +16,7 @@ jest.mock('../../cards/render', () => ({ ...jest.requireActual('../../cards/rend
 const question = { category: 'Science', difficulty: 'hard', question: 'Q?', correct: 'Right', answers: ['Wrong', 'Right', 'Nope', 'No'] };
 
 /** Starts a question in channel `ch` and returns ways to click an answer and to end the 20 seconds */
-const start = (channelId = 'ch') => {
+const start = (channelId = 'ch', options: { category?: number; difficulty?: string } = {}) => {
   const handlers: Record<string, (...args: never[]) => unknown> = {};
   const collector = { on: (event: string, handler: never) => (handlers[event] = handler) };
   const create = jest.fn(async () => ({ id: 'res' }));
@@ -28,6 +28,7 @@ const start = (channelId = 'ch') => {
     id: 'int',
     guildId: 'g',
     channelId,
+    options: { getInteger: () => options.category ?? null, getString: () => options.difficulty ?? null },
     channel: { isSendable: () => true, createMessageComponentCollector: () => collector },
   };
   const done = (new Trivia() as unknown as { slash: (c: unknown, i: unknown) => Promise<void> }).slash(
@@ -108,6 +109,19 @@ describe('/trivia', () => {
     next.end();
     await next.done;
     expect(nextQuestion).toHaveBeenCalledTimes(2);
+  });
+
+  test('the category and difficulty go to Open Trivia DB; without them it asks for anything', async () => {
+    const game = start('filtered', { category: 17, difficulty: 'hard' });
+    await game.ready();
+    game.end();
+    await game.done;
+    expect(nextQuestion).toHaveBeenCalledWith({ category: 17, difficulty: 'hard' });
+    const any = start('any');
+    await any.ready();
+    any.end();
+    await any.done;
+    expect(nextQuestion).toHaveBeenLastCalledWith({ category: undefined, difficulty: undefined });
   });
 
   test('nobody answering saves nothing and grants nothing', async () => {
