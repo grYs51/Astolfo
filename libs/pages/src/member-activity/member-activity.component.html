@@ -197,13 +197,10 @@
                   <path d="M4 22v-7" />
                 </svg>
                 {{ m.hours }} hours in voice
-                @if (m.perSquare) {
-                  <span class="text-xs font-normal text-gray-500">· 1 square = {{ m.perSquare }}h</span>
-                }
               </h3>
-              <!-- One square per hour up to 100 h, then 100 squares (10×10) of m.perSquare hours, drawn like the activity calendar's cells -->
+              <!-- One square per hour up to 100 h, then 100 squares (20×5) of 1% each, drawn like the activity calendar's cells -->
               <div
-                class="mt-sm grid max-w-[140px] grid-cols-10 gap-0.5"
+                class="mt-sm grid max-w-[280px] grid-cols-[repeat(20,minmax(0,1fr))] gap-0.5"
                 role="progressbar"
                 [attr.aria-valuenow]="m.done"
                 aria-valuemin="0"
