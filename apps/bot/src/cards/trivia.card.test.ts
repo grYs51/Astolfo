@@ -1,5 +1,5 @@
 import { renderPng } from './render';
-import { ordinal, triviaQuestionCard, triviaResultCard, wrap } from './trivia.card';
+import { ordinal, triviaQuestionCard, triviaResultCard, triviaScoreboardCard, wrap } from './trivia.card';
 import { THEMES } from './themes';
 
 const question = {
@@ -58,6 +58,22 @@ describe('triviaResultCard', () => {
   test('says so when nobody answered or nobody was right', () => {
     expect(triviaResultCard({ ...result, picks: [0, 0, 0, 0], winners: [] }, THEMES.dark)).toContain('Nobody answered!');
     expect(triviaResultCard({ ...result, picks: [2, 0, 1, 0], winners: [] }, THEMES.dark)).toContain('Nobody got it right (3 tried).');
+  });
+});
+
+describe('triviaScoreboardCard', () => {
+  test('ranks every player with how many they got right and their XP', async () => {
+    const svg = triviaScoreboardCard(
+      { rounds: 5, players: [{ name: 'Top <1>', xp: 75, correct: 4 }, { name: 'Next', xp: 0, correct: 0 }] },
+      THEMES.dark
+    );
+    expect(svg).toContain('final scores after 5 rounds');
+    expect(svg).toContain('>Top &lt;1&gt;<');
+    expect(svg).toContain('>4/5 right<');
+    expect(svg).toContain('>+75 XP<');
+    expect(svg).toContain('>2nd<');
+    expect(svg).toContain('>0/5 right<');
+    expect((await renderPng(svg)).length).toBeGreaterThan(0);
   });
 });
 

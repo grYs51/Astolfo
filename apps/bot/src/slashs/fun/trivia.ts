@@ -7,7 +7,10 @@ import {
   ChatInputCommandInteraction,
   ComponentType,
   InteractionContextType,
+  InteractionEditReplyOptions,
+  InteractionReplyOptions,
   SlashCommandBuilder,
+  WebhookMessageEditOptions,
   escapeMarkdown,
 } from 'discord.js';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
@@ -17,14 +20,32 @@ import { Logger } from '../../utils/logger';
 import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { currentRules } from '../../xp/rules';
-import { CATEGORIES, nextQuestion, TriviaDifficulty, TriviaQuestion } from '../../trivia/opentdb';
+import { CATEGORIES, nextQuestion, TriviaDifficulty, TriviaFilter, TriviaQuestion } from '../../trivia/opentdb';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
-import { capitalise, LETTERS, ordinal, seconds, triviaQuestionCard, triviaResultCard } from '../../cards/trivia.card';
+import { capitalise, LETTERS, ordinal, seconds, triviaQuestionCard, triviaResultCard, triviaScoreboardCard } from '../../cards/trivia.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 export const ANSWER_MS = 20_000;
 const SECONDS = ANSWER_MS / 1000;
+/** The pause between rounds, so everyone can read the result */
+export const PAUSE_MS = 5_000;
+export const MAX_ROUNDS = 10;
+const SCOREBOARD_SIZE = 10;
+
+/** One member's score in a question, or summed over a game: XP, correct answers, time spent on those */
+export interface Score {
+  xp: number;
+  correct: number;
+  ms: number;
+}
+
+/** By XP, then correct answers, then the least time on the right ones */
+export const rankScores = (board: Map<string, Score>) => [...board].sort(([, a], [, b]) => b.xp - a.xp || b.correct - a.correct || a.ms - b.ms);
+
+/** The first message edits the deferred reply; once that's done, every next one is a follow-up */
+const say = (interaction: ChatInputCommandInteraction<CacheType>, options: InteractionEditReplyOptions) =>
+  interaction.replied ? interaction.followUp(options as InteractionReplyOptions) : InterActionUtils.editReply(interaction, options);
 
 /** Channels with a question running: one at a time per channel */
 const running = new Set<string>();
@@ -91,6 +112,14 @@ export default class Trivia extends BaseSlash {
           .setRequired(false)
           .setChoices({ name: 'Easy', value: 'easy' }, { name: 'Medium', value: 'medium' }, { name: 'Hard', value: 'hard' })
       )
+      .addIntegerOption((option) =>
+        option
+          .setName('rounds')
+          .setDescription(`Questions in a row, with a scoreboard at the end (1–${MAX_ROUNDS})`)
+          .setRequired(false)
+          .setMinValue(1)
+          .setMaxValue(MAX_ROUNDS)
+      )
       .setContexts(InteractionContextType.Guild);
   }
 
@@ -104,87 +133,152 @@ export default class Trivia extends BaseSlash {
       await InterActionUtils.editReply(interaction, { content: 'A question is already running here. Answer that one first!' });
       return;
     }
+    const filter: TriviaFilter = {
+      category: interaction.options.getInteger('category') ?? undefined,
+      difficulty: (interaction.options.getString('difficulty') as TriviaDifficulty | null) ?? undefined,
+    };
+    const rounds = interaction.options.getInteger('rounds') ?? 1;
     running.add(channelId);
     try {
-      const fetched = await nextQuestion({
-        category: interaction.options.getInteger('category') ?? undefined,
-        difficulty: (interaction.options.getString('difficulty') as TriviaDifficulty | null) ?? undefined,
-      });
-      if (!fetched.ok) {
-        await InterActionUtils.editReply(interaction, { content: fetched.message });
-        return;
-      }
-      const q = fetched.question;
-      const factor = currentRules().trivia[q.difficulty];
-      const intro = `🎲 Trivia! ${capitalise(q.difficulty)} question: ×${factor} XP, ${SECONDS} seconds.`;
-      const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: SECONDS }, THEMES[DEFAULT_THEME]), 'trivia.png');
-      await InterActionUtils.editReply(interaction, {
-        content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${ATTRIBUTION_LINE}`,
-        // The question is third-party text: it must never ping anyone
-        allowedMentions: { parse: [] },
-        ...(questionCard && { files: [questionCard] }),
-        components: [buttons(q, false)],
-      });
-      // Answer times count from when the question is on screen
-      const shownAt = Date.now();
-
-      const answers = new Map<string, number>();
-      const times = new Map<string, number>();
-      const correctOrder: string[] = [];
-      const collector = interaction.channel.createMessageComponentCollector({
-        filter: (i) =>
-          i.isButton() && i.customId.startsWith('trivia:') && i.message.interactionMetadata?.id.endsWith(interaction.id) === true,
-        componentType: ComponentType.Button,
-        time: ANSWER_MS,
-      });
-      collector.on('collect', (i: ButtonInteraction) => {
-        const index = Number(i.customId.slice(7));
-        // Recorded before any await, so the order of correct answers is the order of the clicks
-        const already = answers.has(i.user.id);
-        if (!already) {
-          answers.set(i.user.id, index);
-          times.set(i.user.id, Date.now() - shownAt);
-          if (q.answers[index] === q.correct) correctOrder.push(i.user.id);
+      const board = new Map<string, Score>();
+      let played = 0;
+      let stopped = '';
+      for (let round = 1; round <= rounds; round++) {
+        if (round > 1) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
+        const result = await this.askQuestion(client, interaction, guildId, filter, rounds > 1 ? `Round ${round}/${rounds}. ` : '');
+        if (!result) break;
+        played = round;
+        for (const [id, score] of result) {
+          const total = board.get(id) ?? { xp: 0, correct: 0, ms: 0 };
+          board.set(id, { xp: total.xp + score.xp, correct: total.correct + score.correct, ms: total.ms + score.ms });
         }
-        const content = already ? 'You already answered.' : `Locked in: ${label(q, index)}`;
-        void i.reply({ content, ephemeral: true }).catch(() => undefined);
-      });
-      await new Promise((resolve) => collector.on('end', resolve));
-      // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
-      await InterActionUtils.editReply(interaction, { components: [buttons(q, true)] });
-
-      const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder);
-      const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
-      const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
-      const resultCard = await card(
-        () =>
-          triviaResultCard(
-            {
-              question: q.question,
-              answers: q.answers,
-              correct: q.correct,
-              picks,
-              winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id), ms: times.get(id) })),
-            },
-            THEMES[DEFAULT_THEME]
-          ),
-        'trivia-result.png'
-      );
-      await InterActionUtils.editReply(interaction, {
-        content: resultText(q, answers.size, correctOrder, xp, times) + (resultCard ? '' : ATTRIBUTION_LINE),
-        // The winners are named, but not pinged
-        allowedMentions: { parse: [] },
-        files: resultCard ? [resultCard] : [],
-        components: [buttons(q, true)],
-      });
+        if (!result.size && round < rounds) {
+          stopped = `Nobody answered round ${round}, so the game stopped there.`;
+          break;
+        }
+      }
+      if (rounds > 1 && played > 0) await this.postScoreboard(interaction, board, played, stopped);
     } catch (error) {
       Logger.error('Trivia question failed', error);
-      await InterActionUtils.editReply(interaction, { content: 'Something went wrong with that question, sorry!', components: [] }).catch(
-        () => undefined
-      );
+      await say(interaction, { content: 'Something went wrong with that question, sorry!', components: [] }).catch(() => undefined);
     } finally {
       running.delete(channelId);
     }
+  }
+
+  /**
+   * One question: ask it, collect the answers, close, save and grant, show the result. Returns each member's
+   * score, or undefined when Open Trivia DB couldn't give a question (its message is already shown).
+   */
+  private async askQuestion(
+    client: Client,
+    interaction: ChatInputCommandInteraction<CacheType>,
+    guildId: string,
+    filter: TriviaFilter,
+    roundLabel: string
+  ): Promise<Map<string, Score> | undefined> {
+    const channel = interaction.channel;
+    const fetched = await nextQuestion(filter);
+    if (!fetched.ok || !channel) {
+      await say(interaction, { content: fetched.ok ? "I can't ask a question here." : fetched.message });
+      return undefined;
+    }
+    const q = fetched.question;
+    const factor = currentRules().trivia[q.difficulty];
+    const intro = `🎲 Trivia! ${roundLabel}${capitalise(q.difficulty)} question: ×${factor} XP, ${SECONDS} seconds.`;
+    const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: SECONDS }, THEMES[DEFAULT_THEME]), 'trivia.png');
+    const message = await say(interaction, {
+      content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${ATTRIBUTION_LINE}`,
+      // The question is third-party text: it must never ping anyone
+      allowedMentions: { parse: [] },
+      ...(questionCard && { files: [questionCard] }),
+      components: [buttons(q, false)],
+    });
+    // Discord lost the interaction (an ignored error): nobody can see the question
+    if (!message) return undefined;
+    // Answer times count from when the question is on screen
+    const shownAt = Date.now();
+    // Round 1 is the deferred reply; later rounds are follow-ups, edited by id
+    const edit = (options: WebhookMessageEditOptions) => interaction.editReply({ ...options, message });
+
+    const answers = new Map<string, number>();
+    const times = new Map<string, number>();
+    const correctOrder: string[] = [];
+    const collector = channel.createMessageComponentCollector({
+      filter: (i) => i.isButton() && i.customId.startsWith('trivia:') && i.message.id === message.id,
+      componentType: ComponentType.Button,
+      time: ANSWER_MS,
+    });
+    collector.on('collect', (i: ButtonInteraction) => {
+      const index = Number(i.customId.slice(7));
+      // Recorded before any await, so the order of correct answers is the order of the clicks
+      const already = answers.has(i.user.id);
+      if (!already) {
+        answers.set(i.user.id, index);
+        times.set(i.user.id, Date.now() - shownAt);
+        if (q.answers[index] === q.correct) correctOrder.push(i.user.id);
+      }
+      const content = already ? 'You already answered.' : `Locked in: ${label(q, index)}`;
+      void i.reply({ content, ephemeral: true }).catch(() => undefined);
+    });
+    await new Promise((resolve) => collector.on('end', resolve));
+    // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
+    await edit({ components: [buttons(q, true)] });
+
+    const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder);
+    const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
+    const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
+    const resultCard = await card(
+      () =>
+        triviaResultCard(
+          {
+            question: q.question,
+            answers: q.answers,
+            correct: q.correct,
+            picks,
+            winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id), ms: times.get(id) })),
+          },
+          THEMES[DEFAULT_THEME]
+        ),
+      'trivia-result.png'
+    );
+    await edit({
+      content: resultText(q, answers.size, correctOrder, xp, times) + (resultCard ? '' : ATTRIBUTION_LINE),
+      // The winners are named, but not pinged
+      allowedMentions: { parse: [] },
+      files: resultCard ? [resultCard] : [],
+      components: [buttons(q, true)],
+    });
+    const right = new Set(correctOrder);
+    return new Map(
+      [...answers.keys()].map((id) => [id, right.has(id) ? { xp: xp.get(id) ?? 0, correct: 1, ms: times.get(id) ?? 0 } : { xp: 0, correct: 0, ms: 0 }])
+    );
+  }
+
+  /** After 2+ rounds: everyone who answered, by XP, then correct answers, then the least time on them */
+  private async postScoreboard(interaction: ChatInputCommandInteraction<CacheType>, board: Map<string, Score>, played: number, stopped: string) {
+    const ranked = rankScores(board);
+    const head = `🏁 Final scores after ${played} round${played === 1 ? '' : 's'}.${stopped ? ` ${stopped}` : ''}`;
+    if (!ranked.length) {
+      await say(interaction, { content: `${head} Nobody answered!` });
+      return;
+    }
+    const shown = ranked.slice(0, SCOREBOARD_SIZE);
+    const members = await cardMembers(interaction.guild, shown.map(([id]) => id)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
+    const scoreboard = await card(
+      () =>
+        triviaScoreboardCard(
+          { rounds: played, players: shown.map(([id, s]) => ({ ...(members[id] ?? { name: 'Unknown member' }), ...s })) },
+          THEMES[DEFAULT_THEME]
+        ),
+      'trivia-scores.png'
+    );
+    await say(interaction, {
+      content: `${head}\n${shown.map(([id, s], i) => `${ordinal(i + 1)} <@${id}> ${s.correct}/${played} +${s.xp} XP`).join(' · ')}`,
+      // The players are named, but not pinged
+      allowedMentions: { parse: [] },
+      files: scoreboard ? [scoreboard] : [],
+    });
   }
 
   /** Saves the question with everyone's answer, grants the XP and returns what each correct member earned */
