@@ -48,7 +48,7 @@ describe('milestoneGrid', () => {
     expect(milestoneGrid(50, 20.5)).toEqual({ squares: 50, perSquare: 1, done: 20, partial: true });
   });
 
-  test('past 100 h, a 10×10 grid where one square is 1%', () => {
+  test('past 100 h, a 20×5 grid where one square is 1%', () => {
     expect(milestoneGrid(2000, 1200)).toEqual({ squares: 100, perSquare: 20, done: 60, partial: false });
     expect(milestoneGrid(250, 6)).toEqual({ squares: 100, perSquare: 2.5, done: 2, partial: true });
     expect(milestoneGrid(10000, 15)).toEqual({ squares: 100, perSquare: 100, done: 0, partial: true });

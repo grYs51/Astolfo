@@ -277,7 +277,6 @@ export class MemberActivityComponent {
       // Hours and minutes, never rolled up into days: the milestone counts hours
       toGo: `${Math.floor(next.remainingMs / HOUR_MS)}h ${Math.floor((next.remainingMs % HOUR_MS) / 60_000)}m`,
       // The grid's shape comes from the bot (milestoneGrid), so the card and the dashboard match
-      perSquare: next.perSquare > 1 ? +next.perSquare.toFixed(1) : undefined,
       squares: Array.from({ length: next.squares }, (_, i) =>
         i < next.done ? HOUR_SQUARE_COLORS.done : i === next.done && next.partial ? HOUR_SQUARE_COLORS.partial : HOUR_SQUARE_COLORS.empty
       ),

@@ -18,8 +18,8 @@ export const crossedMilestones = (beforeMs: number, afterMs: number, hoursList =
 /** The lowest milestone, in ms; out of reach when there are none */
 export const firstMilestoneMs = (hoursList = milestoneHours()) => (hoursList.length ? hoursList[0] * HOUR : Number.MAX_SAFE_INTEGER);
 
-/** The milestone grid is at most 100 squares, 10 a row: a 10×10 grid where one square is 1% */
-export const MILESTONE_GRID_COLUMNS = 10;
+/** The milestone grid is at most 100 squares, 20 a row: a wide 20×5 band where one square is 1% */
+export const MILESTONE_GRID_COLUMNS = 20;
 const MAX_SQUARES = 100;
 
 /**
