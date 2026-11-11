@@ -2,10 +2,13 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
+  inject,
   input,
+  PLATFORM_ID,
 } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
-import { DecimalPipe } from '@angular/common';
+import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import {
   ActivityCalendar,
   DashboardPeriod,
@@ -57,6 +60,8 @@ const MAX_STREAK_PIPS = 14;
 const METER_PARTS = 5;
 
 const HOUR_MS = 3_600_000;
+/** How often the stats are fetched again while a call is still going (the bot grades it every 5 min) */
+const LIVE_REFRESH_MS = 60_000;
 
 /** Milestone squares in the activity calendar's colours: hours done, the hour in progress, hours to go */
 const HOUR_SQUARE_COLORS = {
@@ -124,6 +129,15 @@ export class MemberActivityComponent {
   memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
 
   private readonly durationPipe = new HumanizeDurationPipe();
+
+  constructor() {
+    if (!isPlatformBrowser(inject(PLATFORM_ID))) return;
+    // Only while a session is open and the tab is visible: reload() keeps the current value, so nothing flickers
+    const timer = setInterval(() => {
+      if (!document.hidden && this.stats()?.recentSessions.some((s) => !s.endedOn)) this.userResource().reload();
+    }, LIVE_REFRESH_MS);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
 
   protected self = computed(() => !this.name());
   protected periodPhrase = computed(() => PERIOD_PHRASE[this.period()]);

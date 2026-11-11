@@ -260,3 +260,107 @@ describeDb('grantXp on seeded rows', () => {
     }
   });
 });
+
+describeDb('grantXp during a call (checkpoints)', () => {
+  const db = url ? new PrismaClient({ datasources: { db: { url } } }) : (undefined as unknown as PrismaClient);
+  const L = 'xp-live-guild';
+  // With the live path's 2-day window, like awardAndAnnounce
+  const checkpoint = (now: Date) =>
+    grantXp(db as never, { guildId: L, memberId: 'xp-l1', since: new Date(now.getTime() - 2 * 86_400_000), rules: DEFAULT_RULES, isBot: () => false, now });
+  const voiceRow = () => db.xp_events.findUniqueOrThrow({ where: { key: 'voice:live-open' } });
+  const clean = async () => {
+    await db.xp_events.deleteMany({ where: { guild_id: L } });
+    await db.voice_stats.deleteMany({ where: { guild_id: L } });
+  };
+  const session = (id: string, member: string, from: Date, to: Date | null) => ({
+    id,
+    guild_id: L,
+    member_id: member,
+    channel_id: 'live',
+    type: 'VOICE',
+    issued_on: from,
+    ended_on: to,
+  });
+
+  beforeAll(async () => {
+    await clean();
+    await db.voice_stats.createMany({
+      data: [
+        // 9 h 50 together 40 days before: 10 more minutes is a milestone, and back together is a reconnect
+        session('live-old-1', 'xp-l1', at(30, 0), at(30, 9, 50)),
+        session('live-old-2', 'xp-l2', at(30, 0), at(30, 9, 50)),
+        // L1 starts a call at 10:00 and is still in it; L2 joins at 10:05
+        session('live-open', 'xp-l1', at(70, 10), null),
+        session('live-l2', 'xp-l2', at(70, 10, 5), at(70, 12)),
+      ],
+    });
+  });
+
+  afterAll(async () => {
+    await clean();
+    await db.$disconnect();
+  });
+
+  test('a whole-guild run (the sweep) leaves the open call to the checkpoint', async () => {
+    await grantXp(db as never, { guildId: L, rules: DEFAULT_RULES, isBot: () => false, now: at(70, 10, 8) });
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open' } })).toBeNull();
+    await db.xp_events.deleteMany({ where: { guild_id: L } });
+  });
+
+  test('a checkpoint grades the open call up to now', async () => {
+    // 5 min alone at 0.5× and 3 with one other: 5.5
+    expect(await checkpoint(at(70, 10, 8))).toEqual({ rows: 1, xp: 5 });
+    expect(await voiceRow()).toMatchObject({ amount: 5, created_at: at(70, 10, 8) });
+    expect((await voiceRow()).note).toMatch(/^In #voice now, 8 min so far/);
+  });
+
+  test('the next checkpoint raises the same row and returns only the difference, with the bonuses the call has reached', async () => {
+    // Voice 2.5 + 25 = 27 (+22), starter 15 (10 min together), milestone 100 (10 h at 10:10); no reconnect yet
+    expect(await checkpoint(at(70, 10, 30))).toEqual({ rows: 3, xp: 137 });
+    expect(await db.xp_events.count({ where: { guild_id: L, source: 'VOICE' } })).toBe(1);
+    expect(await voiceRow()).toMatchObject({ amount: 27, created_at: at(70, 10, 30) });
+    const bonuses = await db.xp_events.findMany({
+      where: { guild_id: L, source: { in: ['STARTER', 'MILESTONE', 'RECONNECT'] } },
+      orderBy: { source: 'asc' },
+    });
+    expect(bonuses).toEqual([
+      expect.objectContaining({ source: 'MILESTONE', amount: 100, created_at: at(70, 10, 10) }),
+      expect.objectContaining({ source: 'STARTER', amount: 15 }),
+    ]);
+    expect(await checkpoint(at(70, 10, 30))).toEqual({ rows: 0, xp: 0 });
+  });
+
+  test('the close finishes the row at the end of the session and grants the reconnect, once', async () => {
+    await db.voice_stats.update({ where: { id: 'live-open' }, data: { ended_on: at(70, 11) } });
+    // 2.5 alone, 25 with L2, then 30 min at 1.1× for staying: 60 (+33), and the reconnect 25
+    expect(await checkpoint(at(70, 12))).toEqual({ rows: 2, xp: 58 });
+    const row = await voiceRow();
+    expect(row).toMatchObject({ amount: 60, created_at: at(70, 11) });
+    expect(row.note).toMatch(/^60 min in #voice/);
+    expect(await db.xp_events.count({ where: { guild_id: L, source: 'RECONNECT' } })).toBe(1);
+    expect(await checkpoint(at(70, 13))).toEqual({ rows: 0, xp: 0 });
+  });
+
+  test('a recalculation keeps the voice row of a call still going, not its starter', async () => {
+    const client = { dataSource: db, users: { cache: new Map() } } as never;
+    await db.voice_stats.create({ data: session('live-open-3', 'xp-l3', at(70, 14), null) });
+    await grantXp(db as never, { guildId: L, memberId: 'xp-l3', rules: DEFAULT_RULES, isBot: () => false, now: at(70, 14, 10) });
+    const before = await db.xp_events.findUniqueOrThrow({ where: { key: 'voice:live-open-3' } });
+    // As if the call had earned a starter bonus at an old amount
+    await db.xp_events.create({
+      data: { id: 'live-starter-3', guild_id: L, member_id: 'xp-l3', source: 'STARTER', amount: 5, note: 'old', key: 'starter:live-open-3', created_at: at(70, 14, 10) },
+    });
+    await recalculateXp(client, L);
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open-3' } })).toEqual(before);
+    // Gone: the next checkpoint grants it again at the current amount
+    expect(await db.xp_events.findUnique({ where: { key: 'starter:live-open-3' } })).toBeNull();
+    // Closed sessions were rebuilt
+    expect(await db.xp_events.findUnique({ where: { key: 'voice:live-open' } })).toMatchObject({ amount: 60 });
+  });
+
+  test('a checkpoint that landed after the close is graded again, down to the final amount', async () => {
+    await db.xp_events.update({ where: { key: 'voice:live-open' }, data: { amount: 62, created_at: at(70, 11, 2) } });
+    expect(await checkpoint(at(70, 13))).toEqual({ rows: 1, xp: -2 });
+    expect(await voiceRow()).toMatchObject({ amount: 60, created_at: at(70, 11) });
+  });
+});

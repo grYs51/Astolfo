@@ -33,6 +33,8 @@ export interface VoiceInput {
   stayStart: number;
   others: OtherPiece[];
   channelName?: string;
+  /** Still in the call: `session.to` is now, and the note says "so far" */
+  open?: boolean;
 }
 
 const MINUTE = 60_000;
@@ -142,9 +144,9 @@ export const voiceXp = (input: VoiceInput, rules: XpRules) => {
     maxStay > 1 && `up to ${maxStay}× for staying`,
   ].filter(Boolean);
   const where = `#${input.channelName ?? 'voice'}`;
-  const note = [`${minutes(session.to - session.from)} min in ${where}${parts.length ? `: ${parts.join(', ')}` : ''}`, ...extras].join(
-    ' · '
-  );
+  const length = minutes(session.to - session.from);
+  const head = input.open ? `In ${where} now, ${length} min so far` : `${length} min in ${where}`;
+  const note = [`${head}${parts.length ? `: ${parts.join(', ')}` : ''}`, ...extras].join(' · ');
 
   // The tiny epsilon keeps 69.99999 from flooring to 69
   return { amount: Math.floor(xp + 1e-9), note, segments };

@@ -58,6 +58,12 @@ describe('voiceXp', () => {
     expect(result.note).toBe('60 min in #general: 60 min with 2 others · up to 1.1× for staying');
   });
 
+  test('a call still going earns the same up to now, and its note says so far', () => {
+    const result = voiceXp(input(session(0, 60), { others: [other('a', 0, 60), other('b', 0, 60)], open: true }), DEFAULT_RULES);
+    expect(result.amount).toBe(70);
+    expect(result.note).toBe('In #general now, 60 min so far: 60 min with 2 others · up to 1.1× for staying');
+  });
+
   test('camera on adds 10%', () => {
     const plain = voiceXp(input(session(0, 30), { others: [other('a', 0, 30)] }), DEFAULT_RULES);
     const camera = voiceXp(input(session(0, 30), { others: [other('a', 0, 30)], ownVideo: [{ from: at(0), to: at(30) }] }), DEFAULT_RULES);

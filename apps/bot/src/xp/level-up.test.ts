@@ -43,6 +43,14 @@ test('a level seen crossed twice (a live grant and the sweep) posts once', async
   expect(send).toHaveBeenCalledTimes(1);
 });
 
+test('a checkpoint graded down (the session closed earlier than it) posts nothing', async () => {
+  const { client, send } = clientWith('levels');
+  grant.mockResolvedValue({ rows: 1, xp: -2 });
+  total.mockResolvedValue(999);
+  await awardAndAnnounce(client, 'g', 'down', ['VOICE']);
+  expect(send).not.toHaveBeenCalled();
+});
+
 test('nothing posts without a channel, but the XP is granted', async () => {
   const { client, send } = clientWith(null);
   grant.mockResolvedValue({ rows: 1, xp: 2 });
