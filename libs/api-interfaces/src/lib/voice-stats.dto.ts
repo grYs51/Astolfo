@@ -251,9 +251,8 @@ export interface VoiceStatsUser {
   nextMilestone: {
     hours: number;
     remainingMs: number;
-    /** The grid to draw: `squares` (at most 100, 20 a row) of `perSquare` hours each, `done` full and the next one `partial` */
+    /** The grid to draw: `squares` (at most 100, 20 a row; one per hour up to 100 h, then 1 % each), `done` full and the next one `partial` */
     squares: number;
-    perSquare: number;
     done: number;
     partial: boolean;
   } | null;
