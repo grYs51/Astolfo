@@ -65,19 +65,6 @@ const HOUR_SQUARE_COLORS = {
   empty: HEATMAP_SEQUENTIAL_COLORS[0],
 };
 
-/** The milestone grid: `perSquare` hours a square, wider rows for the bigger milestones (1000 squares = 20 rows of 50) */
-const milestoneSquares = (hours: number, hoursDone: number) => {
-  const perSquare = Math.ceil(hours / 1000);
-  const count = Math.ceil(hours / perSquare);
-  const done = Math.floor(hoursDone / perSquare);
-  return {
-    columns: count <= 50 ? 10 : count <= 250 ? 25 : 50,
-    squares: Array.from({ length: count }, (_, i) =>
-      i < done ? HOUR_SQUARE_COLORS.done : i === done && hoursDone / perSquare > done ? HOUR_SQUARE_COLORS.partial : HOUR_SQUARE_COLORS.empty
-    ),
-  };
-};
-
 const memberName = (member: DiscordMember) => member.displayName || member.username;
 
 /**
@@ -284,15 +271,16 @@ export class MemberActivityComponent {
     const stats = this.stats();
     const next = stats?.nextMilestone;
     if (!next) return undefined;
-    const hoursDone = (next.hours * HOUR_MS - next.remainingMs) / HOUR_MS;
-    const done = Math.floor(hoursDone);
     return {
       hours: next.hours,
-      done,
+      done: Math.floor((next.hours * HOUR_MS - next.remainingMs) / HOUR_MS),
       // Hours and minutes, never rolled up into days: the milestone counts hours
       toGo: `${Math.floor(next.remainingMs / HOUR_MS)}h ${Math.floor((next.remainingMs % HOUR_MS) / 60_000)}m`,
-      // One square per hour, or per few hours past 1000 so the grid stays at most 1000 squares (same as the bot's milestoneGrid)
-      ...milestoneSquares(next.hours, hoursDone),
+      // The grid's shape comes from the bot (milestoneGrid), so the card and the dashboard match
+      perSquare: next.perSquare > 1 ? +next.perSquare.toFixed(1) : undefined,
+      squares: Array.from({ length: next.squares }, (_, i) =>
+        i < next.done ? HOUR_SQUARE_COLORS.done : i === next.done && next.partial ? HOUR_SQUARE_COLORS.partial : HOUR_SQUARE_COLORS.empty
+      ),
     };
   });
 }
