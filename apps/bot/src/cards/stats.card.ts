@@ -1,6 +1,6 @@
 import type { ActivityCalendar, StatsCardSection, VoiceHabits, XpLevel } from '@nx-stolfo/api-interfaces';
 import { formatDuration, PERIOD_LABEL, plural, PREVIOUS_LABEL } from '../stats/messages';
-import { nextMilestone } from '../stats/milestones';
+import { milestoneGrid, nextMilestone } from '../stats/milestones';
 import type { MemberSummary } from '../stats/queries';
 import type { StatsPeriod } from '../stats/windows';
 import { avatarSvg } from './avatars';
@@ -279,11 +279,8 @@ const streak = (d: StatsCardData, top: number, t: CardTheme): [string[], number]
   }
 
   if (next) {
-    const hoursDone = (next.hours * H - next.remainingMs) / H;
-    const done = Math.floor(hoursDone);
-    // One square per hour; wider rows for the bigger milestones (1000 = 20 rows of 50)
-    const columns = next.hours <= 50 ? 10 : next.hours <= 250 ? 25 : 50;
-    const rows = Math.ceil(next.hours / columns);
+    const { squares, done, partial, columns } = milestoneGrid(next.hours, (next.hours * H - next.remainingMs) / H);
+    const rows = Math.ceil(squares / columns);
     const step = (w: number) => Math.min(14, (w - 48 + 2) / columns);
     tiles.push({
       height: (w) => Math.round(48 + rows * step(w) + 40),
@@ -293,12 +290,12 @@ const streak = (d: StatsCardData, top: number, t: CardTheme): [string[], number]
         return [
           panel(x, y, w, h, t),
           text(x + 24, y + 32, 14, t.muted, `${next.hours} hours in voice`),
-          ...Array.from({ length: next.hours }, (_, i) =>
+          ...Array.from({ length: squares }, (_, i) =>
             gridCell(
               +(x + 24 + (i % columns) * cell).toFixed(2),
               +(gridY + Math.floor(i / columns) * cell).toFixed(2),
               +(cell - 2).toFixed(2),
-              i < done ? 4 : i === done && hoursDone > done ? 2 : 0,
+              i < done ? 4 : i === done && partial ? 2 : 0,
               t
             )
           ),
