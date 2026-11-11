@@ -1,6 +1,7 @@
 import { avatarSvg } from './avatars';
 import { escapeXml, truncate } from './render';
-import { PAD, panel, svgCard, text, W } from './svg';
+import { header, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
+import type { TriviaStats } from '../trivia/stats';
 import { CardTheme } from './themes';
 
 export interface TriviaQuestionCardData {
@@ -162,5 +163,36 @@ export const triviaScoreboardCard = (d: TriviaScoreboardCardData, t: CardTheme) 
   return svgCard(listY + d.players.length * ROW_H + 32, t, [
     text(PAD, 52, 24, t.text, escapeXml(`Trivia · final scores after ${d.rounds} rounds`), 'font-weight="700"'),
     ...d.players.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, `${p.correct}/${d.rounds} right`)),
+  ]);
+};
+
+export interface TriviaStatsCardData {
+  name: string;
+  avatar?: string;
+  serverName: string;
+  stats: TriviaStats;
+}
+
+/** /trivia-stats: one member's answers, accuracy, 1st places, XP, quickest answer and best category */
+export const triviaStatsCard = (d: TriviaStatsCardData, t: CardTheme) => {
+  const s = d.stats;
+  const pct = (part: number, whole: number) => `${Math.round((100 * part) / whole)}%`;
+  const y = 136;
+  const tiles: [string, string, string | undefined][] = [
+    ['Right answers', `${s.correct}`, `${pct(s.correct, s.answered)} of ${s.answered} answered`],
+    ['1st places', `${s.firsts}`, 'the quickest right answer'],
+    ['Trivia XP', `${s.xp}`, undefined],
+    ['Quickest right answer', s.fastestMs !== undefined ? seconds(s.fastestMs) : '–', undefined],
+  ];
+  const parts = tiles.map(([label, value, sub], i) => tile(PAD + (i % 2) * (TILE_W + 16), y + Math.floor(i / 2) * (TILE_H + 16), label, value, sub, t));
+  const best = s.bestCategory
+    ? `Best category: ${s.bestCategory.name}, ${s.bestCategory.correct} of ${s.bestCategory.answered} right`
+    : 'Best category: not enough answers in one category yet';
+  const bestY = y + 2 * TILE_H + 16 + 44;
+  return svgCard(bestY + 60, t, [
+    header({ name: d.name, avatar: d.avatar, title: d.name, subtitle: `Trivia in ${d.serverName}` }, t),
+    ...parts,
+    text(PAD, bestY, 18, t.text, escapeXml(truncate(best, 70))),
+    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · CC BY-SA 4.0')),
   ]);
 };

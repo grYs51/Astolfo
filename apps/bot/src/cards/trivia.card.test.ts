@@ -1,5 +1,5 @@
 import { renderPng } from './render';
-import { ordinal, triviaQuestionCard, triviaResultCard, triviaScoreboardCard, wrap } from './trivia.card';
+import { ordinal, triviaQuestionCard, triviaResultCard, triviaScoreboardCard, triviaStatsCard, wrap } from './trivia.card';
 import { THEMES } from './themes';
 
 const question = {
@@ -74,6 +74,25 @@ describe('triviaScoreboardCard', () => {
     expect(svg).toContain('>2nd<');
     expect(svg).toContain('>0/5 right<');
     expect((await renderPng(svg)).length).toBeGreaterThan(0);
+  });
+});
+
+describe('triviaStatsCard', () => {
+  const stats = { answered: 14, correct: 11, firsts: 6, xp: 250, fastestMs: 1500, bestCategory: { name: 'History & <Art>', answered: 5, correct: 4 } };
+
+  test('shows the tiles and the best category, escaped', async () => {
+    const svg = triviaStatsCard({ name: 'Astolfo', serverName: 'Paladins', stats }, THEMES.dark);
+    expect(svg).toContain('>79% of 14 answered<');
+    expect(svg).toContain('>1.5 s<');
+    expect(svg).toContain('Best category: History &amp; &lt;Art&gt;, 4 of 5 right');
+    expect(svg).toContain('Trivia in Paladins');
+    expect((await renderPng(svg)).length).toBeGreaterThan(0);
+  });
+
+  test('without a time or a best category it says so', () => {
+    const svg = triviaStatsCard({ name: 'A', serverName: 'S', stats: { ...stats, fastestMs: undefined, bestCategory: undefined } }, THEMES.dark);
+    expect(svg).toContain('>–<');
+    expect(svg).toContain('not enough answers in one category yet');
   });
 });
 
