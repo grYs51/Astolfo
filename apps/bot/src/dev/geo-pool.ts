@@ -46,43 +46,28 @@ interface MapillaryImage {
   sequence?: string;
 }
 
-const getJson = async <T>(
-  url: string,
-  headers: Record<string, string> = {},
-): Promise<T> => {
+const getJson = async <T>(url: string, headers: Record<string, string> = {}): Promise<T> => {
   const res = await fetch(url, {
     headers,
     signal: AbortSignal.timeout(20_000),
   });
-  if (!res.ok)
-    throw new Error(
-      `${url.split('?')[0]}: HTTP ${res.status} ${await res.text()}`,
-    );
+  if (!res.ok) throw new Error(`${url.split('?')[0]}: HTTP ${res.status} ${await res.text()}`);
   return res.json() as Promise<T>;
 };
 
 /** The best photos in one box: no panoramas, good quality, one per sequence (a sequence is one drive) */
-const searchBox = async (
-  token: string,
-  lat: number,
-  lon: number,
-): Promise<MapillaryImage[]> => {
+const searchBox = async (token: string, lat: number, lon: number): Promise<MapillaryImage[]> => {
   const h = BOX / 2;
-  const bbox = [lon - h, lat - h, lon + h, lat + h]
-    .map((n) => n.toFixed(5))
-    .join(',');
+  const bbox = [lon - h, lat - h, lon + h, lat + h].map((n) => n.toFixed(5)).join(',');
   const { data } = await getJson<{ data: MapillaryImage[] }>(
     `https://graph.mapillary.com/images?bbox=${bbox}&fields=id,is_pano,quality_score,sequence&limit=200`,
-    { Authorization: `OAuth ${token}` },
+    { Authorization: `OAuth ${token}` }
   );
   const seen = new Set<string>();
   return data
     .filter((img) => !img.is_pano && (img.quality_score ?? 0) >= MIN_QUALITY)
     .sort((a, b) => (b.quality_score ?? 0) - (a.quality_score ?? 0))
-    .filter(
-      (img) =>
-        !img.sequence || (!seen.has(img.sequence) && seen.add(img.sequence)),
-    );
+    .filter((img) => !img.sequence || (!seen.has(img.sequence) && seen.add(img.sequence)));
 };
 
 const tsFile = (name: string, type: string, value: unknown) =>
@@ -92,14 +77,9 @@ const tsFile = (name: string, type: string, value: unknown) =>
 
 const main = async () => {
   const token = process.env.MAPILLARY_TOKEN;
-  if (!token)
-    throw new Error(
-      'Set MAPILLARY_TOKEN (a client token from mapillary.com/dashboard/developers)',
-    );
+  if (!token) throw new Error('Set MAPILLARY_TOKEN (a client token from mapillary.com/dashboard/developers)');
 
-  const all = await getJson<RestCountry[]>(
-    'https://restcountries.com/v3.1/all?fields=cca2,cca3,name,region,borders,capitalInfo',
-  );
+  const all = await getJson<RestCountry[]>('https://restcountries.com/v3.1/all?fields=cca2,cca3,name,region,borders,capitalInfo');
   const byCca3 = new Map(all.map((c) => [c.cca3, c.cca2]));
   const countries: GeoCountry[] = [];
   const pool: GeoPoolEntry[] = [];
@@ -112,19 +92,10 @@ const main = async () => {
       continue;
     }
     // Round-robin over the boxes so one busy street doesn't fill the country
-    const boxes = await Promise.all(
-      OFFSETS.map(([dLat, dLon]) =>
-        searchBox(token, capital[0] + dLat, capital[1] + dLon),
-      ),
-    );
+    const boxes = await Promise.all(OFFSETS.map(([dLat, dLon]) => searchBox(token, capital[0] + dLat, capital[1] + dLon)));
     const picked: string[] = [];
-    for (
-      let i = 0;
-      picked.length < PER_COUNTRY && boxes.some((b) => b.length > i);
-      i++
-    ) {
-      for (const box of boxes)
-        if (box[i] && picked.length < PER_COUNTRY) picked.push(box[i].id);
+    for (let i = 0; picked.length < PER_COUNTRY && boxes.some((b) => b.length > i); i++) {
+      for (const box of boxes) if (box[i] && picked.length < PER_COUNTRY) picked.push(box[i].id);
     }
     if (picked.length < 3) {
       Logger.warn(`${code}: only ${picked.length} good photos, skipped`);
@@ -134,22 +105,14 @@ const main = async () => {
       code,
       name: c.name.common,
       region: c.region,
-      borders: (c.borders ?? [])
-        .map((b) => byCca3.get(b))
-        .filter((b): b is string => !!b),
+      borders: (c.borders ?? []).map((b) => byCca3.get(b)).filter((b): b is string => !!b),
     });
     pool.push(...picked.map((id) => ({ id, country: code })));
     Logger.info(`${code}: ${picked.length} photos`);
   }
 
-  writeFileSync(
-    path.join(OUT_DIR, 'countries.data.ts'),
-    tsFile('COUNTRIES', 'GeoCountry', countries),
-  );
-  writeFileSync(
-    path.join(OUT_DIR, 'pool.data.ts'),
-    tsFile('POOL', 'GeoPoolEntry', pool),
-  );
+  writeFileSync(path.join(OUT_DIR, 'countries.data.ts'), tsFile('COUNTRIES', 'GeoCountry', countries));
+  writeFileSync(path.join(OUT_DIR, 'pool.data.ts'), tsFile('POOL', 'GeoPoolEntry', pool));
   Logger.info(`${countries.length} countries, ${pool.length} photos`);
 };
 

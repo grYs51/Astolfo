@@ -1,21 +1,10 @@
-import {
-  BUSY_MESSAGE,
-  DOWN_MESSAGE,
-  GEO_CATEGORY,
-  GeoData,
-  nextGeoQuestion,
-  NOT_SET_UP_MESSAGE,
-  pickAnswers,
-} from './mapillary';
+import { GEO_CATEGORY } from './types';
+import { BUSY_MESSAGE, DOWN_MESSAGE, GeoData, nextGeoQuestion, NOT_SET_UP_MESSAGE, pickAnswers } from './mapillary';
 import type { GeoCountry } from './types';
 
 jest.mock('../utils/logger', () => ({ Logger: { warn: jest.fn() } }));
 
-const country = (
-  code: string,
-  region: string,
-  borders: string[] = [],
-): GeoCountry => ({ code, name: `${code}-land`, region, borders });
+const country = (code: string, region: string, borders: string[] = []): GeoCountry => ({ code, name: `${code}-land`, region, borders });
 const COUNTRIES = [
   country('BE', 'Europe', ['FR', 'NL', 'DE']),
   country('FR', 'Europe', ['BE', 'DE', 'ES']),
@@ -33,62 +22,37 @@ const BE = COUNTRIES[0];
 const byName = new Map(COUNTRIES.map((c) => [c.name, c]));
 
 describe('pickAnswers', () => {
-  test.each(['easy', 'medium', 'hard'] as const)(
-    '%s: four distinct answers, one of them right',
-    (difficulty) => {
-      for (let seed = 0; seed < 20; seed++) {
-        const { answers } = pickAnswers(
-          BE,
-          difficulty,
-          COUNTRIES,
-          mulberry(seed),
-        );
-        expect(answers).toHaveLength(4);
-        expect(new Set(answers).size).toBe(4);
-        expect(answers.filter((a) => a === BE.name)).toHaveLength(1);
-      }
-    },
-  );
+  test.each(['easy', 'medium', 'hard'] as const)('%s: four distinct answers, one of them right', (difficulty) => {
+    for (let seed = 0; seed < 20; seed++) {
+      const { answers } = pickAnswers(BE, difficulty, COUNTRIES, mulberry(seed));
+      expect(answers).toHaveLength(4);
+      expect(new Set(answers).size).toBe(4);
+      expect(answers.filter((a) => a === BE.name)).toHaveLength(1);
+    }
+  });
 
   test('easy: the wrong answers come from other regions', () => {
     const { answers, near } = pickAnswers(BE, 'easy', COUNTRIES, mulberry(1));
-    expect(
-      answers
-        .filter((a) => a !== BE.name)
-        .every((a) => byName.get(a)?.region !== 'Europe'),
-    ).toBe(true);
+    expect(answers.filter((a) => a !== BE.name).every((a) => byName.get(a)?.region !== 'Europe')).toBe(true);
     expect(near).toEqual([]);
   });
 
   test('medium: same region, never a neighbour', () => {
     const { answers, near } = pickAnswers(BE, 'medium', COUNTRIES, mulberry(2));
-    const wrong = answers
-      .filter((a) => a !== BE.name)
-      .map((a) => byName.get(a));
-    expect(
-      wrong.every(
-        (c) => c?.region === 'Europe' && !BE.borders.includes(c.code),
-      ),
-    ).toBe(true);
+    const wrong = answers.filter((a) => a !== BE.name).map((a) => byName.get(a));
+    expect(wrong.every((c) => c?.region === 'Europe' && !BE.borders.includes(c.code))).toBe(true);
     expect(near).toEqual([]);
   });
 
   test('hard: two neighbours, and near is exactly the bordering answers', () => {
     const { answers, near } = pickAnswers(BE, 'hard', COUNTRIES, mulberry(3));
-    const bordering = answers.filter((a) =>
-      BE.borders.includes(byName.get(a)?.code ?? ''),
-    );
+    const bordering = answers.filter((a) => BE.borders.includes(byName.get(a)?.code ?? ''));
     expect(bordering).toHaveLength(2);
     expect([...near].sort()).toEqual([...bordering].sort());
   });
 
   test('fills up from the other groups when a group runs short', () => {
-    const { answers } = pickAnswers(
-      country('AU', 'Oceania'),
-      'medium',
-      [...COUNTRIES, country('AU', 'Oceania')],
-      mulberry(4),
-    );
+    const { answers } = pickAnswers(country('AU', 'Oceania'), 'medium', [...COUNTRIES, country('AU', 'Oceania')], mulberry(4));
     expect(answers).toHaveLength(4);
   });
 });
@@ -102,8 +66,7 @@ describe('nextGeoQuestion', () => {
     countries: COUNTRIES,
     random: () => 0,
   };
-  const json = (status: number, body: unknown) =>
-    ({ status, ok: status < 300, json: async () => body }) as Response;
+  const json = (status: number, body: unknown) => ({ status, ok: status < 300, json: async () => body }) as Response;
   const photo = {
     status: 200,
     ok: true,
@@ -124,10 +87,7 @@ describe('nextGeoQuestion', () => {
   });
 
   test('a photo question: the right country, the photo, the credit and the place', async () => {
-    const fetchFn = jest
-      .fn()
-      .mockResolvedValueOnce(json(200, meta))
-      .mockResolvedValueOnce(photo);
+    const fetchFn = jest.fn().mockResolvedValueOnce(json(200, meta)).mockResolvedValueOnce(photo);
     const result = await nextGeoQuestion('hard', fetchFn, data);
     expect(result).toMatchObject({
       ok: true,
@@ -160,18 +120,14 @@ describe('nextGeoQuestion', () => {
       message: NOT_SET_UP_MESSAGE,
     });
     process.env.MAPILLARY_TOKEN = 'token';
-    expect(
-      await nextGeoQuestion(undefined, fetchFn, { ...data, pool: [] }),
-    ).toEqual({ ok: false, message: NOT_SET_UP_MESSAGE });
+    expect(await nextGeoQuestion(undefined, fetchFn, { ...data, pool: [] })).toEqual({ ok: false, message: NOT_SET_UP_MESSAGE });
     expect(fetchFn).not.toHaveBeenCalled();
   });
 
   test('a deleted photo (404) tries another one', async () => {
     const fetchFn = jest
       .fn()
-      .mockResolvedValueOnce(
-        json(404, { error: { message: 'Unsupported get request' } }),
-      )
+      .mockResolvedValueOnce(json(404, { error: { message: 'Unsupported get request' } }))
       .mockResolvedValueOnce(json(200, meta))
       .mockResolvedValueOnce(photo);
     const result = await nextGeoQuestion('easy', fetchFn, data);
@@ -191,32 +147,18 @@ describe('nextGeoQuestion', () => {
   });
 
   test('the photo itself fails to download: tries another, then down', async () => {
-    const fetchFn = jest.fn(async (url: string) =>
-      url.startsWith('https://img') ? json(500, {}) : json(200, meta),
-    );
-    expect(
-      await nextGeoQuestion('easy', fetchFn as unknown as typeof fetch, data),
-    ).toEqual({ ok: false, message: DOWN_MESSAGE });
+    const fetchFn = jest.fn(async (url: string) => (url.startsWith('https://img') ? json(500, {}) : json(200, meta)));
+    expect(await nextGeoQuestion('easy', fetchFn as unknown as typeof fetch, data)).toEqual({ ok: false, message: DOWN_MESSAGE });
   });
 
   test('rate limited: says busy and stops at once', async () => {
-    const fetchFn = jest
-      .fn()
-      .mockResolvedValue(
-        json(400, { error: { message: 'Application request limit reached' } }),
-      );
+    const fetchFn = jest.fn().mockResolvedValue(json(400, { error: { message: 'Application request limit reached' } }));
     expect(await nextGeoQuestion('easy', fetchFn, data)).toEqual({
       ok: false,
       message: BUSY_MESSAGE,
     });
     expect(fetchFn).toHaveBeenCalledTimes(1);
-    expect(
-      await nextGeoQuestion(
-        'easy',
-        jest.fn().mockResolvedValue(json(429, {})),
-        data,
-      ),
-    ).toEqual({ ok: false, message: BUSY_MESSAGE });
+    expect(await nextGeoQuestion('easy', jest.fn().mockResolvedValue(json(429, {})), data)).toEqual({ ok: false, message: BUSY_MESSAGE });
   });
 });
 

@@ -217,6 +217,6 @@ export const triviaStatsCard = (d: TriviaStatsCardData, t: CardTheme) => {
     header({ name: d.name, avatar: d.avatar, title: d.name, subtitle: `Trivia in ${d.serverName}` }, t),
     ...parts,
     text(PAD, bestY, 18, t.text, escapeXml(truncate(best, 70))),
-    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · CC BY-SA 4.0')),
+    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · photos from Mapillary · CC BY-SA 4.0')),
   ]);
 };

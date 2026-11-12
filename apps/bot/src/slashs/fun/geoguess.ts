@@ -1,5 +1,4 @@
 import { CacheType, ChatInputCommandInteraction, InteractionContextType, SlashCommandBuilder } from 'discord.js';
-import Client from '../../client/client';
 import { nextGeoQuestion } from '../../geo/mapillary';
 import { TriviaDifficulty, TriviaFetch } from '../../trivia/opentdb';
 import Trivia, { MAX_ROUNDS } from './trivia';
@@ -17,7 +16,7 @@ export default class GeoGuess extends Trivia {
     super('geoguess', 'Guess the country from a street photo: a neighbouring country still earns a little XP');
   }
 
-  override createInteraction(client: Client) {
+  override createInteraction() {
     return new SlashCommandBuilder()
       .setName(this.name)
       .setDescription(this.description)
