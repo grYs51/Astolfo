@@ -38,6 +38,15 @@ const NAMES = [
   'Medoro',
 ];
 
+const PLACEHOLDER_PHOTO =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="768">' +
+  '<defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6FA8DC"/><stop offset="1" stop-color="#CFE2F3"/></linearGradient></defs>' +
+  '<rect width="1024" height="768" fill="url(#sky)"/>' +
+  '<path d="M0 420 Q260 320 520 410 T1024 380 V768 H0 Z" fill="#6AA84F"/>' +
+  '<path d="M440 768 L500 430 L530 430 L700 768 Z" fill="#666"/>' +
+  '<path d="M512 760 L514 440" stroke="#FFF" stroke-width="6" stroke-dasharray="40 30"/>' +
+  '</svg>';
+
 const main = async () => {
   mkdirSync(OUT_DIR, { recursive: true });
   const avatars = await Promise.all(
@@ -45,6 +54,8 @@ const main = async () => {
   );
   // Every third member has no avatar, to show the initial fallback
   const avatar = (i: number) => (i % 3 === 2 ? undefined : avatars[i % avatars.length]);
+  // A stand-in street photo (sky, hills, a road), drawn here so the GeoGuess cards need no network
+  const photo = `data:image/png;base64,${(await renderPng(PLACEHOLDER_PHOTO)).toString('base64')}`;
 
   const stats: StatsCardData = {
       period: 'month',
@@ -231,6 +242,40 @@ const main = async () => {
           avatar: avatar(1),
           serverName: 'Paladins of France',
           stats: { answered: 142, correct: 97, firsts: 31, xp: 1_860, fastestMs: 1_240, bestCategory: { name: 'Mythology', answered: 18, correct: 15 } },
+        },
+        THEMES[theme]
+      ),
+    'geoguess-question': (theme) =>
+      triviaQuestionCard(
+        {
+          category: 'GeoGuess',
+          difficulty: 'hard',
+          factor: 2,
+          question: 'Which country is this?',
+          answers: ['Belgium', 'Netherlands', 'France', 'Luxembourg'],
+          seconds: 30,
+          geo: { image: photo, credit: 'roadtripper_42' },
+        },
+        THEMES[theme]
+      ),
+    'geoguess-result': (theme) =>
+      triviaResultCard(
+        {
+          question: 'Which country is this?',
+          answers: ['Belgium', 'Netherlands', 'France', 'Luxembourg'],
+          correct: 'Belgium',
+          picks: [3, 2, 1, 0],
+          winners: [0, 1, 2].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [30, 20, 14][i], ms: [4100, 7900, 12_300][i] })),
+          geo: { image: photo, credit: 'roadtripper_42', near: ['Netherlands', 'France', 'Luxembourg'] },
+        },
+        THEMES[theme]
+      ),
+    'geoguess-scores': (theme) =>
+      triviaScoreboardCard(
+        {
+          title: 'GeoGuess',
+          rounds: 3,
+          players: [0, 1, 2].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [64, 34, 4][i], correct: [2, 1, 0][i] })),
         },
         THEMES[theme]
       ),
