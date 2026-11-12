@@ -9,6 +9,22 @@ export interface TriviaQuestion {
   correct: string;
   /** Shuffled for a multiple-choice question; True then False for a true/false one */
   answers: string[];
+  /** Set for a GeoGuess photo question */
+  geo?: GeoInfo;
+}
+
+export interface GeoInfo {
+  /** The photo as a data URI */
+  image: string;
+  /** The Mapillary username of who took it, for the CC BY-SA credit */
+  credit?: string;
+  imageId: string;
+  /** The right country's code */
+  country: string;
+  lat?: number;
+  lon?: number;
+  /** The answers that share a land border with the right country: picking one is a near miss */
+  near: string[];
 }
 
 export type TriviaFetch = { ok: true; question: TriviaQuestion } | { ok: false; message: string };
@@ -74,9 +90,9 @@ const queues = new Map<string, TriviaQuestion[]>();
 const inFlight = new Map<string, Promise<TriviaFetch>>();
 let chain: Promise<unknown> = Promise.resolve();
 let lastRequestAt = 0;
-const DIFFICULTIES: TriviaDifficulty[] = ['easy', 'medium', 'hard'];
+export const DIFFICULTIES: TriviaDifficulty[] = ['easy', 'medium', 'hard'];
 
-const shuffle = <T>(items: T[], random: () => number) => {
+export const shuffle = <T>(items: T[], random: () => number) => {
   const copy = [...items];
   for (let i = copy.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1));
