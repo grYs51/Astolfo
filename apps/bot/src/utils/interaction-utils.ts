@@ -153,10 +153,10 @@ export class InterActionUtils {
 
   public static async editReply(
     intr: InteractionType,
-    content: string | EmbedBuilder | WebhookMessageEditOptions
+    content: string | EmbedBuilder | InteractionEditReplyOptions
   ): Promise<Message | void> {
     try {
-      let options: WebhookMessageEditOptions;
+      let options: InteractionEditReplyOptions;
       if (typeof content === 'string') {
         options = { content };
       } else if (content instanceof EmbedBuilder) {

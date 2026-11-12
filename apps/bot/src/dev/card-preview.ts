@@ -16,7 +16,7 @@ import { leaderboardCard } from '../cards/leaderboard.card';
 import { profileCard } from '../cards/profile.card';
 import { reminderCard } from '../cards/reminder.card';
 import { rpsCard } from '../cards/rps.card';
-import { triviaQuestionCard, triviaResultCard } from '../cards/trivia.card';
+import { triviaQuestionCard, triviaResultCard, triviaScoreboardCard, triviaStatsCard } from '../cards/trivia.card';
 import { renderPng } from '../cards/render';
 import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
@@ -212,7 +212,25 @@ const main = async () => {
           answers: ['Jupiter', 'Saturn', 'Uranus', 'Neptune'],
           correct: 'Saturn',
           picks: [3, 6, 0, 1],
-          winners: [0, 1, 2, 3, 4, 5].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [30, 20, 14, 10, 6, 6][i] })),
+          winners: [0, 1, 2, 3, 4, 5].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [30, 20, 14, 10, 6, 6][i], ms: [2300, 3100, 4800, 6050, 9900, 14200][i] })),
+        },
+        THEMES[theme]
+      ),
+    'trivia-scores': (theme) =>
+      triviaScoreboardCard(
+        {
+          rounds: 5,
+          players: [0, 1, 2, 3, 4].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [96, 75, 45, 15, 0][i], correct: [5, 4, 3, 1, 0][i] })),
+        },
+        THEMES[theme]
+      ),
+    'trivia-stats': (theme) =>
+      triviaStatsCard(
+        {
+          name: NAMES[1],
+          avatar: avatar(1),
+          serverName: 'Paladins of France',
+          stats: { answered: 142, correct: 97, firsts: 31, xp: 1_860, fastestMs: 1_240, bestCategory: { name: 'Mythology', answered: 18, correct: 15 } },
         },
         THEMES[theme]
       ),

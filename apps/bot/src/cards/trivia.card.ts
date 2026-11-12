@@ -1,6 +1,7 @@
 import { avatarSvg } from './avatars';
 import { escapeXml, truncate } from './render';
-import { PAD, panel, svgCard, text, W } from './svg';
+import { header, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
+import type { TriviaStats } from '../trivia/stats';
 import { CardTheme } from './themes';
 
 export interface TriviaQuestionCardData {
@@ -19,6 +20,8 @@ export interface TriviaPlayer {
   avatar?: string;
   /** XP earned; undefined when none was granted */
   xp?: number;
+  /** How long they took to answer; undefined for questions saved before times were kept */
+  ms?: number;
 }
 
 export interface TriviaResultCardData {
@@ -31,6 +34,13 @@ export interface TriviaResultCardData {
   winners: TriviaPlayer[];
 }
 
+export interface TriviaScoreboardCardData {
+  /** How many rounds were played */
+  rounds: number;
+  /** Ranked already: XP, then correct answers, then time */
+  players: (TriviaPlayer & { correct: number })[];
+}
+
 export const LETTERS = ['A', 'B', 'C', 'D'];
 const ATTRIBUTION = 'Question from Open Trivia DB (opentdb.com) · CC BY-SA 4.0';
 const SHOWN_WINNERS = 5;
@@ -38,6 +48,8 @@ const ANSWER_H = 64;
 const GAP = 16;
 const ANSWER_W = (W - 2 * PAD - GAP) / 2;
 
+/** 2300 → "2.3 s" */
+export const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 export const capitalise = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 /** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th, 21st */
 export const ordinal = (n: number) => `${n}${n % 100 >= 11 && n % 100 <= 13 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
@@ -104,6 +116,16 @@ export const triviaQuestionCard = (d: TriviaQuestionCardData, t: CardTheme) => {
   ]);
 };
 
+const ROW_H = 56;
+
+/** A place, avatar, name, a muted note and the XP, one row of `ROW_H` from `y` */
+const playerRow = (p: TriviaPlayer, i: number, y: number, t: CardTheme, note: string) =>
+  text(PAD + 8, y + 28, 18, i === 0 ? t.accent : t.muted, ordinal(i + 1), 'dy="0.35em" font-weight="700"') +
+  avatarSvg({ id: `p${i}`, x: PAD + 64, y: y + 8, size: 40, name: p.name, image: p.avatar, theme: t }) +
+  text(PAD + 120, y + 28, 18, t.text, escapeXml(truncate(p.name, 36)), 'dy="0.35em" font-weight="600"') +
+  (note ? text(W - PAD - 130, y + 28, 16, t.muted, escapeXml(note), 'dy="0.35em" text-anchor="end"') : '') +
+  (p.xp ? text(W - PAD - 8, y + 28, 18, t.accent, `+${p.xp} XP`, 'dy="0.35em" text-anchor="end" font-weight="700"') : '');
+
 /** The answer and who got it: the right answer filled, picks per answer, the quickest right members with their XP */
 export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
   const answered = d.picks.reduce((a, b) => a + b, 0);
@@ -111,15 +133,7 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
   const gridY = q.end + 28;
   const listY = gridY + gridHeight(d.answers) + 40;
   const shown = d.winners.slice(0, SHOWN_WINNERS);
-  const rows = shown.map((p, i) => {
-    const y = listY + i * 56;
-    return (
-      text(PAD + 8, y + 28, 18, i === 0 ? t.accent : t.muted, ordinal(i + 1), 'dy="0.35em" font-weight="700"') +
-      avatarSvg({ id: `w${i}`, x: PAD + 64, y: y + 8, size: 40, name: p.name, image: p.avatar, theme: t }) +
-      text(PAD + 120, y + 28, 18, t.text, escapeXml(truncate(p.name, 36)), 'dy="0.35em" font-weight="600"') +
-      (p.xp ? text(W - PAD - 8, y + 28, 18, t.accent, `+${p.xp} XP`, 'dy="0.35em" text-anchor="end" font-weight="700"') : '')
-    );
-  });
+  const rows = shown.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, p.ms !== undefined ? seconds(p.ms) : ''));
   const more = d.winners.length - shown.length;
   const wrong = answered - d.winners.length;
   const summary = !answered
@@ -127,7 +141,7 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
     : !d.winners.length
       ? `Nobody got it right (${answered} tried).`
       : [more ? `+${more} more got it right` : '', wrong ? `${wrong} got it wrong` : ''].filter(Boolean).join(' · ');
-  const summaryY = listY + shown.length * 56 + (shown.length ? 24 : 8);
+  const summaryY = listY + shown.length * ROW_H + (shown.length ? 24 : 8);
   return svgCard(summaryY + 56, t, [
     q.svg,
     answerGrid(
@@ -140,5 +154,45 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
     ...rows,
     summary ? text(PAD, summaryY, 16, t.muted, escapeXml(summary)) : '',
     text(PAD, summaryY + 28, 12, t.muted, escapeXml(ATTRIBUTION)),
+  ]);
+};
+
+/** After a game of 2+ rounds: everyone ranked, with how many they got right and the XP they earned */
+export const triviaScoreboardCard = (d: TriviaScoreboardCardData, t: CardTheme) => {
+  const listY = 84;
+  return svgCard(listY + d.players.length * ROW_H + 32, t, [
+    text(PAD, 52, 24, t.text, escapeXml(`Trivia · final scores after ${d.rounds} round${d.rounds === 1 ? '' : 's'}`), 'font-weight="700"'),
+    ...d.players.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, `${p.correct}/${d.rounds} right`)),
+  ]);
+};
+
+export interface TriviaStatsCardData {
+  name: string;
+  avatar?: string;
+  serverName: string;
+  stats: TriviaStats;
+}
+
+/** /trivia-stats: one member's answers, accuracy, 1st places, XP, quickest answer and best category */
+export const triviaStatsCard = (d: TriviaStatsCardData, t: CardTheme) => {
+  const s = d.stats;
+  const pct = (part: number, whole: number) => `${Math.round((100 * part) / whole)}%`;
+  const y = 136;
+  const tiles: [string, string, string | undefined][] = [
+    ['Right answers', `${s.correct}`, `${pct(s.correct, s.answered)} of ${s.answered} answered`],
+    ['1st places', `${s.firsts}`, 'the quickest right answer'],
+    ['Trivia XP', `${s.xp}`, undefined],
+    ['Quickest right answer', s.fastestMs !== undefined ? seconds(s.fastestMs) : '–', undefined],
+  ];
+  const parts = tiles.map(([label, value, sub], i) => tile(PAD + (i % 2) * (TILE_W + 16), y + Math.floor(i / 2) * (TILE_H + 16), label, value, sub, t));
+  const best = s.bestCategory
+    ? `Best category: ${s.bestCategory.name}, ${s.bestCategory.correct} of ${s.bestCategory.answered} right`
+    : 'Best category: not enough answers in one category yet';
+  const bestY = y + 2 * TILE_H + 16 + 44;
+  return svgCard(bestY + 60, t, [
+    header({ name: d.name, avatar: d.avatar, title: d.name, subtitle: `Trivia in ${d.serverName}` }, t),
+    ...parts,
+    text(PAD, bestY, 18, t.text, escapeXml(truncate(best, 70))),
+    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · CC BY-SA 4.0')),
   ]);
 };

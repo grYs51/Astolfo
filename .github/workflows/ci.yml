@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    # A throwaway database for the tests that need real SQL (xp/grant.db.test.ts)
+    # A throwaway database for the tests that need real SQL (xp/grant.db.test.ts, trivia/stats.db.test.ts)
     services:
       postgres:
         image: postgres:17
