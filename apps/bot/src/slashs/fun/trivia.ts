@@ -19,14 +19,13 @@ import { Logger } from '../../utils/logger';
 import { GAME_TYPES, SCORING } from '../../utils/handlers/games-handler';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { currentRules } from '../../xp/rules';
-import { CATEGORIES, nextQuestion, TriviaDifficulty, TriviaFilter, TriviaQuestion } from '../../trivia/opentdb';
+import { CATEGORIES, GeoInfo, nextQuestion, TriviaDifficulty, TriviaFetch, TriviaFilter, TriviaQuestion } from '../../trivia/opentdb';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { capitalise, LETTERS, ordinal, seconds, triviaQuestionCard, triviaResultCard, triviaScoreboardCard } from '../../cards/trivia.card';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 
 export const ANSWER_MS = 20_000;
-const SECONDS = ANSWER_MS / 1000;
 /** The pause between rounds, so everyone can read the result */
 export const PAUSE_MS = 5_000;
 export const MAX_ROUNDS = 10;
@@ -68,21 +67,34 @@ export const resultText = (
   answered: number,
   correctOrder: string[],
   xp: Map<string, number>,
-  times = new Map<string, number>()
+  times = new Map<string, number>(),
+  near: string[] = []
 ) => {
   // Answers come from Open Trivia DB and can hold Markdown ("*NSYNC")
-  const head = `The answer was **${escapeMarkdown(q.correct)}**.`;
+  const head = q.geo ? `It was **${escapeMarkdown(q.correct)}**.${geoLinks(q.geo)}` : `The answer was **${escapeMarkdown(q.correct)}**.`;
   if (!answered) return `${head} Nobody answered!`;
-  if (!correctOrder.length) return `${head} Nobody got it right.`;
+  const nearText = near.length ? `\nNear miss: ${near.map((id) => `<@${id}>${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`).join(' · ')}` : '';
+  if (!correctOrder.length) return `${head} Nobody got it right.${nearText}`;
   const places = correctOrder.map((id, i) => {
     const ms = times.get(id);
     return `${ordinal(i + 1)} <@${id}>${ms !== undefined ? ` ${seconds(ms)}` : ''}${xp.get(id) ? ` +${xp.get(id)} XP` : ''}`;
   });
-  return `${head}\n${places.join(' · ')}`;
+  return `${head}\n${places.join(' · ')}${nearText}`;
 };
 
+const photoUrl = (geo: GeoInfo) => `https://www.mapillary.com/app/?pKey=${geo.imageId}`;
+
+/** Where the photo was taken and the photo itself; `<>` keeps Discord from embedding them */
+const geoLinks = (geo: GeoInfo) =>
+  (geo.lat !== undefined && geo.lon !== undefined
+    ? ` [Map](<https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=15/${geo.lat}/${geo.lon}>) ·`
+    : '') + ` [Photo](<${photoUrl(geo)}>)`;
+
 /** The licence asks for attribution: the card carries it, a text-only message needs it written out */
-const ATTRIBUTION_LINE = '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
+const attributionLine = (q: TriviaQuestion) =>
+  q.geo
+    ? `\n-# Photo ${q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary (<${photoUrl(q.geo)}>), CC BY-SA 4.0`
+    : '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
 
 /** A card as a Discord attachment, or undefined when it can't be drawn (the message then falls back to text) */
 const card = (svg: () => string, name: string) =>
@@ -92,9 +104,23 @@ const card = (svg: () => string, name: string) =>
   });
 
 export default class Trivia extends BaseSlash {
-  constructor() {
+  /** How long everyone has to answer a question */
+  protected answerMs = ANSWER_MS;
+  /** The game's name on the intro and the scoreboard */
+  protected title = 'Trivia';
+
+  constructor(name = 'trivia', description = 'Answer a trivia question: the quickest right answers earn the most XP') {
     // Deferred in public: fetching the question can take longer than Discord's 3 s, and a "down" reply should be seen
-    super('trivia', 'Answer a trivia question: the quickest right answers earn the most XP', SlashDeferTypes.PUBLIC);
+    super(name, description, SlashDeferTypes.PUBLIC);
+  }
+
+  /** Where the questions come from: Open Trivia DB, with the command's category and difficulty */
+  protected questions(interaction: ChatInputCommandInteraction<CacheType>): () => Promise<TriviaFetch> {
+    const filter: TriviaFilter = {
+      category: interaction.options.getInteger('category') ?? undefined,
+      difficulty: (interaction.options.getString('difficulty') as TriviaDifficulty | null) ?? undefined,
+    };
+    return () => nextQuestion(filter);
   }
 
   override createInteraction(client: Client) {
@@ -132,10 +158,7 @@ export default class Trivia extends BaseSlash {
       await InterActionUtils.editReply(interaction, { content: 'A question is already running here. Answer that one first!' });
       return;
     }
-    const filter: TriviaFilter = {
-      category: interaction.options.getInteger('category') ?? undefined,
-      difficulty: (interaction.options.getString('difficulty') as TriviaDifficulty | null) ?? undefined,
-    };
+    const next = this.questions(interaction);
     const rounds = interaction.options.getInteger('rounds') ?? 1;
     running.add(channelId);
     const board = new Map<string, Score>();
@@ -144,7 +167,7 @@ export default class Trivia extends BaseSlash {
     try {
       for (let round = 1; round <= rounds; round++) {
         if (round > 1) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
-        const result = await this.askQuestion(client, interaction, guildId, filter, rounds > 1 ? `Round ${round}/${rounds}. ` : '');
+        const result = await this.askQuestion(client, interaction, guildId, next, rounds > 1 ? `Round ${round}/${rounds}. ` : '');
         if (!result) break;
         played = round;
         for (const [id, score] of result) {
@@ -179,21 +202,22 @@ export default class Trivia extends BaseSlash {
     client: Client,
     interaction: ChatInputCommandInteraction<CacheType>,
     guildId: string,
-    filter: TriviaFilter,
+    next: () => Promise<TriviaFetch>,
     roundLabel: string
   ): Promise<Map<string, Score> | undefined> {
     const channel = interaction.channel;
-    const fetched = await nextQuestion(filter);
+    const fetched = await next();
     if (!fetched.ok || !channel) {
       await say(interaction, { content: fetched.ok ? "I can't ask a question here." : fetched.message });
       return undefined;
     }
     const q = fetched.question;
     const factor = currentRules().trivia[q.difficulty];
-    const intro = `🎲 Trivia! ${roundLabel}${capitalise(q.difficulty)} question: ×${factor} XP, ${SECONDS} seconds.`;
-    const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: SECONDS }, THEMES[DEFAULT_THEME]), 'trivia.png');
+    const seconds = this.answerMs / 1000;
+    const intro = `${q.geo ? '🌍' : '🎲'} ${this.title}! ${roundLabel}${capitalise(q.difficulty)} question: ×${factor} XP, ${seconds} seconds.`;
+    const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds }, THEMES[DEFAULT_THEME]), 'trivia.png');
     const message = await say(interaction, {
-      content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${ATTRIBUTION_LINE}`,
+      content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${attributionLine(q)}`,
       // The question is third-party text: it must never ping anyone
       allowedMentions: { parse: [] },
       ...(questionCard && { files: [questionCard] }),
@@ -210,10 +234,12 @@ export default class Trivia extends BaseSlash {
     const answers = new Map<string, number>();
     const times = new Map<string, number>();
     const correctOrder: string[] = [];
+    // GeoGuess: members who picked a country next to the right one
+    const near: string[] = [];
     const collector = channel.createMessageComponentCollector({
       filter: (i) => i.isButton() && i.customId.startsWith('trivia:') && i.message.id === message.id,
       componentType: ComponentType.Button,
-      time: ANSWER_MS,
+      time: this.answerMs,
     });
     collector.on('collect', (i: ButtonInteraction) => {
       const index = Number(i.customId.slice(7));
@@ -223,6 +249,7 @@ export default class Trivia extends BaseSlash {
         answers.set(i.user.id, index);
         times.set(i.user.id, Date.now() - shownAt);
         if (q.answers[index] === q.correct) correctOrder.push(i.user.id);
+        else if (q.geo?.near.includes(q.answers[index])) near.push(i.user.id);
       }
       const content = already ? 'You already answered.' : `Locked in: ${label(q, index)}`;
       void i.reply({ content, ephemeral: true }).catch(() => undefined);
@@ -231,7 +258,7 @@ export default class Trivia extends BaseSlash {
     // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
     await edit({ components: [buttons(q, true)] });
 
-    const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder);
+    const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder, near);
     const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
     const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
     const resultCard = await card(
@@ -243,21 +270,27 @@ export default class Trivia extends BaseSlash {
             correct: q.correct,
             picks,
             winners: correctOrder.map((id) => ({ ...(members[id] ?? { name: 'Unknown member' }), xp: xp.get(id), ms: times.get(id) })),
+            geo: q.geo,
           },
           THEMES[DEFAULT_THEME]
         ),
       'trivia-result.png'
     );
     await edit({
-      content: resultText(q, answers.size, correctOrder, xp, times) + (resultCard ? '' : ATTRIBUTION_LINE),
+      content: resultText(q, answers.size, correctOrder, xp, times, near) + (resultCard ? '' : attributionLine(q)),
       // The winners are named, but not pinged
       allowedMentions: { parse: [] },
       files: resultCard ? [resultCard] : [],
       components: [buttons(q, true)],
     });
     const right = new Set(correctOrder);
+    const close = new Set(near);
+    // A near miss adds its XP to the scoreboard, not a right answer
     return new Map(
-      [...answers.keys()].map((id) => [id, right.has(id) ? { xp: xp.get(id) ?? 0, correct: 1, ms: times.get(id) ?? 0 } : { xp: 0, correct: 0, ms: 0 }])
+      [...answers.keys()].map((id) => [
+        id,
+        right.has(id) ? { xp: xp.get(id) ?? 0, correct: 1, ms: times.get(id) ?? 0 } : { xp: close.has(id) ? (xp.get(id) ?? 0) : 0, correct: 0, ms: 0 },
+      ])
     );
   }
 
@@ -274,7 +307,7 @@ export default class Trivia extends BaseSlash {
     const scoreboard = await card(
       () =>
         triviaScoreboardCard(
-          { rounds: played, players: shown.map(([id, s]) => ({ ...(members[id] ?? { name: 'Unknown member' }), ...s })) },
+          { title: this.title, rounds: played, players: shown.map(([id, s]) => ({ ...(members[id] ?? { name: 'Unknown member' }), ...s })) },
           THEMES[DEFAULT_THEME]
         ),
       'trivia-scores.png'
@@ -294,7 +327,8 @@ export default class Trivia extends BaseSlash {
     q: TriviaQuestion,
     answers: Map<string, number>,
     times: Map<string, number>,
-    correctOrder: string[]
+    correctOrder: string[],
+    near: string[] = []
   ): Promise<Map<string, number>> {
     if (!answers.size) return new Map();
     const saved = await client.dataSource.gameResults
@@ -311,11 +345,13 @@ export default class Trivia extends BaseSlash {
             correctOrder,
             // Milliseconds from the question showing to each member's click, for /trivia-stats
             answerMs: Object.fromEntries(times),
+            // GeoGuess: the photo and the answers that bordered the right country (a near miss is saved as a tie)
+            ...(q.geo && { imageId: q.geo.imageId, country: q.geo.country, lat: q.geo.lat, lon: q.geo.lon, near: q.geo.near }),
           },
           players: {
             create: [...answers].map(([user_id, index]) => ({
               user_id,
-              result: q.answers[index] === q.correct ? SCORING.WIN : SCORING.LOSS,
+              result: q.answers[index] === q.correct ? SCORING.WIN : q.geo?.near.includes(q.answers[index]) ? SCORING.TIE : SCORING.LOSS,
               move: q.answers[index],
             })),
           },
@@ -324,12 +360,13 @@ export default class Trivia extends BaseSlash {
       .catch((error) => {
         Logger.error('Failed to save trivia result', error);
       });
-    if (!saved || !correctOrder.length) return new Map();
+    const earning = [...correctOrder, ...near];
+    if (!saved || !earning.length) return new Map();
 
-    // The SQL grant applies the places, difficulty and daily cap; read back what it gave
-    await Promise.all(correctOrder.map((memberId) => awardAndAnnounce(client, guildId, memberId, ['TRIVIA'])));
+    // The SQL grant applies the places, near misses, difficulty and daily cap; read back what it gave
+    await Promise.all(earning.map((memberId) => awardAndAnnounce(client, guildId, memberId, ['TRIVIA'])));
     const rows = await client.dataSource.xpEvents.findMany({
-      where: { key: { in: correctOrder.map((memberId) => `trivia:${saved.id}:${memberId}`) } },
+      where: { key: { in: earning.map((memberId) => `trivia:${saved.id}:${memberId}`) } },
       select: { member_id: true, amount: true },
     });
     return new Map(rows.map((row) => [row.member_id, row.amount]));
