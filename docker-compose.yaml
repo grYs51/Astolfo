@@ -51,6 +51,7 @@ services:
       - REDIRECT_URI=${REDIRECT_URI}
       - CLIENT_URL=${CLIENT_URL}
       - METRICS_TOKEN=${METRICS_TOKEN}
+      - MAPILLARY_TOKEN=${MAPILLARY_TOKEN}
     depends_on:
       postgres:
         condition: service_healthy
