@@ -261,6 +261,19 @@ describe('/trivia rounds', () => {
     expect(sent.at(-2)).toEqual({ content: 'Open Trivia DB is down' });
     expect(lastReply().content).toBe('🏁 Final scores after 1 round.\n1st <@a> 1/1 +30 XP');
   });
+
+  test('an error mid-game still shows the scores of the rounds before it', async () => {
+    const game = start('broken', { rounds: 3 });
+    await game.ready();
+    game.click('a', 1);
+    game.interaction.followUp.mockRejectedValueOnce(new Error('Discord is down'));
+    game.end();
+    await game.ready();
+    await jest.advanceTimersByTimeAsync(PAUSE_MS);
+    await game.done;
+    expect(sent.at(-2)).toEqual({ content: 'Something went wrong with that question, sorry!', components: [] });
+    expect(lastReply().content).toBe('🏁 Final scores after 1 round. Something went wrong, so the game stopped there.\n1st <@a> 1/1 +30 XP');
+  });
 });
 
 describe('rankScores', () => {

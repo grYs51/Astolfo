@@ -138,10 +138,10 @@ export default class Trivia extends BaseSlash {
     };
     const rounds = interaction.options.getInteger('rounds') ?? 1;
     running.add(channelId);
+    const board = new Map<string, Score>();
+    let played = 0;
+    let stopped = '';
     try {
-      const board = new Map<string, Score>();
-      let played = 0;
-      let stopped = '';
       for (let round = 1; round <= rounds; round++) {
         if (round > 1) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
         const result = await this.askQuestion(client, interaction, guildId, filter, rounds > 1 ? `Round ${round}/${rounds}. ` : '');
@@ -156,10 +156,16 @@ export default class Trivia extends BaseSlash {
           break;
         }
       }
-      if (rounds > 1 && played > 0) await this.postScoreboard(interaction, board, played, stopped);
     } catch (error) {
       Logger.error('Trivia question failed', error);
       await say(interaction, { content: 'Something went wrong with that question, sorry!', components: [] }).catch(() => undefined);
+      stopped = 'Something went wrong, so the game stopped there.';
+    }
+    // After a failure too: the rounds before it were saved and their XP granted
+    try {
+      if (rounds > 1 && played > 0) await this.postScoreboard(interaction, board, played, stopped);
+    } catch (error) {
+      Logger.error('Trivia scoreboard failed', error);
     } finally {
       running.delete(channelId);
     }
