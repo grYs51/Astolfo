@@ -45,6 +45,8 @@ export interface XpRules {
     trivia: [number, number, number, number];
     /** Every correct answer after the fourth */
     triviaCorrect: number;
+    /** A GeoGuess answer that borders the right country, before the difficulty multiplier */
+    triviaNear: number;
   };
   thresholds: {
     /** Minutes together for the starter, reconnect and welcome bonuses */

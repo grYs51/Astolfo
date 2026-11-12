@@ -5,7 +5,7 @@ const DEFAULTS: XpRules = {
   levelStep: 50,
   levelBase: 100,
   voice: { alone: 0.5, oneOther: 1, perExtra: 0.12, crowdCap: 1.5, deafened: 0.25, stayStep: 0.1, stayEveryMin: 30, stayCap: 1.5, camera: 0.1, screenShare: 0.1 },
-  amounts: { voiceMinute: 1, starter: 15, message: 2, streakDay: 10, gameWin: 5, gameStreakStep: 2, gameStreakCap: 10, reconnect: 25, welcome: 20, milestone: 100, weekly: [50, 30, 20], trivia: [15, 10, 7, 5], triviaCorrect: 3 },
+  amounts: { voiceMinute: 1, starter: 15, message: 2, streakDay: 10, gameWin: 5, gameStreakStep: 2, gameStreakCap: 10, reconnect: 25, welcome: 20, milestone: 100, weekly: [50, 30, 20], trivia: [15, 10, 7, 5], triviaCorrect: 3, triviaNear: 2 },
   thresholds: { togetherMin: 10, reconnectDays: 30, welcomeAfterDays: 30, startersPerDay: 3, milestoneHours: [10, 50, 100, 250, 500, 1000], triviaDailyCap: 500 },
   trivia: { easy: 1, medium: 1.5, hard: 2 },
 };

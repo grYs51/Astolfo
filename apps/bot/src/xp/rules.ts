@@ -31,6 +31,7 @@ export const DEFAULT_RULES: XpRules = {
     weekly: [50, 30, 20],
     trivia: [15, 10, 7, 5],
     triviaCorrect: 3,
+    triviaNear: 2,
   },
   thresholds: {
     togetherMin: 10,
@@ -102,6 +103,7 @@ const SHAPE: Record<string, Kind | Record<string, Kind>> = {
     welcome: 'amount',
     milestone: 'amount',
     triviaCorrect: 'amount',
+    triviaNear: 'amount',
   },
   thresholds: {
     togetherMin: 'count',

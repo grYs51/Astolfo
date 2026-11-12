@@ -8,10 +8,10 @@ import {
 } from '../trivia/opentdb';
 import { COUNTRIES } from './countries.data';
 import { POOL } from './pool.data';
-import type { GeoCountry, GeoPoolEntry } from './types';
+import { GEO_CATEGORY, type GeoCountry, type GeoPoolEntry } from './types';
 
-/** The trivia category GeoGuess questions are saved under: /trivia-stats and the XP notes read it */
-export const GEO_CATEGORY = 'GeoGuess';
+export { GEO_CATEGORY };
+
 export const GEO_QUESTION = 'Which country is this?';
 
 export const NOT_SET_UP_MESSAGE =

@@ -1,3 +1,6 @@
+/** The trivia category GeoGuess questions are saved under: /trivia-stats and the XP notes read it */
+export const GEO_CATEGORY = 'GeoGuess';
+
 export interface GeoCountry {
   /** ISO 3166-1 alpha-2 */
   code: string;
