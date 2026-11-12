@@ -145,7 +145,11 @@ export default class Trivia extends BaseSlash {
       for (let round = 1; round <= rounds; round++) {
         if (round > 1) await new Promise((resolve) => setTimeout(resolve, PAUSE_MS));
         const result = await this.askQuestion(client, interaction, guildId, filter, rounds > 1 ? `Round ${round}/${rounds}. ` : '');
-        if (!result) break;
+        if (!result) {
+          // Open Trivia DB failed or Discord lost the question; its own message is already shown
+          stopped = `Round ${round} couldn't be asked, so the game stopped there.`;
+          break;
+        }
         played = round;
         for (const [id, score] of result) {
           const total = board.get(id) ?? { xp: 0, correct: 0, ms: 0 };
