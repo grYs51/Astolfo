@@ -86,6 +86,7 @@ const loadPhoto = async (id: string, token: string, fetchFn: typeof fetch): Prom
       Logger.warn(`Mapillary answered HTTP ${res.status} for image ${id}: ${body?.error?.message ?? ''}`);
       return { ok: false, busy: false };
     }
+    if (!body.thumb_1024_url) Logger.warn(`Mapillary image ${id} has no thumbnail`);
     const image = await fetchImage(body.thumb_1024_url, IMAGE_TIMEOUT_MS, fetchFn);
     return image ? { ok: true, image, meta: body } : { ok: false, busy: false };
   } catch (error) {
@@ -112,6 +113,7 @@ export const nextGeoQuestion = async (
     const untried = data.pool.filter((e) => !tried.has(e));
     const entry = untried[Math.floor(data.random() * untried.length)];
     tried.add(entry);
+    // The pool script writes both files together, so a pool entry always has its country
     const country = data.countries.find((c) => c.code === entry.country);
     if (!country) continue;
     const photo = await loadPhoto(entry.id, token, fetchFn);

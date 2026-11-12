@@ -90,11 +90,20 @@ const geoLinks = (geo: GeoInfo) =>
     ? ` [Map](<https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=15/${geo.lat}/${geo.lon}>) ·`
     : '') + ` [Photo](<${photoUrl(geo)}>)`;
 
-/** The licence asks for attribution: the card carries it, a text-only message needs it written out */
-const attributionLine = (q: TriviaQuestion) =>
+/**
+ * The licence asks for attribution: the card carries it, a text-only message needs it written out. The photo
+ * link waits for the result, because its page shows the map pin.
+ */
+const attributionLine = (q: TriviaQuestion, link = true) =>
   q.geo
-    ? `\n-# Photo ${q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary (<${photoUrl(q.geo)}>), CC BY-SA 4.0`
+    ? `\n-# Photo ${q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary${link ? ` (<${photoUrl(q.geo)}>)` : ''}, CC BY-SA 4.0`
     : '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
+
+/** When the GeoGuess card can't be drawn, the photo goes out on its own: without it there's no question */
+const photoFile = (geo: GeoInfo) => {
+  const [head, data] = geo.image.split(',');
+  return { attachment: Buffer.from(data, 'base64'), name: head.includes('png') ? 'geoguess.png' : 'geoguess.jpg' };
+};
 
 /** A card as a Discord attachment, or undefined when it can't be drawn (the message then falls back to text) */
 const card = (svg: () => string, name: string) =>
@@ -216,11 +225,12 @@ export default class Trivia extends BaseSlash {
     const seconds = this.answerMs / 1000;
     const intro = `${q.geo ? '🌍' : '🎲'} ${this.title}! ${roundLabel}${capitalise(q.difficulty)} question: ×${factor} XP, ${seconds} seconds.`;
     const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds }, THEMES[DEFAULT_THEME]), 'trivia.png');
+    const file = questionCard ?? (q.geo && photoFile(q.geo));
     const message = await say(interaction, {
-      content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${attributionLine(q)}`,
+      content: questionCard ? intro : `${intro}\n**${escapeMarkdown(q.question)}**${attributionLine(q, false)}`,
       // The question is third-party text: it must never ping anyone
       allowedMentions: { parse: [] },
-      ...(questionCard && { files: [questionCard] }),
+      ...(file && { files: [file] }),
       components: [buttons(q, false)],
     });
     // Discord lost the interaction (an ignored error): nobody can see the question

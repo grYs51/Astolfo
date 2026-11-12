@@ -3,6 +3,7 @@ import Trivia from './trivia';
 import { awardAndAnnounce } from '../../xp/level-up';
 import { nextGeoQuestion } from '../../geo/mapillary';
 import { nextQuestion } from '../../trivia/opentdb';
+import { cardFile } from '../../cards/render';
 
 // Every message the command sends or edits, in order
 let sent: Record<string, unknown>[] = [];
@@ -118,6 +119,18 @@ describe('/geoguess', () => {
     } finally {
       jest.useRealTimers();
     }
+  });
+
+  test('when the card fails, the photo goes out on its own, and the question never links the photo page (it shows the pin)', async () => {
+    (cardFile as jest.Mock).mockRejectedValueOnce(new Error('resvg'));
+    const game = start(GeoGuess, 'no-card');
+    await game.ready();
+    game.end();
+    await game.done;
+    const asked = sent[0] as { content: string; files: { name: string; attachment: Buffer }[] };
+    expect(asked.files).toEqual([{ name: 'geoguess.jpg', attachment: Buffer.from('AAAA', 'base64') }]);
+    expect(asked.content).toContain('Photo by @walker on Mapillary, CC BY-SA 4.0');
+    expect(asked.content).not.toContain('pKey');
   });
 
   test('one game per channel: a GeoGuess blocks a /trivia there', async () => {
