@@ -48,6 +48,7 @@ export class GeoguessMapComponent {
     });
 
     // Redraw every marker when anything changes: a handful of pins, so no diffing
+    let zoomedIn = false;
     effect(() => {
       const leaflet = this.leaflet();
       const pin = this.pin();
@@ -59,9 +60,13 @@ export class GeoguessMapComponent {
       // Circle markers need no icon images, which bundlers lose
       const dot = (at: LatLon, color: string, radius: number) => L.circleMarker([at.lat, at.lon], { radius, color, fillColor: color, fillOpacity: 0.9, weight: 2 });
       if (!answer) {
+        // A new round: back to the whole world, or the last answer would be a hint
+        if (zoomedIn) map.setView([20, 0], 2);
+        zoomedIn = false;
         if (pin) dot(pin, ACCENT, 8).addTo(layer);
         return;
       }
+      zoomedIn = true;
       for (const p of pins) {
         L.polyline([[p.lat, p.lon], [answer.lat, answer.lon]], { color: OTHER, weight: 1, dashArray: '4 4' }).addTo(layer);
         dot(p, p.place ? ACCENT : OTHER, 7)

@@ -1,7 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, DOCUMENT, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { DiscordImagePipe } from '@nx-stolfo/common/pipes';
 import { GeoguessApi } from '@nx-stolfo/data-access-geoguess';
 import { countdown, GeoguessMapComponent, GeoguessViewerComponent, LatLon, memberName, ordinal } from '@nx-stolfo/ui-geoguess';
 
@@ -14,7 +13,7 @@ const POLL_MS = 2000;
  */
 @Component({
   selector: 'pages-geoguess',
-  imports: [GeoguessViewerComponent, GeoguessMapComponent, RouterLink, DiscordImagePipe],
+  imports: [GeoguessViewerComponent, GeoguessMapComponent, RouterLink],
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GeoguessApi],
   template: `
@@ -67,7 +66,11 @@ const POLL_MS = 2000;
                 @for (p of g.pins; track p.member.id) {
                   <div class="flex items-center gap-sm text-sm">
                     <span class="w-8 text-gray-400">{{ p.place ? ordinal(p.place) : '–' }}</span>
-                    <img class="h-6 w-6 rounded-full" [src]="p.member.avatar | discordImage: 'avatars' : p.member.id" alt="" />
+                    @if (p.member.avatar) {
+                      <img class="h-6 w-6 rounded-full" [src]="p.member.avatar" alt="" />
+                    } @else {
+                      <span class="h-6 w-6 rounded-full bg-base-300"></span>
+                    }
                     <span class="flex-1 truncate">{{ name(p.member) }}</span>
                     <span class="tabular-nums text-gray-400">{{ p.km }} km</span>
                     @if (p.xp) {
