@@ -4,6 +4,12 @@
     <div>
       <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Activity</p>
       <h1 class="text-2xl font-bold tracking-tight text-gray-100">{{ serverName() }}</h1>
+      <a
+        [href]="'https://discord.com/channels/' + id()"
+        target="_blank"
+        rel="noopener"
+        class="text-sm text-gray-400 hover:text-gray-200 hover:underline"
+      >Open in Discord ↗</a>
     </div>
     <div class="flex flex-wrap items-center gap-sm">
       @if (accessResource.hasValue() && accessResource.value().canManage) {
@@ -12,9 +18,9 @@
         </a>
       }
       @if (activeTab() === 'you' && currentUser(); as me) {
-        <pages-card-dialog [guildId]="id()" [memberId]="me.id" [period]="period()" [name]="me.global_name || me.username" />
+        <pages-card-dialog [guildId]="id()" [memberId]="me.id" [period]="activePeriod()" [name]="me.global_name || me.username" />
       }
-      <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
+      <lib-segmented-control label="Period" [options]="periodOptions" [value]="activePeriod()" (valueChange)="selectPeriod($event)" />
     </div>
   </header>
 
@@ -51,7 +57,7 @@
         [presenceResource]="userPresenceResource"
         [gamesResource]="userGamesResource"
         [calendarResource]="userCalendarResource"
-        [period]="period()"
+        [period]="activePeriod()"
         [xpLeaderboard]="xpLeaderboard()"
         [messageRank]="myMessageRank()"
         [memberLink]="memberLink"

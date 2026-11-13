@@ -4,16 +4,13 @@ import {
   computed,
   inject,
   input,
-  signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { DashboardPeriod, VoiceStatsApi } from '@nx-stolfo/data-access-voice-stats';
 import { USER } from '@nx-stolfo/auth';
-import {
-  SegmentedControlComponent,
-  SegmentedControlOption,
-} from '@nx-stolfo/components';
+import { SegmentedControlComponent } from '@nx-stolfo/components';
 import { MemberActivityComponent } from '../member-activity/member-activity.component';
+import { PERIOD_OPTIONS, parsePeriod, periodParam } from '../period';
 import { CardDialogComponent } from '../card-dialog/card-dialog.component';
 
 /** Another member's activity on a server (/overview/detail/:id/members/:memberId). */
@@ -29,37 +26,47 @@ export class MemberProfileComponent {
   id = input.required<string>();
   /** Member id (route param) */
   memberId = input.required<string>();
+  /** `?period=week`; month when absent */
+  period = input<string | undefined>();
 
   private api = inject(VoiceStatsApi);
   private currentUser = inject(USER);
+  private router = inject(Router);
+  private route = inject(ActivatedRoute);
 
-  readonly periodOptions: SegmentedControlOption<DashboardPeriod>[] = [
-    { value: 'week', label: 'Week' },
-    { value: 'month', label: 'Month' },
-    { value: 'year', label: 'Year' },
-    { value: 'all', label: 'All time' },
-  ];
-  period = signal<DashboardPeriod>('month');
+  readonly periodOptions = PERIOD_OPTIONS;
+  activePeriod = computed(() => parsePeriod(this.period()));
+  /** For links that keep the period */
+  periodParam = computed(() => periodParam(this.activePeriod()));
+
+  selectPeriod(period: DashboardPeriod) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { period: periodParam(period) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
 
   userResource = this.api.fetchVoiceStatsUser(
     () => this.id(),
     () => this.memberId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   heatmapResource = this.api.fetchVoiceStatsUserHeatmap(
     () => this.id(),
     () => this.memberId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   presenceResource = this.api.fetchUserPresence(
     () => this.id(),
     () => this.memberId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   gamesResource = this.api.fetchUserGames(
     () => this.id(),
     () => this.memberId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   calendarResource = this.api.fetchUserActivityCalendar(
     () => this.id(),
@@ -69,11 +76,11 @@ export class MemberProfileComponent {
   private xpLeaderboardResource = this.api.fetchXpLeaderboard(() => this.id());
   private messagesResource = this.api.fetchServerMessages(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   private overviewResource = this.api.fetchVoiceStatsOverview(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
 
   /** Viewing your own profile reads in the first person */
@@ -106,7 +113,10 @@ export class MemberProfileComponent {
   );
 
   memberLink = (memberId: string) =>
-    memberId === this.currentUser()?.id
-      ? ['/overview/detail', this.id()]
-      : ['/overview/detail', this.id(), 'members', memberId];
+    this.router.createUrlTree(
+      memberId === this.currentUser()?.id
+        ? ['/overview/detail', this.id()]
+        : ['/overview/detail', this.id(), 'members', memberId],
+      { queryParams: { period: this.periodParam() } }
+    );
 }

@@ -26,6 +26,12 @@ enum GameChoices {
   Scissors = 'scissors',
 }
 
+const MOVE_EMOJI: Record<string, string> = {
+  [GameChoices.Rock]: '🪨',
+  [GameChoices.Paper]: '📄',
+  [GameChoices.Scissors]: '✂️',
+};
+
 /** The move that beats each move */
 const COUNTER: Record<string, GameChoices> = {
   [GameChoices.Rock]: GameChoices.Paper,
@@ -101,42 +107,65 @@ export default class RockPaperScissors extends BaseSlash {
         .setStyle(ButtonStyle.Primary)
     );
 
-    await InterActionUtils.send(interaction, {
-      content: vsBot
+    const players = [interaction.user, opponent];
+    const choices: { [key: string]: string } = {};
+    let outcome: GameOutcome | undefined;
+    // Shows who has picked (never what), so both players know who the game waits on
+    const board = () =>
+      vsBot
         ? `${interaction.user}, you challenged me to Rock Paper Scissors! Choose your move:`
-        : `${opponent}, you have been challenged to a game of Rock Paper Scissors! Choose your move:`,
+        : `${opponent}, ${interaction.user} challenged you to Rock Paper Scissors! Choose your move:\n` +
+          players.map((p) => `${choices[p.id] ? '✅' : '⏳'} ${p}`).join('\n');
+
+    const sent = await InterActionUtils.send(interaction, {
+      content: board(),
       components: [buttons],
+      fetchReply: true,
     });
+    if (!sent) return;
 
-    if (!interaction.channel?.isSendable()) return;
-
-    const collector = interaction.channel?.createMessageComponentCollector({
-      filter: (i) =>
-        i.isButton() &&
-        (i.user.id === opponent.id || i.user.id === interaction.user.id) &&
-        i.message.interactionMetadata!.id.endsWith(interaction.id),
-
+    // Everyone's clicks reach `collect`, so bystanders get an answer instead
+    // of Discord's "This interaction failed"
+    const collector = sent.createMessageComponentCollector({
       componentType: ComponentType.Button,
       time: 60000,
     });
-
-    const choices: { [key: string]: string } = {};
-    let outcome: GameOutcome | undefined;
 
     /** The result as text, for when the card can't be shown */
     const resultText = (o: GameOutcome) =>
       `${interaction.user} chose ${o.moves[interaction.user.id]}, ${opponent} chose ${o.moves[opponent.id]}. ` +
       (o.isTie ? "It's a tie!" : `<@${o.winnerId}> wins!`);
 
-    collector?.on('collect', async (i) => {
+    collector.on('collect', async (i) => {
       // Acknowledging can fail (Discord's 3s window missed under load); that mustn't lose the game
       const ack = () => i.deferUpdate().catch(() => undefined);
+
+      if (!players.some((p) => p.id === i.user.id)) {
+        await i
+          .reply({
+            content: `This game is between ${interaction.user} and ${opponent}. Start your own with /rockpaperscissors.`,
+            ephemeral: true,
+          })
+          .catch(() => undefined);
+        return;
+      }
 
       // Decided before any await, so a re-click while the card renders can't play the game twice
       if (outcome) return void ack();
       choices[i.user.id] = i.customId;
       if (vsBot) choices[opponent.id] = astolfoMove(i.customId);
-      if (!choices[interaction.user.id] || !choices[opponent.id]) return void ack();
+      if (!choices[interaction.user.id] || !choices[opponent.id]) {
+        // Only the picker sees their move; picking again changes it
+        await i
+          .reply({
+            content: `You picked ${MOVE_EMOJI[i.customId]}. You can change it until both of you have picked.`,
+            ephemeral: true,
+          })
+          .catch(() => undefined);
+        // The other player may have finished the game while this reply was sent
+        if (!outcome) await InterActionUtils.editReply(interaction, { content: board() }).catch(() => undefined);
+        return;
+      }
       const played = (outcome = this.getGameOutcome(
         choices[interaction.user.id],
         choices[opponent.id],
@@ -178,10 +207,11 @@ export default class RockPaperScissors extends BaseSlash {
       }
     });
 
-    collector?.on('end', async (collected, reason) => {
+    collector.on('end', async (_collected, reason) => {
       if (reason === 'time') {
+        const missing = players.filter((p) => !choices[p.id]).join(' and ');
         await InterActionUtils.editReply(interaction, {
-          content: 'Game cancelled - time limit reached!',
+          content: `Game cancelled: ${missing} didn't pick in time.`,
           components: [],
         });
       }

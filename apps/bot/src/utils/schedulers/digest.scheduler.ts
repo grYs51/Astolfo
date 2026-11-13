@@ -77,7 +77,8 @@ export const buildLatestDigest = async (
     },
     THEMES[DEFAULT_THEME]
   );
-  const dashboardUrl = dashboardUrlFor(guildId);
+  // A server recap of the past week: open the Server tab on Week
+  const dashboardUrl = dashboardUrlFor(guildId, { period: 'week', tab: 'server' });
   return {
     files: [await cardFile(svg, 'digest.png')],
     components: dashboardUrl ? [dashboardButton(dashboardUrl, 'Open the dashboard')] : [],

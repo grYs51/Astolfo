@@ -10,7 +10,7 @@ You are a read-only navigator for the Astolfo Nx monorepo (Discord activity-trac
 You already know the layout — verify with targeted reads, don't rediscover it:
 
 - **Bot + Express API in one process**: `apps/bot`. Entry `apps/bot/src/index.ts` (startup chain: prisma → configs → registries → metrics → express → scheduler → discord login).
-- **Auto-registration**: `apps/bot/src/utils/registry.ts` scans `commands/`, `events/`, `slashs/`, `interactions/`; files default-export classes extending bases in `utils/structures/`.
+- **Auto-registration**: `apps/bot/src/utils/registry.ts` scans `commands/`, `events/`, `slashs/`; files default-export classes extending bases in `utils/structures/`.
 - **Voice tracking**: `events/voiceState/voice-state-update.ts` → `utils/handlers/vc/{voice-changes,voice-db,voice-utils}.ts`. Open sessions cached in `client.voiceUsers` (key `guildId:memberId`), one `voice_stats` row per state type (VOICE/MUTED/DEAF/VIDEO/STREAMING), written when the state ends. Durations in ms.
 - **Presence tracking**: `events/presence-update` → `utils/handlers/presence/*`; cache `client.userStatus`, persisted to `user_statuses` on status change (>15s).
 - **API routes**: `apps/bot/src/api/routes/`; feature endpoints registered in `routes/features/index.ts` with `isAuthenticated`; `req.db` injected by middleware in `api/utils/middleware/`. Voice-stats handlers: `routes/features/voice-stats/getVoiceStats*.ts`, mostly SQL aggregation via `$queryRaw`.

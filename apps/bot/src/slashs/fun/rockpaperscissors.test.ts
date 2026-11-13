@@ -16,20 +16,26 @@ const user = (id: string) => ({ id, bot: false, toString: () => `<@${id}>` });
 /** Starts a game of a vs b and returns a way to click its buttons */
 const startGame = async (opponent = user('b')) => {
   const handlers: Record<string, (...args: never[]) => Promise<unknown>> = {};
-  const collector = { on: (event: string, handler: never) => (handlers[event] = handler), stop: jest.fn() };
+  const collector = {
+    on: (event: string, handler: never) => (handlers[event] = handler),
+    stop: jest.fn(),
+    ended: false,
+  };
   const create = jest.fn(async () => ({}));
+  // The collector lives on the game message the command sends
+  (InterActionUtils.send as jest.Mock).mockResolvedValue({ createMessageComponentCollector: () => collector });
   const interaction = {
     id: 'int',
     guildId: 'g',
     guild: {},
     user: user('a'),
     options: { get: () => ({ user: opponent }) },
-    channel: { isSendable: () => true, createMessageComponentCollector: () => collector },
   };
   await (new RockPaperScissors() as unknown as { slash: (c: unknown, i: unknown) => Promise<void> }).slash(
     { user: { id: 'astolfo' }, dataSource: { gameResults: { create } } },
     interaction
   );
+  const replies: { id: string; content: string; ephemeral: boolean }[] = [];
   const click = (id: string, move: string, deferFails = false) =>
     handlers.collect({
       user: { id },
@@ -37,8 +43,10 @@ const startGame = async (opponent = user('b')) => {
       deferUpdate: jest.fn(async () => {
         if (deferFails) throw new Error('Unknown interaction');
       }),
+      reply: jest.fn(async (r: { content: string; ephemeral: boolean }) => replies.push({ id, ...r })),
     } as never);
-  return { click, create, collector };
+  const end = (reason: string) => handlers.end(new Map() as never, reason as never);
+  return { click, end, create, collector, replies };
 };
 
 beforeEach(() => {
@@ -55,9 +63,43 @@ describe('/rockpaperscissors', () => {
 
     expect(create).toHaveBeenCalledTimes(1);
     expect(collector.stop).toHaveBeenCalledWith('played');
-    const [, reply] = (InterActionUtils.editReply as jest.Mock).mock.calls[0];
+    const [, reply] = (InterActionUtils.editReply as jest.Mock).mock.lastCall;
     expect(reply.files).toHaveLength(1);
     expect(reply.content).toBe('<@a> vs <@b>');
+  });
+
+  test('a player sees their own pick, and the game message shows who has picked', async () => {
+    const { click, replies } = await startGame();
+    await click('a', 'rock');
+
+    expect(replies).toEqual([expect.objectContaining({ id: 'a', ephemeral: true, content: expect.stringContaining('🪨') })]);
+    const [, board] = (InterActionUtils.editReply as jest.Mock).mock.lastCall;
+    // Who has picked, never what
+    expect(board.content).toContain('✅ <@a>');
+    expect(board.content).toContain('⏳ <@b>');
+    expect(board.content).not.toContain('rock');
+  });
+
+  test('someone outside the game gets an answer and changes nothing', async () => {
+    const { click, create, replies } = await startGame();
+    await click('c', 'rock');
+    await click('a', 'rock');
+    await click('b', 'scissors');
+
+    expect(replies[0]).toMatchObject({ id: 'c', ephemeral: true, content: expect.stringContaining('between <@a> and <@b>') });
+    // c's click didn't count as a move for anyone
+    expect(create).toHaveBeenCalledTimes(1);
+  });
+
+  test('a timeout names who did not pick', async () => {
+    const { click, end } = await startGame();
+    await click('a', 'rock');
+    await end('time');
+
+    expect(InterActionUtils.editReply).toHaveBeenLastCalledWith(expect.anything(), {
+      content: "Game cancelled: <@b> didn't pick in time.",
+      components: [],
+    });
   });
 
   test('a click after the game is decided does not play it again', async () => {

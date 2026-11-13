@@ -8,6 +8,7 @@ import {
   PLATFORM_ID,
 } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
+import { UrlTree } from '@angular/router';
 import { DecimalPipe, isPlatformBrowser } from '@angular/common';
 import {
   ActivityCalendar,
@@ -126,7 +127,7 @@ export class MemberActivityComponent {
   xpLeaderboard = input<XpLeaderboard['leaderboard']>([]);
   messageRank = input<number | undefined>(undefined);
   /** Router commands for a member's profile (companions become links) */
-  memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
+  memberLink = input<((memberId: string) => unknown[] | UrlTree) | undefined>(undefined);
 
   private readonly durationPipe = new HumanizeDurationPipe();
 

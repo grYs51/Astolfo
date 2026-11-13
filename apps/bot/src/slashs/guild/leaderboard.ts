@@ -23,10 +23,20 @@ import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
 import { leaderboardCard } from '../../cards/leaderboard.card';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
-import { formatDuration } from '../../stats/messages';
+import { dashboardUrlFor, formatDuration } from '../../stats/messages';
+import { StatsPeriod } from '../../stats/windows';
 
 const PAGE_SIZE = 10;
-const COLLECTOR_TIMEOUT_MS = 60_000;
+/** Buttons stop working after this long without a click */
+const COLLECTOR_IDLE_MS = 60_000;
+
+/** Dashboard period closest to each leaderboard time range */
+const DASHBOARD_PERIOD: Record<LeaderboardTimeRanges, StatsPeriod> = {
+  today: 'week',
+  week: 'week',
+  month: 'month',
+  allTime: 'all',
+};
 
 export default class LeaderboardEvent extends BaseSlash {
   constructor() {
@@ -150,23 +160,38 @@ export default class LeaderboardEvent extends BaseSlash {
       const nextId = `leaderboard_next_${interaction.id}`;
       const closeId = `leaderboard_close_${interaction.id}`;
 
-      const makeRow = (page: number) =>
-        new ActionRowBuilder<ButtonBuilder>().addComponents(
+      const dashboardUrl = dashboardUrlFor(guild.id, {
+        period: DASHBOARD_PERIOD[timeRange],
+        tab: 'server',
+      });
+
+      // `ended`: the collector stopped, so every paging button is disabled
+      const makeRow = (page: number, ended = false) => {
+        const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
           new ButtonBuilder()
             .setCustomId(prevId)
             .setLabel('Previous')
             .setStyle(ButtonStyle.Primary)
-            .setDisabled(page <= 0),
+            .setDisabled(ended || page <= 0),
           new ButtonBuilder()
             .setCustomId(closeId)
             .setLabel('Close')
-            .setStyle(ButtonStyle.Secondary),
+            .setStyle(ButtonStyle.Secondary)
+            .setDisabled(ended),
           new ButtonBuilder()
             .setCustomId(nextId)
             .setLabel('Next')
             .setStyle(ButtonStyle.Primary)
-            .setDisabled(page >= totalPages - 1)
+            .setDisabled(ended || page >= totalPages - 1)
         );
+        // Link buttons fire no interaction, so it keeps working after the collector ends
+        if (dashboardUrl) {
+          row.addComponents(
+            new ButtonBuilder().setStyle(ButtonStyle.Link).setLabel('Dashboard').setURL(dashboardUrl)
+          );
+        }
+        return row;
+      };
 
       let currentPage = 0;
 
@@ -178,19 +203,19 @@ export default class LeaderboardEvent extends BaseSlash {
 
       if (!sent) return;
 
+      // Everyone's clicks reach `collect`, so other people get an answer
+      // instead of Discord's "This interaction failed"
       const collector = sent.createMessageComponentCollector({
-        filter: (i) =>
-          i.user.id === interaction.user.id &&
-          [prevId, nextId, closeId].includes(i.customId),
+        filter: (i) => [prevId, nextId, closeId].includes(i.customId),
         componentType: ComponentType.Button,
-        time: COLLECTOR_TIMEOUT_MS,
+        idle: COLLECTOR_IDLE_MS,
       });
 
       collector.on('collect', async (btn) => {
         try {
           if (btn.user.id !== interaction.user.id) {
             await btn.reply({
-              content: 'Only the command user can use these buttons.',
+              content: `Only ${interaction.user} can turn these pages. Run /leaderboard for your own.`,
               ephemeral: true,
             });
             return;
@@ -223,31 +248,11 @@ export default class LeaderboardEvent extends BaseSlash {
         }
       });
 
-      collector.on('end', async (_collected, _reason) => {
-        void _reason;
+      collector.on('end', async () => {
         try {
-          const disabledRow =
-            new ActionRowBuilder<ButtonBuilder>().addComponents(
-              new ButtonBuilder()
-                .setCustomId(prevId)
-                .setLabel('Previous')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true),
-              new ButtonBuilder()
-                .setCustomId(closeId)
-                .setLabel('Close')
-                .setStyle(ButtonStyle.Secondary)
-                .setDisabled(true),
-              new ButtonBuilder()
-                .setCustomId(nextId)
-                .setLabel('Next')
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(true)
-            );
-
-          await sent.edit({ components: [disabledRow] });
-        } catch (e) {
-          void e;
+          await sent.edit({ components: [makeRow(currentPage, true)] });
+        } catch {
+          // The message may be gone; nothing to disable
         }
       });
     } catch (error) {

@@ -24,7 +24,11 @@
   <div class="min-w-0 flex-1">
     <h2 class="truncate text-sm font-semibold text-gray-100">{{ name }}</h2>
     <p class="text-xs text-gray-500">
-      {{ server.totalDuration * 1000 | humanizeDuration: true }} in voice
+      @if (server.totalDuration > 0) {
+        {{ server.totalDuration * 1000 | humanizeDuration: true }} in voice
+      } @else {
+        Messages only, no voice time yet
+      }
     </p>
   </div>
   <span aria-hidden="true" class="text-gray-600 transition-colors group-hover:text-primary-400">›</span>
