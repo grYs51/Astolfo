@@ -33,6 +33,12 @@ export const appRoutes: Route[] = [
     ],
   },
   {
+    // Opened from the Play button of /geoguess mode:map in Discord
+    path: 'play/geoguess',
+    canActivate: [AuthGuard()],
+    loadChildren: () => import('@nx-stolfo/pages').then((m) => m.geoguessRoutes),
+  },
+  {
     path: 'login',
     loadChildren: () => import('@nx-stolfo/pages').then((m) => m.loginRoutes),
   },

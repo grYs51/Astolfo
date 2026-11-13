@@ -270,6 +270,24 @@ const main = async () => {
         },
         THEMES[theme]
       ),
+    'geoguess-map-question': (theme) =>
+      triviaQuestionCard(
+        { category: 'GeoGuess', difficulty: 'medium', factor: 1.5, question: 'Where is this?', answers: [], seconds: 90, geo: { image: photo } },
+        THEMES[theme]
+      ),
+    'geoguess-map-result': (theme) =>
+      triviaResultCard(
+        {
+          question: 'Where is this?',
+          answers: [],
+          correct: 'Belgium',
+          picks: [],
+          winners: [0, 1].map((i) => ({ name: NAMES[i], avatar: avatar(i), xp: [30, 20][i], km: [38, 412][i] })),
+          geo: { image: photo, credit: 'roadtripper_42', near: [] },
+          map: { radiusKm: 1000, answered: 3 },
+        },
+        THEMES[theme]
+      ),
     'geoguess-scores': (theme) =>
       triviaScoreboardCard(
         {

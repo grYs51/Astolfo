@@ -65,7 +65,9 @@ export const isEmptyDigest = (d: ServerDigest) => d.voiceMs === 0 && d.messages 
  * Dashboard link for a server; undefined when CLIENT_URL isn't an absolute
  * http(s) URL (Discord rejects relative links, which would fail the reply)
  */
-export const dashboardUrlFor = (guildId: string) => {
+export const dashboardUrl = (path: string) => {
   const base = (process.env.CLIENT_URL ?? '').replace(/\/+$/, '');
-  return /^https?:\/\//.test(base) ? `${base}/overview/detail/${guildId}` : undefined;
+  return /^https?:\/\//.test(base) ? `${base}${path}` : undefined;
 };
+
+export const dashboardUrlFor = (guildId: string) => dashboardUrl(`/overview/detail/${guildId}`);

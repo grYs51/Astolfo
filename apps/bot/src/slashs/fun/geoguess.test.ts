@@ -4,6 +4,7 @@ import { awardAndAnnounce } from '../../xp/level-up';
 import { nextGeoQuestion } from '../../geo/mapillary';
 import { nextQuestion } from '../../trivia/opentdb';
 import { cardFile } from '../../cards/render';
+import { getMapGame, guess } from '../../geo/map-games';
 
 // Every message the command sends or edits, in order
 let sent: Record<string, unknown>[] = [];
@@ -32,7 +33,7 @@ const question = {
   geo: { image: 'data:image/jpeg;base64,AAAA', credit: 'walker', imageId: '42', country: 'BE', lat: 50.85, lon: 4.35, near: ['France', 'Netherlands'] },
 };
 
-const start = (Command: new () => Trivia, channelId: string, options: { difficulty?: string; rounds?: number } = {}) => {
+const start = (Command: new () => Trivia, channelId: string, options: { difficulty?: string; rounds?: number; mode?: string } = {}) => {
   const handlers: Record<string, (...args: never[]) => unknown> = {};
   const createCollector = jest.fn(() => ({ on: (event: string, handler: never) => (handlers[event] = handler) }));
   const create = jest.fn(async () => ({ id: 'res' }));
@@ -47,7 +48,7 @@ const start = (Command: new () => Trivia, channelId: string, options: { difficul
     replied: false,
     options: {
       getInteger: (name: string) => (name === 'rounds' ? options.rounds : undefined) ?? null,
-      getString: () => options.difficulty ?? null,
+      getString: (name: string) => (name === 'mode' ? options.mode : options.difficulty) ?? null,
     },
     followUp: jest.fn(async (o: Record<string, unknown>) => {
       sent.push(o);
@@ -156,5 +157,80 @@ describe('/geoguess', () => {
     next.end();
     await next.done;
     expect(nextGeoQuestion).toHaveBeenCalledTimes(2);
+  });
+
+  describe('mode:map', () => {
+    const BRUSSELS = [50.85, 4.35];
+    const PARIS = [48.85, 2.35];
+    const TOKYO = [35.68, 139.65];
+    const playUrl = () => {
+      const row = (sent[0] as { components: { components: { data: { url: string } }[] }[] }).components[0];
+      return row.components[0].data.url;
+    };
+
+    beforeEach(() => {
+      process.env.CLIENT_URL = 'https://astolfo.example';
+      jest.useFakeTimers();
+    });
+    afterEach(() => {
+      process.env.CLIENT_URL = '';
+      jest.useRealTimers();
+    });
+
+    test('pins within the radius are the places, closest first; the rest are saved as losses', async () => {
+      const run = start(GeoGuess, 'map', { mode: 'map', difficulty: 'hard' });
+      await jest.advanceTimersByTimeAsync(0);
+      expect(sent[0]).toMatchObject({ content: '🗺️ GeoGuess on the map! Hard: within 500 km counts, ×2 XP, 90 seconds.', files: [{ name: 'trivia.png' }] });
+      const url = playUrl();
+      expect(url).toMatch(/^https:\/\/astolfo\.example\/play\/geoguess\/g\/[0-9a-f-]{36}$/);
+      const game = getMapGame('g', url.split('/').at(-1) as string);
+      if (!game) throw new Error('no game');
+      expect(guess(game, 'b', PARIS[0], PARIS[1])).toBe('ok');
+      expect(guess(game, 'a', BRUSSELS[0] + 0.1, BRUSSELS[1])).toBe('ok');
+      expect(guess(game, 'c', TOKYO[0], TOKYO[1])).toBe('ok');
+      await jest.advanceTimersByTimeAsync(90_000);
+      await run.done;
+
+      const { data } = (run.create.mock.calls[0] as unknown as [{ data: { metadata: Record<string, unknown>; players: { create: unknown[] } } }])[0];
+      expect(data.metadata).toMatchObject({ category: 'GeoGuess', difficulty: 'hard', correctOrder: ['a', 'b'], mode: 'map', radiusKm: 500, imageId: '42', km: { a: 11, b: 265, c: expect.any(Number) } });
+      expect(data.players.create).toEqual([
+        { user_id: 'a', result: 1, move: '50.9500,4.3500' },
+        { user_id: 'b', result: 1, move: '48.8500,2.3500' },
+        { user_id: 'c', result: 0, move: '35.6800,139.6500' },
+      ]);
+      expect((awardAndAnnounce as jest.Mock).mock.calls.map((c) => c[2])).toEqual(['a', 'b']);
+      const result = lastReply();
+      const lines = (result.content as string).split('\n');
+      expect(lines[0]).toMatch(/^It was \*\*Belgium\*\*\. \[Map\]/);
+      expect(lines[1]).toBe('1st <@a> 11 km +30 XP · 2nd <@b> 265 km +4 XP');
+      expect(lines[2]).toMatch(/^Further than 500 km: <@c> \d+ km$/);
+      expect(result.files).toEqual([{ name: 'trivia-result.png' }]);
+      // The page keeps showing the result until the game is forgotten
+      expect(game.phase).toBe('over');
+      expect(game.current?.ranked?.map((g) => g.userId)).toEqual(['a', 'b', 'c']);
+    });
+
+    test('a photo without a location is skipped for one that has one', async () => {
+      (nextGeoQuestion as jest.Mock).mockResolvedValueOnce({ ok: true, question: { ...question, geo: { ...question.geo, lat: undefined, lon: undefined } } });
+      const run = start(GeoGuess, 'spot', { mode: 'map' });
+      await jest.advanceTimersByTimeAsync(90_000);
+      await run.done;
+      expect(nextGeoQuestion).toHaveBeenCalledTimes(2);
+      expect(lastReply().content).toContain('Nobody guessed!');
+      expect(run.create).not.toHaveBeenCalled();
+    });
+
+    test('without a dashboard URL it says so, saves nothing and frees the channel', async () => {
+      process.env.CLIENT_URL = '';
+      const run = start(GeoGuess, 'nodash', { mode: 'map' });
+      await run.done;
+      expect(lastReply().content).toContain("doesn't have one set up");
+      expect(nextGeoQuestion).not.toHaveBeenCalled();
+      const after = start(GeoGuess, 'nodash');
+      await jest.advanceTimersByTimeAsync(0);
+      after.end();
+      await after.done;
+      expect(nextGeoQuestion).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -23,11 +23,15 @@
             "input": "apps/web/public"
           }
         ],
-        "styles": ["apps/web/src/styles.scss"],
+        "styles": [
+          "apps/web/src/styles.scss",
+          { "input": "apps/web/src/geoguess.css", "bundleName": "geoguess", "inject": false }
+        ],
         "stylePreprocessorOptions": {
           "includePaths": ["libs/styles/src"]
         },
         "scripts": [],
+        "allowedCommonJsDependencies": ["leaflet"],
         "server": "apps/web/src/main.server.ts",
         "ssr": {
           "entry": "apps/web/src/server.ts"

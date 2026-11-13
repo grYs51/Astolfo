@@ -1,0 +1,25 @@
+{
+  "name": "ui-geoguess",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "features/geoguess/ui/src",
+  "prefix": "feature-geoguess",
+  "projectType": "library",
+  "tags": [
+    "type:ui"
+  ],
+  "targets": {
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "jestConfig": "features/geoguess/ui/jest.config.ts",
+        "tsConfig": "features/geoguess/ui/tsconfig.spec.json"
+      }
+    }
+  }
+}
