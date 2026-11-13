@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, DOCUMENT, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, DOCUMENT, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { GeoguessApi } from '@nx-stolfo/data-access-geoguess';
+import { GeoguessApi, GeoguessGameResponse } from '@nx-stolfo/data-access-geoguess';
 import { countdown, GeoguessMapComponent, GeoguessViewerComponent, LatLon, memberName, ordinal } from '@nx-stolfo/ui-geoguess';
 
 /** The page reloads the game this often while it runs */
@@ -122,9 +122,12 @@ export class GeoguessComponent {
 
   private api = inject(GeoguessApi);
   gameResource = this.api.fetchGame(() => this.serverId(), () => this.gameId());
-  /** The last game seen: a failed reload mid-game keeps the page up instead of flashing an error */
-  game = computed(() => (this.gameResource.hasValue() ? this.gameResource.value() : undefined));
   missing = computed(() => (this.gameResource.error() as HttpErrorResponse | undefined)?.status === 404);
+  /** The last game seen: a failed reload mid-game keeps the viewer, map and pin instead of tearing them down */
+  game = linkedSignal<GeoguessGameResponse | undefined, GeoguessGameResponse | undefined>({
+    source: () => (this.gameResource.hasValue() ? this.gameResource.value() : undefined),
+    computation: (next, previous) => next ?? (this.missing() ? undefined : previous?.value),
+  });
 
   /** A pin placed but not sent yet */
   pending = signal<LatLon | null>(null);

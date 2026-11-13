@@ -126,9 +126,11 @@ export default class GeoGuess extends Trivia {
     const secs = MAP_ANSWER_MS / 1000;
     const intro = `🗺️ GeoGuess on the map! ${roundLabel}${capitalise(q.difficulty)}: within ${radiusKm} km counts, ×${factor} XP, ${secs} seconds.`;
     const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: secs }, THEMES[DEFAULT_THEME]), 'trivia.png');
+    // Without the card the text carries the photo's licence line, also after the "N guessed" edits
+    const asked = (count: string) => `${intro}${count}${questionCard ? '' : attributionLine(q, false)}`;
     const button = playButton(url);
     const message = await say(interaction, {
-      content: questionCard ? intro : `${intro}${attributionLine(q, false)}`,
+      content: asked(''),
       allowedMentions: { parse: [] },
       files: [questionCard ?? photoFile(geo)],
       components: [button],
@@ -143,7 +145,7 @@ export default class GeoGuess extends Trivia {
       const n = game.current?.guesses.size ?? 0;
       if (n === counted) return;
       counted = n;
-      void edit({ content: `${intro} ${n} guessed so far.` }).catch(() => undefined);
+      void edit({ content: asked(` ${n} guessed so far.`) }).catch(() => undefined);
     }, COUNT_EVERY_MS);
     await closed;
     clearInterval(counter);
