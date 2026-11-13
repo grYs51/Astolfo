@@ -54,7 +54,7 @@ export const XP_RULE_GROUPS: { title: string; hint: string; fields: XpRuleField[
   },
   {
     title: 'Trivia',
-    hint: 'The quickest right answers earn the most, times the difficulty multiplier. A GeoGuess near miss is a neighbouring country. XP stops at the daily cap.',
+    hint: 'The quickest right answers earn the most, times the difficulty multiplier. A GeoGuess near miss is a neighbouring country and earns a flat amount. XP stops at the daily cap.',
     fields: [
       f('amounts.trivia.0', 'Trivia 1st'),
       f('amounts.trivia.1', 'Trivia 2nd'),

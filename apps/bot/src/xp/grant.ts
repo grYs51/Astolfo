@@ -492,7 +492,8 @@ const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptio
 
 /**
  * Correct trivia answers: the first four by place, then a flat amount, times the question's difficulty.
- * A GeoGuess near miss (saved as a tie) earns its own flat amount, times the difficulty.
+ * A GeoGuess near miss (saved as a tie) earns its own flat amount, not times the difficulty: hard puts two
+ * neighbours among the answers, so with the factor a random click there would pay off three times in four.
  * A member's trivia XP stops at the daily cap (UTC day): the grant that crosses it is cut to what's left.
  */
 const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions) => {
@@ -520,8 +521,9 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       ),
       scored AS (
         SELECT *,
-          ROUND(CASE WHEN result = ${SCORING.TIE} THEN ${triviaNear} WHEN place <= 4 THEN (${places}::int[])[place]
-            ELSE ${triviaCorrect} END * factor)::int AS full_amount
+          CASE WHEN result = ${SCORING.TIE} THEN ${triviaNear}::int
+            ELSE ROUND(CASE WHEN place <= 4 THEN (${places}::int[])[place] ELSE ${triviaCorrect} END * factor)::int
+          END AS full_amount
         FROM answers
         WHERE place IS NOT NULL OR result = ${SCORING.TIE}
       ),
@@ -536,8 +538,8 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       SELECT gen_random_uuid()::text, ${guildId}, user_id, 'TRIVIA', amount,
         label || ': ' || CASE WHEN result = ${SCORING.TIE} THEN 'near miss' ELSE place
           || CASE WHEN place % 100 IN (11, 12, 13) THEN 'th' WHEN place % 10 = 1 THEN 'st'
-          WHEN place % 10 = 2 THEN 'nd' WHEN place % 10 = 3 THEN 'rd' ELSE 'th' END END
-          || ' (' || difficulty || ' ×' || trim_scale(factor) || ')'
+          WHEN place % 10 = 2 THEN 'nd' WHEN place % 10 = 3 THEN 'rd' ELSE 'th' END
+          || ' (' || difficulty || ' ×' || trim_scale(factor) || ')' END
           || CASE WHEN amount < full_amount THEN ', daily cap reached' ELSE '' END,
         'trivia:' || game_id || ':' || user_id, created_at
       FROM capped

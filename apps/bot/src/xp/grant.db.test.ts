@@ -171,11 +171,11 @@ describeDb('grantXp on seeded rows', () => {
     ]);
   });
 
-  test('GeoGuess: places like trivia, a near miss earns its own amount times the difficulty, a wrong answer nothing', async () => {
+  test('GeoGuess: places like trivia, a near miss earns its own flat amount, a wrong answer nothing', async () => {
     const geo = (await rows('TRIVIA')).filter((r) => r.member_id.startsWith('xp-g'));
     expect(geo.map((r) => [r.member_id, r.amount, r.note, r.key.endsWith(`:${r.member_id}`)])).toEqual([
       ['xp-g1', 23, 'GeoGuess: 1st (medium ×1.5)', true],
-      ['xp-g2', 3, 'GeoGuess: near miss (medium ×1.5)', true],
+      ['xp-g2', 2, 'GeoGuess: near miss', true],
     ]);
   });
 
@@ -183,13 +183,13 @@ describeDb('grantXp on seeded rows', () => {
     const nearRows = async () => (await rows('TRIVIA')).filter((r) => r.member_id === 'xp-near').map((r) => [r.amount, r.note]);
     expect(await nearRows()).toEqual([
       [30, 'Trivia: 1st (hard ×2)'],
-      [4, 'GeoGuess: near miss (hard ×2)'],
+      [2, 'GeoGuess: near miss'],
     ]);
     await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-near' } });
-    await grant({ memberId: 'xp-near', rules: { ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, triviaDailyCap: 32 } } });
+    await grant({ memberId: 'xp-near', rules: { ...DEFAULT_RULES, thresholds: { ...DEFAULT_RULES.thresholds, triviaDailyCap: 31 } } });
     expect(await nearRows()).toEqual([
       [30, 'Trivia: 1st (hard ×2)'],
-      [2, 'GeoGuess: near miss (hard ×2), daily cap reached'],
+      [1, 'GeoGuess: near miss, daily cap reached'],
     ]);
     await db.xp_events.deleteMany({ where: { guild_id: G, member_id: 'xp-near' } });
     await grant({ memberId: 'xp-near' });
