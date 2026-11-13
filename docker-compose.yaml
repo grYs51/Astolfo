@@ -52,6 +52,7 @@ services:
       - CLIENT_URL=${CLIENT_URL}
       - METRICS_TOKEN=${METRICS_TOKEN}
       - MAPILLARY_TOKEN=${MAPILLARY_TOKEN}
+      - TRUST_PROXY=${TRUST_PROXY}
     depends_on:
       postgres:
         condition: service_healthy

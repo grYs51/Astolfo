@@ -66,6 +66,7 @@ jobs:
           PORT_WEB: ${{ secrets.PORT_WEB }}
           METRICS_TOKEN: ${{ secrets.METRICS_TOKEN }}
           MAPILLARY_TOKEN: ${{ secrets.MAPILLARY_TOKEN }}
+          TRUST_PROXY: ${{ secrets.TRUST_PROXY }}
           GRAFANA_ADMIN_PASSWORD: ${{ secrets.GRAFANA_ADMIN_PASSWORD }}
       - name: clean up docker images
         run: docker image prune -f

@@ -75,7 +75,7 @@ yarn nx run models:prisma-generate   # regenerate client
 yarn nx affected -t lint test build  # verify changes
 ```
 
-Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `CLIENT_URL`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`. Optional: `METRICS_TOKEN`, `CORS_ORIGINS`, `MOCK_DISCORD` (with it, only `DATABASE_URL`, `COOKIE_SECRET` and `CLIENT_URL` are required). The web app's production API URL is a literal in `apps/web/src/environments/environment.ts` (the browser bundle can't read env vars).
+Required env (`.env`, see `.env.example`): `DISCORD_BOT_TOKEN`, `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, `REDIRECT_URI`, `CLIENT_URL`, `COOKIE_SECRET`, `OWNER`, `DATABASE_URL`, `DEFAULT_PREFIX`. Optional: `METRICS_TOKEN`, `CORS_ORIGINS`, `TRUST_PROXY` (production: the reverse proxy IP, or a hop count; default 1), `MOCK_DISCORD` (with it, only `DATABASE_URL`, `COOKIE_SECRET` and `CLIENT_URL` are required). The web app's production API URL is a literal in `apps/web/src/environments/environment.ts` (the browser bundle can't read env vars).
 
 ## Conventions & gotchas
 
