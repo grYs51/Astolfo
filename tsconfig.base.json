@@ -45,7 +45,11 @@
       "@nx-stolfo/data-access-guild-settings": [
         "features/guild-settings/data-access/src/index.ts"
       ],
-      "@nx-stolfo/ui-guild-settings": ["features/guild-settings/ui/src/index.ts"]
+      "@nx-stolfo/ui-guild-settings": ["features/guild-settings/ui/src/index.ts"],
+      "@nx-stolfo/data-access-geoguess": [
+        "features/geoguess/data-access/src/index.ts"
+      ],
+      "@nx-stolfo/ui-geoguess": ["features/geoguess/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp", "dist", "coverage"]
