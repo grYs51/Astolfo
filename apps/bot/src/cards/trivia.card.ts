@@ -2,6 +2,7 @@ import { avatarSvg } from './avatars';
 import { escapeXml, truncate } from './render';
 import { header, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
 import type { TriviaStats } from '../trivia/stats';
+import type { GeoInfo } from '../trivia/opentdb';
 import { CardTheme } from './themes';
 
 export interface TriviaQuestionCardData {
@@ -13,6 +14,8 @@ export interface TriviaQuestionCardData {
   question: string;
   answers: string[];
   seconds: number;
+  /** GeoGuess: the photo is the question. No credit: a Mapillary username can name the place */
+  geo?: Pick<GeoInfo, 'image'>;
 }
 
 export interface TriviaPlayer {
@@ -32,9 +35,13 @@ export interface TriviaResultCardData {
   picks: number[];
   /** The members who were right, quickest first */
   winners: TriviaPlayer[];
+  /** GeoGuess: the photo, and the answers that were a near miss */
+  geo?: Pick<GeoInfo, 'image' | 'credit' | 'near'>;
 }
 
 export interface TriviaScoreboardCardData {
+  /** The game's name; Trivia when unset */
+  title?: string;
   /** How many rounds were played */
   rounds: number;
   /** Ranked already: XP, then correct answers, then time */
@@ -43,6 +50,16 @@ export interface TriviaScoreboardCardData {
 
 export const LETTERS = ['A', 'B', 'C', 'D'];
 const ATTRIBUTION = 'Question from Open Trivia DB (opentdb.com) · CC BY-SA 4.0';
+const PHOTO_W = W - 2 * PAD;
+
+/** The licence line: Open Trivia DB, or the GeoGuess photo and, once the round is over, who took it */
+const attribution = (geo?: Pick<GeoInfo, 'credit'>) =>
+  geo ? `Photo ${geo.credit ? `by @${truncate(geo.credit, 40)} ` : ''}on Mapillary · CC BY-SA 4.0` : ATTRIBUTION;
+
+/** A GeoGuess photo across the card, cropped to fill `h` with rounded corners (the data URI comes from fetchImage) */
+const photo = (image: string, y: number, h: number) =>
+  `<clipPath id="photo"><rect x="${PAD}" y="${y}" width="${PHOTO_W}" height="${h}" rx="16"/></clipPath>` +
+  `<image href="${image}" x="${PAD}" y="${y}" width="${PHOTO_W}" height="${h}" clip-path="url(#photo)" preserveAspectRatio="xMidYMid slice"/>`;
 const SHOWN_WINNERS = 5;
 const ANSWER_H = 64;
 const GAP = 16;
@@ -103,16 +120,18 @@ const gridHeight = (answers: string[]) => Math.ceil(answers.length / 2) * (ANSWE
 /** The question as it's asked: category and difficulty, the question, the answers */
 export const triviaQuestionCard = (d: TriviaQuestionCardData, t: CardTheme) => {
   const badge = `${capitalise(d.difficulty)} · ×${d.factor} XP`;
-  const q = questionText(d.question, 72, 28, t);
+  const photoH = d.geo ? 440 : 0;
+  const q = questionText(d.question, 72 + (photoH && photoH + 12), 28, t);
   const gridY = q.end + 36;
   const footerY = gridY + gridHeight(d.answers) + 40;
   return svgCard(footerY + 52, t, [
     text(PAD, 52, 16, t.muted, escapeXml(truncate(d.category, 48))),
     text(W - PAD, 52, 16, t.accent, escapeXml(badge), 'text-anchor="end" font-weight="700"'),
+    d.geo ? photo(d.geo.image, 72, photoH) : '',
     q.svg,
     answerGrid(d.answers, gridY, t),
     text(PAD, footerY, 16, t.text, escapeXml(`Everyone can answer: the quicker you're right, the more XP. ${d.seconds} seconds!`)),
-    text(PAD, footerY + 26, 12, t.muted, escapeXml(ATTRIBUTION)),
+    text(PAD, footerY + 26, 12, t.muted, escapeXml(attribution(d.geo && {}))),
   ]);
 };
 
@@ -129,31 +148,36 @@ const playerRow = (p: TriviaPlayer, i: number, y: number, t: CardTheme, note: st
 /** The answer and who got it: the right answer filled, picks per answer, the quickest right members with their XP */
 export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
   const answered = d.picks.reduce((a, b) => a + b, 0);
-  const q = questionText(d.question, 28, 20, t);
+  const photoH = d.geo ? 240 : 0;
+  const isNear = (i: number) => !!d.geo?.near.includes(d.answers[i]);
+  const nearCount = d.picks.reduce((sum, n, i) => sum + (isNear(i) ? n : 0), 0);
+  const q = questionText(d.geo ? `It was ${d.correct}` : d.question, 28 + (photoH && photoH + 12), 20, t);
   const gridY = q.end + 28;
   const listY = gridY + gridHeight(d.answers) + 40;
   const shown = d.winners.slice(0, SHOWN_WINNERS);
   const rows = shown.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, p.ms !== undefined ? seconds(p.ms) : ''));
   const more = d.winners.length - shown.length;
-  const wrong = answered - d.winners.length;
+  const wrong = answered - d.winners.length - nearCount;
+  const nearNote = nearCount ? `${nearCount} near miss${nearCount === 1 ? '' : 'es'}` : '';
   const summary = !answered
     ? 'Nobody answered!'
     : !d.winners.length
-      ? `Nobody got it right (${answered} tried).`
-      : [more ? `+${more} more got it right` : '', wrong ? `${wrong} got it wrong` : ''].filter(Boolean).join(' · ');
+      ? `Nobody got it right (${answered} tried).${nearNote ? ` ${nearNote}.` : ''}`
+      : [more ? `+${more} more got it right` : '', nearNote, wrong ? `${wrong} got it wrong` : ''].filter(Boolean).join(' · ');
   const summaryY = listY + shown.length * ROW_H + (shown.length ? 24 : 8);
   return svgCard(summaryY + 56, t, [
+    d.geo ? photo(d.geo.image, 28, photoH) : '',
     q.svg,
     answerGrid(
       d.answers,
       gridY,
       t,
       (i) => d.answers[i] === d.correct,
-      (i) => (d.picks[i] ? `${d.picks[i]}` : '')
+      (i) => [isNear(i) ? 'near' : '', d.picks[i] ? `${d.picks[i]}` : ''].filter(Boolean).join(' · ')
     ),
     ...rows,
     summary ? text(PAD, summaryY, 16, t.muted, escapeXml(summary)) : '',
-    text(PAD, summaryY + 28, 12, t.muted, escapeXml(ATTRIBUTION)),
+    text(PAD, summaryY + 28, 12, t.muted, escapeXml(attribution(d.geo))),
   ]);
 };
 
@@ -161,7 +185,7 @@ export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
 export const triviaScoreboardCard = (d: TriviaScoreboardCardData, t: CardTheme) => {
   const listY = 84;
   return svgCard(listY + d.players.length * ROW_H + 32, t, [
-    text(PAD, 52, 24, t.text, escapeXml(`Trivia · final scores after ${d.rounds} round${d.rounds === 1 ? '' : 's'}`), 'font-weight="700"'),
+    text(PAD, 52, 24, t.text, escapeXml(`${d.title ?? 'Trivia'} · final scores after ${d.rounds} round${d.rounds === 1 ? '' : 's'}`), 'font-weight="700"'),
     ...d.players.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, `${p.correct}/${d.rounds} right`)),
   ]);
 };
@@ -193,6 +217,6 @@ export const triviaStatsCard = (d: TriviaStatsCardData, t: CardTheme) => {
     header({ name: d.name, avatar: d.avatar, title: d.name, subtitle: `Trivia in ${d.serverName}` }, t),
     ...parts,
     text(PAD, bestY, 18, t.text, escapeXml(truncate(best, 70))),
-    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · CC BY-SA 4.0')),
+    text(PAD, bestY + 30, 12, t.muted, escapeXml('Questions from Open Trivia DB (opentdb.com) · photos from Mapillary · CC BY-SA 4.0')),
   ]);
 };

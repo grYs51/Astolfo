@@ -9,10 +9,14 @@ const FETCH_TIMEOUT_MS = 3_000;
  * fetch URLs). Undefined when there's no URL or the fetch fails, so the card
  * falls back to an initial instead of failing the reply.
  */
-export const fetchImage = async (url: string | null | undefined): Promise<string | undefined> => {
+export const fetchImage = async (
+  url: string | null | undefined,
+  timeoutMs = FETCH_TIMEOUT_MS,
+  fetchFn: typeof fetch = fetch
+): Promise<string | undefined> => {
   if (!url) return undefined;
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+    const res = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const type = res.headers.get('content-type') ?? 'image/png';
     return `data:${type};base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`;

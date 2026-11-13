@@ -3,6 +3,7 @@ import type { XpRules, XpSegment, XpSource } from '@nx-stolfo/api-interfaces';
 import type { Db } from '../db';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
+import { GEO_CATEGORY } from '../geo/types';
 import { Interval, OtherPiece, Session, starterSessions, stayStarts, togetherMs, voiceXp } from './voice-xp';
 
 /**
@@ -491,10 +492,12 @@ const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptio
 
 /**
  * Correct trivia answers: the first four by place, then a flat amount, times the question's difficulty.
+ * A GeoGuess near miss (saved as a tie) earns its own flat amount, not times the difficulty: hard puts two
+ * neighbours among the answers, so with the factor a random click there would pay off three times in four.
  * A member's trivia XP stops at the daily cap (UTC day): the grant that crosses it is cut to what's left.
  */
 const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions) => {
-  const { trivia: places, triviaCorrect } = rules.amounts;
+  const { trivia: places, triviaCorrect, triviaNear } = rules.amounts;
   const { easy, medium, hard } = rules.trivia;
   // The cap only needs the answers of the same UTC day as `since`; without `since` (a backfill) read them all
   const dayStart = since && new Date(Math.floor(since.getTime() / DAY) * DAY);
@@ -502,7 +505,8 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
     db,
     Prisma.sql`
       WITH answers AS (
-        SELECT gp.user_id, gr.id AS game_id, gr.created_at,
+        SELECT gp.user_id, gr.id AS game_id, gr.created_at, gp.result,
+          CASE WHEN gr.metadata->>'category' = ${GEO_CATEGORY} THEN 'GeoGuess' ELSE 'Trivia' END AS label,
           (SELECT o.n FROM jsonb_array_elements_text(gr.metadata->'correctOrder') WITH ORDINALITY AS o(id, n)
            WHERE o.id = gp.user_id)::int AS place,
           CASE gr.metadata->>'difficulty' WHEN 'hard' THEN ${hard}::numeric WHEN 'medium' THEN ${medium}::numeric
@@ -510,15 +514,18 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
           COALESCE(gr.metadata->>'difficulty', 'easy') AS difficulty
         FROM game_player gp
         JOIN game_result gr ON gr.id = gp.game_result_id
-        WHERE gr.guild_id = ${guildId} AND gr.game_type_id = ${GAME_TYPES.TRIVIA} AND gp.result = ${SCORING.WIN}
+        WHERE gr.guild_id = ${guildId} AND gr.game_type_id = ${GAME_TYPES.TRIVIA}
+          AND gp.result IN (${SCORING.WIN}, ${SCORING.TIE})
           ${memberFilter('gp.user_id', memberId)}
           ${sinceFilter('gr.created_at', dayStart)}
       ),
       scored AS (
         SELECT *,
-          ROUND(CASE WHEN place <= 4 THEN (${places}::int[])[place] ELSE ${triviaCorrect} END * factor)::int AS full_amount
+          CASE WHEN result = ${SCORING.TIE} THEN ${triviaNear}::int
+            ELSE ROUND(CASE WHEN place <= 4 THEN (${places}::int[])[place] ELSE ${triviaCorrect} END * factor)::int
+          END AS full_amount
         FROM answers
-        WHERE place IS NOT NULL
+        WHERE place IS NOT NULL OR result = ${SCORING.TIE}
       ),
       capped AS (
         SELECT *,
@@ -529,9 +536,10 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       )
       INSERT INTO xp_events (id, guild_id, member_id, source, amount, note, key, created_at)
       SELECT gen_random_uuid()::text, ${guildId}, user_id, 'TRIVIA', amount,
-        'Trivia: ' || place || CASE WHEN place % 100 IN (11, 12, 13) THEN 'th' WHEN place % 10 = 1 THEN 'st'
+        label || ': ' || CASE WHEN result = ${SCORING.TIE} THEN 'near miss' ELSE place
+          || CASE WHEN place % 100 IN (11, 12, 13) THEN 'th' WHEN place % 10 = 1 THEN 'st'
           WHEN place % 10 = 2 THEN 'nd' WHEN place % 10 = 3 THEN 'rd' ELSE 'th' END
-          || ' (' || difficulty || ' ×' || trim_scale(factor) || ')'
+          || ' (' || difficulty || ' ×' || trim_scale(factor) || ')' END
           || CASE WHEN amount < full_amount THEN ', daily cap reached' ELSE '' END,
         'trivia:' || game_id || ':' || user_id, created_at
       FROM capped
@@ -625,7 +633,7 @@ export const grantXp = async (db: GrantDb, opts: GrantOptions): Promise<Granted>
   if (wants('MESSAGE') && amounts.message > 0) results.push(await grantMessages(db, opts));
   if (wants('STREAK') && amounts.streakDay > 0) results.push(await grantStreaks(db, opts, botIds));
   if (wants('GAME') && amounts.gameWin > 0) results.push(await grantGames(db, opts));
-  if (wants('TRIVIA') && (amounts.trivia.some((a) => a > 0) || amounts.triviaCorrect > 0)) {
+  if (wants('TRIVIA') && (amounts.trivia.some((a) => a > 0) || amounts.triviaCorrect > 0 || amounts.triviaNear > 0)) {
     results.push(await grantTrivia(db, opts));
   }
   if (wants('MILESTONE') && amounts.milestone > 0 && thresholds.milestoneHours.length) {

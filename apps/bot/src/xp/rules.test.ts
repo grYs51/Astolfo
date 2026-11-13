@@ -84,6 +84,7 @@ describe('trivia rules', () => {
     const { trivia: _multipliers, ...older } = JSON.parse(JSON.stringify(DEFAULT_RULES));
     delete older.amounts.trivia;
     delete older.amounts.triviaCorrect;
+    delete older.amounts.triviaNear;
     delete older.thresholds.triviaDailyCap;
     older.amounts.message = 7;
     await loadRules({ xpRules: { findUnique: async () => ({ rules: older }) } } as never);
