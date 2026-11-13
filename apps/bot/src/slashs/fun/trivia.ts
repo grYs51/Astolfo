@@ -12,6 +12,7 @@ import {
   SlashCommandBuilder,
   escapeMarkdown,
 } from 'discord.js';
+import { Prisma } from '@prisma/client';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import Client from '../../client/client';
@@ -42,7 +43,7 @@ export interface Score {
 export const rankScores = (board: Map<string, Score>) => [...board].sort(([, a], [, b]) => b.xp - a.xp || b.correct - a.correct || a.ms - b.ms);
 
 /** The first message edits the deferred reply; once that's done, every next one is a follow-up */
-const say = (interaction: ChatInputCommandInteraction<CacheType>, options: InteractionEditReplyOptions) =>
+export const say = (interaction: ChatInputCommandInteraction<CacheType>, options: InteractionEditReplyOptions) =>
   interaction.replied ? interaction.followUp(options as InteractionReplyOptions) : InterActionUtils.editReply(interaction, options);
 
 /** Channels with a question running: one at a time per channel */
@@ -85,7 +86,7 @@ export const resultText = (
 const photoUrl = (geo: GeoInfo) => `https://www.mapillary.com/app/?pKey=${geo.imageId}`;
 
 /** Where the photo was taken and the photo itself; `<>` keeps Discord from embedding them */
-const geoLinks = (geo: GeoInfo) =>
+export const geoLinks = (geo: GeoInfo) =>
   (geo.lat !== undefined && geo.lon !== undefined
     ? ` [Map](<https://www.openstreetmap.org/?mlat=${geo.lat}&mlon=${geo.lon}#map=15/${geo.lat}/${geo.lon}>) ·`
     : '') + ` [Photo](<${photoUrl(geo)}>)`;
@@ -94,19 +95,19 @@ const geoLinks = (geo: GeoInfo) =>
  * The licence asks for attribution: the card carries it, a text-only message needs it written out. Who took the
  * photo and its link wait for the result: a username can name the place, and the photo page shows the map pin.
  */
-const attributionLine = (q: TriviaQuestion, result = true) =>
+export const attributionLine = (q: TriviaQuestion, result = true) =>
   q.geo
     ? `\n-# Photo ${result && q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary${result ? ` (<${photoUrl(q.geo)}>)` : ''}, CC BY-SA 4.0`
     : '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
 
 /** When the GeoGuess card can't be drawn, the photo goes out on its own: without it there's no question */
-const photoFile = (geo: GeoInfo) => {
+export const photoFile = (geo: GeoInfo) => {
   const [head, data] = geo.image.split(',');
   return { attachment: Buffer.from(data, 'base64'), name: head.includes('png') ? 'geoguess.png' : 'geoguess.jpg' };
 };
 
 /** A card as a Discord attachment, or undefined when it can't be drawn (the message then falls back to text) */
-const card = (svg: () => string, name: string) =>
+export const card = (svg: () => string, name: string) =>
   cardFile(svg(), name).catch((error) => {
     Logger.error(`Failed to draw ${name}`, error);
     return undefined;
@@ -211,7 +212,7 @@ export default class Trivia extends BaseSlash {
    * One question: ask it, collect the answers, close, save and grant, show the result. Returns each member's
    * score, or undefined when Open Trivia DB couldn't give a question (its message is already shown).
    */
-  private async askQuestion(
+  protected async askQuestion(
     client: Client,
     interaction: ChatInputCommandInteraction<CacheType>,
     guildId: string,
@@ -272,7 +273,27 @@ export default class Trivia extends BaseSlash {
     // Close the answers at once: saving and granting take a moment, and a click in that gap would fail
     await edit({ components: [buttons(q, true)] });
 
-    const xp = await this.saveAndGrant(client, guildId, q, answers, times, correctOrder, near);
+    const xp = await this.saveAndGrant(
+      client,
+      guildId,
+      {
+        question: q.question,
+        category: q.category,
+        difficulty: q.difficulty,
+        correct: q.correct,
+        correctOrder,
+        // Milliseconds from the question showing to each member's click, for /trivia-stats
+        answerMs: Object.fromEntries(times),
+        // GeoGuess: the photo and the answers that bordered the right country (a near miss is saved as a tie)
+        ...(q.geo && { imageId: q.geo.imageId, country: q.geo.country, lat: q.geo.lat, lon: q.geo.lon, near: q.geo.near }),
+      },
+      [...answers].map(([user_id, index]) => ({
+        user_id,
+        result: q.answers[index] === q.correct ? SCORING.WIN : q.geo?.near.includes(q.answers[index]) ? SCORING.TIE : SCORING.LOSS,
+        move: q.answers[index],
+      })),
+      [...correctOrder, ...near]
+    );
     const members = await cardMembers(interaction.guild, correctOrder.slice(0, 5)).catch(() => ({}) as Awaited<ReturnType<typeof cardMembers>>);
     const picks = q.answers.map((_, i) => [...answers.values()].filter((picked) => picked === i).length);
     const resultCard = await card(
@@ -334,47 +355,30 @@ export default class Trivia extends BaseSlash {
     });
   }
 
-  /** Saves the question with everyone's answer, grants the XP and returns what each correct member earned */
-  private async saveAndGrant(
+  /**
+   * Saves the question with everyone's answer, grants the XP to the `earning` members and returns what each
+   * earned. The metadata keeps `correctOrder` and the difficulty: XP is rebuilt from it.
+   */
+  protected async saveAndGrant(
     client: Client,
     guildId: string,
-    q: TriviaQuestion,
-    answers: Map<string, number>,
-    times: Map<string, number>,
-    correctOrder: string[],
-    near: string[] = []
+    metadata: Prisma.InputJsonObject,
+    players: { user_id: string; result: number; move: string }[],
+    earning: string[]
   ): Promise<Map<string, number>> {
-    if (!answers.size) return new Map();
+    if (!players.length) return new Map();
     const saved = await client.dataSource.gameResults
       .create({
         data: {
           game_type: { connect: { id: GAME_TYPES.TRIVIA } },
           guild_id: guildId,
-          // XP is rebuilt from this, so a recalculation keeps the places and the difficulty
-          metadata: {
-            question: q.question,
-            category: q.category,
-            difficulty: q.difficulty,
-            correct: q.correct,
-            correctOrder,
-            // Milliseconds from the question showing to each member's click, for /trivia-stats
-            answerMs: Object.fromEntries(times),
-            // GeoGuess: the photo and the answers that bordered the right country (a near miss is saved as a tie)
-            ...(q.geo && { imageId: q.geo.imageId, country: q.geo.country, lat: q.geo.lat, lon: q.geo.lon, near: q.geo.near }),
-          },
-          players: {
-            create: [...answers].map(([user_id, index]) => ({
-              user_id,
-              result: q.answers[index] === q.correct ? SCORING.WIN : q.geo?.near.includes(q.answers[index]) ? SCORING.TIE : SCORING.LOSS,
-              move: q.answers[index],
-            })),
-          },
+          metadata,
+          players: { create: players },
         },
       })
       .catch((error) => {
         Logger.error('Failed to save trivia result', error);
       });
-    const earning = [...correctOrder, ...near];
     if (!saved || !earning.length) return new Map();
 
     // The SQL grant applies the places, near misses, difficulty and daily cap; read back what it gave
