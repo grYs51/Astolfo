@@ -259,7 +259,7 @@ describe('/trivia rounds', () => {
     await jest.advanceTimersByTimeAsync(PAUSE_MS);
     await game.done;
     expect(sent.at(-2)).toEqual({ content: 'Open Trivia DB is down' });
-    expect(lastReply().content).toBe('🏁 Final scores after 1 round.\n1st <@a> 1/1 +30 XP');
+    expect(lastReply().content).toBe("🏁 Final scores after 1 round. Round 2 couldn't be asked, so the game stopped there.\n1st <@a> 1/1 +30 XP");
   });
 
   test('an error mid-game still shows the scores of the rounds before it', async () => {
