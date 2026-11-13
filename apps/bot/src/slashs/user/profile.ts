@@ -7,6 +7,7 @@ import { CARD_IMAGE, fetchImage } from '../../cards/avatars';
 import { profileCard } from '../../cards/profile.card';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
+import { dashboardButton, dashboardUrlFor } from '../../stats/messages';
 
 export default class ProfileSlash extends BaseSlash {
   constructor() {
@@ -18,7 +19,8 @@ export default class ProfileSlash extends BaseSlash {
       .setName(this.name)
       .setDescription(this.description)
       .setContexts(InteractionContextType.Guild)
-      .addMentionableOption((option) =>
+      // A user option, not "mentionable": that also accepts roles, which fell back to your own profile
+      .addUserOption((option) =>
         option
           .setName('user')
           .setDescription("Get other user's profile (optional)")
@@ -33,7 +35,12 @@ export default class ProfileSlash extends BaseSlash {
       return;
     }
     const guildId = interaction.guildId;
-    const memberToGetProfileFor = interaction.options.get('user')?.member || interaction.member;
+    const picked = interaction.options.getUser('user');
+    const memberToGetProfileFor = picked ? interaction.options.getMember('user') : interaction.member;
+    if (!memberToGetProfileFor) {
+      await InterActionUtils.send(interaction, `${picked} isn't a member of this server.`, true);
+      return;
+    }
     const userId = memberToGetProfileFor.id;
 
     const now = new Date();
@@ -61,6 +68,12 @@ export default class ProfileSlash extends BaseSlash {
       },
       THEMES[DEFAULT_THEME]
     );
-    await InterActionUtils.send(interaction, { files: [await cardFile(svg, 'profile.png')] });
+    const dashboardUrl = dashboardUrlFor(guildId, { memberId: userId });
+    await InterActionUtils.send(interaction, {
+      files: [await cardFile(svg, 'profile.png')],
+      components: dashboardUrl
+        ? [dashboardButton(dashboardUrl, `Open ${memberToGetProfileFor.displayName}’s page`)]
+        : [],
+    });
   }
 }

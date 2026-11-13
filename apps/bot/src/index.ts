@@ -1,7 +1,6 @@
 import {
   registerCommands,
   registerEvents,
-  registerInteractions,
   registerSlash,
 } from './utils/registry';
 import { client } from './client/instance';
@@ -66,7 +65,6 @@ const main = () =>
     .then(() => registerCommands())
     .then(() => registerEvents())
     .then(() => registerSlash())
-    .then(() => registerInteractions())
     .then(() => initPrometheusData())
     .then(() => {
       httpServer = server();

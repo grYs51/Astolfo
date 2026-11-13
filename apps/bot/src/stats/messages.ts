@@ -62,10 +62,20 @@ export const dashboardButton = (url: string, label: string) =>
 export const isEmptyDigest = (d: ServerDigest) => d.voiceMs === 0 && d.messages === 0;
 
 /**
- * Dashboard link for a server; undefined when CLIENT_URL isn't an absolute
- * http(s) URL (Discord rejects relative links, which would fail the reply)
+ * Dashboard link for a server, or for one member's page on it, opened on the
+ * same period as the reply (the dashboard's default is month) and optionally
+ * on the Server tab. Undefined when CLIENT_URL isn't an absolute http(s) URL
+ * (Discord rejects relative links, which would fail the reply).
  */
-export const dashboardUrlFor = (guildId: string) => {
+export const dashboardUrlFor = (
+  guildId: string,
+  options: { memberId?: string; period?: StatsPeriod; tab?: 'server' } = {}
+) => {
   const base = (process.env.CLIENT_URL ?? '').replace(/\/+$/, '');
-  return /^https?:\/\//.test(base) ? `${base}/overview/detail/${guildId}` : undefined;
+  if (!/^https?:\/\//.test(base)) return undefined;
+  const member = options.memberId ? `/members/${options.memberId}` : '';
+  const url = new URL(`${base}/overview/detail/${guildId}${member}`);
+  if (options.period && options.period !== 'month') url.searchParams.set('period', options.period);
+  if (options.tab) url.searchParams.set('tab', options.tab);
+  return url.toString();
 };
