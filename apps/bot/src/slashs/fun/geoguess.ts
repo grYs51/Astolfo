@@ -129,6 +129,9 @@ export default class GeoGuess extends Trivia {
     // Without the card the text carries the photo's licence line, also after the "N guessed" edits
     const asked = (count: string) => `${intro}${count}${questionCard ? '' : attributionLine(q, false)}`;
     const button = playButton(url);
+    // The round exists before its Play link goes out: a quick click must not get a 404, which stops the page polling
+    const answer = { country: q.correct, lat: geo.lat, lon: geo.lon };
+    const closed = playRound(game, { imageId: geo.imageId, difficulty: q.difficulty, answer }, MAP_ANSWER_MS);
     const message = await say(interaction, {
       content: asked(''),
       allowedMentions: { parse: [] },
@@ -138,8 +141,6 @@ export default class GeoGuess extends Trivia {
     if (!message) return undefined;
     const edit = (options: InteractionEditReplyOptions) => InterActionUtils.editReply(interaction, { ...options, message });
 
-    const answer = { country: q.correct, lat: geo.lat, lon: geo.lon };
-    const closed = playRound(game, { imageId: geo.imageId, difficulty: q.difficulty, answer }, MAP_ANSWER_MS);
     let counted = 0;
     const counter = setInterval(() => {
       const n = game.current?.guesses.size ?? 0;

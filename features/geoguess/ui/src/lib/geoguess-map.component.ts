@@ -31,9 +31,12 @@ export class GeoguessMapComponent {
   private leaflet = signal<{ L: typeof import('leaflet'); map: LeafletMap; layer: LayerGroup } | undefined>(undefined);
 
   constructor() {
+    let destroyed = false;
     // Leaflet touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
       const L = await import('leaflet');
+      // Left the page while it loaded: don't start a map nobody will remove
+      if (destroyed) return;
       const map = L.map(this.container().nativeElement, { worldCopyJump: true, minZoom: 1 }).setView([20, 0], 2);
       L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         maxZoom: 18,
@@ -82,6 +85,9 @@ export class GeoguessMapComponent {
       map.fitBounds(L.latLngBounds([[answer.lat, answer.lon], ...pins.map((p) => [p.lat, p.lon] as [number, number])]).pad(0.2), { maxZoom: 8 });
     });
 
-    inject(DestroyRef).onDestroy(() => this.leaflet()?.map.remove());
+    inject(DestroyRef).onDestroy(() => {
+      destroyed = true;
+      this.leaflet()?.map.remove();
+    });
   }
 }

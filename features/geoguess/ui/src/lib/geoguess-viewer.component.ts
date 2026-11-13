@@ -16,9 +16,12 @@ export class GeoguessViewerComponent {
   private viewer?: Viewer;
 
   constructor() {
+    let destroyed = false;
     // MapillaryJS touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
       const { Viewer } = await import('mapillary-js');
+      // Left the page while it loaded: don't start a WebGL viewer nobody will remove
+      if (destroyed) return;
       this.viewer = new Viewer({ accessToken: this.token(), container: this.container().nativeElement, imageId: this.imageId() });
     });
     effect(() => {
@@ -26,6 +29,9 @@ export class GeoguessViewerComponent {
       // A photo deleted since the pool was built rejects; the round goes on without walking around
       this.viewer?.moveTo(id).catch(() => undefined);
     });
-    inject(DestroyRef).onDestroy(() => this.viewer?.remove());
+    inject(DestroyRef).onDestroy(() => {
+      destroyed = true;
+      this.viewer?.remove();
+    });
   }
 }

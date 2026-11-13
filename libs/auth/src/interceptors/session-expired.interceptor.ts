@@ -3,6 +3,7 @@ import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { ProfileStore } from '../profile/profile.store';
+import { rememberReturnUrl } from '../guards/return-url';
 
 /**
  * A 401 from the API means the session is gone (expired, or logged out in
@@ -25,6 +26,8 @@ export const sessionExpiredInterceptor: HttpInterceptorFn = (request, next) => {
       ) {
         // Only provided in the browser (provideAuth); absent during SSR
         injector.get(ProfileStore, null)?.markLoggedOut();
+        // Back to this page after logging in again (a GeoGuess game mid-round)
+        rememberReturnUrl(router.url);
         void router.navigate(['/login']);
       }
       return throwError(() => error);
