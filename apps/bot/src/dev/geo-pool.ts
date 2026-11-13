@@ -3,11 +3,13 @@
  *
  *   MAPILLARY_TOKEN=… yarn nx run bot:geo-pool   → apps/bot/src/geo/{countries,pool}.data.ts
  *
- * Run once, look over a few photos, commit the two files. Only image ids are kept: the bot asks Mapillary
- * for a fresh thumbnail URL every time it shows one.
+ * Run once (about 10 minutes: each photo's country is looked up at OpenStreetMap, one request a second), look
+ * over a few photos, commit the two files. Only image ids are kept: the bot asks Mapillary for a fresh thumbnail
+ * URL every time it shows one.
  */
 import { writeFileSync } from 'fs';
 import path from 'path';
+import { setTimeout as sleep } from 'timers/promises';
 import { Logger } from '../utils/logger';
 import type { GeoCountry, GeoPoolEntry } from '../geo/types';
 
@@ -20,7 +22,7 @@ const PER_COUNTRY = 10;
 const MIN_QUALITY = 0.6;
 /** Box side in degrees: the API refuses a bbox of 0.01 deg² or more */
 const BOX = 0.09;
-/** Box centres around the capital, in degrees: the centre and four neighbours */
+/** Box centres around the capital, in degrees: the centre and four neighbours. Near a border they reach the next country, so every photo's country is checked */
 const OFFSETS = [
   [0, 0],
   [0.1, 0.1],
@@ -44,6 +46,8 @@ interface MapillaryImage {
   is_pano?: boolean;
   quality_score?: number | null;
   sequence?: string;
+  computed_geometry?: { coordinates: [number, number] };
+  geometry?: { coordinates: [number, number] };
 }
 
 const getJson = async <T>(url: string, headers: Record<string, string> = {}): Promise<T> => {
@@ -60,7 +64,7 @@ const searchBox = async (token: string, lat: number, lon: number): Promise<Mapil
   const h = BOX / 2;
   const bbox = [lon - h, lat - h, lon + h, lat + h].map((n) => n.toFixed(5)).join(',');
   const { data } = await getJson<{ data: MapillaryImage[] }>(
-    `https://graph.mapillary.com/images?bbox=${bbox}&fields=id,is_pano,quality_score,sequence&limit=200`,
+    `https://graph.mapillary.com/images?bbox=${bbox}&fields=id,is_pano,quality_score,sequence,computed_geometry,geometry&limit=200`,
     { Authorization: `OAuth ${token}` }
   );
   const seen = new Set<string>();
@@ -68,6 +72,18 @@ const searchBox = async (token: string, lat: number, lon: number): Promise<Mapil
     .filter((img) => !img.is_pano && (img.quality_score ?? 0) >= MIN_QUALITY)
     .sort((a, b) => (b.quality_score ?? 0) - (a.quality_score ?? 0))
     .filter((img) => !img.sequence || (!seen.has(img.sequence) && seen.add(img.sequence)));
+};
+
+/** The ISO code of the country a photo was taken in, from OpenStreetMap; Nominatim allows one request a second */
+const countryOf = async (img: MapillaryImage): Promise<string | undefined> => {
+  const [lon, lat] = (img.computed_geometry ?? img.geometry)?.coordinates ?? [];
+  if (lat === undefined) return undefined;
+  await sleep(1100);
+  const { address } = await getJson<{ address?: { country_code?: string } }>(
+    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=3&lat=${lat}&lon=${lon}`,
+    { 'User-Agent': 'nx-stolfo-geo-pool' }
+  );
+  return address?.country_code?.toUpperCase();
 };
 
 const tsFile = (name: string, type: string, value: unknown) =>
@@ -94,9 +110,16 @@ const main = async () => {
     // Round-robin over the boxes so one busy street doesn't fill the country
     const boxes = await Promise.all(OFFSETS.map(([dLat, dLon]) => searchBox(token, capital[0] + dLat, capital[1] + dLon)));
     const picked: string[] = [];
+    let abroad = 0;
     for (let i = 0; picked.length < PER_COUNTRY && boxes.some((b) => b.length > i); i++) {
-      for (const box of boxes) if (box[i] && picked.length < PER_COUNTRY) picked.push(box[i].id);
+      for (const box of boxes) {
+        if (!box[i] || picked.length >= PER_COUNTRY) continue;
+        // A photo over the border would make the right answer wrong
+        if ((await countryOf(box[i])) === code) picked.push(box[i].id);
+        else abroad++;
+      }
     }
+    if (abroad) Logger.info(`${code}: ${abroad} photos outside the country or without a place, left out`);
     if (picked.length < 3) {
       Logger.warn(`${code}: only ${picked.length} good photos, skipped`);
       continue;
