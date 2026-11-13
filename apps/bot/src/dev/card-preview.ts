@@ -254,7 +254,7 @@ const main = async () => {
           question: 'Which country is this?',
           answers: ['Belgium', 'Netherlands', 'France', 'Luxembourg'],
           seconds: 30,
-          geo: { image: photo, credit: 'roadtripper_42' },
+          geo: { image: photo },
         },
         THEMES[theme]
       ),

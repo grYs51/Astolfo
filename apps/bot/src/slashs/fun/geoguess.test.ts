@@ -129,7 +129,8 @@ describe('/geoguess', () => {
     await game.done;
     const asked = sent[0] as { content: string; files: { name: string; attachment: Buffer }[] };
     expect(asked.files).toEqual([{ name: 'geoguess.jpg', attachment: Buffer.from('AAAA', 'base64') }]);
-    expect(asked.content).toContain('Photo by @walker on Mapillary, CC BY-SA 4.0');
+    expect(asked.content).toContain('Photo on Mapillary, CC BY-SA 4.0');
+    expect(asked.content).not.toContain('walker');
     expect(asked.content).not.toContain('pKey');
   });
 

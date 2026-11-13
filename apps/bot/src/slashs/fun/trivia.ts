@@ -91,12 +91,12 @@ const geoLinks = (geo: GeoInfo) =>
     : '') + ` [Photo](<${photoUrl(geo)}>)`;
 
 /**
- * The licence asks for attribution: the card carries it, a text-only message needs it written out. The photo
- * link waits for the result, because its page shows the map pin.
+ * The licence asks for attribution: the card carries it, a text-only message needs it written out. Who took the
+ * photo and its link wait for the result: a username can name the place, and the photo page shows the map pin.
  */
-const attributionLine = (q: TriviaQuestion, link = true) =>
+const attributionLine = (q: TriviaQuestion, result = true) =>
   q.geo
-    ? `\n-# Photo ${q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary${link ? ` (<${photoUrl(q.geo)}>)` : ''}, CC BY-SA 4.0`
+    ? `\n-# Photo ${result && q.geo.credit ? `by @${escapeMarkdown(q.geo.credit)} ` : ''}on Mapillary${result ? ` (<${photoUrl(q.geo)}>)` : ''}, CC BY-SA 4.0`
     : '\n-# Question from Open Trivia DB (opentdb.com), CC BY-SA 4.0';
 
 /** When the GeoGuess card can't be drawn, the photo goes out on its own: without it there's no question */

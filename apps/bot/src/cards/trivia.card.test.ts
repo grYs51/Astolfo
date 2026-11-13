@@ -67,24 +67,26 @@ describe('GeoGuess cards', () => {
     'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
   const answers = ['Belgium', 'France', 'Japan', 'Netherlands'];
 
-  test('the question shows the photo and credits who took it, escaped', async () => {
-    const svg = triviaQuestionCard({ ...question, category: 'GeoGuess', question: 'Which country is this?', answers, geo: { image, credit: 'a<b>' } }, THEMES.dark);
+  test('the question shows the photo but not who took it, as a username can name the place', async () => {
+    const geo = { image, credit: 'oslo_mapper' };
+    const svg = triviaQuestionCard({ ...question, category: 'GeoGuess', question: 'Which country is this?', answers, geo }, THEMES.dark);
     expect(svg).toContain(`href="${image}"`);
-    expect(svg).toContain('Photo by @a&lt;b&gt; on Mapillary · CC BY-SA 4.0');
+    expect(svg).toContain('Photo on Mapillary · CC BY-SA 4.0');
+    expect(svg).not.toContain('oslo_mapper');
     expect(svg).not.toContain('Open Trivia DB');
     expect((await renderPng(svg)).length).toBeGreaterThan(0);
   });
 
-  test('the result names the country, marks the near misses and counts them apart from the wrong answers', async () => {
+  test('the result names the country, marks the near misses, counts them apart from the wrong answers and credits the photo', async () => {
     const svg = triviaResultCard(
-      { question: 'Which country is this?', answers, correct: 'Belgium', picks: [1, 2, 1, 1], winners: [{ name: 'A', xp: 30 }], geo: { image, near: ['France', 'Netherlands'] } },
+      { question: 'Which country is this?', answers, correct: 'Belgium', picks: [1, 2, 1, 1], winners: [{ name: 'A', xp: 30 }], geo: { image, credit: 'a<b>', near: ['France', 'Netherlands'] } },
       THEMES.dark
     );
     expect(svg).toContain('>It was Belgium<');
     expect(svg).toContain('>near · 2<');
     expect(svg).toContain('>near · 1<');
     expect(svg).toContain('3 near misses · 1 got it wrong');
-    expect(svg).toContain('Photo on Mapillary · CC BY-SA 4.0');
+    expect(svg).toContain('Photo by @a&lt;b&gt; on Mapillary · CC BY-SA 4.0');
     expect((await renderPng(svg)).length).toBeGreaterThan(0);
   });
 

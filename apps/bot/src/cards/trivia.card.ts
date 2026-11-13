@@ -14,8 +14,8 @@ export interface TriviaQuestionCardData {
   question: string;
   answers: string[];
   seconds: number;
-  /** GeoGuess: the photo is the question */
-  geo?: Pick<GeoInfo, 'image' | 'credit'>;
+  /** GeoGuess: the photo is the question. No credit: a Mapillary username can name the place */
+  geo?: Pick<GeoInfo, 'image'>;
 }
 
 export interface TriviaPlayer {
@@ -52,7 +52,7 @@ export const LETTERS = ['A', 'B', 'C', 'D'];
 const ATTRIBUTION = 'Question from Open Trivia DB (opentdb.com) · CC BY-SA 4.0';
 const PHOTO_W = W - 2 * PAD;
 
-/** The licence line: Open Trivia DB, or who took the GeoGuess photo */
+/** The licence line: Open Trivia DB, or the GeoGuess photo and, once the round is over, who took it */
 const attribution = (geo?: Pick<GeoInfo, 'credit'>) =>
   geo ? `Photo ${geo.credit ? `by @${truncate(geo.credit, 40)} ` : ''}on Mapillary · CC BY-SA 4.0` : ATTRIBUTION;
 
@@ -131,7 +131,7 @@ export const triviaQuestionCard = (d: TriviaQuestionCardData, t: CardTheme) => {
     q.svg,
     answerGrid(d.answers, gridY, t),
     text(PAD, footerY, 16, t.text, escapeXml(`Everyone can answer: the quicker you're right, the more XP. ${d.seconds} seconds!`)),
-    text(PAD, footerY + 26, 12, t.muted, escapeXml(attribution(d.geo))),
+    text(PAD, footerY + 26, 12, t.muted, escapeXml(attribution(d.geo && {}))),
   ]);
 };
 
