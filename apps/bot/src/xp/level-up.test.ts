@@ -1,75 +1,71 @@
 import { awardAndAnnounce } from './level-up';
 import { grantXp, totalXp } from './grant';
 import { isRecalculating } from './recalculate';
+import { postLevelUp } from './announce';
+import { Logger } from '../utils/logger';
 
 jest.mock('./grant', () => ({ grantXp: jest.fn(), totalXp: jest.fn() }));
 jest.mock('./recalculate', () => ({ isRecalculating: jest.fn(() => false), xpLookups: () => ({ isBot: () => false }) }));
+jest.mock('./announce', () => ({ postLevelUp: jest.fn(async () => undefined) }));
 jest.mock('../utils/logger', () => ({ Logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 
 const grant = grantXp as jest.Mock;
 const total = totalXp as jest.Mock;
+const post = postLevelUp as jest.Mock;
 
-const clientWith = (channelId: string | null) => {
-  const send = jest.fn();
-  const client = {
-    dataSource: {},
-    guildConfigs: new Map([['g', { level_up_channel_id: channelId }]]),
-    channels: { fetch: jest.fn(async () => ({ isSendable: () => true, send })) },
-  };
-  return { client: client as never, send };
-};
+const clientWith = (channelId: string | null) =>
+  ({ dataSource: {}, guildConfigs: new Map([['g', { level_up_channel_id: channelId }]]) }) as never;
 
 beforeEach(() => jest.clearAllMocks());
 
-test('the message that crosses level 5 posts once', async () => {
-  const { client, send } = clientWith('levels');
+test('the message that crosses level 5 posts it, the next one does not', async () => {
+  const client = clientWith('levels');
   // Level 5 starts at 1,000 XP under the default curve
   grant.mockResolvedValue({ rows: 1, xp: 2 });
   total.mockResolvedValueOnce(1001).mockResolvedValueOnce(1003);
   await awardAndAnnounce(client, 'g', 'm', ['MESSAGE']);
   await awardAndAnnounce(client, 'g', 'm', ['MESSAGE']);
-  expect(send).toHaveBeenCalledTimes(1);
-  expect(send.mock.calls[0][0]).toEqual({ content: '🎉 <@m> reached **level 5**!', allowedMentions: { parse: [] } });
+  expect(post).toHaveBeenCalledTimes(1);
+  expect(post).toHaveBeenCalledWith(client, 'g', 'm', 5);
   expect(grant.mock.calls[0][1]).toMatchObject({ guildId: 'g', memberId: 'm', sources: ['MESSAGE'] });
 });
 
-test('a level seen crossed twice (a live grant and the sweep) posts once', async () => {
-  const { client, send } = clientWith('levels');
+test('the grant does not wait for the post, and a failed post is logged', async () => {
+  const client = clientWith('levels');
   grant.mockResolvedValue({ rows: 1, xp: 2 });
-  // Both see 999 → 1,001, the crossing into level 5
   total.mockResolvedValue(1001);
-  await awardAndAnnounce(client, 'g', 'twice', ['MESSAGE']);
-  await awardAndAnnounce(client, 'g', 'twice', ['MESSAGE']);
-  expect(send).toHaveBeenCalledTimes(1);
+  post.mockReturnValueOnce(new Promise(() => undefined));
+  await expect(awardAndAnnounce(client, 'g', 'slow', ['MESSAGE'])).resolves.toBeUndefined();
+
+  post.mockRejectedValueOnce(new Error('missing permission'));
+  await awardAndAnnounce(client, 'g', 'denied', ['MESSAGE']);
+  await new Promise(setImmediate);
+  expect(Logger.error).toHaveBeenCalledWith(expect.stringContaining('denied'), expect.any(Error));
 });
 
 test('a checkpoint graded down (the session closed earlier than it) posts nothing', async () => {
-  const { client, send } = clientWith('levels');
   grant.mockResolvedValue({ rows: 1, xp: -2 });
   total.mockResolvedValue(999);
-  await awardAndAnnounce(client, 'g', 'down', ['VOICE']);
-  expect(send).not.toHaveBeenCalled();
+  await awardAndAnnounce(clientWith('levels'), 'g', 'down', ['VOICE']);
+  expect(post).not.toHaveBeenCalled();
 });
 
 test('nothing posts without a channel, but the XP is granted', async () => {
-  const { client, send } = clientWith(null);
   grant.mockResolvedValue({ rows: 1, xp: 2 });
   total.mockResolvedValue(1001);
-  await awardAndAnnounce(client, 'g', 'm', ['MESSAGE']);
+  await awardAndAnnounce(clientWith(null), 'g', 'm', ['MESSAGE']);
   expect(grant).toHaveBeenCalled();
-  expect(send).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
 });
 
 test('nothing is granted or posted while the guild is recalculating', async () => {
   (isRecalculating as jest.Mock).mockReturnValueOnce(true);
-  const { client, send } = clientWith('levels');
-  await awardAndAnnounce(client, 'g', 'm', ['MESSAGE']);
+  await awardAndAnnounce(clientWith('levels'), 'g', 'm', ['MESSAGE']);
   expect(grant).not.toHaveBeenCalled();
-  expect(send).not.toHaveBeenCalled();
+  expect(post).not.toHaveBeenCalled();
 });
 
 test('a failed grant is logged, not thrown', async () => {
-  const { client } = clientWith('levels');
   grant.mockRejectedValue(new Error('db down'));
-  await expect(awardAndAnnounce(client, 'g', 'm', ['MESSAGE'])).resolves.toBeUndefined();
+  await expect(awardAndAnnounce(clientWith('levels'), 'g', 'm', ['MESSAGE'])).resolves.toBeUndefined();
 });

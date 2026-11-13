@@ -14,6 +14,7 @@ import { digestCard } from '../cards/digest.card';
 import { duoCard } from '../cards/duo.card';
 import { leaderboardCard } from '../cards/leaderboard.card';
 import { profileCard } from '../cards/profile.card';
+import { levelUpCard } from '../cards/level-up.card';
 import { reminderCard } from '../cards/reminder.card';
 import { rpsCard } from '../cards/rps.card';
 import { triviaQuestionCard, triviaResultCard, triviaScoreboardCard, triviaStatsCard } from '../cards/trivia.card';
@@ -286,6 +287,8 @@ const main = async () => {
       ),
     reminder: (theme) =>
       reminderCard({ memberName: NAMES[2], avatar: avatar(2), channelName: 'round-table', hours: 5, word: 'gay' }, THEMES[theme]),
+    'level-up': (theme) =>
+      levelUpCard({ memberName: NAMES[0], avatar: avatar(0), serverName: 'Paladins of France', level: 12 }, THEMES[theme]),
     digest: (theme) =>
       digestCard(
         {
