@@ -20,18 +20,19 @@ export const postLevelUp = async (client: DiscordClient, guildId: string, member
     Logger.warn(`Level-up channel ${channelId} in guild ${guildId} is missing or not sendable`);
     return;
   }
-  // The mention shows who it is without pinging them
-  const allowedMentions = { parse: [] };
-  let files;
-  try {
-    const guild = client.guilds.cache.get(guildId);
-    const { [memberId]: member } = await cardMembers(guild, [memberId]);
-    const svg = levelUpCard({ memberName: member.name, avatar: member.avatar, serverName: guild?.name ?? 'the server', level }, THEMES[DEFAULT_THEME]);
-    files = [await cardFile(svg, 'level-up.png')];
-  } catch (error) {
-    Logger.error(`Failed to render the level-up card for ${memberId} in guild ${guildId}`, error);
-    await channel.send({ content: `🎉 <@${memberId}> reached **level ${level}**!`, allowedMentions });
-    return;
-  }
-  await channel.send({ content: `<@${memberId}>`, files, allowedMentions });
+  const files = await levelUpFile(client, guildId, memberId, level)
+    .then((file) => [file])
+    .catch((error) => {
+      Logger.error(`Failed to render the level-up card for ${memberId} in guild ${guildId}`, error);
+      return [];
+    });
+  // The text stays beside the card for search, notifications and screen readers; the mention shows who it is without pinging them
+  await channel.send({ content: `🎉 <@${memberId}> reached **level ${level}**!`, files, allowedMentions: { parse: [] } });
+};
+
+const levelUpFile = async (client: DiscordClient, guildId: string, memberId: string, level: number) => {
+  const guild = client.guilds.cache.get(guildId);
+  const { [memberId]: member } = await cardMembers(guild, [memberId]);
+  const svg = levelUpCard({ memberName: member.name, avatar: member.avatar, serverName: guild?.name ?? 'the server', level }, THEMES[DEFAULT_THEME]);
+  return cardFile(svg, 'level-up.png');
 };

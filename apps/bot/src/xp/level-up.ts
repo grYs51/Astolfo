@@ -46,7 +46,12 @@ const award = async (client: DiscordClient, guildId: string, memberId: string, s
 
     const total = await totalXp(client.dataSource, guildId, memberId);
     const level = levelFor(total, rules);
-    if (level > levelFor(total - added, rules)) await postLevelUp(client, guildId, memberId, level);
+    // Not awaited: the card fetches an avatar and renders, and callers hold the member's voice queue or a trivia result.
+    // postLevelUp marks the level posted before its first await, so it still posts once.
+    if (level > levelFor(total - added, rules))
+      void postLevelUp(client, guildId, memberId, level).catch((error) =>
+        Logger.error(`Level-up post failed for ${memberId} in guild ${guildId}`, error)
+      );
   } catch (error) {
     Logger.error(`XP grant failed for ${memberId} in guild ${guildId}`, error);
   }
