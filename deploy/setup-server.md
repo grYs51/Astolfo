@@ -10,7 +10,7 @@
 >   (same origin) — or keep a separate API host in NPM and leave it as is.
 > - **Proxy headers:** NPM → Caddy → Express is two proxies. Add
 >   `servers { trusted_proxies static private_ranges }` to the Caddyfile and
->   set Express `trust proxy` to 2 (`apps/bot/src/api/index.ts`), or secure
+>   set `TRUST_PROXY=2` in `.env`, or secure
 >   cookies won't be sent and every client shares one rate-limit bucket.
 > - **CI:** replace `image-build.yml` with a job that runs
 >   `deploy/deploy.sh` on this runner (Step 5) — the LXC can't run Docker.
