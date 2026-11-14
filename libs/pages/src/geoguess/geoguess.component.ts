@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, DOCUMENT, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { USER } from '@nx-stolfo/auth';
 import { GeoguessApi, GeoguessGameResponse } from '@nx-stolfo/data-access-geoguess';
 import { countdown, GeoguessMapComponent, GeoguessViewerComponent, LatLon, memberName, ordinal } from '@nx-stolfo/ui-geoguess';
 
@@ -77,6 +78,8 @@ const POLL_MS = 2000;
               [locked]="g.phase !== 'guessing' || !!g.myGuess"
               [answer]="g.answer"
               [pins]="g.pins ?? []"
+              [radiusKm]="g.radiusKm"
+              [me]="meId()"
               (picked)="pending.set($event)"
             />
 
@@ -101,16 +104,34 @@ const POLL_MS = 2000;
               }
             } @else if (g.answer) {
               <section class="space-y-xs" aria-label="Round result">
+                <!-- Your own result first, big: no hunting for your name in the list -->
+                <div
+                  class="rounded-xl border p-sm"
+                  [class]="mine()?.place ? 'border-primary bg-primary/15' : 'border-base-300 bg-base-200'"
+                >
+                  @if (mine(); as me) {
+                    <p class="text-2xl font-bold tabular-nums">You: {{ me.km }} km</p>
+                    <p class="text-sm text-gray-300">
+                      @if (me.place) {
+                        {{ ordinal(me.place) }} place{{ me.xp ? ' · +' + me.xp + ' XP' : '' }}
+                      } @else {
+                        Outside {{ g.radiusKm }} km · no XP this round
+                      }
+                    </p>
+                  } @else {
+                    <p class="text-sm text-gray-300">You didn’t guess this round.</p>
+                  }
+                </div>
                 <h2 class="font-semibold">It was {{ g.answer.country }}</h2>
                 @for (p of g.pins; track p.member.id) {
-                  <div class="flex items-center gap-sm text-sm">
+                  <div class="-mx-xs flex items-center gap-sm rounded px-xs text-sm" [class.bg-base-200]="p.member.id === meId()" [class.font-semibold]="p.member.id === meId()">
                     <span class="w-8 text-gray-400">{{ p.place ? ordinal(p.place) : '–' }}</span>
                     @if (p.member.avatar) {
                       <img class="h-6 w-6 rounded-full" [src]="p.member.avatar" alt="" />
                     } @else {
                       <span class="h-6 w-6 rounded-full bg-base-300"></span>
                     }
-                    <span class="flex-1 truncate">{{ name(p.member) }}</span>
+                    <span class="flex-1 truncate">{{ name(p.member) }}{{ p.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="tabular-nums text-gray-400">{{ p.km }} km</span>
                     @if (p.xp) {
                       <span class="font-semibold text-primary">+{{ p.xp }} XP</span>
@@ -129,9 +150,9 @@ const POLL_MS = 2000;
               <section class="space-y-xs" aria-label="Final scores">
                 <h2 class="font-semibold">Final scores</h2>
                 @for (s of g.scores; track s.member.id; let i = $index) {
-                  <div class="flex items-center gap-sm text-sm">
+                  <div class="-mx-xs flex items-center gap-sm rounded px-xs text-sm" [class.bg-base-200]="s.member.id === meId()" [class.font-semibold]="s.member.id === meId()">
                     <span class="w-8 text-gray-400">{{ ordinal(i + 1) }}</span>
-                    <span class="flex-1 truncate">{{ name(s.member) }}</span>
+                    <span class="flex-1 truncate">{{ name(s.member) }}{{ s.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="text-gray-400">{{ s.inside }}/{{ g.round }} close</span>
                     <span class="font-semibold text-primary">+{{ s.xp }} XP</span>
                   </div>
@@ -160,6 +181,7 @@ export class GeoguessComponent {
   gameId = input.required<string>();
 
   private api = inject(GeoguessApi);
+  private user = inject(USER);
   gameResource = this.api.fetchGame(() => this.serverId(), () => this.gameId());
   missing = computed(() => (this.gameResource.error() as HttpErrorResponse | undefined)?.status === 404);
   /** The last game seen: a failed reload mid-game keeps the viewer, map and pin instead of tearing them down */
@@ -167,6 +189,10 @@ export class GeoguessComponent {
     source: () => (this.gameResource.hasValue() ? this.gameResource.value() : undefined),
     computation: (next, previous) => next ?? (this.missing() ? undefined : previous?.value),
   });
+
+  meId = computed(() => this.user()?.id);
+  /** Your pin on the round result, if you guessed */
+  mine = computed(() => this.game()?.pins?.find((p) => p.member.id === this.meId()));
 
   /** A pin placed but not sent yet */
   pending = signal<LatLon | null>(null);
