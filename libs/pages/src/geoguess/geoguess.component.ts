@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, DestroyRef, DOCUMENT, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { USER } from '@nx-stolfo/auth';
 import { GeoguessApi, GeoguessGameResponse } from '@nx-stolfo/data-access-geoguess';
 import { countdown, GeoguessMapComponent, GeoguessViewerComponent, LatLon, memberName, ordinal } from '@nx-stolfo/ui-geoguess';
 
@@ -17,19 +18,41 @@ const POLL_MS = 2000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GeoguessApi],
   template: `
-    <div class="flex min-h-screen flex-col gap-md bg-base-100 p-md text-gray-100 lg:h-screen">
+    <div class="flex min-h-screen flex-col gap-md bg-base-100 p-md text-gray-100 lg:h-screen" [style.--split]="split() + '%'">
       @if (game(); as g) {
-        <header class="flex flex-wrap items-baseline gap-x-md gap-y-xs">
-          <h1 class="text-xl font-bold tracking-tight">🗺️ GeoGuess</h1>
-          <span class="text-sm text-gray-400">Round {{ g.round }}/{{ g.rounds }} · {{ g.difficulty }} · within {{ g.radiusKm }} km counts</span>
+        <header class="relative flex flex-wrap items-center gap-x-md gap-y-xs lg:min-h-14">
+          <!-- While the timer follows the divider, the text on each side stops short of it (the pill is ~8rem wide)
+               and wraps or truncates instead of running under it -->
+          <div
+            class="flex min-w-0 flex-wrap items-baseline gap-x-md"
+            [class]="g.phase === 'guessing' ? 'lg:max-w-[calc(var(--split)-4.5rem)]' : ''"
+          >
+            <h1 class="text-xl font-bold tracking-tight">🗺️ GeoGuess</h1>
+            <span class="max-w-full truncate text-sm text-gray-400">Round {{ g.round }}/{{ g.rounds }} · {{ g.difficulty }} · within {{ g.radiusKm }} km counts</span>
+          </div>
           @if (g.phase === 'guessing') {
-            <span class="ml-auto text-sm tabular-nums" aria-live="polite">
-              {{ g.guessCount }} guessed · <strong class="text-lg">{{ timeLeft() }}</strong>
-            </span>
+            <span class="ml-auto truncate text-sm text-gray-400 tabular-nums lg:max-w-[calc(100%-var(--split)-5.5rem)]" aria-live="polite">{{ g.guessCount }} guessed</span>
+            <!-- Centred over the divider when side by side (the bar sits after the photo column and a 0.25rem gap),
+                 its own centred row above the photo on a phone -->
+            <div
+              class="order-first flex w-full justify-center lg:absolute lg:left-[calc(var(--split)+0.5rem)] lg:top-1/2 lg:w-auto lg:-translate-x-1/2 lg:-translate-y-1/2"
+              role="timer"
+              aria-label="Time left"
+            >
+              <span
+                class="rounded-full border px-md py-xs font-mono text-3xl font-bold tabular-nums shadow"
+                [class]="hurry() ? 'motion-safe:animate-pulse border-error bg-error/20 text-error' : 'border-base-300 bg-base-200'"
+              >
+                {{ timeLeft() }}
+              </span>
+            </div>
           }
         </header>
 
-        <main class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-2">
+        <main
+          #panes
+          class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-[var(--split)_auto_minmax(0,1fr)] lg:gap-x-xs"
+        >
           <div class="flex min-h-0 flex-col gap-xs">
             <feature-geoguess-viewer
               class="h-[45vh] lg:h-auto lg:flex-1"
@@ -42,6 +65,19 @@ const POLL_MS = 2000;
               <p class="text-xs text-gray-500">Photo on Mapillary · CC BY-SA 4.0 · the photographer is shown after the round</p>
             }
           </div>
+          <!-- Drag (or arrow keys) to share the width between the photo and the map; side by side only -->
+          <div
+            role="separator"
+            tabindex="0"
+            aria-orientation="vertical"
+            aria-label="Resize the photo and the map"
+            aria-valuemin="20"
+            aria-valuemax="80"
+            [attr.aria-valuenow]="split()"
+            class="hidden w-2 cursor-col-resize touch-none rounded bg-base-300 hover:bg-primary-500 focus-visible:bg-primary-500 focus-visible:outline-none lg:block"
+            (pointerdown)="drag($event, panes)"
+            (keydown)="nudge($event)"
+          ></div>
           <div class="flex min-h-0 flex-col gap-sm">
             <feature-geoguess-map
               class="h-[45vh] lg:h-auto lg:flex-1"
@@ -49,6 +85,8 @@ const POLL_MS = 2000;
               [locked]="g.phase !== 'guessing' || !!g.myGuess"
               [answer]="g.answer"
               [pins]="g.pins ?? []"
+              [radiusKm]="g.radiusKm"
+              [me]="meId()"
               (picked)="pending.set($event)"
             />
 
@@ -73,19 +111,37 @@ const POLL_MS = 2000;
               }
             } @else if (g.answer) {
               <section class="space-y-xs" aria-label="Round result">
+                <!-- Your own result first, big: no hunting for your name in the list -->
+                <div
+                  class="rounded-xl border p-sm"
+                  [class]="mine()?.place ? 'border-primary-500 bg-primary-500/15' : 'border-base-300 bg-base-200'"
+                >
+                  @if (mine(); as me) {
+                    <p class="text-2xl font-bold tabular-nums">You: {{ me.km }} km</p>
+                    <p class="text-sm text-gray-300">
+                      @if (me.place) {
+                        {{ ordinal(me.place) }} place{{ me.xp ? ' · +' + me.xp + ' XP' : '' }}
+                      } @else {
+                        Outside {{ g.radiusKm }} km · no XP this round
+                      }
+                    </p>
+                  } @else {
+                    <p class="text-sm text-gray-300">You didn’t guess this round.</p>
+                  }
+                </div>
                 <h2 class="font-semibold">It was {{ g.answer.country }}</h2>
                 @for (p of g.pins; track p.member.id) {
-                  <div class="flex items-center gap-sm text-sm">
+                  <div class="-mx-xs flex items-center gap-sm rounded px-xs text-sm" [class.bg-base-200]="p.member.id === meId()" [class.font-semibold]="p.member.id === meId()">
                     <span class="w-8 text-gray-400">{{ p.place ? ordinal(p.place) : '–' }}</span>
                     @if (p.member.avatar) {
                       <img class="h-6 w-6 rounded-full" [src]="p.member.avatar" alt="" />
                     } @else {
                       <span class="h-6 w-6 rounded-full bg-base-300"></span>
                     }
-                    <span class="flex-1 truncate">{{ name(p.member) }}</span>
+                    <span class="flex-1 truncate">{{ name(p.member) }}{{ p.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="tabular-nums text-gray-400">{{ p.km }} km</span>
                     @if (p.xp) {
-                      <span class="font-semibold text-primary">+{{ p.xp }} XP</span>
+                      <span class="font-semibold text-primary-300">+{{ p.xp }} XP</span>
                     }
                   </div>
                 } @empty {
@@ -101,11 +157,11 @@ const POLL_MS = 2000;
               <section class="space-y-xs" aria-label="Final scores">
                 <h2 class="font-semibold">Final scores</h2>
                 @for (s of g.scores; track s.member.id; let i = $index) {
-                  <div class="flex items-center gap-sm text-sm">
+                  <div class="-mx-xs flex items-center gap-sm rounded px-xs text-sm" [class.bg-base-200]="s.member.id === meId()" [class.font-semibold]="s.member.id === meId()">
                     <span class="w-8 text-gray-400">{{ ordinal(i + 1) }}</span>
-                    <span class="flex-1 truncate">{{ name(s.member) }}</span>
+                    <span class="flex-1 truncate">{{ name(s.member) }}{{ s.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="text-gray-400">{{ s.inside }}/{{ g.round }} close</span>
-                    <span class="font-semibold text-primary">+{{ s.xp }} XP</span>
+                    <span class="font-semibold text-primary-300">+{{ s.xp }} XP</span>
                   </div>
                 }
                 <a [routerLink]="['/overview/detail', serverId()]" class="inline-block text-sm text-gray-400 hover:text-gray-200">
@@ -132,6 +188,7 @@ export class GeoguessComponent {
   gameId = input.required<string>();
 
   private api = inject(GeoguessApi);
+  private user = inject(USER);
   gameResource = this.api.fetchGame(() => this.serverId(), () => this.gameId());
   missing = computed(() => (this.gameResource.error() as HttpErrorResponse | undefined)?.status === 404);
   /** The last game seen: a failed reload mid-game keeps the viewer, map and pin instead of tearing them down */
@@ -139,6 +196,10 @@ export class GeoguessComponent {
     source: () => (this.gameResource.hasValue() ? this.gameResource.value() : undefined),
     computation: (next, previous) => next ?? (this.missing() ? undefined : previous?.value),
   });
+
+  meId = computed(() => this.user()?.id);
+  /** Your pin on the round result, if you guessed */
+  mine = computed(() => this.game()?.pins?.find((p) => p.member.id === this.meId()));
 
   /** A pin placed but not sent yet */
   pending = signal<LatLon | null>(null);
@@ -149,6 +210,11 @@ export class GeoguessComponent {
   // the server's time with the game if players notice
   private now = signal(Date.now());
   timeLeft = computed(() => countdown(this.game()?.endsAt ?? 0, this.now()));
+  /** The last 10 seconds: the timer turns red and pulses */
+  hurry = computed(() => (this.game()?.endsAt ?? 0) - this.now() <= 10_000);
+
+  /** The photo's share of the width in %, when side by side */
+  split = signal(50);
 
   name = memberName;
   ordinal = ordinal;
@@ -179,6 +245,31 @@ export class GeoguessComponent {
       this.pending.set(null);
       this.error.set(null);
     });
+  }
+
+  drag(start: PointerEvent, main: HTMLElement) {
+    const bar = start.target as HTMLElement;
+    // Pointer capture doesn't stop the mouse from selecting the header and result text on the way
+    start.preventDefault();
+    // Capture keeps the moves coming while the pointer is over the viewer or map, which would take them
+    bar.setPointerCapture(start.pointerId);
+    const move = (e: PointerEvent) => {
+      const box = main.getBoundingClientRect();
+      this.setSplit(((e.clientX - box.left) / box.width) * 100);
+    };
+    bar.addEventListener('pointermove', move);
+    bar.addEventListener('lostpointercapture', () => bar.removeEventListener('pointermove', move), { once: true });
+  }
+
+  nudge(e: KeyboardEvent) {
+    const step = { ArrowLeft: -5, ArrowRight: 5 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    this.setSplit(this.split() + step);
+  }
+
+  private setSplit(percent: number) {
+    this.split.set(Math.round(Math.min(80, Math.max(20, percent))));
   }
 
   send() {

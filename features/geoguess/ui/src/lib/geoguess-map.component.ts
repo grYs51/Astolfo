@@ -5,7 +5,25 @@ import { LatLon, memberName } from './geoguess-format';
 
 const ACCENT = '#a855f7';
 const ANSWER = '#22c55e';
-const OTHER = '#9ca3af';
+const OTHER = '#6b7280';
+/** Size of a player's avatar marker on the result, in px; yours is bigger */
+const AVATAR = 36;
+const MY_AVATAR = 46;
+
+/** A round avatar (or the name's initial) ringed in the pin's colour; built as elements so names need no escaping */
+const avatarIcon = (L: typeof import('leaflet'), p: GeoguessPin, color: string, size: number) => {
+  const avatar = p.member.avatar;
+  let el: HTMLElement;
+  if (avatar) {
+    el = Object.assign(document.createElement('img'), { src: avatar, alt: '' });
+  } else {
+    el = document.createElement('div');
+    el.textContent = memberName(p.member).charAt(0).toUpperCase();
+  }
+  el.style.cssText = `width:${size}px;height:${size}px;border-radius:50%;border:3px solid ${color};box-sizing:border-box;background:#1f2937;color:#fff;display:grid;place-items:center;font-weight:700;object-fit:cover`;
+  // className '' drops Leaflet's default white square behind div icons
+  return L.divIcon({ html: el, className: '', iconSize: [size, size] });
+};
 
 /**
  * A world map: click to place your pin while the round is open. Once it's over it shows the answer, every pin
@@ -24,6 +42,10 @@ export class GeoguessMapComponent {
   locked = input(false);
   answer = input<LatLon | undefined>(undefined);
   pins = input<GeoguessPin[]>([]);
+  /** The round's radius: drawn around the answer, so it's clear why a pin counted */
+  radiusKm = input<number | undefined>(undefined);
+  /** The viewer's member id: their pin is bigger and on top */
+  me = input<string | undefined>(undefined);
   picked = output<LatLon>();
 
   private container = viewChild.required<ElementRef<HTMLElement>>('container');
@@ -32,6 +54,7 @@ export class GeoguessMapComponent {
 
   constructor() {
     let destroyed = false;
+    let resized: ResizeObserver | undefined;
     // Leaflet touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
       // Leaflet is CommonJS: the production build puts it all on `default` (only `export default`), the dev
@@ -41,9 +64,11 @@ export class GeoguessMapComponent {
       // Left the page while it loaded: don't start a map nobody will remove
       if (destroyed) return;
       const map = L.map(this.container().nativeElement, { worldCopyJump: true, minZoom: 1 }).setView([20, 0], 2);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Esri's street map labels every place in English; OpenStreetMap's tiles use the local language.
+      // shortcut: Esri's keyless tile service, fine for a friendly server; move to an ArcGIS key if Esri starts refusing it.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: 'Powered by <a href="https://www.esri.com">Esri</a> | Sources: Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS, &copy; OpenStreetMap contributors',
       }).addTo(map);
       const pick = (at: LatLng) => {
         if (this.locked()) return;
@@ -54,6 +79,9 @@ export class GeoguessMapComponent {
       // Keyboard: the arrow keys pan the map, Enter drops the pin at its centre
       map.on('keydown', (e) => e.originalEvent.key === 'Enter' && pick(map.getCenter()));
       this.leaflet.set({ L, map, layer: L.layerGroup().addTo(map) });
+      // Leaflet only follows window resizes; the page's divider resizes the container on its own
+      resized = new ResizeObserver(() => map.invalidateSize());
+      resized.observe(this.container().nativeElement);
     });
 
     // Redraw every marker when anything changes: a handful of pins, so no diffing
@@ -64,6 +92,8 @@ export class GeoguessMapComponent {
       const pin = this.pin();
       const answer = this.answer();
       const pins = this.pins();
+      const radiusKm = this.radiusKm();
+      const me = this.me();
       if (!leaflet) return;
       const { L, map, layer } = leaflet;
       layer.clearLayers();
@@ -76,13 +106,23 @@ export class GeoguessMapComponent {
         if (pin) dot(pin, ACCENT, 8).addTo(layer);
         return;
       }
-      for (const p of pins) {
-        L.polyline([[p.lat, p.lon], [answer.lat, answer.lon]], { color: OTHER, weight: 1, dashArray: '4 4' }).addTo(layer);
-        dot(p, p.place ? ACCENT : OTHER, 7)
-          .bindTooltip(`${memberName(p.member)} · ${p.km} km`)
+      if (radiusKm) {
+        L.circle([answer.lat, answer.lon], { radius: radiusKm * 1000, color: ANSWER, weight: 2, dashArray: '2 6', fillColor: ANSWER, fillOpacity: 0.08, interactive: false })
           .addTo(layer);
       }
-      dot(answer, ANSWER, 10).bindTooltip('Here!', { permanent: true, direction: 'top' }).addTo(layer);
+      for (const p of pins) {
+        const color = p.place ? ACCENT : OTHER;
+        const mine = p.member.id === me;
+        const size = mine ? MY_AVATAR : AVATAR;
+        const line: [number, number][] = [[p.lat, p.lon], [answer.lat, answer.lon]];
+        // A white casing under the line keeps it readable over roads and labels; outside the radius it's dashed
+        L.polyline(line, { color: '#fff', weight: 7, opacity: 0.9, interactive: false }).addTo(layer);
+        L.polyline(line, { color, weight: 4, dashArray: p.place ? undefined : '10 8', interactive: false }).addTo(layer);
+        L.marker([p.lat, p.lon], { icon: avatarIcon(L, p, color, size), title: memberName(p.member), zIndexOffset: mine ? 1000 : 0 })
+          .bindTooltip(mine ? `You · ${p.km} km` : `${p.km} km`, { permanent: true, direction: 'bottom', offset: [0, size / 2] })
+          .addTo(layer);
+      }
+      dot(answer, ANSWER, 14).bindTooltip('Here!', { permanent: true, direction: 'top' }).addTo(layer);
       if (fitted === `${answer.lat},${answer.lon}`) return;
       fitted = `${answer.lat},${answer.lon}`;
       map.fitBounds(L.latLngBounds([[answer.lat, answer.lon], ...pins.map((p) => [p.lat, p.lon] as [number, number])]).pad(0.2), { maxZoom: 8 });
@@ -90,6 +130,7 @@ export class GeoguessMapComponent {
 
     inject(DestroyRef).onDestroy(() => {
       destroyed = true;
+      resized?.disconnect();
       this.leaflet()?.map.remove();
     });
   }
