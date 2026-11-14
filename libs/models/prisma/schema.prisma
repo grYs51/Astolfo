@@ -73,6 +73,8 @@ model message_stats {
 
   @@index([guild_id, user_id])
   @@index([guild_id, created_at])
+  // The server list looks up one user's guilds across all servers
+  @@index([user_id, guild_id])
 }
 
 model user_configs {

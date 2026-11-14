@@ -36,14 +36,18 @@ const startGame = async (opponent = user('b')) => {
     interaction
   );
   const replies: { id: string; content: string; ephemeral: boolean }[] = [];
-  const click = (id: string, move: string, deferFails = false) =>
+  /** `whileReplying` runs while the click's private reply is being sent */
+  const click = (id: string, move: string, deferFails = false, whileReplying?: () => Promise<unknown>) =>
     handlers.collect({
       user: { id },
       customId: move,
       deferUpdate: jest.fn(async () => {
         if (deferFails) throw new Error('Unknown interaction');
       }),
-      reply: jest.fn(async (r: { content: string; ephemeral: boolean }) => replies.push({ id, ...r })),
+      reply: jest.fn(async (r: { content: string; ephemeral: boolean }) => {
+        await whileReplying?.();
+        replies.push({ id, ...r });
+      }),
     } as never);
   const end = (reason: string) => handlers.end(new Map() as never, reason as never);
   return { click, end, create, collector, replies };
@@ -95,6 +99,19 @@ describe('/rockpaperscissors', () => {
     const { click, end } = await startGame();
     await click('a', 'rock');
     await end('time');
+
+    expect(InterActionUtils.editReply).toHaveBeenLastCalledWith(expect.anything(), {
+      content: "Game cancelled: <@b> didn't pick in time.",
+      components: [],
+    });
+  });
+
+  test('a pick that lands as the game times out does not bring the board back', async () => {
+    const { click, end, collector } = await startGame();
+    await click('a', 'rock', false, async () => {
+      collector.ended = true;
+      await end('time');
+    });
 
     expect(InterActionUtils.editReply).toHaveBeenLastCalledWith(expect.anything(), {
       content: "Game cancelled: <@b> didn't pick in time.",

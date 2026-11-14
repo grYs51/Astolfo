@@ -162,8 +162,8 @@ export default class RockPaperScissors extends BaseSlash {
             ephemeral: true,
           })
           .catch(() => undefined);
-        // The other player may have finished the game while this reply was sent
-        if (!outcome) await InterActionUtils.editReply(interaction, { content: board() }).catch(() => undefined);
+        // The other player may have finished the game, or it timed out, while this reply was sent
+        if (!outcome && !collector.ended) await InterActionUtils.editReply(interaction, { content: board() }).catch(() => undefined);
         return;
       }
       const played = (outcome = this.getGameOutcome(

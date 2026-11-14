@@ -208,7 +208,8 @@ export default class LeaderboardEvent extends BaseSlash {
       const collector = sent.createMessageComponentCollector({
         filter: (i) => [prevId, nextId, closeId].includes(i.customId),
         componentType: ComponentType.Button,
-        idle: COLLECTOR_IDLE_MS,
+        // Not `idle`: every collected click resets that, bystanders' included
+        time: COLLECTOR_IDLE_MS,
       });
 
       collector.on('collect', async (btn) => {
@@ -220,6 +221,8 @@ export default class LeaderboardEvent extends BaseSlash {
             });
             return;
           }
+          // Only the owner's clicks keep the buttons alive
+          collector.resetTimer();
 
           if (btn.customId === prevId) {
             currentPage = Math.max(0, currentPage - 1);
