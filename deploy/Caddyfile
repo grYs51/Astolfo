@@ -34,9 +34,11 @@
 			# hydration (withEventReplay) injects an inline bootstrap script, so
 			# a strict `script-src 'self'` will break hydration. Roll it out as
 			# Report-Only first, watch the browser console for violations, then
-			# switch the header name to `Content-Security-Policy`:
+			# switch the header name to `Content-Security-Policy`. The GeoGuess
+			# page loads the Mapillary viewer (API, tiles, photos on fbcdn) and
+			# OpenStreetMap tiles:
 			#
-			# Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https://cdn.discordapp.com; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+			# Content-Security-Policy-Report-Only "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.discordapp.com https://tile.openstreetmap.org https://*.fbcdn.net https://*.mapillary.com; font-src 'self' data:; connect-src 'self' https://*.mapillary.com https://*.fbcdn.net; worker-src 'self' blob:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
 		}
 
 		reverse_proxy localhost:4000

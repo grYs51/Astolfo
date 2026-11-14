@@ -12,6 +12,7 @@ export interface TriviaQuestionCardData {
   /** The XP multiplier for that difficulty */
   factor: number;
   question: string;
+  /** Empty for a GeoGuess map round: the guess is a pin on the dashboard */
   answers: string[];
   seconds: number;
   /** GeoGuess: the photo is the question. No credit: a Mapillary username can name the place */
@@ -25,6 +26,8 @@ export interface TriviaPlayer {
   xp?: number;
   /** How long they took to answer; undefined for questions saved before times were kept */
   ms?: number;
+  /** GeoGuess map round: how far their pin was */
+  km?: number;
 }
 
 export interface TriviaResultCardData {
@@ -37,6 +40,8 @@ export interface TriviaResultCardData {
   winners: TriviaPlayer[];
   /** GeoGuess: the photo, and the answers that were a near miss */
   geo?: Pick<GeoInfo, 'image' | 'credit' | 'near'>;
+  /** GeoGuess map round: no answer grid, the winners are the pins inside the radius */
+  map?: { radiusKm: number; answered: number };
 }
 
 export interface TriviaScoreboardCardData {
@@ -123,14 +128,17 @@ export const triviaQuestionCard = (d: TriviaQuestionCardData, t: CardTheme) => {
   const photoH = d.geo ? 440 : 0;
   const q = questionText(d.question, 72 + (photoH && photoH + 12), 28, t);
   const gridY = q.end + 36;
-  const footerY = gridY + gridHeight(d.answers) + 40;
+  const footerY = d.answers.length ? gridY + gridHeight(d.answers) + 40 : q.end + 40;
+  const howTo = d.answers.length
+    ? `Everyone can answer: the quicker you're right, the more XP. ${d.seconds} seconds!`
+    : `Drop a pin on the dashboard: the closer, the more XP. ${d.seconds} seconds!`;
   return svgCard(footerY + 52, t, [
     text(PAD, 52, 16, t.muted, escapeXml(truncate(d.category, 48))),
     text(W - PAD, 52, 16, t.accent, escapeXml(badge), 'text-anchor="end" font-weight="700"'),
     d.geo ? photo(d.geo.image, 72, photoH) : '',
     q.svg,
     answerGrid(d.answers, gridY, t),
-    text(PAD, footerY, 16, t.text, escapeXml(`Everyone can answer: the quicker you're right, the more XP. ${d.seconds} seconds!`)),
+    text(PAD, footerY, 16, t.text, escapeXml(howTo)),
     text(PAD, footerY + 26, 12, t.muted, escapeXml(attribution(d.geo && {}))),
   ]);
 };
@@ -147,23 +155,26 @@ const playerRow = (p: TriviaPlayer, i: number, y: number, t: CardTheme, note: st
 
 /** The answer and who got it: the right answer filled, picks per answer, the quickest right members with their XP */
 export const triviaResultCard = (d: TriviaResultCardData, t: CardTheme) => {
-  const answered = d.picks.reduce((a, b) => a + b, 0);
+  const answered = d.map?.answered ?? d.picks.reduce((a, b) => a + b, 0);
   const photoH = d.geo ? 240 : 0;
   const isNear = (i: number) => !!d.geo?.near.includes(d.answers[i]);
   const nearCount = d.picks.reduce((sum, n, i) => sum + (isNear(i) ? n : 0), 0);
   const q = questionText(d.geo ? `It was ${d.correct}` : d.question, 28 + (photoH && photoH + 12), 20, t);
   const gridY = q.end + 28;
-  const listY = gridY + gridHeight(d.answers) + 40;
+  const listY = d.answers.length ? gridY + gridHeight(d.answers) + 40 : gridY;
   const shown = d.winners.slice(0, SHOWN_WINNERS);
-  const rows = shown.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, p.ms !== undefined ? seconds(p.ms) : ''));
+  const rows = shown.map((p, i) => playerRow(p, i, listY + i * ROW_H, t, p.km !== undefined ? `${Math.round(p.km)} km` : p.ms !== undefined ? seconds(p.ms) : ''));
   const more = d.winners.length - shown.length;
   const wrong = answered - d.winners.length - nearCount;
   const nearNote = nearCount ? `${nearCount} near miss${nearCount === 1 ? '' : 'es'}` : '';
+  const right = d.map ? `within ${d.map.radiusKm} km` : 'got it right';
   const summary = !answered
     ? 'Nobody answered!'
     : !d.winners.length
-      ? `Nobody got it right (${answered} tried).${nearNote ? ` ${nearNote}.` : ''}`
-      : [more ? `+${more} more got it right` : '', nearNote, wrong ? `${wrong} got it wrong` : ''].filter(Boolean).join(' · ');
+      ? d.map
+        ? `Nobody was within ${d.map.radiusKm} km (${answered} tried).`
+        : `Nobody got it right (${answered} tried).${nearNote ? ` ${nearNote}.` : ''}`
+      : [more ? `+${more} more ${right}` : '', nearNote, wrong ? (d.map ? `${wrong} further away` : `${wrong} got it wrong`) : ''].filter(Boolean).join(' · ');
   const summaryY = listY + shown.length * ROW_H + (shown.length ? 24 : 8);
   return svgCard(summaryY + 56, t, [
     d.geo ? photo(d.geo.image, 28, photoH) : '',

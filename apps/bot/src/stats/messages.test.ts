@@ -40,6 +40,17 @@ describe('dashboard link', () => {
     expect(dashboardUrlFor('g')).toBe('https://astolfo.example/overview/detail/g');
   });
 
+  test('opens on the same period, tab and member as the reply', () => {
+    process.env.CLIENT_URL = 'https://astolfo.example';
+    expect(dashboardUrlFor('g', { period: 'week' })).toBe('https://astolfo.example/overview/detail/g?period=week');
+    // month is the dashboard's default, so it stays out of the URL
+    expect(dashboardUrlFor('g', { period: 'month' })).toBe('https://astolfo.example/overview/detail/g');
+    expect(dashboardUrlFor('g', { period: 'all', tab: 'server' })).toBe(
+      'https://astolfo.example/overview/detail/g?period=all&tab=server'
+    );
+    expect(dashboardUrlFor('g', { memberId: 'm' })).toBe('https://astolfo.example/overview/detail/g/members/m');
+  });
+
   test('left out when CLIENT_URL is missing or not absolute', () => {
     Reflect.deleteProperty(process.env, 'CLIENT_URL');
     expect(dashboardUrlFor('g')).toBeUndefined();

@@ -1,0 +1,12 @@
+{
+  "name": "@nx-stolfo/ui-geoguess",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/core": "^21.0.0",
+    "@nx-stolfo/api-interfaces": "0.0.1",
+    "leaflet": "^1.9.4",
+    "mapillary-js": "^4.1.2",
+    "@nx/angular": "22.3.3"
+  },
+  "sideEffects": false
+}

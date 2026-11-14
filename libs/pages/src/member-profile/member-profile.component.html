@@ -2,7 +2,7 @@
   <header class="space-y-sm">
     <a
       [routerLink]="['/overview/detail', id()]"
-      [queryParams]="{ tab: 'server' }"
+      [queryParams]="{ tab: 'server', period: periodParam() }"
       class="inline-flex items-center gap-xs text-sm text-gray-400 hover:text-gray-200"
     >
       <span aria-hidden="true">←</span> {{ serverName() }}
@@ -16,13 +16,19 @@
         <div>
           <p class="text-xs font-medium uppercase tracking-widest text-gray-500">Member</p>
           <h1 class="text-2xl font-bold tracking-tight text-gray-100">{{ name() }}</h1>
+          <a
+            [href]="'https://discord.com/users/' + memberId()"
+            target="_blank"
+            rel="noopener"
+            class="text-sm text-gray-400 hover:text-gray-200 hover:underline"
+          >Open in Discord ↗</a>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-sm">
-        <lib-segmented-control label="Period" [options]="periodOptions" [(value)]="period" />
+        <lib-segmented-control label="Period" [options]="periodOptions" [value]="activePeriod()" (valueChange)="selectPeriod($event)" />
         <!-- Once the member has loaded -->
         @if (member()) {
-          <pages-card-dialog [guildId]="id()" [memberId]="memberId()" [period]="period()" [name]="name()" />
+          <pages-card-dialog [guildId]="id()" [memberId]="memberId()" [period]="activePeriod()" [name]="name()" />
         }
       </div>
     </div>
@@ -34,7 +40,7 @@
     [presenceResource]="presenceResource"
     [gamesResource]="gamesResource"
     [calendarResource]="calendarResource"
-    [period]="period()"
+    [period]="activePeriod()"
     [name]="isSelf() ? undefined : name()"
     [xpLeaderboard]="xpLeaderboard()"
     [messageRank]="messageRank()"

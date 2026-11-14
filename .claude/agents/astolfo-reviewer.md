@@ -18,7 +18,7 @@ You review diffs in the Astolfo monorepo against **this project's** conventions.
 - Response shape mirrored in `features/*/data-access/**/*.model.ts` if the frontend consumes it.
 
 **Bot code (`apps/bot/src/`)**
-- New commands/events/slashs/interactions: correct folder, default-exported class extending the right base in `utils/structures/`.
+- New commands/events/slashs: correct folder, default-exported class extending the right base in `utils/structures/`.
 - Async work inside event handlers has error handling (BaseEvent.run does NOT catch — CODE_REVIEW.md §4.1).
 - Uses `Logger`, never `console`. Voice-cache keys via the `guildId:memberId` convention. DB writes of N rows use `createMany`, not N `create`s.
 - No unawaited `forEach(async ...)`. Anything cached in memory that must survive restarts is flushed in `shutdown-handler.ts`.

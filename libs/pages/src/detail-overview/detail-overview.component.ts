@@ -33,6 +33,7 @@ import {
 } from '@nx-stolfo/components';
 import { HumanizeDurationPipe } from '@nx-stolfo/common/pipes';
 import { MemberActivityComponent } from '../member-activity/member-activity.component';
+import { PERIOD_OPTIONS, parsePeriod, periodParam } from '../period';
 import { CardDialogComponent } from '../card-dialog/card-dialog.component';
 
 type Tab = 'you' | 'server';
@@ -69,6 +70,8 @@ export class DetailOverviewComponent {
   id = input.required<string>();
   /** `?tab=server` (query params are bound to inputs too) */
   tab = input<string | undefined>();
+  /** `?period=week`; month when absent */
+  period = input<string | undefined>();
 
   private voiceStatsApi = inject(VoiceStatsApi);
   private guildSettingsApi = inject(GuildSettingsApi);
@@ -102,17 +105,21 @@ export class DetailOverviewComponent {
   }
 
   // ── One period for the whole page ────────────────────────────────────────
-  readonly periodOptions: SegmentedControlOption<DashboardPeriod>[] = [
-    { value: 'week', label: 'Week' },
-    { value: 'month', label: 'Month' },
-    { value: 'year', label: 'Year' },
-    { value: 'all', label: 'All time' },
-  ];
-  period = signal<DashboardPeriod>('month');
-  previousLabel = computed(() => PREVIOUS_LABEL[this.period()]);
+  readonly periodOptions = PERIOD_OPTIONS;
+  activePeriod = computed(() => parsePeriod(this.period()));
+
+  selectPeriod(period: DashboardPeriod) {
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { period: periodParam(period) },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
+  previousLabel = computed(() => PREVIOUS_LABEL[this.activePeriod()]);
   /** Daily bars for a week or month, weekly bars beyond that */
   private granularity = computed<TimelineGranularity>(() =>
-    this.period() === 'week' || this.period() === 'month' ? 'day' : 'week'
+    this.activePeriod() === 'week' || this.activePeriod() === 'month' ? 'day' : 'week'
   );
 
   private userId = computed(() => this.currentUser()?.id);
@@ -120,50 +127,50 @@ export class DetailOverviewComponent {
   // ── Data (resources refetch when id/period/user change) ──────────────────
   overviewResource = this.voiceStatsApi.fetchVoiceStatsOverview(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   // Enough rows to find the viewer's rank; the list shows the top 10
   leaderboardResource = this.voiceStatsApi.fetchVoiceStatsLeaderboard(
     () => this.id(),
-    () => this.period(),
+    () => this.activePeriod(),
     () => 100
   );
   messagesResource = this.voiceStatsApi.fetchServerMessages(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   channelsResource = this.voiceStatsApi.fetchVoiceStatsChannels(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   timelineResource = this.voiceStatsApi.fetchVoiceStatsTimeline(
     () => this.id(),
-    () => this.period(),
+    () => this.activePeriod(),
     () => this.granularity()
   );
   heatmapResource = this.voiceStatsApi.fetchVoiceStatsHeatmap(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   userResource = this.voiceStatsApi.fetchVoiceStatsUser(
     () => this.id(),
     () => this.userId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   userHeatmapResource = this.voiceStatsApi.fetchVoiceStatsUserHeatmap(
     () => this.id(),
     () => this.userId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   userPresenceResource = this.voiceStatsApi.fetchUserPresence(
     () => this.id(),
     () => this.userId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   userGamesResource = this.voiceStatsApi.fetchUserGames(
     () => this.id(),
     () => this.userId(),
-    () => this.period()
+    () => this.activePeriod()
   );
   userCalendarResource = this.voiceStatsApi.fetchUserActivityCalendar(
     () => this.id(),
@@ -172,11 +179,11 @@ export class DetailOverviewComponent {
   calendarResource = this.voiceStatsApi.fetchServerActivityCalendar(() => this.id());
   presenceResource = this.voiceStatsApi.fetchServerPresence(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
   gamesResource = this.voiceStatsApi.fetchServerGames(
     () => this.id(),
-    () => this.period()
+    () => this.activePeriod()
   );
 
   /** Decides the settings link; a small call, not the whole settings object */
@@ -200,14 +207,17 @@ export class DetailOverviewComponent {
     this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
   );
 
-  /** Profile page of a member; your own row/name leads to the You tab */
+  /** Profile page of a member, same period; your own row/name leads to the You tab */
   memberLink = (memberId: string) =>
-    memberId === this.userId()
-      ? ['/overview/detail', this.id()]
-      : ['/overview/detail', this.id(), 'members', memberId];
+    this.router.createUrlTree(
+      memberId === this.userId()
+        ? ['/overview/detail', this.id()]
+        : ['/overview/detail', this.id(), 'members', memberId],
+      { queryParams: { period: periodParam(this.activePeriod()) } }
+    );
 
   openMember(memberId: string) {
-    this.router.navigate(this.memberLink(memberId));
+    this.router.navigateByUrl(this.memberLink(memberId));
   }
 
   private readonly durationPipe = new HumanizeDurationPipe();
@@ -257,7 +267,7 @@ export class DetailOverviewComponent {
   habitMetric = signal<VoiceHabitMetric>('camera');
   habitsResource = this.voiceStatsApi.fetchVoiceHabits(
     () => this.id(),
-    () => this.period(),
+    () => this.activePeriod(),
     () => this.habitMetric()
   );
 

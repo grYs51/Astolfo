@@ -90,6 +90,34 @@ describe('GeoGuess cards', () => {
     expect((await renderPng(svg)).length).toBeGreaterThan(0);
   });
 
+  test('a map round: no answer grid, the pin how-to, and the winners with their distance', async () => {
+    const asked = triviaQuestionCard({ ...question, category: 'GeoGuess', question: 'Where is this?', answers: [], seconds: 90, geo: { image } }, THEMES.dark);
+    expect(asked).not.toContain('<circle');
+    expect(asked).toContain('Drop a pin on the dashboard: the closer, the more XP. 90 seconds!');
+    expect((await renderPng(asked)).length).toBeGreaterThan(0);
+
+    const svg = triviaResultCard(
+      {
+        question: 'Where is this?',
+        answers: [],
+        correct: 'Belgium',
+        picks: [],
+        winners: [{ name: 'A<1>', xp: 30, km: 212.4 }],
+        geo: { image, near: [] },
+        map: { radiusKm: 500, answered: 3 },
+      },
+      THEMES.dark
+    );
+    expect(svg).toContain('>It was Belgium<');
+    expect(svg).toContain('>212 km<');
+    expect(svg).toContain('A&lt;1&gt;');
+    expect(svg).toContain('2 further away');
+    expect(triviaResultCard({ question: '', answers: [], correct: 'Peru', picks: [], winners: [], geo: { image, near: [] }, map: { radiusKm: 500, answered: 2 } }, THEMES.dark)).toContain(
+      'Nobody was within 500 km (2 tried).'
+    );
+    expect((await renderPng(svg)).length).toBeGreaterThan(0);
+  });
+
   test('the scoreboard carries the game name', () => {
     expect(triviaScoreboardCard({ title: 'GeoGuess', rounds: 2, players: [] }, THEMES.dark)).toContain('GeoGuess · final scores after 2 rounds');
   });

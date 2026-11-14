@@ -11,6 +11,7 @@ import {
 } from './guild-settings';
 import { getActiveServers } from './active-servers';
 import { trackPageView } from './track';
+import { getGeoguessGame, postGeoguessGuess } from './geoguess';
 import {
   getVoiceStatsOverview,
   getVoiceStatsLeaderboard,
@@ -61,6 +62,20 @@ export default (router: Router) => {
     isServerMember,
     isServerManager,
     getGuildSettingsHistory,
+  );
+
+  // GeoGuess map games: the page polls the game and sends one pin per round
+  router.get(
+    '/features/servers/:serverId/geoguess/:gameId',
+    isAuthenticated,
+    isServerMember,
+    getGeoguessGame,
+  );
+  router.post(
+    '/features/servers/:serverId/geoguess/:gameId/guess',
+    isAuthenticated,
+    isServerMember,
+    postGeoguessGuess,
   );
 
   // Voice Stats endpoints — all require real guild membership

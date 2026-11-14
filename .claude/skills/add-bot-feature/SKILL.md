@@ -1,18 +1,17 @@
 ---
 name: add-bot-feature
-description: Add a Discord bot capability — prefix command, event handler, slash command, or interaction (modal/component). USE WHEN working in apps/bot/src/{commands,events,slashs,interactions} or when asked to make the bot react to something on Discord.
+description: Add a Discord bot capability — prefix command, event handler, slash command, or buttons on a reply. USE WHEN working in apps/bot/src/{commands,events,slashs} or when asked to make the bot react to something on Discord.
 ---
 
-# Adding a Bot Feature (command / event / slash / interaction)
+# Adding a Bot Feature (command / event / slash / buttons)
 
-Registration is automatic: `apps/bot/src/utils/registry.ts` recursively scans the four folders at startup and instantiates every file's default export. **No manual registration list** — the file's location determines its kind.
+Registration is automatic: `apps/bot/src/utils/registry.ts` recursively scans the three folders at startup and instantiates every file's default export. **No manual registration list** — the file's location determines its kind.
 
 | Kind | Folder | Base class | Triggered by |
 | --- | --- | --- | --- |
 | Prefix command | `apps/bot/src/commands/<category>/` | `BaseCommand` | `<prefix><name>` in chat (prefix from guild config, default `,`) |
 | Event handler | `apps/bot/src/events/<category>/` | `BaseEvent` | discord.js gateway event (constructor takes `Events.X`) |
 | Slash command | `apps/bot/src/slashs/<category>/` | `BaseSlash` | Application command via `interaction-create.ts` |
-| Interaction | `apps/bot/src/interactions/<kind>/` | `BaseInteraction` | Modal submit / message component, matched by `customId` |
 
 Base classes live in `apps/bot/src/utils/structures/`. Each `run()` wrapper also increments the matching prom-client counter (`api/utils/counter.ts`) — you get metrics for free.
 
@@ -35,7 +34,7 @@ export default class MyEvent extends BaseEvent {
 
 **Prefix command**: extend `BaseCommand`; name + aliases are registered in the commands Collection. Dispatch happens in `utils/handlers/message/run-command.ts`.
 
-**Interaction**: the Collection key is the interaction `customId` (see `interactions/modal/modal-submit.ts`). Buttons are explicitly ignored in `events/slashs/interaction-create.ts`.
+**Buttons**: `events/slashs/interaction-create.ts` only dispatches slash commands. Handle buttons with a collector on the reply (`sent.createMessageComponentCollector`, see `slashs/guild/leaderboard.ts` and `slashs/fun/rockpaperscissors.ts`). Filter on `customId` only and check the user inside `collect`, replying ephemerally to anyone else, or their click shows "This interaction failed". Prefer `idle` over `time` so active use doesn't time out. Link buttons (e.g. `dashboardButton(dashboardUrlFor(...))` from `stats/messages.ts`) need no handler.
 
 ## Shared state & helpers
 
