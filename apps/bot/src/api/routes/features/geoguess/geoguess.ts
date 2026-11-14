@@ -55,7 +55,8 @@ export const getGeoguessGame: RequestHandler<Params> = asyncHandler(async (req, 
   if (game.phase === 'guessing') game.viewers.add(userId);
   const ids = new Set([...game.totals.keys(), ...(game.current.ranked ?? []).map((g) => g.userId)]);
   const members = await discordDirectory().members(serverId, [...ids]);
-  res.send(gameView(game, userId, process.env.MAPILLARY_TOKEN ?? '', members));
+  // Its own token when set: anyone in the server can read it, and burning it shouldn't take button GeoGuess down too
+  res.send(gameView(game, userId, process.env.MAPILLARY_CLIENT_TOKEN || process.env.MAPILLARY_TOKEN || '', members));
 });
 
 const REFUSED = {
