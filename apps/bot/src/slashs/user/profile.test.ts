@@ -18,7 +18,10 @@ const interactionFor = (targetId?: string) =>
     inCachedGuild: () => true,
     user: { id: ME },
     member: { id: ME },
-    options: { get: () => (targetId ? { member: { id: targetId } } : null) },
+    options: {
+      getUser: () => (targetId ? { id: targetId } : null),
+      getMember: () => (targetId === 'left-server' ? null : targetId ? { id: targetId } : null),
+    },
   }) as never;
 
 const run = (client: never, interaction: never) =>
@@ -60,4 +63,19 @@ test('/profile posts the profile as a PNG card', async () => {
   const [, message, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
   expect(message.files[0].name).toBe('profile.png');
   expect(hidden).toBeUndefined(); // public, like before
+});
+
+test('/profile on someone who left the server says so instead of showing yours', async () => {
+  await run(clientWith(), interactionFor('left-server'));
+
+  const [, text, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
+  expect(text).toMatch(/isn't a member of this server/);
+  expect(hidden).toBe(true);
+  expect(getMemberProfile).not.toHaveBeenCalled();
+});
+
+test('the user option takes users only (a role used to show your own profile)', () => {
+  const json = new ProfileSlash().createInteraction().toJSON();
+  // 6 = USER; 9 (MENTIONABLE) also accepts roles
+  expect(json.options?.[0]).toMatchObject({ name: 'user', type: 6 });
 });

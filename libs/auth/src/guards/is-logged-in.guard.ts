@@ -4,6 +4,7 @@ import { CanActivateFn, Router, UrlTree } from "@angular/router";
 import { of, filter, map, take } from "rxjs";
 import { IS_SESSION_CHECKED, IS_LOGGED_IN, USER } from "../profile/profile.token";
 import { toObservable } from '@angular/core/rxjs-interop';
+import { saveReturnUrl, takeReturnUrl } from './return-url';
 
 /** Runs `decide` once the first /auth/status check has finished. Call in an injection context. */
 const afterSessionCheck = (decide: () => boolean | UrlTree) => {
@@ -25,10 +26,18 @@ const afterSessionCheck = (decide: () => boolean | UrlTree) => {
 };
 
 export function AuthGuard(): CanActivateFn {
-  return () => {
+  return (_route, state) => {
     const isLoggedIn = inject(IS_LOGGED_IN);
     const router = inject(Router);
-    return afterSessionCheck(() => isLoggedIn() || router.createUrlTree(['/login']));
+    return afterSessionCheck(() => {
+      if (!isLoggedIn()) {
+        // A dashboard link from Discord should still open its page after login
+        saveReturnUrl(state.url);
+        return router.createUrlTree(['/login']);
+      }
+      const returnUrl = takeReturnUrl();
+      return returnUrl && returnUrl !== state.url ? router.parseUrl(returnUrl) : true;
+    });
   };
 }
 

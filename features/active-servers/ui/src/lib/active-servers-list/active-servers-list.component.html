@@ -20,7 +20,13 @@
         <feature-active-servers-card [guild]="guild" />
       </a>
     } @empty {
-      <feature-active-servers-card-skeleton [title]="'No active servers'" />
+      <div class="col-span-full rounded-xl border border-white/5 bg-base-300 p-md">
+        <h2 class="text-sm font-semibold text-gray-100">No servers yet</h2>
+        <p class="mt-xs text-sm text-gray-400">
+          Join a voice channel or send a message in a server that has Astolfo, then come back.
+          Or run <code>/stats</code> there: its button opens that server here.
+        </p>
+      </div>
     }
   }
 </div>
