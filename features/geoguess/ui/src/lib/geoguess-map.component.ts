@@ -34,7 +34,10 @@ export class GeoguessMapComponent {
     let destroyed = false;
     // Leaflet touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
-      const L = await import('leaflet');
+      // Leaflet is CommonJS: the production build puts it all on `default` (only `export default`), the dev
+      // server exposes the names directly. Take whichever is there.
+      const mod: typeof import('leaflet') & { default?: typeof import('leaflet') } = await import('leaflet');
+      const L = mod.default ?? mod;
       // Left the page while it loaded: don't start a map nobody will remove
       if (destroyed) return;
       const map = L.map(this.container().nativeElement, { worldCopyJump: true, minZoom: 1 }).setView([20, 0], 2);
