@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DecimalPipe, PercentPipe } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, UrlTree } from '@angular/router';
 import { PresenceRhythmMember, ServerPresence } from '@nx-stolfo/data-access-voice-stats';
 import {
   HEATMAP_HOURS,
@@ -25,7 +25,7 @@ import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component'
 export class ServerPulseComponent {
   presence = input.required<ServerPresence>();
   /** Router commands for a member's profile */
-  memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
+  memberLink = input<((memberId: string) => unknown[] | UrlTree) | undefined>(undefined);
 
   private averages = computed(
     () => new Map(this.presence().cells.map((c) => [heatmapKey(c.hour, weekdayRow(c.dayOfWeek)), c.avgOnline]))

@@ -9,12 +9,10 @@ import {
   voice_stats,
 } from '@prisma/client';
 import { Db } from '../db';
-import BaseInteraction from '../utils/structures/base-interaction';
 
 export default class DiscordClient extends Client {
   public readonly commands = new Collection<string, BaseCommand>();
   public readonly events = new Collection<string, BaseEvent>();
-  public readonly interactions = new Collection<string, BaseInteraction>();
   public readonly slashs = new Collection<string, BaseSlash>();
   public readonly guildConfigs = new Collection<string, guild_configs>();
   public readonly userConfigs = new Collection<string, user_configs>();

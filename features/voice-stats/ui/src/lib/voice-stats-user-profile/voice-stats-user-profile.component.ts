@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, UrlTree } from '@angular/router';
 import { VoiceStatsUser } from '@nx-stolfo/data-access-voice-stats';
 import {
   ProgressBarComponent,
@@ -41,7 +41,7 @@ export class VoiceStatsUserProfileComponent {
   /** Recent sessions show exact times, so only on the viewer's own page */
   showRecent = input(true);
   /** Router commands for a member's profile; companions become links */
-  memberLink = input<((memberId: string) => unknown[]) | undefined>(undefined);
+  memberLink = input<((memberId: string) => unknown[] | UrlTree) | undefined>(undefined);
 
   protected topChannels = computed(() => this.userStats().channelBreakdown.slice(0, 3));
   protected recentSessions = computed(() => this.userStats().recentSessions.slice(0, 5));

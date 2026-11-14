@@ -52,7 +52,7 @@ export default class StatsSlash extends BaseSlash {
       period,
       theme: THEMES[DEFAULT_THEME],
     });
-    const dashboardUrl = dashboardUrlFor(guild.id);
+    const dashboardUrl = dashboardUrlFor(guild.id, { period });
     await InterActionUtils.send(
       interaction,
       {

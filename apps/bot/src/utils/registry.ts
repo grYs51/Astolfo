@@ -5,7 +5,6 @@ import BaseCommand from './structures/base-command';
 import BaseEvent from './structures/base-event';
 import { BaseSlash } from './structures/base-slash';
 import { client } from '../client/instance';
-import BaseInteraction from './structures/base-interaction';
 import { Logger } from './logger';
 import { pathToFileURL } from 'url';
 
@@ -13,7 +12,6 @@ enum FileType {
   COMMANDS = 'commands',
   EVENTS = 'events',
   SLASHS = 'slashs',
-  INTERACTIONS = 'interactions',
 }
 
 type HandlerFunction = (instance: any, client: DiscordClient) => void;
@@ -30,24 +28,16 @@ const handleEvent: HandlerFunction = (instance: BaseEvent, client) => {
   client.on(instance.name, instance.run.bind(instance, client));
 };
 
-// Slashes and interactions are dispatched by interaction-create.ts, not by
-// client events of the same name
+// Slashes are dispatched by interaction-create.ts, not by client events of
+// the same name
 const handleSlash: HandlerFunction = (instance: BaseSlash, client) => {
   client.slashs.set(instance.name, instance);
-};
-
-const handleInteraction: HandlerFunction = (
-  instance: BaseInteraction,
-  client
-) => {
-  client.interactions.set(instance.name, instance);
 };
 
 const fileTypeHandlers: Record<FileType, HandlerFunction> = {
   [FileType.COMMANDS]: handleCommand,
   [FileType.EVENTS]: handleEvent,
   [FileType.SLASHS]: handleSlash,
-  [FileType.INTERACTIONS]: handleInteraction,
 };
 
 // Source modules only — no declaration files, no tests
@@ -105,6 +95,3 @@ export const registerSlash = (
   dir: string = path.join(__dirname, '../slashs')
 ) => registerFiles(client, dir, FileType.SLASHS);
 
-export const registerInteractions = (
-  dir: string = path.join(__dirname, '../interactions')
-) => registerFiles(client, dir, FileType.INTERACTIONS);

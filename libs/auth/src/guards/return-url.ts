@@ -1,24 +1,27 @@
-const KEY = 'auth:return-url';
+/**
+ * Where to go after logging in. Kept in sessionStorage because the Discord
+ * login leaves the app and comes back to the site root. Same tab, same
+ * origin, so it survives the round trip. Storage can be missing or throw
+ * (private mode, blocked site data): then the user lands on the home page.
+ */
+const KEY = 'astolfo.returnUrl';
 
-/** A path on this site, or null: never another site (`//evil.example`, `/` + backslash) or a scheme */
-export const safeReturnUrl = (url: string | null | undefined) =>
-  url && url.startsWith('/') && !url.startsWith('//') && !url.startsWith('/\\') ? url : null;
-
-// Storage can throw (blocked site data, private mode): then login lands on the dashboard as before
-export const rememberReturnUrl = (url: string) => {
+export const saveReturnUrl = (url: string) => {
+  // Only in-app paths; "/" is where the login lands anyway
+  if (!url.startsWith('/') || url.startsWith('//') || url === '/' || url.startsWith('/login')) return;
   try {
-    if (safeReturnUrl(url)) sessionStorage.setItem(KEY, url);
+    sessionStorage.setItem(KEY, url);
   } catch {
-    /* ignore */
+    // no storage: skip
   }
 };
 
-/** The page the visitor wanted before logging in, once */
-export const takeReturnUrl = () => {
+/** Reads and clears the saved URL */
+export const takeReturnUrl = (): string | null => {
   try {
     const url = sessionStorage.getItem(KEY);
     sessionStorage.removeItem(KEY);
-    return safeReturnUrl(url);
+    return url;
   } catch {
     return null;
   }
