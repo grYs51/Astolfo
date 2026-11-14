@@ -1,0 +1,3 @@
+/* Loaded only by the GeoGuess page (not injected): the street viewer and the map bring their own styles */
+@import 'mapillary-js/dist/mapillary.css';
+@import 'leaflet/dist/leaflet.css';
