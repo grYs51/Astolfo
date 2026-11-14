@@ -30,7 +30,18 @@ const POLL_MS = 2000;
         </header>
 
         <main class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-2">
-          <feature-geoguess-viewer class="h-[45vh] lg:h-full" [imageId]="g.imageId" [token]="g.mapillaryToken" />
+          <div class="flex min-h-0 flex-col gap-xs">
+            <feature-geoguess-viewer
+              class="h-[45vh] lg:h-auto lg:flex-1"
+              [imageId]="g.imageId"
+              [token]="g.mapillaryToken"
+              [credit]="g.phase !== 'guessing'"
+            />
+            @if (g.phase === 'guessing') {
+              <!-- The licence asks for attribution; who took it waits for the result, a username can name the place -->
+              <p class="text-xs text-gray-500">Photo on Mapillary · CC BY-SA 4.0 · the photographer is shown after the round</p>
+            }
+          </div>
           <div class="flex min-h-0 flex-col gap-sm">
             <feature-geoguess-map
               class="h-[45vh] lg:h-auto lg:flex-1"
