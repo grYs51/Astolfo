@@ -5,7 +5,7 @@ import { LatLon, memberName } from './geoguess-format';
 
 const ACCENT = '#a855f7';
 const ANSWER = '#22c55e';
-const OTHER = '#9ca3af';
+const OTHER = '#6b7280';
 /** Size of a player's avatar marker on the result, in px */
 const AVATAR = 36;
 
@@ -101,7 +101,10 @@ export class GeoguessMapComponent {
       }
       for (const p of pins) {
         const color = p.place ? ACCENT : OTHER;
-        L.polyline([[p.lat, p.lon], [answer.lat, answer.lon]], { color, weight: 2, dashArray: '6 6' }).addTo(layer);
+        const line: [number, number][] = [[p.lat, p.lon], [answer.lat, answer.lon]];
+        // A white casing under the line keeps it readable over roads and labels; outside the radius it's dashed
+        L.polyline(line, { color: '#fff', weight: 7, opacity: 0.9, interactive: false }).addTo(layer);
+        L.polyline(line, { color, weight: 4, dashArray: p.place ? undefined : '10 8', interactive: false }).addTo(layer);
         L.marker([p.lat, p.lon], { icon: avatarIcon(L, p, color), title: memberName(p.member) })
           .bindTooltip(`${p.km} km`, { permanent: true, direction: 'bottom', offset: [0, AVATAR / 2] })
           .addTo(layer);
