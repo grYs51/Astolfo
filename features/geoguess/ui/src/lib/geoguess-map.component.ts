@@ -49,6 +49,7 @@ export class GeoguessMapComponent {
 
   constructor() {
     let destroyed = false;
+    let resized: ResizeObserver | undefined;
     // Leaflet touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
       // Leaflet is CommonJS: the production build puts it all on `default` (only `export default`), the dev
@@ -73,6 +74,9 @@ export class GeoguessMapComponent {
       // Keyboard: the arrow keys pan the map, Enter drops the pin at its centre
       map.on('keydown', (e) => e.originalEvent.key === 'Enter' && pick(map.getCenter()));
       this.leaflet.set({ L, map, layer: L.layerGroup().addTo(map) });
+      // Leaflet only follows window resizes; the page's divider resizes the container on its own
+      resized = new ResizeObserver(() => map.invalidateSize());
+      resized.observe(this.container().nativeElement);
     });
 
     // Redraw every marker when anything changes: a handful of pins, so no diffing
@@ -110,6 +114,7 @@ export class GeoguessMapComponent {
 
     inject(DestroyRef).onDestroy(() => {
       destroyed = true;
+      resized?.disconnect();
       this.leaflet()?.map.remove();
     });
   }

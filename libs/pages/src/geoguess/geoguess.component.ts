@@ -29,7 +29,11 @@ const POLL_MS = 2000;
           }
         </header>
 
-        <main class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-2">
+        <main
+          #panes
+          class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-[var(--split)_auto_minmax(0,1fr)] lg:gap-x-xs"
+          [style.--split]="split() + '%'"
+        >
           <div class="flex min-h-0 flex-col gap-xs">
             <feature-geoguess-viewer
               class="h-[45vh] lg:h-auto lg:flex-1"
@@ -42,6 +46,19 @@ const POLL_MS = 2000;
               <p class="text-xs text-gray-500">Photo on Mapillary · CC BY-SA 4.0 · the photographer is shown after the round</p>
             }
           </div>
+          <!-- Drag (or arrow keys) to share the width between the photo and the map; side by side only -->
+          <div
+            role="separator"
+            tabindex="0"
+            aria-orientation="vertical"
+            aria-label="Resize the photo and the map"
+            aria-valuemin="20"
+            aria-valuemax="80"
+            [attr.aria-valuenow]="split()"
+            class="hidden w-2 cursor-col-resize touch-none rounded bg-base-300 hover:bg-primary focus-visible:bg-primary focus-visible:outline-none lg:block"
+            (pointerdown)="drag($event, panes)"
+            (keydown)="nudge($event)"
+          ></div>
           <div class="flex min-h-0 flex-col gap-sm">
             <feature-geoguess-map
               class="h-[45vh] lg:h-auto lg:flex-1"
@@ -150,6 +167,9 @@ export class GeoguessComponent {
   private now = signal(Date.now());
   timeLeft = computed(() => countdown(this.game()?.endsAt ?? 0, this.now()));
 
+  /** The photo's share of the width in %, when side by side */
+  split = signal(50);
+
   name = memberName;
   ordinal = ordinal;
 
@@ -179,6 +199,29 @@ export class GeoguessComponent {
       this.pending.set(null);
       this.error.set(null);
     });
+  }
+
+  drag(start: PointerEvent, main: HTMLElement) {
+    const bar = start.target as HTMLElement;
+    // Capture keeps the moves coming while the pointer is over the viewer or map, which would take them
+    bar.setPointerCapture(start.pointerId);
+    const move = (e: PointerEvent) => {
+      const box = main.getBoundingClientRect();
+      this.setSplit(((e.clientX - box.left) / box.width) * 100);
+    };
+    bar.addEventListener('pointermove', move);
+    bar.addEventListener('lostpointercapture', () => bar.removeEventListener('pointermove', move), { once: true });
+  }
+
+  nudge(e: KeyboardEvent) {
+    const step = { ArrowLeft: -5, ArrowRight: 5 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    this.setSplit(this.split() + step);
+  }
+
+  private setSplit(percent: number) {
+    this.split.set(Math.round(Math.min(80, Math.max(20, percent))));
   }
 
   send() {

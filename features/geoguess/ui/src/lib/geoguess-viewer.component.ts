@@ -23,6 +23,7 @@ export class GeoguessViewerComponent {
 
   constructor() {
     let destroyed = false;
+    let resized: ResizeObserver | undefined;
     // MapillaryJS touches window: load it in the browser only, after the first render
     afterNextRender(async () => {
       const { Viewer } = await import('mapillary-js');
@@ -34,6 +35,9 @@ export class GeoguessViewerComponent {
         imageId: this.imageId(),
         component: { attribution: this.credit() },
       });
+      // MapillaryJS only follows window resizes; the page's divider resizes the container on its own
+      resized = new ResizeObserver(() => this.viewer?.resize());
+      resized.observe(this.container().nativeElement);
     });
     effect(() => {
       const id = this.imageId();
@@ -47,6 +51,7 @@ export class GeoguessViewerComponent {
     });
     inject(DestroyRef).onDestroy(() => {
       destroyed = true;
+      resized?.disconnect();
       this.viewer?.remove();
     });
   }
