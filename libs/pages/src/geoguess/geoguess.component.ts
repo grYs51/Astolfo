@@ -17,22 +17,33 @@ const POLL_MS = 2000;
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [GeoguessApi],
   template: `
-    <div class="flex min-h-screen flex-col gap-md bg-base-100 p-md text-gray-100 lg:h-screen">
+    <div class="flex min-h-screen flex-col gap-md bg-base-100 p-md text-gray-100 lg:h-screen" [style.--split]="split() + '%'">
       @if (game(); as g) {
-        <header class="flex flex-wrap items-baseline gap-x-md gap-y-xs">
+        <header class="relative flex flex-wrap items-center gap-x-md gap-y-xs lg:min-h-14">
           <h1 class="text-xl font-bold tracking-tight">🗺️ GeoGuess</h1>
           <span class="text-sm text-gray-400">Round {{ g.round }}/{{ g.rounds }} · {{ g.difficulty }} · within {{ g.radiusKm }} km counts</span>
           @if (g.phase === 'guessing') {
-            <span class="ml-auto text-sm tabular-nums" aria-live="polite">
-              {{ g.guessCount }} guessed · <strong class="text-lg">{{ timeLeft() }}</strong>
-            </span>
+            <span class="ml-auto text-sm text-gray-400 tabular-nums" aria-live="polite">{{ g.guessCount }} guessed</span>
+            <!-- Centred over the divider when side by side (the bar sits after the photo column and a 0.25rem gap),
+                 its own centred row above the photo on a phone -->
+            <div
+              class="order-first flex w-full justify-center lg:absolute lg:left-[calc(var(--split)+0.5rem)] lg:top-1/2 lg:w-auto lg:-translate-x-1/2 lg:-translate-y-1/2"
+              role="timer"
+              aria-label="Time left"
+            >
+              <span
+                class="rounded-full border px-md py-xs font-mono text-3xl font-bold tabular-nums shadow"
+                [class]="hurry() ? 'animate-pulse border-error bg-error/20 text-error' : 'border-base-300 bg-base-200'"
+              >
+                {{ timeLeft() }}
+              </span>
+            </div>
           }
         </header>
 
         <main
           #panes
           class="grid flex-1 gap-md lg:min-h-0 lg:grid-cols-[var(--split)_auto_minmax(0,1fr)] lg:gap-x-xs"
-          [style.--split]="split() + '%'"
         >
           <div class="flex min-h-0 flex-col gap-xs">
             <feature-geoguess-viewer
@@ -166,6 +177,8 @@ export class GeoguessComponent {
   // the server's time with the game if players notice
   private now = signal(Date.now());
   timeLeft = computed(() => countdown(this.game()?.endsAt ?? 0, this.now()));
+  /** The last 10 seconds: the timer turns red and pulses */
+  hurry = computed(() => (this.game()?.endsAt ?? 0) - this.now() <= 10_000);
 
   /** The photo's share of the width in %, when side by side */
   split = signal(50);
