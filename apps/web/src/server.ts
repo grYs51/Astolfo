@@ -49,10 +49,10 @@ app.use(
     maxAge: '1y',
     index: false,
     redirect: false,
-    // Only files with a content hash in their name may be cached for a year; the others (geoguess.css,
-    // favicon.ico, media) keep their name across builds, so the browser checks them each time
+    // Only files with a content hash in their name (chunks, styles, media/) may be cached for a year; the
+    // others (geoguess.css, favicon.ico) keep their name across builds, so the browser checks them each time
     setHeaders: (res, path) => {
-      if (!/-[A-Z0-9]{8}\.(js|css)$/.test(path)) res.setHeader('Cache-Control', 'no-cache');
+      if (!/-[A-Z0-9]{8}\.\w+$/.test(path)) res.setHeader('Cache-Control', 'no-cache');
     },
   })
 );
