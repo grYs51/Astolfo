@@ -67,7 +67,7 @@ const POLL_MS = 2000;
             aria-valuemin="20"
             aria-valuemax="80"
             [attr.aria-valuenow]="split()"
-            class="hidden w-2 cursor-col-resize touch-none rounded bg-base-300 hover:bg-primary focus-visible:bg-primary focus-visible:outline-none lg:block"
+            class="hidden w-2 cursor-col-resize touch-none rounded bg-base-300 hover:bg-primary-500 focus-visible:bg-primary-500 focus-visible:outline-none lg:block"
             (pointerdown)="drag($event, panes)"
             (keydown)="nudge($event)"
           ></div>
@@ -107,7 +107,7 @@ const POLL_MS = 2000;
                 <!-- Your own result first, big: no hunting for your name in the list -->
                 <div
                   class="rounded-xl border p-sm"
-                  [class]="mine()?.place ? 'border-primary bg-primary/15' : 'border-base-300 bg-base-200'"
+                  [class]="mine()?.place ? 'border-primary-500 bg-primary-500/15' : 'border-base-300 bg-base-200'"
                 >
                   @if (mine(); as me) {
                     <p class="text-2xl font-bold tabular-nums">You: {{ me.km }} km</p>
@@ -134,7 +134,7 @@ const POLL_MS = 2000;
                     <span class="flex-1 truncate">{{ name(p.member) }}{{ p.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="tabular-nums text-gray-400">{{ p.km }} km</span>
                     @if (p.xp) {
-                      <span class="font-semibold text-primary">+{{ p.xp }} XP</span>
+                      <span class="font-semibold text-primary-300">+{{ p.xp }} XP</span>
                     }
                   </div>
                 } @empty {
@@ -154,7 +154,7 @@ const POLL_MS = 2000;
                     <span class="w-8 text-gray-400">{{ ordinal(i + 1) }}</span>
                     <span class="flex-1 truncate">{{ name(s.member) }}{{ s.member.id === meId() ? ' (you)' : '' }}</span>
                     <span class="text-gray-400">{{ s.inside }}/{{ g.round }} close</span>
-                    <span class="font-semibold text-primary">+{{ s.xp }} XP</span>
+                    <span class="font-semibold text-primary-300">+{{ s.xp }} XP</span>
                   </div>
                 }
                 <a [routerLink]="['/overview/detail', serverId()]" class="inline-block text-sm text-gray-400 hover:text-gray-200">
