@@ -21,10 +21,17 @@ const POLL_MS = 2000;
     <div class="flex min-h-screen flex-col gap-md bg-base-100 p-md text-gray-100 lg:h-screen" [style.--split]="split() + '%'">
       @if (game(); as g) {
         <header class="relative flex flex-wrap items-center gap-x-md gap-y-xs lg:min-h-14">
-          <h1 class="text-xl font-bold tracking-tight">🗺️ GeoGuess</h1>
-          <span class="text-sm text-gray-400">Round {{ g.round }}/{{ g.rounds }} · {{ g.difficulty }} · within {{ g.radiusKm }} km counts</span>
+          <!-- While the timer follows the divider, the text on each side stops short of it (the pill is ~8rem wide)
+               and wraps or truncates instead of running under it -->
+          <div
+            class="flex min-w-0 flex-wrap items-baseline gap-x-md"
+            [class]="g.phase === 'guessing' ? 'lg:max-w-[calc(var(--split)-4.5rem)]' : ''"
+          >
+            <h1 class="text-xl font-bold tracking-tight">🗺️ GeoGuess</h1>
+            <span class="max-w-full truncate text-sm text-gray-400">Round {{ g.round }}/{{ g.rounds }} · {{ g.difficulty }} · within {{ g.radiusKm }} km counts</span>
+          </div>
           @if (g.phase === 'guessing') {
-            <span class="ml-auto text-sm text-gray-400 tabular-nums" aria-live="polite">{{ g.guessCount }} guessed</span>
+            <span class="ml-auto truncate text-sm text-gray-400 tabular-nums lg:max-w-[calc(100%-var(--split)-5.5rem)]" aria-live="polite">{{ g.guessCount }} guessed</span>
             <!-- Centred over the divider when side by side (the bar sits after the photo column and a 0.25rem gap),
                  its own centred row above the photo on a phone -->
             <div
@@ -34,7 +41,7 @@ const POLL_MS = 2000;
             >
               <span
                 class="rounded-full border px-md py-xs font-mono text-3xl font-bold tabular-nums shadow"
-                [class]="hurry() ? 'animate-pulse border-error bg-error/20 text-error' : 'border-base-300 bg-base-200'"
+                [class]="hurry() ? 'motion-safe:animate-pulse border-error bg-error/20 text-error' : 'border-base-300 bg-base-200'"
               >
                 {{ timeLeft() }}
               </span>
@@ -242,6 +249,8 @@ export class GeoguessComponent {
 
   drag(start: PointerEvent, main: HTMLElement) {
     const bar = start.target as HTMLElement;
+    // Pointer capture doesn't stop the mouse from selecting the header and result text on the way
+    start.preventDefault();
     // Capture keeps the moves coming while the pointer is over the viewer or map, which would take them
     bar.setPointerCapture(start.pointerId);
     const move = (e: PointerEvent) => {
