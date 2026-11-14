@@ -104,7 +104,7 @@ const POLL_MS = 2000;
                   <div class="flex items-center gap-sm text-sm">
                     <span class="w-8 text-gray-400">{{ ordinal(i + 1) }}</span>
                     <span class="flex-1 truncate">{{ name(s.member) }}</span>
-                    <span class="text-gray-400">{{ s.inside }}/{{ g.rounds }} close</span>
+                    <span class="text-gray-400">{{ s.inside }}/{{ g.round }} close</span>
                     <span class="font-semibold text-primary">+{{ s.xp }} XP</span>
                   </div>
                 }
