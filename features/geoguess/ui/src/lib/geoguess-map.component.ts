@@ -6,6 +6,23 @@ import { LatLon, memberName } from './geoguess-format';
 const ACCENT = '#a855f7';
 const ANSWER = '#22c55e';
 const OTHER = '#9ca3af';
+/** Size of a player's avatar marker on the result, in px */
+const AVATAR = 36;
+
+/** A round avatar (or the name's initial) ringed in the pin's colour; built as elements so names need no escaping */
+const avatarIcon = (L: typeof import('leaflet'), p: GeoguessPin, color: string) => {
+  const avatar = p.member.avatar;
+  let el: HTMLElement;
+  if (avatar) {
+    el = Object.assign(document.createElement('img'), { src: avatar, alt: '' });
+  } else {
+    el = document.createElement('div');
+    el.textContent = memberName(p.member).charAt(0).toUpperCase();
+  }
+  el.style.cssText = `width:${AVATAR}px;height:${AVATAR}px;border-radius:50%;border:3px solid ${color};box-sizing:border-box;background:#1f2937;color:#fff;display:grid;place-items:center;font-weight:700;object-fit:cover`;
+  // className '' drops Leaflet's default white square behind div icons
+  return L.divIcon({ html: el, className: '', iconSize: [AVATAR, AVATAR] });
+};
 
 /**
  * A world map: click to place your pin while the round is open. Once it's over it shows the answer, every pin
@@ -41,9 +58,11 @@ export class GeoguessMapComponent {
       // Left the page while it loaded: don't start a map nobody will remove
       if (destroyed) return;
       const map = L.map(this.container().nativeElement, { worldCopyJump: true, minZoom: 1 }).setView([20, 0], 2);
-      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      // Esri's street map labels every place in English; OpenStreetMap's tiles use the local language.
+      // shortcut: Esri's keyless tile service, fine for a friendly server; move to an ArcGIS key if Esri starts refusing it.
+      L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
         maxZoom: 18,
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        attribution: 'Powered by <a href="https://www.esri.com">Esri</a> | Sources: Esri, HERE, Garmin, USGS, NGA, EPA, USDA, NPS, &copy; OpenStreetMap contributors',
       }).addTo(map);
       const pick = (at: LatLng) => {
         if (this.locked()) return;
@@ -77,12 +96,13 @@ export class GeoguessMapComponent {
         return;
       }
       for (const p of pins) {
-        L.polyline([[p.lat, p.lon], [answer.lat, answer.lon]], { color: OTHER, weight: 1, dashArray: '4 4' }).addTo(layer);
-        dot(p, p.place ? ACCENT : OTHER, 7)
-          .bindTooltip(`${memberName(p.member)} · ${p.km} km`)
+        const color = p.place ? ACCENT : OTHER;
+        L.polyline([[p.lat, p.lon], [answer.lat, answer.lon]], { color, weight: 2, dashArray: '6 6' }).addTo(layer);
+        L.marker([p.lat, p.lon], { icon: avatarIcon(L, p, color), title: memberName(p.member) })
+          .bindTooltip(`${p.km} km`, { permanent: true, direction: 'bottom', offset: [0, AVATAR / 2] })
           .addTo(layer);
       }
-      dot(answer, ANSWER, 10).bindTooltip('Here!', { permanent: true, direction: 'top' }).addTo(layer);
+      dot(answer, ANSWER, 14).bindTooltip('Here!', { permanent: true, direction: 'top' }).addTo(layer);
       if (fitted === `${answer.lat},${answer.lon}`) return;
       fitted = `${answer.lat},${answer.lon}`;
       map.fitBounds(L.latLngBounds([[answer.lat, answer.lon], ...pins.map((p) => [p.lat, p.lon] as [number, number])]).pad(0.2), { maxZoom: 8 });
