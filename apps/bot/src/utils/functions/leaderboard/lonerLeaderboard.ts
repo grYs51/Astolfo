@@ -15,16 +15,22 @@ export const getLonerVoiceStats: getVoiceStatsType = async (
     where: {
       guild_id: guildId,
       type: VOICE_TYPE.VOICE,
-      issued_on: fromTime ? { gte: fromTime.toISOString() } : undefined,
+      // Every session overlapping the range, not only those starting in it:
+      // a companion who joined before the cutoff must still count as company.
       // Open rows are merged from the in-memory cache below — including them
       // here would double-count live sessions
-      ended_on: { not: null },
+      ended_on: fromTime ? { gt: fromTime } : { not: null },
     },
   });
 
   const inChannel = getOpenVoiceStats(client, guildId, [VOICE_TYPE.VOICE], fromTime);
 
-  return [...dbVoiceStats.filter(isClosed), ...inChannel];
+  // Clip to the range, like getOpenVoiceStats does for live sessions
+  const closed = dbVoiceStats.filter(isClosed).map((stat) =>
+    fromTime && stat.issued_on < fromTime ? { ...stat, issued_on: fromTime } : stat
+  );
+
+  return [...closed, ...inChannel];
 };
 
 /**
