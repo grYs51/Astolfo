@@ -55,10 +55,6 @@ storybook-static
 __screenshots__/
 debug-storybook.log
 
-
-# APM dependencies
-apm_modules/
-
 .nx/polygraph
 .claude/worktrees
 .claude/settings.local.json
