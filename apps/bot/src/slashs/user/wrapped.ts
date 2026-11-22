@@ -52,17 +52,19 @@ export default class WrappedSlash extends BaseSlash {
       return;
     }
 
-    const duoId = wrapped.topDuo?.memberId;
-    const members = await cardMembers(guild, duoId ? [member.id, duoId] : [member.id]);
-    const channel = wrapped.favouriteChannelId ? guild.channels.cache.get(wrapped.favouriteChannelId) : undefined;
+    const buddyIds = wrapped.buddies.map((b) => b.memberId);
+    const members = await cardMembers(guild, [member.id, ...buddyIds]);
     const svg = wrappedCard(
       {
         wrapped,
         member: members[member.id],
         serverName: guild.name,
-        // Public reply: never name a channel @everyone can't see
-        favouriteChannelName: channel?.permissionsFor(guild.roles.everyone)?.has('ViewChannel') ? channel.name : undefined,
-        duoName: duoId ? members[duoId]?.name : undefined,
+        channelNames: wrapped.topChannels.map(({ channelId }) => {
+          const channel = guild.channels.cache.get(channelId);
+          // Public reply: never name a channel @everyone can't see
+          return channel?.permissionsFor(guild.roles.everyone)?.has('ViewChannel') ? channel.name : undefined;
+        }),
+        buddies: buddyIds.map((id) => members[id]),
       },
       THEMES[DEFAULT_THEME]
     );

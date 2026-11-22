@@ -17,12 +17,11 @@ export const getWrapped: RequestHandler<{ serverId: string; userId: string }, Vo
     }
 
     const wrapped = await getMemberWrapped(req.db, serverId, userId, year, now);
-    const duoId = wrapped.topDuo?.memberId;
-    const members = await discordDirectory().members(serverId, duoId ? [userId, duoId] : [userId]);
+    const members = await discordDirectory().members(serverId, [userId, ...wrapped.buddies.map((b) => b.memberId)]);
     res.send({
       ...wrapped,
       member: memberOrUnknown(members, userId),
-      favouriteChannel: wrapped.favouriteChannelId ? getChannelData(serverId, wrapped.favouriteChannelId) : null,
-      topDuoMember: duoId ? memberOrUnknown(members, duoId) : null,
+      topChannels: wrapped.topChannels.map((c) => ({ channel: getChannelData(serverId, c.channelId), voiceMs: c.voiceMs })),
+      buddies: wrapped.buddies.map((b) => ({ member: memberOrUnknown(members, b.memberId), togetherMs: b.togetherMs })),
     });
   });

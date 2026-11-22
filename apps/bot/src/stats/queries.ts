@@ -6,8 +6,10 @@ import { crossedMilestones, firstMilestoneMs } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 import { currentRules, levelFor } from '../xp/rules';
-import type { WrappedStats } from '@nx-stolfo/api-interfaces';
+import type { WrappedMonth, WrappedPersona, WrappedStats } from '@nx-stolfo/api-interfaces';
 import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
+import { voiceHeatmapCells } from '../api/routes/features/voice-stats/heatmap-sql';
+import { activityCalendar } from '../api/routes/features/voice-stats/calendar-sql';
 
 /**
  * Stats for the Discord-side features (/stats, /profile, weekly digest). Same rules as
@@ -59,19 +61,23 @@ const messageCount = async (db: QueryDb, guildId: string, window: TimeWindow, me
   return Number(row.count);
 };
 
-/** The channel a member spent the most voice time in */
-const favouriteChannel = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow) => {
-  const [row] = await db.$queryRaw<{ channel_id: string }[]>`
-    SELECT channel_id
+/** The channels a member spent the most voice time in, most first */
+const topVoiceChannels = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow, limit: number) => {
+  const rows = await db.$queryRaw<{ channel_id: string; total: bigint }[]>`
+    SELECT channel_id, SUM(${durationMs()})::bigint AS total
     FROM voice_stats
     WHERE guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}
       ${windowFilter('issued_on', window)}
     GROUP BY channel_id
-    ORDER BY SUM(${durationMs()}) DESC
-    LIMIT 1
+    ORDER BY total DESC
+    LIMIT ${limit}
   `;
-  return row?.channel_id;
+  return rows.map((row) => ({ channelId: row.channel_id, voiceMs: Number(row.total) }));
 };
+
+/** The channel a member spent the most voice time in */
+const favouriteChannel = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow) =>
+  (await topVoiceChannels(db, guildId, memberId, window, 1))[0]?.channelId;
 
 /** Who a member shared a channel with most (their sessions started in the window), most time together first */
 const getCompanions = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow, limit: number) => {
@@ -559,6 +565,10 @@ export const yearWindow = (year: number, now = new Date()): Required<TimeWindow>
   return { from: new Date(Date.UTC(year, 0, 1)), to: end < now ? end : now };
 };
 
+/** Night owl, early bird…, from the busiest UTC hour */
+export const personaFor = (hour: number): WrappedPersona =>
+  hour >= 5 && hour < 11 ? 'Early bird' : hour >= 11 && hour < 17 ? 'Afternoon regular' : hour >= 17 && hour < 22 ? 'Evening regular' : 'Night owl';
+
 /** One member's year on a server, for /wrapped and the dashboard's Wrapped page */
 export const getMemberWrapped = async (
   db: QueryDb,
@@ -571,7 +581,7 @@ export const getMemberWrapped = async (
   const { from, to } = window;
   const mine = Prisma.sql`guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}`;
 
-  const [[voice], favouriteChannelId, [duo], [peak], [streak], [lifetime], messages, [rank], [xp]] = await Promise.all([
+  const [[voice], topChannels, buddies, monthRows, hourRows, days, [streak], [lifetime], [rank], [xp], [games]] = await Promise.all([
     db.$queryRaw<{ total: bigint; sessions: bigint; longest: bigint }[]>`
       SELECT COALESCE(SUM(${durationMs()}), 0)::bigint AS total,
         COUNT(*)::bigint AS sessions,
@@ -579,16 +589,38 @@ export const getMemberWrapped = async (
       FROM voice_stats
       WHERE ${mine} ${windowFilter('issued_on', window)}
     `,
-    favouriteChannel(db, guildId, memberId, window),
-    getCompanions(db, guildId, memberId, window, 1),
-    db.$queryRaw<{ month: number; total: bigint }[]>`
-      SELECT EXTRACT(MONTH FROM issued_on)::int AS month, SUM(${durationMs()})::bigint AS total
-      FROM voice_stats
-      WHERE ${mine} ${windowFilter('issued_on', window)}
-      GROUP BY 1
-      ORDER BY total DESC, month
-      LIMIT 1
+    topVoiceChannels(db, guildId, memberId, window, 3),
+    getCompanions(db, guildId, memberId, window, 5),
+    // Every month, empty ones as zero; voice by the month a session started
+    db.$queryRaw<{ month: number; voice: bigint; messages: bigint }[]>`
+      WITH voice AS (
+        SELECT EXTRACT(MONTH FROM issued_on)::int AS month, SUM(${durationMs()})::bigint AS total
+        FROM voice_stats
+        WHERE ${mine} ${windowFilter('issued_on', window)}
+        GROUP BY 1
+      ),
+      msgs AS (
+        SELECT EXTRACT(MONTH FROM created_at)::int AS month, COUNT(*)::bigint AS count
+        FROM message_stats
+        WHERE guild_id = ${guildId} AND user_id = ${memberId} ${windowFilter('created_at', window)}
+        GROUP BY 1
+      )
+      SELECT m.month, COALESCE(voice.total, 0)::bigint AS voice, COALESCE(msgs.count, 0)::bigint AS messages
+      FROM generate_series(1, 12) AS m(month)
+      LEFT JOIN voice ON voice.month = m.month
+      LEFT JOIN msgs ON msgs.month = m.month
+      ORDER BY m.month
     `,
+    // Every UTC hour, each session cut into the hours it covers (the heatmap's cells, summed over the weekdays)
+    db.$queryRaw<{ hour: number; minutes: number }[]>`
+      SELECT h.hour, COALESCE(SUM(c.total_minutes), 0)::int AS minutes
+      FROM generate_series(0, 23) AS h(hour)
+      LEFT JOIN (${voiceHeatmapCells(guildId, 'UTC', from, Prisma.sql`AND member_id = ${memberId} AND issued_on < ${to}`)}) c
+        ON c.hour = h.hour
+      GROUP BY h.hour
+      ORDER BY h.hour
+    `,
+    activityCalendar(db, guildId, memberId, 'UTC', window),
     getStreaks(db, guildId, { memberIds: [memberId], from }, to),
     // Lifetime voice at the start and the end of the year, for the milestones passed in it
     db.$queryRaw<{ before: bigint; after: bigint }[]>`
@@ -597,7 +629,6 @@ export const getMemberWrapped = async (
       FROM voice_stats
       WHERE ${mine} AND issued_on < ${to}
     `,
-    messageCount(db, guildId, window, memberId),
     rankIn(
       db,
       memberId,
@@ -614,6 +645,16 @@ export const getMemberWrapped = async (
       FROM xp_events
       WHERE guild_id = ${guildId} AND member_id = ${memberId} AND created_at < ${to}
     `,
+    // Wins against members (the games against Astolfo are kept apart, like the win rates) and right trivia answers
+    db.$queryRaw<{ rps: bigint; ttt: bigint; trivia: bigint }[]>`
+      SELECT COUNT(*) FILTER (WHERE gr.game_type_id = ${GAME_TYPES.ROCK_PAPER_SCISSORS})::bigint AS rps,
+        COUNT(*) FILTER (WHERE gr.game_type_id = ${GAME_TYPES.TIC_TAC_TOE})::bigint AS ttt,
+        COUNT(*) FILTER (WHERE gr.game_type_id = ${GAME_TYPES.TRIVIA})::bigint AS trivia
+      FROM game_player gp
+      JOIN game_result gr ON gr.id = gp.game_result_id
+      WHERE gp.user_id = ${memberId} AND gr.guild_id = ${guildId} AND gp.result = ${SCORING.WIN}
+        AND gr.created_at >= ${from} AND gr.created_at < ${to}
+    `,
   ]);
 
   const voiceMs = Number(voice?.total ?? 0);
@@ -622,20 +663,29 @@ export const getMemberWrapped = async (
   const rules = currentRules();
   const place = rank?.rank != null ? Number(rank.rank) : undefined;
   const members = Number(rank?.members ?? 0);
+  const months = monthRows.map((row) => ({ month: row.month, voiceMs: Number(row.voice), messages: Number(row.messages) }));
+  const peakMonth = months.reduce<WrappedMonth | null>((peak, m) => (m.voiceMs > (peak?.voiceMs ?? 0) ? m : peak), null);
+  const hours = hourRows.map((row) => row.minutes);
+  const peakHour = hours.indexOf(Math.max(...hours));
   return {
     year,
     voiceMs,
     sessions: Number(voice?.sessions ?? 0),
     longestSessionMs: Number(voice?.longest ?? 0),
-    favouriteChannelId: favouriteChannelId ?? null,
-    topDuo: duo ?? null,
-    peakMonth: peak ? { month: peak.month, voiceMs: Number(peak.total) } : null,
+    topChannels,
+    buddies,
+    months,
+    peakMonth,
+    hours,
+    persona: voiceMs > 0 && hours[peakHour] > 0 ? { label: personaFor(peakHour), peakHour } : null,
+    days,
     longestStreak: streak?.longest ?? 0,
     milestones: crossedMilestones(Number(lifetime?.before ?? 0), Number(lifetime?.after ?? 0)),
-    messages,
+    messages: months.reduce((sum, m) => sum + m.messages, 0),
     // "Top 4%": the share of voice members ranked at or above them, rounded up so #1 is never "top 0%"
     voiceRank:
       place && members && voiceMs > 0 ? { rank: place, members, topPercent: Math.max(1, Math.ceil((100 * place) / members)) } : null,
     xp: { gained: xpGained, levelFrom: levelFor(xpBefore, rules), levelTo: levelFor(xpBefore + xpGained, rules) },
+    games: { rockPaperScissors: Number(games?.rps ?? 0), ticTacToe: Number(games?.ttt ?? 0), trivia: Number(games?.trivia ?? 0) },
   };
 };

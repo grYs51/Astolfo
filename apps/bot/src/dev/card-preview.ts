@@ -22,6 +22,7 @@ import { renderPng } from '../cards/render';
 import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
 import { wrappedCard } from '../cards/wrapped.card';
+import type { WrappedStats } from '@nx-stolfo/api-interfaces';
 import { Logger } from '../utils/logger';
 import { DEFAULT_RULES, setRules } from '../xp/rules';
 
@@ -91,6 +92,40 @@ const main = async () => {
         ],
       },
     };
+
+  // 312 h over the year, most in November, mostly in the evening
+  const monthHours = [18, 22, 15, 20, 26, 31, 35, 28, 24, 30, 49, 14];
+  const wrappedFixture: WrappedStats = {
+    year: 2026,
+    voiceMs: 312 * 3_600_000,
+    sessions: 406,
+    longestSessionMs: 31_500_000,
+    topChannels: [
+      { channelId: '1', voiceMs: 190 * 3_600_000 },
+      { channelId: '2', voiceMs: 84 * 3_600_000 },
+      { channelId: '3', voiceMs: 31 * 3_600_000 },
+    ],
+    buddies: [81, 64, 40, 22, 9].map((hours, i) => ({ memberId: `${i + 1}`, togetherMs: hours * 3_600_000 })),
+    months: monthHours.map((hours, i) => ({ month: i + 1, voiceMs: hours * 3_600_000, messages: 600 + ((i * 397) % 900) })),
+    peakMonth: { month: 11, voiceMs: 49 * 3_600_000, messages: 1_100 },
+    hours: Array.from({ length: 24 }, (_, h) => (h >= 18 ? 900 + h * 60 : h < 2 ? 700 - h * 300 : h >= 12 ? 200 + h * 10 : 20)),
+    persona: { label: 'Evening regular', peakHour: 21 },
+    days: {
+      start: '2026-01-01',
+      end: '2026-11-22',
+      days: Array.from({ length: 326 }, (_, i) => ({
+        date: new Date(Date.UTC(2026, 0, 1 + i)).toISOString().substring(0, 10),
+        minutes: i % 7 < 2 || i % 45 < 9 ? 0 : (i * 37) % 300,
+        messages: (i * 13) % 11,
+      })).filter((day) => day.minutes > 0 || day.messages > 0),
+    },
+    longestStreak: 23,
+    milestones: [100, 250],
+    messages: 12_840,
+    voiceRank: { rank: 2, members: 57, topPercent: 4 },
+    xp: { gained: 14_200, levelFrom: 4, levelTo: 19 },
+    games: { rockPaperScissors: 31, ticTacToe: 7, trivia: 112 },
+  };
 
   const cards: Record<string, (theme: ThemeName) => string> = {
     leaderboard: (theme) =>
@@ -200,22 +235,10 @@ const main = async () => {
         {
           member: { name: NAMES[0], avatar: avatar(0) },
           serverName: 'Paladins of France',
-          favouriteChannelName: 'round-table',
-          duoName: NAMES[1],
-          wrapped: {
-            year: 2026,
-            voiceMs: 1_124_000_000, // 312h
-            sessions: 406,
-            longestSessionMs: 31_500_000,
-            favouriteChannelId: '1',
-            topDuo: { memberId: '1', togetherMs: 290_000_000 },
-            peakMonth: { month: 11, voiceMs: 176_000_000 },
-            longestStreak: 23,
-            milestones: [100, 250],
-            messages: 12_840,
-            voiceRank: { rank: 2, members: 57, topPercent: 4 },
-            xp: { gained: 14_200, levelFrom: 4, levelTo: 19 },
-          },
+          // The third channel is one @everyone can't see
+          channelNames: ['round-table', 'tournament-grounds', undefined],
+          buddies: [1, 2, 3, 4, 5].map((i) => ({ name: NAMES[i], avatar: avatar(i) })),
+          wrapped: wrappedFixture,
         },
         THEMES[theme]
       ),

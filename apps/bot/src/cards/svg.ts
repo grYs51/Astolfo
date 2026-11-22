@@ -15,12 +15,37 @@ export const text = (x: number, y: number, size: number, fill: string, content: 
 export const panel = (x: number, y: number, w: number, h: number, t: CardTheme) =>
   `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${t.surface}"/>`;
 
-/** A label, a big value and an optional line under it (all escaped here) */
-export const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme, w = TILE_W) =>
-  panel(x, y, w, TILE_H, t) +
-  text(x + 24, y + 32, 14, t.muted, escapeXml(label)) +
-  text(x + 24, y + 68, 30, t.text, escapeXml(value), 'font-weight="700"') +
-  (sub ? text(x + 24, y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '');
+/** A muted heading above a section */
+export const heading = (y: number, label: string, t: CardTheme) => text(PAD, y, 14, t.muted, escapeXml(label));
+
+/** A bar with a rounded track; `fill` 0–1 */
+export const bar = (x: number, y: number, w: number, h: number, fill: number, color: string, t: CardTheme, opacity = 1) =>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${t.track}"/>` +
+  (fill > 0
+    ? `<rect x="${x}" y="${y}" width="${+(fill * w).toFixed(2)}" height="${h}" rx="${h / 2}" fill="${color}"${opacity < 1 ? ` fill-opacity="${opacity}"` : ''}/>`
+    : '');
+
+/** Bold Inter averages a bit over half an em a character in names */
+const CHAR_EM = 0.55;
+const MIN_SIZE = 14;
+
+/** The font size (up to `max`, down to 14) that fits `value` in `width`, and the value cut to fit at 14 */
+const fit = (value: string, width: number, max: number) => {
+  const chars = [...value].length;
+  const size = Math.min(max, Math.floor(width / (chars * CHAR_EM)));
+  return size >= MIN_SIZE ? { size, value } : { size: MIN_SIZE, value: truncate(value, Math.floor(width / (MIN_SIZE * CHAR_EM))) };
+};
+
+/** A label, a big value (smaller when it's long, e.g. a name) and an optional line under it (all escaped here) */
+export const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme, w = TILE_W) => {
+  const big = fit(value, w - 48, 30);
+  return (
+    panel(x, y, w, TILE_H, t) +
+    text(x + 24, y + 32, 14, t.muted, escapeXml(label)) +
+    text(x + 24, y + 68, big.size, t.text, escapeXml(big.value), 'font-weight="700"') +
+    (sub ? text(x + 24, y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '')
+  );
+};
 
 /** Big avatar, title and a muted line under it, across the top (escaped here); ends at y = 112 */
 export const header = (h: { name: string; avatar?: string; title: string; subtitle: string }, t: CardTheme) =>

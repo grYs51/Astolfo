@@ -24,14 +24,19 @@ const quiet = {
   voiceMs: 0,
   sessions: 0,
   longestSessionMs: 0,
-  favouriteChannelId: null,
-  topDuo: null,
+  topChannels: [],
+  buddies: [],
+  months: Array.from({ length: 12 }, (_, i) => ({ month: i + 1, voiceMs: 0, messages: 0 })),
   peakMonth: null,
+  hours: Array(24).fill(0),
+  persona: null,
+  days: { start: '2025-01-01', end: '2025-12-31', days: [] },
   longestStreak: 0,
   milestones: [],
   messages: 0,
   voiceRank: null,
   xp: { gained: 0, levelFrom: 0, levelTo: 0 },
+  games: { rockPaperScissors: 0, ticTacToe: 0, trivia: 0 },
 };
 
 beforeEach(() => jest.clearAllMocks());

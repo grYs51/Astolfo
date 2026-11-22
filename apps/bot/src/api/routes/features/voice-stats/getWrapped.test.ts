@@ -29,14 +29,18 @@ test.each(['abc', '2019', String(new Date().getUTCFullYear() + 1), '2025.5'])('4
 });
 
 test('the current year by default, with names for the channel and the duo', async () => {
-  (getMemberWrapped as jest.Mock).mockResolvedValue({ year: 2026, favouriteChannelId: 'vc1', topDuo: { memberId: 'b', togetherMs: 1 } });
+  (getMemberWrapped as jest.Mock).mockResolvedValue({
+    year: 2026,
+    topChannels: [{ channelId: 'vc1', voiceMs: 5 }],
+    buddies: [{ memberId: 'b', togetherMs: 1 }],
+  });
   const res = await get();
   expect((getMemberWrapped as jest.Mock).mock.calls[0].slice(1, 4)).toEqual(['g', 'me', new Date().getUTCFullYear()]);
   expect(res.send).toHaveBeenCalledWith(
     expect.objectContaining({
       member: { id: 'me', username: 'Unknown User', displayName: null, avatar: null },
-      favouriteChannel: { id: 'vc1', name: 'round-table', type: 'GuildVoice' },
-      topDuoMember: expect.objectContaining({ id: 'b', displayName: 'Bradamante' }),
+      topChannels: [{ channel: { id: 'vc1', name: 'round-table', type: 'GuildVoice' }, voiceMs: 5 }],
+      buddies: [{ member: expect.objectContaining({ id: 'b', displayName: 'Bradamante' }), togetherMs: 1 }],
     })
   );
 });

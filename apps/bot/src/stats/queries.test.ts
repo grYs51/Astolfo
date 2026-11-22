@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getDuo, getMemberSummary, getMemberWrapped, yearWindow } from './queries';
+import { getDuo, getMemberSummary, getMemberWrapped, personaFor, yearWindow } from './queries';
 import { DEFAULT_RULES, levelFor } from '../xp/rules';
 
 // No test database in this repo: the SQL was checked once against the dev database
@@ -60,36 +60,48 @@ describe('getMemberSummary', () => {
   });
 });
 
+describe('personaFor', () => {
+  test.each([
+    [23, 'Night owl'],
+    [3, 'Night owl'],
+    [7, 'Early bird'],
+    [14, 'Afternoon regular'],
+    [20, 'Evening regular'],
+  ])('%i:00 → %s', (hour, label) => expect(personaFor(hour)).toBe(label));
+});
+
 describe('getMemberWrapped', () => {
   const H = 3_600_000;
   const now = new Date('2026-11-22T12:00:00Z');
-  type Part = 'totals' | 'channel' | 'duo' | 'peak' | 'streak' | 'lifetime' | 'messages' | 'rank' | 'xp';
+  type Part =
+    | 'totals' | 'channels' | 'buddies' | 'months' | 'hours' | 'calendar'
+    | 'streak' | 'lifetime' | 'rank' | 'xp' | 'games';
 
-  /** Answers each raw query by what it reads, so the order of the Promise.all doesn't matter */
+  /** Which query this is, by what it reads, so the order of the Promise.all doesn't matter */
+  const partOf = (sql: string): Part =>
+    /FROM xp_events/.test(sql) ? 'xp'
+    : /FROM game_player/.test(sql) ? 'games'
+    : /WITH totals/.test(sql) ? 'rank'
+    : /generate_series\(1, 12\)/.test(sql) ? 'months'
+    : /generate_series\(0, 23\)/.test(sql) ? 'hours'
+    : /INTERVAL '1 day'/.test(sql) ? 'calendar'
+    : /WITH days/.test(sql) ? 'streak'
+    : /AS before/.test(sql) ? 'lifetime'
+    : /voice_stats other/.test(sql) ? 'buddies'
+    : /GROUP BY channel_id/.test(sql) ? 'channels'
+    : 'totals';
+
   const dbFor = (rows: Partial<Record<Part, object[]>>) => {
-    const queryRaw = jest.fn((strings: TemplateStringsArray, ...values: unknown[]) => {
-      const { sql } = Prisma.sql(strings, ...values);
-      const pick: Part = /FROM xp_events/.test(sql)
-        ? 'xp'
-        : /WITH totals/.test(sql)
-          ? 'rank'
-          : /FROM message_stats/.test(sql)
-            ? 'messages'
-            : /WITH days/.test(sql)
-              ? 'streak'
-              : /AS before/.test(sql)
-                ? 'lifetime'
-                : /EXTRACT\(MONTH/.test(sql)
-                  ? 'peak'
-                  : /voice_stats other/.test(sql)
-                    ? 'duo'
-                    : /GROUP BY channel_id/.test(sql)
-                      ? 'channel'
-                      : 'totals';
-      return Promise.resolve(rows[pick] ?? []);
-    });
+    const queryRaw = jest.fn((strings: TemplateStringsArray, ...values: unknown[]) =>
+      Promise.resolve(rows[partOf(Prisma.sql(strings, ...values).sql)] ?? [])
+    );
     return { db: { $queryRaw: queryRaw } as never, queryRaw };
   };
+
+  const MONTH_HOURS = [18, 22, 15, 20, 26, 31, 35, 28, 24, 30, 49, 14];
+  const months = MONTH_HOURS.map((hours, i) => ({ month: i + 1, voice: BigInt(hours * H), messages: 1070n }));
+  // Busiest at 21:00
+  const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, minutes: hour === 21 ? 900 : hour >= 18 ? 400 : 10 }));
 
   test('yearWindow is the UTC calendar year, cut at now for the current one', () => {
     expect(yearWindow(2025, now)).toEqual({ from: new Date('2025-01-01T00:00:00Z'), to: new Date('2026-01-01T00:00:00Z') });
@@ -99,15 +111,17 @@ describe('getMemberWrapped', () => {
   test('maps the year', async () => {
     const { db } = dbFor({
       totals: [{ total: BigInt(312 * H), sessions: 406n, longest: BigInt(9 * H) }],
-      channel: [{ channel_id: 'vc1' }],
-      duo: [{ member_id: 'b', together: BigInt(81 * H) }],
-      peak: [{ month: 11, total: BigInt(49 * H) }],
+      channels: [{ channel_id: 'vc1', total: BigInt(190 * H) }, { channel_id: 'vc2', total: BigInt(84 * H) }],
+      buddies: [{ member_id: 'b', together: BigInt(81 * H) }, { member_id: 'c', together: BigInt(40 * H) }],
+      months,
+      hours,
+      calendar: [{ day: new Date('2026-03-04T00:00:00Z'), minutes: 90, messages: 2 }],
       streak: [{ member_id: 'me', current: 3, longest: 23 }],
       // 40h before the year, 352h at its end: passes 50, 100 and 250
       lifetime: [{ before: BigInt(40 * H), after: BigInt(352 * H) }],
-      messages: [{ count: 12_840n }],
       rank: [{ members: 57n, rank: 2n }],
       xp: [{ before: 500, gained: 14_200 }],
+      games: [{ rps: 3n, ttt: 1n, trivia: 12n }],
     });
     const wrapped = await getMemberWrapped(db, 'g', 'me', 2026, now);
     expect(wrapped).toEqual({
@@ -115,47 +129,73 @@ describe('getMemberWrapped', () => {
       voiceMs: 312 * H,
       sessions: 406,
       longestSessionMs: 9 * H,
-      favouriteChannelId: 'vc1',
-      topDuo: { memberId: 'b', togetherMs: 81 * H },
-      peakMonth: { month: 11, voiceMs: 49 * H },
+      topChannels: [{ channelId: 'vc1', voiceMs: 190 * H }, { channelId: 'vc2', voiceMs: 84 * H }],
+      buddies: [{ memberId: 'b', togetherMs: 81 * H }, { memberId: 'c', togetherMs: 40 * H }],
+      months: MONTH_HOURS.map((h, i) => ({ month: i + 1, voiceMs: h * H, messages: 1070 })),
+      peakMonth: { month: 11, voiceMs: 49 * H, messages: 1070 },
+      hours: hours.map((h) => h.minutes),
+      persona: { label: 'Evening regular', peakHour: 21 },
+      days: { start: '2026-01-01', end: '2026-11-22', days: [{ date: '2026-03-04', minutes: 90, messages: 2 }] },
       longestStreak: 23,
       milestones: [50, 100, 250],
-      messages: 12_840,
+      messages: 12 * 1070,
       voiceRank: { rank: 2, members: 57, topPercent: 4 },
       xp: { gained: 14_200, levelFrom: levelFor(500, DEFAULT_RULES), levelTo: levelFor(14_700, DEFAULT_RULES) },
+      games: { rockPaperScissors: 3, ticTacToe: 1, trivia: 12 },
     });
   });
 
-  test('a quiet year: no rank, month, duo or streak', async () => {
-    const { db } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }], messages: [{ count: 3n }], xp: [{ before: 0, gained: 0 }] });
+  test('a quiet year: no rank, peak, persona, buddies or streak', async () => {
+    const { db } = dbFor({
+      totals: [{ total: 0n, sessions: 0n, longest: 0n }],
+      months: months.map((m) => ({ ...m, voice: 0n, messages: m.month === 2 ? 3n : 0n })),
+      hours: hours.map((h) => ({ ...h, minutes: 0 })),
+      xp: [{ before: 0, gained: 0 }],
+    });
     expect(await getMemberWrapped(db, 'g', 'me', 2025, now)).toMatchObject({
       voiceMs: 0,
-      favouriteChannelId: null,
-      topDuo: null,
+      topChannels: [],
+      buddies: [],
       peakMonth: null,
+      persona: null,
+      days: { start: '2025-01-01', end: '2025-12-31', days: [] },
       longestStreak: 0,
       milestones: [],
       messages: 3,
       voiceRank: null,
       xp: { gained: 0, levelFrom: 0, levelTo: 0 },
+      games: { rockPaperScissors: 0, ticTacToe: 0, trivia: 0 },
     });
   });
 
   test('every voice query reads VOICE rows that started in the year, open sessions live', async () => {
-    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }], messages: [{ count: 0n }] });
+    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
     await getMemberWrapped(db, 'g', 'me', 2025, now);
     const from = new Date('2025-01-01T00:00:00Z').getTime();
     const to = new Date('2026-01-01T00:00:00Z').getTime();
     const voice = queryRaw.mock.calls
       .map(([strings, ...values]) => Prisma.sql(strings, ...values))
       .filter((q) => /FROM voice_stats/.test(q.sql));
-    expect(voice).toHaveLength(7); // totals, channel, duo, peak, streak, lifetime, rank
+    expect(voice.map((q) => partOf(q.sql)).sort()).toEqual(
+      ['buddies', 'calendar', 'channels', 'hours', 'lifetime', 'months', 'rank', 'streak', 'totals'].sort()
+    );
     for (const q of voice) {
       expect(q.values).toContain('VOICE');
-      expect(q.sql).toMatch(/COALESCE\((\w+\.)?ended_on, NOW\(\)\)/);
+      expect(q.sql).toMatch(/COALESCE\((\w+\.)?ended_on, (NOW\(\)|\(NOW\(\) AT TIME ZONE 'UTC'\))\)/);
       expect(q.values.some((v) => v instanceof Date && v.getTime() === to)).toBe(true);
-      // The lifetime query also reads before the year, for the milestones
-      if (!/AS before/.test(q.sql)) expect(q.values.some((v) => v instanceof Date && v.getTime() === from)).toBe(true);
+      // The lifetime query also reads before the year, for the milestones; the calendar starts at its first day
+      if (partOf(q.sql) === 'calendar') expect(q.values).toContain('2025-01-01');
+      else if (partOf(q.sql) !== 'lifetime') expect(q.values.some((v) => v instanceof Date && v.getTime() === from)).toBe(true);
     }
+  });
+
+  test('games count wins in the server in the year, without the games against Astolfo', async () => {
+    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
+    await getMemberWrapped(db, 'g', 'me', 2025, now);
+    const games = queryRaw.mock.calls
+      .map(([strings, ...values]) => Prisma.sql(strings, ...values))
+      .find((q) => partOf(q.sql) === 'games');
+    expect(games?.values).toEqual(expect.arrayContaining(['rock-paper-scissors', 'tic-tac-toe', 'trivia', 'me', 'g', 1]));
+    expect(games?.values).not.toContain('rock-paper-scissors-astolfo');
   });
 });
