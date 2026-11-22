@@ -57,6 +57,8 @@ export interface DiscordDirectory {
   members(guildId: string, userIds: string[]): Promise<Map<string, MemberInfo>>;
   /** Ids of the guild's current human members */
   memberIds(guildId: string): Promise<string[]>;
+  /** Ids of the guild's bot accounts in the gateway cache (bots in voice are always cached), to keep them out of buddies and ranks */
+  botIds(guildId: string): string[];
   /** Text and announcement channels both the bot and the viewer can post in */
   postableChannels(guildId: string, viewerId: string): Promise<ChannelInfo[]>;
 }
@@ -165,6 +167,11 @@ const live: DiscordDirectory = {
     return [...guild.members.cache.filter((m) => !m.user.bot).keys()];
   },
 
+  botIds(guildId) {
+    const guild = client.guilds.cache.get(guildId);
+    return guild ? [...guild.members.cache.filter((m) => m.user.bot).keys()] : [];
+  },
+
   async postableChannels(guildId, viewerId) {
     const guild = client.guilds.cache.get(guildId);
     const viewer = await findMember(guildId, viewerId);
@@ -230,7 +237,11 @@ const mock: DiscordDirectory = {
   },
 
   async memberIds(guildId) {
-    return findMockGuild(guildId)?.members.map((m) => m.id) ?? [];
+    return findMockGuild(guildId)?.members.filter((m) => !m.bot).map((m) => m.id) ?? [];
+  },
+
+  botIds(guildId) {
+    return findMockGuild(guildId)?.members.filter((m) => m.bot).map((m) => m.id) ?? [];
   },
 
   async postableChannels(guildId) {

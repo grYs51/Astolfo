@@ -7,7 +7,7 @@ import { HeatmapChartComponent } from '../heatmap-chart/heatmap-chart.component'
 
 type Metric = 'minutes' | 'messages';
 
-/** GitHub-style graph: one cell per day over the last 12 months, weeks as columns. */
+/** GitHub-style graph: one cell per day over the last 12 months (or one calendar `year`), weeks as columns. */
 @Component({
   selector: 'feature-voice-stats-activity-calendar',
   imports: [HeatmapChartComponent, SegmentedControlComponent, HumanizeDurationPipe],
@@ -17,7 +17,7 @@ type Metric = 'minutes' | 'messages';
     <div class="rounded-xl border border-white/5 bg-base-300 p-lg">
       <div class="mb-sm flex flex-wrap items-start justify-between gap-sm">
         <div>
-          <h3 class="text-base font-semibold text-gray-100">Past year</h3>
+          <h3 class="text-base font-semibold text-gray-100">{{ year() ?? 'Past year' }}</h3>
           <!-- Local days with any activity; the voice streak counts UTC days with 10+ min -->
           <p class="text-xs text-gray-500">
             Days in your time zone · {{ activeDays() }} active {{ activeDays() === 1 ? 'day' : 'days' }} ·
@@ -42,6 +42,8 @@ type Metric = 'minutes' | 'messages';
 })
 export class ActivityCalendarComponent {
   calendar = input.required<ActivityCalendar>();
+  /** A calendar year (Server Wrapped) instead of the past 12 months, as the title */
+  year = input<number>();
 
   readonly metricOptions: SegmentedControlOption<Metric>[] = [
     { value: 'minutes', label: 'Voice' },

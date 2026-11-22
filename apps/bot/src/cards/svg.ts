@@ -1,3 +1,5 @@
+import type { ActivityCalendar } from '@nx-stolfo/api-interfaces';
+import { plural } from '../stats/messages';
 import { avatarSvg } from './avatars';
 import { escapeXml, FONT_FAMILY, truncate } from './render';
 import { CardTheme } from './themes';
@@ -15,12 +17,64 @@ export const text = (x: number, y: number, size: number, fill: string, content: 
 export const panel = (x: number, y: number, w: number, h: number, t: CardTheme) =>
   `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="16" fill="${t.surface}"/>`;
 
-/** A label, a big value and an optional line under it (all escaped here) */
-export const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme, w = TILE_W) =>
-  panel(x, y, w, TILE_H, t) +
-  text(x + 24, y + 32, 14, t.muted, escapeXml(label)) +
-  text(x + 24, y + 68, 30, t.text, escapeXml(value), 'font-weight="700"') +
-  (sub ? text(x + 24, y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '');
+/** A muted heading above a section */
+export const heading = (y: number, label: string, t: CardTheme) => text(PAD, y, 14, t.muted, escapeXml(label));
+
+/** A bar with a rounded track; `fill` 0–1 */
+export const bar = (x: number, y: number, w: number, h: number, fill: number, color: string, t: CardTheme, opacity = 1) =>
+  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${t.track}"/>` +
+  (fill > 0
+    ? `<rect x="${x}" y="${y}" width="${+(fill * w).toFixed(2)}" height="${h}" rx="${h / 2}" fill="${color}"${opacity < 1 ? ` fill-opacity="${opacity}"` : ''}/>`
+    : '');
+
+/** Bold Inter averages a bit over half an em a character in names */
+const CHAR_EM = 0.55;
+/** One line shrinks down to this, then the value wraps onto two lines */
+const ONE_LINE_MIN = 20;
+const MIN_SIZE = 14;
+
+/** `value` in two lines of at most `max` characters, broken at the last space that allows it (or mid-word); undefined when it doesn't fit */
+const twoLines = (value: string, max: number): [string, string] | undefined => {
+  const chars = [...value];
+  if (chars.length > 2 * max) return undefined;
+  const space = chars.slice(0, max + 1).lastIndexOf(' ');
+  const cut = space > 0 && chars.length - space - 1 <= max ? space : max;
+  const rest = chars.slice(cut).join('').trim();
+  return [...rest].length <= max ? [chars.slice(0, cut).join('').trim(), rest] : undefined;
+};
+
+/**
+ * Fits a tile's value in `width`: one line from `max` down to 20 px, then two
+ * lines from 20 px down to 14, then two lines at 14 with the end cut.
+ */
+export const fitValue = (value: string, width: number, max: number): { size: number; lines: string[] } => {
+  const perLine = (size: number) => Math.floor(width / (size * CHAR_EM));
+  const one = Math.min(max, Math.floor(width / ([...value].length * CHAR_EM)));
+  if (one >= ONE_LINE_MIN) return { size: one, lines: [value] };
+  for (let size = ONE_LINE_MIN; size >= MIN_SIZE; size--) {
+    const lines = twoLines(value, perLine(size));
+    if (lines) return { size, lines };
+  }
+  const n = perLine(MIN_SIZE);
+  const chars = [...value];
+  return { size: MIN_SIZE, lines: [chars.slice(0, n).join('').trim(), truncate(chars.slice(n).join('').trim(), n)] };
+};
+
+/** A label, a big value (smaller or on two lines when it's long, e.g. a name) and an optional line under it (all escaped here) */
+export const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme, w = TILE_W) => {
+  const big = fitValue(value, w - 48, 30);
+  const two = big.lines.length === 2;
+  // Two lines move the label up a little to make room
+  const lines = two
+    ? big.lines.map((line, i) => text(x + 24, y + 52 + i * (big.size + 3), big.size, t.text, escapeXml(line), 'font-weight="700"')).join('')
+    : text(x + 24, y + 68, big.size, t.text, escapeXml(big.lines[0]), 'font-weight="700"');
+  return (
+    panel(x, y, w, TILE_H, t) +
+    text(x + 24, two ? y + 27 : y + 32, 14, t.muted, escapeXml(label)) +
+    lines +
+    (sub ? text(x + 24, two ? y + 96 : y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '')
+  );
+};
 
 /** Big avatar, title and a muted line under it, across the top (escaped here); ends at y = 112 */
 export const header = (h: { name: string; avatar?: string; title: string; subtitle: string }, t: CardTheme) =>
@@ -46,3 +100,43 @@ export const level = (value: number, max: number) =>
 /** One square of a calendar or heatmap: `track` when empty, `accent` stronger with the level */
 export const gridCell = (x: number, y: number, size: number, lvl: number, t: CardTheme) =>
   `<rect x="${x}" y="${y}" width="${size}" height="${size}" rx="2" fill="${lvl ? t.accent : t.track}"${lvl ? ` fill-opacity="${LEVEL_OPACITY[lvl]}"` : ''}/>`;
+
+const H = 60 * 60 * 1000;
+/** Inside a full-width panel */
+const INNER_W = W - 2 * PAD - 48;
+const toUtc = (date: string) => new Date(`${date}T00:00:00Z`);
+
+/** The past year (or the calendar's range), a square per day in weeks of Monday to Sunday, coloured by voice minutes */
+export const calendar = (c: ActivityCalendar, y: number, t: CardTheme, title = 'Past year'): [string[], number] => {
+  const first = toUtc(c.start).getTime();
+  const days = Math.round((toUtc(c.end).getTime() - first) / (24 * H)) + 1;
+  const offset = (toUtc(c.start).getUTCDay() + 6) % 7;
+  const columns = Math.ceil((days + offset) / 7);
+  // Fractional, so the 53–54 weeks fill the panel
+  const step = (INNER_W + 3) / columns;
+  const size = +(step - 3).toFixed(2);
+  const byDate = new Map(c.days.map((day) => [day.date, day]));
+  const max = Math.max(0, ...c.days.map((day) => day.minutes));
+  const gridY = y + 28 + 24 + 18;
+  const parts = [
+    heading(y + 14, `${title} · ${plural(c.days.length, 'active day')}`, t),
+    panel(PAD, y + 28, W - 2 * PAD, Math.round(24 + 18 + 7 * step + 21), t),
+  ];
+  let lastLabel = -3;
+  for (let i = 0; i < days; i++) {
+    const date = new Date(first + i * 24 * H);
+    const iso = date.toISOString().substring(0, 10);
+    const col = Math.floor((i + offset) / 7);
+    const row = (i + offset) % 7;
+    const x = +(PAD + 24 + col * step).toFixed(2);
+    const day = byDate.get(iso);
+    // Days with only messages still show as active
+    const lvl = day ? Math.max(level(day.minutes, max), day.messages > 0 ? 1 : 0) : 0;
+    parts.push(gridCell(x, +(gridY + row * step).toFixed(2), size, lvl, t));
+    if (date.getUTCDate() === 1 && col - lastLabel >= 3) {
+      parts.push(text(x, gridY - 8, 11, t.muted, date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })));
+      lastLabel = col;
+    }
+  }
+  return [parts, Math.round(28 + 24 + 18 + 7 * step + 21)];
+};

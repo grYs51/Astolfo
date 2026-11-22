@@ -9,16 +9,19 @@ type DayRow = { day: Date; minutes: number; messages: number };
 
 /**
  * Daily voice minutes and messages over the last 12 months, for the whole
- * server or one member, in time zone `tz` (the calendar endpoint and the stats card).
+ * server or one member, in time zone `tz` (the calendar endpoint and the stats card),
+ * or over `range` (Server Wrapped's year).
  */
 export const activityCalendar = async (
   db: Pick<Db, '$queryRaw'>,
   serverId: string,
   userId: string | undefined,
-  tz: string
+  tz: string,
+  range?: { from: Date; to: Date }
 ): Promise<ActivityCalendar> => {
   const localDate = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: tz }).format(d);
-  const start = localDate(new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+  const start = localDate(range?.from ?? new Date(Date.now() - 365 * 24 * 60 * 60 * 1000));
+  const end = localDate(range ? new Date(range.to.getTime() - 1) : new Date());
   // Local midnight of the first day, as the UTC wall-clock time the columns hold,
   // so the first square counts its whole day (and the indexes stay usable)
   const since = Prisma.sql`((${start}::date::timestamp AT TIME ZONE ${tz}) AT TIME ZONE 'UTC')`;
@@ -41,6 +44,7 @@ export const activityCalendar = async (
         WHERE guild_id = ${serverId}
           AND type = ${VOICE_TYPE.VOICE}
           AND issued_on >= ${since}
+          ${range ? Prisma.sql`AND issued_on < ${range.to}` : Prisma.empty}
           ${voiceMember}
       ) spans,
       LATERAL generate_series(date_trunc('day', s), e, INTERVAL '1 day') AS d
@@ -52,6 +56,7 @@ export const activityCalendar = async (
       FROM message_stats
       WHERE guild_id = ${serverId}
         AND created_at >= ${since}
+        ${range ? Prisma.sql`AND created_at < ${range.to}` : Prisma.empty}
         ${messageMember}
       GROUP BY 1
     )
@@ -67,8 +72,11 @@ export const activityCalendar = async (
   // `day` is zone-less wall-clock time read as UTC, so its ISO date is the local date
   const isoDate = (d: Date) => d.toISOString().substring(0, 10);
   return {
-    days: rows.map((row) => ({ date: isoDate(row.day), minutes: row.minutes, messages: row.messages })),
+    days: rows
+      .map((row) => ({ date: isoDate(row.day), minutes: row.minutes, messages: row.messages }))
+      // A session running past the end of the range spills into the next day
+      .filter((day) => day.date <= end),
     start,
-    end: localDate(new Date()),
+    end,
   };
 };

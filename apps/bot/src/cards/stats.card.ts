@@ -5,7 +5,7 @@ import type { MemberSummary } from '../stats/queries';
 import type { StatsPeriod } from '../stats/windows';
 import { avatarSvg } from './avatars';
 import { escapeXml, truncate } from './render';
-import { gridCell, header, level, PAD, panel, svgCard, text, TILE_H, TILE_W, W } from './svg';
+import { bar, calendar, gridCell, header, heading, level, PAD, panel, svgCard, text, TILE_H, TILE_W, W } from './svg';
 import { CardTheme } from './themes';
 
 /** The parts of the card a viewer can turn on, in the order they're drawn */
@@ -61,9 +61,6 @@ const GAP = 16;
 const INNER_W = W - 2 * PAD - 48;
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-/** A muted heading above a section */
-const heading = (y: number, label: string, t: CardTheme) => text(PAD, y, 14, t.muted, escapeXml(label));
-
 /** Labels for the this-period vs previous-period bars */
 const COMPARE_LABELS: Record<Exclude<StatsPeriod, 'all'>, [string, string]> = {
   week: ['Past week', 'Week before'],
@@ -75,13 +72,6 @@ const COMPARE_LABELS: Record<Exclude<StatsPeriod, 'all'>, [string, string]> = {
 const COLORS = { muted: '#FBBF24', camera: '#38BDF8', streaming: '#F472B6', online: '#34D399', streak: '#FBBF24' };
 
 const INNER_X = PAD + 24;
-
-/** A bar with a rounded track; `fill` 0–1 */
-const bar = (x: number, y: number, w: number, h: number, fill: number, color: string, t: CardTheme, opacity = 1) =>
-  `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="${t.track}"/>` +
-  (fill > 0
-    ? `<rect x="${x}" y="${y}" width="${+(fill * w).toFixed(2)}" height="${h}" rx="${h / 2}" fill="${color}"${opacity < 1 ? ` fill-opacity="${opacity}"` : ''}/>`
-    : '');
 
 /** Hours and minutes, never rolled up into days ("85h 44m") */
 const hoursAndMinutes = (ms: number) => `${Math.floor(ms / H)}h ${Math.floor((ms % H) / 60_000)}m`;
@@ -355,43 +345,6 @@ const habits = (h: VoiceHabits, online: StatsCardData['online'], y: number, t: C
     );
   });
   return [parts, 28 + 108];
-};
-
-const toUtc = (date: string) => new Date(`${date}T00:00:00Z`);
-
-/** The past year, a square per day in weeks of Monday to Sunday, coloured by voice minutes */
-const calendar = (c: ActivityCalendar, y: number, t: CardTheme): [string[], number] => {
-  const first = toUtc(c.start).getTime();
-  const days = Math.round((toUtc(c.end).getTime() - first) / (24 * H)) + 1;
-  const offset = (toUtc(c.start).getUTCDay() + 6) % 7;
-  const columns = Math.ceil((days + offset) / 7);
-  // Fractional, so the 53–54 weeks fill the panel
-  const step = (INNER_W + 3) / columns;
-  const size = +(step - 3).toFixed(2);
-  const byDate = new Map(c.days.map((day) => [day.date, day]));
-  const max = Math.max(0, ...c.days.map((day) => day.minutes));
-  const gridY = y + 28 + 24 + 18;
-  const parts = [
-    heading(y + 14, `Past year · ${plural(c.days.length, 'active day')}`, t),
-    panel(PAD, y + 28, W - 2 * PAD, Math.round(24 + 18 + 7 * step + 21), t),
-  ];
-  let lastLabel = -3;
-  for (let i = 0; i < days; i++) {
-    const date = new Date(first + i * 24 * H);
-    const iso = date.toISOString().substring(0, 10);
-    const col = Math.floor((i + offset) / 7);
-    const row = (i + offset) % 7;
-    const x = +(PAD + 24 + col * step).toFixed(2);
-    const day = byDate.get(iso);
-    // Days with only messages still show as active
-    const lvl = day ? Math.max(level(day.minutes, max), day.messages > 0 ? 1 : 0) : 0;
-    parts.push(gridCell(x, +(gridY + row * step).toFixed(2), size, lvl, t));
-    if (date.getUTCDate() === 1 && col - lastLabel >= 3) {
-      parts.push(text(x, gridY - 8, 11, t.muted, date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })));
-      lastLabel = col;
-    }
-  }
-  return [parts, Math.round(28 + 24 + 18 + 7 * step + 21)];
 };
 
 /** Voice time per weekday and hour in the period, in the viewer's time zone */

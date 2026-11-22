@@ -110,7 +110,8 @@ const insertRows = async (db: GrantDb, guildId: string, rows: XpRow[]): Promise<
 
 const memberFilter = (column: string, memberId?: string) =>
   memberId ? Prisma.sql`AND ${Prisma.raw(column)} = ${memberId}` : Prisma.empty;
-const notBots = (column: string, botIds: string[]) =>
+/** `AND <column> NOT IN (bots)`; also keeps bots out of the Wrapped and /stats companions and ranks */
+export const notBots = (column: string, botIds: string[]) =>
   botIds.length ? Prisma.sql`AND ${Prisma.raw(column)} NOT IN (${Prisma.join(botIds)})` : Prisma.empty;
 const sinceFilter = (column: string, since?: Date) =>
   since ? Prisma.sql`AND ${Prisma.raw(column)} >= ${since}` : Prisma.empty;

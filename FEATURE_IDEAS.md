@@ -49,7 +49,9 @@ You have everything needed: overlapping `voice_stats` intervals in the same chan
 
 This is the feature people screenshot and share. Nothing else in the app has this virality potential.
 
-### 2.2 "Server Wrapped" — yearly/monthly recap 🟡
+### 2.2 "Server Wrapped" — yearly/monthly recap 🟡 — ✅ done (2026-11-22)
+> Shipped as a yearly recap (UTC calendar year): `/wrapped [member] [year]` replies with a PNG card, and the dashboard has a Wrapped page per member (`…/members/:memberId/wrapped?year=`, linked from the You tab and member profiles). Voice hours, sessions, longest session, favourite channel, top duo, peak month, longest streak, milestones passed, messages, "top x%" voice rank, games won, the year's XP (total, level-ups, XP rank, by source, best day, weekly top 3 finishes), plus charts over the year (voice and messages by month, top 5 buddies, top 3 channels, voice by hour with a night owl / early bird label, the year's activity calendar), from one query (`getMemberWrapped` in `apps/bot/src/stats/queries.ts`). Not done: a monthly recap, a server-wide Wrapped, a December announcement post.
+
 > Groundwork (2026-11-08): the image-card renderer exists (`apps/bot/src/cards/`, used by every stats reply since 2026-11-09), so the shareable card is a new template, not new infrastructure.
 
 Spotify-Wrapped-style story page per user per server: total hours, longest session, favorite channel, top duo, peak month, percentile rank ("you were in the top 4% of voice users"). Historical data is already sitting in Postgres. Generate a shareable image/card for Discord posting. Seasonal, high-retention, and largely composed of queries you already have.
