@@ -450,6 +450,8 @@ export interface ServerDigest {
   activeMembers: number;
   topVoice: { memberId: string; ms: number }[];
   topMessages: { memberId: string; count: number }[];
+  /** Most XP earned in the window, with the levels it took them up (current curve) */
+  topXp: { memberId: string; xp: number; levelsGained: number }[];
   bestDuo?: { a: string; b: string; togetherMs: number };
   /** UTC day with the most voice time */
   busiestDay?: { day: Date; ms: number };
@@ -466,7 +468,7 @@ export const getServerDigest = async (
   window: Required<TimeWindow>,
   previous: Required<TimeWindow>
 ): Promise<ServerDigest> => {
-  const [voice, previousVoice, messages, previousMessages, [active], topVoice, topMessages, [duo], [day], streaks, lifetimes] =
+  const [voice, previousVoice, messages, previousMessages, [active], topVoice, topMessages, topXp, [duo], [day], streaks, lifetimes] =
     await Promise.all([
       voiceTotal(db, guildId, window),
       voiceTotal(db, guildId, previous),
@@ -498,6 +500,18 @@ export const getServerDigest = async (
           ${windowFilter('created_at', window)}
         GROUP BY user_id
         ORDER BY count DESC
+        LIMIT 3
+      `,
+      // XP dated in the window, and each earner's total before it for the levels gained
+      db.$queryRaw<{ member_id: string; before: number; gained: number }[]>`
+        SELECT member_id,
+          COALESCE(SUM(amount) FILTER (WHERE created_at < ${window.from}), 0)::float8 AS before,
+          COALESCE(SUM(amount) FILTER (WHERE created_at >= ${window.from}), 0)::float8 AS gained
+        FROM xp_events
+        WHERE guild_id = ${guildId} AND created_at < ${window.to}
+        GROUP BY member_id
+        HAVING SUM(amount) FILTER (WHERE created_at >= ${window.from}) > 0
+        ORDER BY gained DESC, member_id
         LIMIT 3
       `,
       // Pair with the most time in the same channel at the same time
@@ -549,6 +563,7 @@ export const getServerDigest = async (
     .sort((a, b) => b.hours - a.hours)
     // Keeps the embed field under Discord's 1024 characters
     .slice(0, 10);
+  const rules = currentRules();
 
   return {
     voiceMs: voice.total,
@@ -558,6 +573,11 @@ export const getServerDigest = async (
     activeMembers: Number(active.members),
     topVoice: topVoice.map((row) => ({ memberId: row.member_id, ms: Number(row.total) })),
     topMessages: topMessages.map((row) => ({ memberId: row.user_id, count: Number(row.count) })),
+    topXp: topXp.map((row) => {
+      const before = Number(row.before);
+      const xp = Number(row.gained);
+      return { memberId: row.member_id, xp, levelsGained: levelFor(before + xp, rules) - levelFor(before, rules) };
+    }),
     bestDuo: duo ? { a: duo.a, b: duo.b, togetherMs: Number(duo.together) } : undefined,
     busiestDay: day && Number(day.total) > 0 ? { day: day.day, ms: Number(day.total) } : undefined,
     topStreaks: streaks.filter((s) => s.current >= 2).map((s) => ({ memberId: s.memberId, days: s.current })),
