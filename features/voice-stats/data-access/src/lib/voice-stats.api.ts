@@ -23,6 +23,7 @@ import {
   VoiceHabitMetric,
   VoiceHabitsLeaderboard,
   XpLeaderboard,
+  XpHistory,
   StatsCardSection,
   StatsCardTheme,
   VoiceStatsWrapped,
@@ -260,6 +261,21 @@ export class VoiceStatsApi extends ApiBase {
   /** Members ranked by level (all-time XP) */
   fetchXpLeaderboard(guildId: () => string) {
     return this.get<XpLeaderboard>(() => `/features/voice-stats/${guildId()}/xp-leaderboard`);
+  }
+
+  /** One member's running XP total over the period; `period` returning undefined skips the request (section closed) */
+  fetchUserXpHistory(
+    guildId: () => string,
+    userId: () => string | undefined,
+    period: () => DashboardPeriod | undefined
+  ) {
+    return this.get<XpHistory>(
+      () => {
+        const user = userId();
+        return user && period() ? `/features/voice-stats/${guildId()}/users/${user}/xp-history` : undefined;
+      },
+      () => ({ period: period() ?? 'all', tz: viewerTimeZone() })
+    );
   }
 
   /** One member's rock-paper-scissors record (and head-to-head with the viewer) */
