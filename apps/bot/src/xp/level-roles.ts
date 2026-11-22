@@ -4,10 +4,15 @@ import type DiscordClient from '../client/client';
 import type { Db } from '../db';
 import { discordDirectory } from '../api/utils/discord-directory';
 import { Logger } from '../utils/logger';
+import { isEnabled, SETTING_FLAGS } from '../utils/handlers/settings-handler';
 import { guildTotals } from './grant';
 import { currentRules, levelFor } from './rules';
 
 const REASON = 'Level role reward';
+
+/** The server opted in (settings toggle). Every sync checks it, so off means nothing changes anywhere. */
+export const levelRolesEnabled = (client: DiscordClient, guildId: string) =>
+  isEnabled(client.guildConfigs.get(guildId)?.toggles ?? 0, SETTING_FLAGS.LEVEL_ROLES);
 
 /** A server's level role rewards, lowest level first */
 export const levelRolesOf = async (db: Db, guildId: string): Promise<LevelRole[]> =>
@@ -48,7 +53,7 @@ const warnSkipped = (guildId: string, roleIds: Iterable<string>) =>
 export const syncMemberLevelRoles = async (client: DiscordClient, guildId: string, memberId: string, level: number) => {
   try {
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) return;
+    if (!guild || !levelRolesEnabled(client, guildId)) return;
     const mapping = await levelRolesOf(client.dataSource, guildId);
     if (!mapping.length) return;
     const member = await guild.members.fetch(memberId).catch(() => null);
@@ -73,7 +78,7 @@ export const syncGuildLevelRoles = async (client: DiscordClient, guildId: string
   backfills.set(guildId, run);
   try {
     const guild = client.guilds.cache.get(guildId);
-    if (!guild) return;
+    if (!guild || !levelRolesEnabled(client, guildId)) return;
     const mapping = await levelRolesOf(client.dataSource, guildId);
     if (!mapping.length) return;
     // Fills the member cache once, so members without XP lose roles they hold above level 0
@@ -82,7 +87,8 @@ export const syncGuildLevelRoles = async (client: DiscordClient, guildId: string
     const rules = currentRules();
     const skipped = new Set<string>();
     for (const id of ids) {
-      if (backfills.get(guildId) !== run) return;
+      // A newer run started over, or the server turned level roles off mid-way
+      if (backfills.get(guildId) !== run || !levelRolesEnabled(client, guildId)) return;
       const member = guild.members.cache.get(id);
       if (!member) continue;
       for (const roleId of await syncMember(member, mapping, levelFor(totals.get(id) ?? 0, rules))) skipped.add(roleId);

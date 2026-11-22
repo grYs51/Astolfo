@@ -16,6 +16,7 @@ import {
   SETTINGS_LABELS,
   toggleArray,
 } from '../../utils/handlers/settings-handler';
+import { syncGuildLevelRoles } from '../../xp/level-roles';
 
 export default class SettingsEvent extends BaseSlash {
   constructor() {
@@ -75,6 +76,10 @@ export default class SettingsEvent extends BaseSlash {
       },
     });
     client.guildConfigs.set(interaction.guildId!, dbConfig);
+    // Opting in to level roles hands them out right away, like the settings page
+    if (flag === 'LEVEL_ROLES' && value && !isEnabled(settings, SETTING_FLAGS.LEVEL_ROLES)) {
+      void syncGuildLevelRoles(client, dbConfig.guild_id);
+    }
 
     const content = toggleArray
       .map((toggle) => {

@@ -2,12 +2,15 @@ export const SETTING_FLAGS = {
   VOICE_CHANNEL_REMINDER: 1 << 0, // 0001 = 1
   // WELCOME_MESSAGE: 1 << 1, // 0010 = 2
   // LEAVE_MESSAGE: 1 << 2, // 0100 = 4
+  // Off by default (toggles default to 0): the bot only hands out and takes away roles once an admin opts in
+  LEVEL_ROLES: 1 << 3, // 1000 = 8
 } as const;
 
 export const SETTINGS_LABELS: Record<Settings, string> = {
   // WELCOME_MESSAGE: 'Send Welcome Message',
   // LEAVE_MESSAGE: 'Send Leave Message',
   VOICE_CHANNEL_REMINDER: 'Voice Channel Reminder',
+  LEVEL_ROLES: 'Level roles',
 } as const;
 
 export type Settings = keyof typeof SETTING_FLAGS;

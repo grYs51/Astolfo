@@ -1,4 +1,4 @@
-import { rolesToSync, syncMemberLevelRoles } from './level-roles';
+import { rolesToSync, syncGuildLevelRoles, syncMemberLevelRoles } from './level-roles';
 import { Logger } from '../utils/logger';
 
 jest.mock('../api/utils/discord-directory', () => ({ discordDirectory: () => ({}) }));
@@ -31,7 +31,7 @@ describe('rolesToSync', () => {
 describe('syncMemberLevelRoles', () => {
   const add = jest.fn();
   const remove = jest.fn();
-  const clientWith = (editable: Record<string, boolean>) => {
+  const clientWith = (editable: Record<string, boolean>, toggles = 0b1000) => {
     const guild = {
       roles: { cache: new Map(Object.entries(editable).map(([id, e]) => [id, { editable: e }])) },
       members: { fetch: jest.fn() },
@@ -39,8 +39,22 @@ describe('syncMemberLevelRoles', () => {
     const member = { id: 'm', guild, roles: { cache: held('veteran', 'veteran-color'), add, remove } };
     guild.members.fetch.mockResolvedValue(member);
     const findMany = jest.fn(async () => mapping.map((r) => ({ guild_id: 'g', role_id: r.roleId, level: r.level })));
-    return { guilds: { cache: new Map([['g', guild]]) }, dataSource: { levelRoles: { findMany } } } as never;
+    return {
+      guilds: { cache: new Map([['g', guild]]) },
+      guildConfigs: new Map([['g', { toggles }]]),
+      dataSource: { levelRoles: { findMany } },
+    } as never;
   };
+
+  // Level-up, recalculation, sweep and settings save all go through these two, so this is the one gate
+  test('with level roles off nothing syncs, for one member or the whole server', async () => {
+    const off = clientWith({ regular: true, veteran: true, 'veteran-color': true }, 0b0001);
+    await syncMemberLevelRoles(off, 'g', 'm', 5);
+    await syncGuildLevelRoles(off, 'g');
+    expect(add).not.toHaveBeenCalled();
+    expect(remove).not.toHaveBeenCalled();
+    expect((off as unknown as { dataSource: { levelRoles: { findMany: jest.Mock } } }).dataSource.levelRoles.findMany).not.toHaveBeenCalled();
+  });
 
   beforeEach(() => jest.clearAllMocks());
 
