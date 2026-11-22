@@ -25,6 +25,7 @@ import {
   XpLeaderboard,
   StatsCardSection,
   StatsCardTheme,
+  VoiceStatsWrapped,
 } from '@nx-stolfo/api-interfaces';
 
 /**
@@ -120,6 +121,14 @@ export class VoiceStatsApi extends ApiBase {
         const periodVal = period?.();
         return periodVal ? { period: periodVal } : {};
       }
+    );
+  }
+
+  /** A member's year on the server ("Server Wrapped"), the same numbers as /wrapped */
+  fetchWrapped(guildId: () => string, userId: () => string, year: () => number) {
+    return this.get<VoiceStatsWrapped>(
+      () => `/features/voice-stats/${guildId()}/users/${userId()}/wrapped`,
+      () => ({ year: String(year()) })
     );
   }
 

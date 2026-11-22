@@ -5,6 +5,8 @@ import { periodWindows, StatsPeriod, TimeWindow, windowFilter } from './windows'
 import { crossedMilestones, firstMilestoneMs } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
+import { currentRules, levelFor } from '../xp/rules';
+import type { WrappedStats } from '@nx-stolfo/api-interfaces';
 import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
 
 /**
@@ -71,6 +73,27 @@ const favouriteChannel = async (db: QueryDb, guildId: string, memberId: string, 
   return row?.channel_id;
 };
 
+/** Who a member shared a channel with most (their sessions started in the window), most time together first */
+const getCompanions = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow, limit: number) => {
+  const rows = await db.$queryRaw<{ member_id: string; together: bigint }[]>`
+    SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
+    FROM voice_stats me
+    JOIN voice_stats other
+      ON other.guild_id = me.guild_id
+     AND other.channel_id = me.channel_id
+     AND other.type = ${VOICE_TYPE.VOICE}
+     AND other.member_id <> me.member_id
+     AND other.issued_on < COALESCE(me.ended_on, NOW())
+     AND COALESCE(other.ended_on, NOW()) > me.issued_on
+    WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
+      ${windowFilter('me.issued_on', window)}
+    GROUP BY other.member_id
+    ORDER BY together DESC
+    LIMIT ${limit}
+  `;
+  return rows.map((row) => ({ memberId: row.member_id, togetherMs: Number(row.together) }));
+};
+
 // ── Streaks ─────────────────────────────────────────────────────────────────
 
 /** Voice time a UTC day needs to count for a streak (a quick join-and-leave doesn't) */
@@ -93,7 +116,8 @@ export interface Streak {
 export const getStreaks = async (
   db: QueryDb,
   guildId: string,
-  opts: { memberIds?: string[]; limit?: number },
+  /** `from`: only days from then on, e.g. the longest streak of one year */
+  opts: { memberIds?: string[]; limit?: number; from?: Date },
   now = new Date()
 ): Promise<Streak[]> => {
   if (opts.memberIds?.length === 0) return [];
@@ -106,6 +130,7 @@ export const getStreaks = async (
       SELECT member_id, issued_on::date AS day
       FROM voice_stats
       WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE} AND issued_on < ${now}
+        ${opts.from ? Prisma.sql`AND issued_on >= ${opts.from}` : Prisma.empty}
         ${members}
       GROUP BY member_id, issued_on::date
       HAVING SUM(${durationMs()}) >= ${VOICE_DAY_MS}
@@ -269,22 +294,7 @@ export const getMemberSummary = async (
             ${windowFilter('created_at', current)}
           GROUP BY user_id`
       ),
-      db.$queryRaw<{ member_id: string; together: bigint }[]>`
-        SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
-        FROM voice_stats me
-        JOIN voice_stats other
-          ON other.guild_id = me.guild_id
-         AND other.channel_id = me.channel_id
-         AND other.type = ${VOICE_TYPE.VOICE}
-         AND other.member_id <> me.member_id
-         AND other.issued_on < COALESCE(me.ended_on, NOW())
-         AND COALESCE(other.ended_on, NOW()) > me.issued_on
-        WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
-          ${windowFilter('me.issued_on', current)}
-        GROUP BY other.member_id
-        ORDER BY together DESC
-        LIMIT 3
-      `,
+      getCompanions(db, guildId, memberId, current, 3),
       getMemberStreak(db, guildId, memberId, now),
       lifetimeVoiceMs(db, guildId, memberId, now),
     ]);
@@ -296,10 +306,7 @@ export const getMemberSummary = async (
     messages,
     previousMessages,
     messageRank: messageRank?.rank != null ? Number(messageRank.rank) : undefined,
-    companions: companions.map((row) => ({
-      memberId: row.member_id,
-      togetherMs: Number(row.together),
-    })),
+    companions,
     streak,
     lifetimeMs,
   };
@@ -541,5 +548,94 @@ export const getServerDigest = async (
     busiestDay: day && Number(day.total) > 0 ? { day: day.day, ms: Number(day.total) } : undefined,
     topStreaks: streaks.filter((s) => s.current >= 2).map((s) => ({ memberId: s.memberId, days: s.current })),
     milestones,
+  };
+};
+
+// ── Server Wrapped ──────────────────────────────────────────────────────────
+
+/** A UTC calendar year as a window; the current year ends now */
+export const yearWindow = (year: number, now = new Date()): Required<TimeWindow> => {
+  const end = new Date(Date.UTC(year + 1, 0, 1));
+  return { from: new Date(Date.UTC(year, 0, 1)), to: end < now ? end : now };
+};
+
+/** One member's year on a server, for /wrapped and the dashboard's Wrapped page */
+export const getMemberWrapped = async (
+  db: QueryDb,
+  guildId: string,
+  memberId: string,
+  year: number,
+  now = new Date()
+): Promise<WrappedStats> => {
+  const window = yearWindow(year, now);
+  const { from, to } = window;
+  const mine = Prisma.sql`guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}`;
+
+  const [[voice], favouriteChannelId, [duo], [peak], [streak], [lifetime], messages, [rank], [xp]] = await Promise.all([
+    db.$queryRaw<{ total: bigint; sessions: bigint; longest: bigint }[]>`
+      SELECT COALESCE(SUM(${durationMs()}), 0)::bigint AS total,
+        COUNT(*)::bigint AS sessions,
+        COALESCE(MAX(${durationMs()}), 0)::bigint AS longest
+      FROM voice_stats
+      WHERE ${mine} ${windowFilter('issued_on', window)}
+    `,
+    favouriteChannel(db, guildId, memberId, window),
+    getCompanions(db, guildId, memberId, window, 1),
+    db.$queryRaw<{ month: number; total: bigint }[]>`
+      SELECT EXTRACT(MONTH FROM issued_on)::int AS month, SUM(${durationMs()})::bigint AS total
+      FROM voice_stats
+      WHERE ${mine} ${windowFilter('issued_on', window)}
+      GROUP BY 1
+      ORDER BY total DESC, month
+      LIMIT 1
+    `,
+    getStreaks(db, guildId, { memberIds: [memberId], from }, to),
+    // Lifetime voice at the start and the end of the year, for the milestones passed in it
+    db.$queryRaw<{ before: bigint; after: bigint }[]>`
+      SELECT COALESCE(SUM(${durationBeforeMs(from)}) FILTER (WHERE issued_on < ${from}), 0)::bigint AS before,
+        COALESCE(SUM(${durationBeforeMs(to)}), 0)::bigint AS after
+      FROM voice_stats
+      WHERE ${mine} AND issued_on < ${to}
+    `,
+    messageCount(db, guildId, window, memberId),
+    rankIn(
+      db,
+      memberId,
+      Prisma.sql`
+        SELECT member_id, SUM(${durationMs()}) AS total
+        FROM voice_stats
+        WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
+          ${windowFilter('issued_on', window)}
+        GROUP BY member_id`
+    ),
+    db.$queryRaw<{ before: number; gained: number }[]>`
+      SELECT COALESCE(SUM(amount) FILTER (WHERE created_at < ${from}), 0)::float8 AS before,
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= ${from}), 0)::float8 AS gained
+      FROM xp_events
+      WHERE guild_id = ${guildId} AND member_id = ${memberId} AND created_at < ${to}
+    `,
+  ]);
+
+  const voiceMs = Number(voice?.total ?? 0);
+  const xpBefore = Number(xp?.before ?? 0);
+  const xpGained = Number(xp?.gained ?? 0);
+  const rules = currentRules();
+  const place = rank?.rank != null ? Number(rank.rank) : undefined;
+  const members = Number(rank?.members ?? 0);
+  return {
+    year,
+    voiceMs,
+    sessions: Number(voice?.sessions ?? 0),
+    longestSessionMs: Number(voice?.longest ?? 0),
+    favouriteChannelId: favouriteChannelId ?? null,
+    topDuo: duo ?? null,
+    peakMonth: peak ? { month: peak.month, voiceMs: Number(peak.total) } : null,
+    longestStreak: streak?.longest ?? 0,
+    milestones: crossedMilestones(Number(lifetime?.before ?? 0), Number(lifetime?.after ?? 0)),
+    messages,
+    // "Top 4%": the share of voice members ranked at or above them, rounded up so #1 is never "top 0%"
+    voiceRank:
+      place && members && voiceMs > 0 ? { rank: place, members, topPercent: Math.max(1, Math.ceil((100 * place) / members)) } : null,
+    xp: { gained: xpGained, levelFrom: levelFor(xpBefore, rules), levelTo: levelFor(xpBefore + xpGained, rules) },
   };
 };

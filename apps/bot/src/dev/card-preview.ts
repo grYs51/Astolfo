@@ -21,6 +21,7 @@ import { triviaQuestionCard, triviaResultCard, triviaScoreboardCard, triviaStats
 import { renderPng } from '../cards/render';
 import { STATS_CARD_SECTIONS, statsCard, StatsCardData } from '../cards/stats.card';
 import { THEMES, ThemeName } from '../cards/themes';
+import { wrappedCard } from '../cards/wrapped.card';
 import { Logger } from '../utils/logger';
 import { DEFAULT_RULES, setRules } from '../xp/rules';
 
@@ -190,6 +191,30 @@ const main = async () => {
             lastWeekMs: 104_576_295,
             favouriteChannelId: '1',
             rps: { wins: 4, ties: 10, losses: 10 },
+          },
+        },
+        THEMES[theme]
+      ),
+    wrapped: (theme) =>
+      wrappedCard(
+        {
+          member: { name: NAMES[0], avatar: avatar(0) },
+          serverName: 'Paladins of France',
+          favouriteChannelName: 'round-table',
+          duoName: NAMES[1],
+          wrapped: {
+            year: 2026,
+            voiceMs: 1_124_000_000, // 312h
+            sessions: 406,
+            longestSessionMs: 31_500_000,
+            favouriteChannelId: '1',
+            topDuo: { memberId: '1', togetherMs: 290_000_000 },
+            peakMonth: { month: 11, voiceMs: 176_000_000 },
+            longestStreak: 23,
+            milestones: [100, 250],
+            messages: 12_840,
+            voiceRank: { rank: 2, members: 57, topPercent: 4 },
+            xp: { gained: 14_200, levelFrom: 4, levelTo: 19 },
           },
         },
         THEMES[theme]

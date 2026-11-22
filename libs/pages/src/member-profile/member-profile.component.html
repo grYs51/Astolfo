@@ -27,6 +27,7 @@
       <div class="flex flex-wrap items-center gap-sm">
         <lib-segmented-control label="Period" [options]="periodOptions" [value]="activePeriod()" (valueChange)="selectPeriod($event)" />
         <!-- Once the member has loaded -->
+        <a [routerLink]="['/overview/detail', id(), 'members', memberId(), 'wrapped']" class="btn btn-ghost btn-sm">Wrapped</a>
         @if (member()) {
           <pages-card-dialog [guildId]="id()" [memberId]="memberId()" [period]="activePeriod()" [name]="name()" />
         }

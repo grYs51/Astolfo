@@ -29,6 +29,7 @@ import {
   getVoiceHabits,
   getStatsCard,
   getXpLeaderboard,
+  getWrapped,
 } from './voice-stats';
 
 export default (router: Router) => {
@@ -109,6 +110,12 @@ export default (router: Router) => {
     cardRateLimit,
     isServerMember,
     getStatsCard,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/wrapped',
+    isAuthenticated,
+    isServerMember,
+    getWrapped,
   );
   router.get(
     '/features/voice-stats/:serverId/users/:userId/heatmap',

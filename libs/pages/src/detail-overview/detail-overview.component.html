@@ -18,6 +18,7 @@
         </a>
       }
       @if (activeTab() === 'you' && currentUser(); as me) {
+        <a [routerLink]="['/overview/detail', id(), 'members', me.id, 'wrapped']" class="btn btn-ghost btn-sm">Wrapped</a>
         <pages-card-dialog [guildId]="id()" [memberId]="me.id" [period]="activePeriod()" [name]="me.global_name || me.username" />
       }
       <lib-segmented-control label="Period" [options]="periodOptions" [value]="activePeriod()" (valueChange)="selectPeriod($event)" />

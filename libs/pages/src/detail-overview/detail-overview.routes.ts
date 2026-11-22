@@ -2,8 +2,14 @@ import { Route } from "@angular/router";
 import { DetailOverviewComponent } from "./detail-overview.component";
 import { MemberProfileComponent } from "../member-profile/member-profile.component";
 import { GuildSettingsComponent } from "../guild-settings/guild-settings.component";
+import { WrappedComponent } from "../wrapped/wrapped.component";
 
 export const detailOverviewRoutes: Route[] = [
+  {
+    // A member's year on this server (Server Wrapped), yours included
+    path: ':id/members/:memberId/wrapped',
+    component: WrappedComponent,
+  },
   {
     // Another member's activity on this server
     path: ':id/members/:memberId',

@@ -7,3 +7,4 @@ export * from './lib/admin.dto';
 export * from './lib/guild-settings.dto';
 export * from './lib/xp.dto';
 export * from './lib/geoguess.dto';
+export * from './lib/wrapped.dto';
