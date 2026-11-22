@@ -6,7 +6,7 @@ import { crossedMilestones, firstMilestoneMs } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 import { currentRules, levelFor } from '../xp/rules';
-import type { WrappedMonth, WrappedPersona, WrappedStats } from '@nx-stolfo/api-interfaces';
+import type { WrappedMonth, WrappedPersona, WrappedStats, WrappedXpGroup, XpSource } from '@nx-stolfo/api-interfaces';
 import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
 import { voiceHeatmapCells } from '../api/routes/features/voice-stats/heatmap-sql';
 import { activityCalendar } from '../api/routes/features/voice-stats/calendar-sql';
@@ -569,6 +569,23 @@ export const yearWindow = (year: number, now = new Date()): Required<TimeWindow>
 export const personaFor = (hour: number): WrappedPersona =>
   hour >= 5 && hour < 11 ? 'Early bird' : hour >= 11 && hour < 17 ? 'Afternoon regular' : hour >= 17 && hour < 22 ? 'Evening regular' : 'Night owl';
 
+/** The XP sources Wrapped groups together, in the order it draws them */
+export const WRAPPED_XP_GROUPS: Record<WrappedXpGroup, XpSource[]> = {
+  voice: ['VOICE'],
+  messages: ['MESSAGE'],
+  games: ['GAME', 'TRIVIA'],
+  streaks: ['STREAK'],
+  bonuses: ['STARTER', 'RECONNECT', 'WELCOME', 'MILESTONE', 'WEEKLY'],
+};
+const XP_GROUPS = Object.entries(WRAPPED_XP_GROUPS) as [WrappedXpGroup, XpSource[]][];
+
+/** A rank and the "top x%" it makes, rounded up so #1 is never "top 0%"; null when they're not ranked */
+const ranked = (row: { members: bigint; rank: bigint | null } | undefined, counts: boolean) => {
+  const place = row?.rank != null ? Number(row.rank) : 0;
+  const members = Number(row?.members ?? 0);
+  return place && members && counts ? { rank: place, members, topPercent: Math.max(1, Math.ceil((100 * place) / members)) } : null;
+};
+
 /** One member's year on a server, for /wrapped and the dashboard's Wrapped page */
 export const getMemberWrapped = async (
   db: QueryDb,
@@ -581,7 +598,10 @@ export const getMemberWrapped = async (
   const { from, to } = window;
   const mine = Prisma.sql`guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}`;
 
-  const [[voice], topChannels, buddies, monthRows, hourRows, days, [streak], [lifetime], [rank], [xp], [games]] = await Promise.all([
+  const xpMine = Prisma.sql`guild_id = ${guildId} AND member_id = ${memberId}`;
+  const [
+    [voice], topChannels, buddies, monthRows, hourRows, days, [streak], [lifetime], [rank], [xp], [games], [xpRank], [bestDay],
+  ] = await Promise.all([
     db.$queryRaw<{ total: bigint; sessions: bigint; longest: bigint }[]>`
       SELECT COALESCE(SUM(${durationMs()}), 0)::bigint AS total,
         COUNT(*)::bigint AS sessions,
@@ -592,7 +612,7 @@ export const getMemberWrapped = async (
     topVoiceChannels(db, guildId, memberId, window, 3),
     getCompanions(db, guildId, memberId, window, 5),
     // Every month, empty ones as zero; voice by the month a session started
-    db.$queryRaw<{ month: number; voice: bigint; messages: bigint }[]>`
+    db.$queryRaw<{ month: number; voice: bigint; messages: bigint; xp: number }[]>`
       WITH voice AS (
         SELECT EXTRACT(MONTH FROM issued_on)::int AS month, SUM(${durationMs()})::bigint AS total
         FROM voice_stats
@@ -604,11 +624,19 @@ export const getMemberWrapped = async (
         FROM message_stats
         WHERE guild_id = ${guildId} AND user_id = ${memberId} ${windowFilter('created_at', window)}
         GROUP BY 1
+      ),
+      xp AS (
+        SELECT EXTRACT(MONTH FROM created_at)::int AS month, SUM(amount)::float8 AS total
+        FROM xp_events
+        WHERE ${xpMine} ${windowFilter('created_at', window)}
+        GROUP BY 1
       )
-      SELECT m.month, COALESCE(voice.total, 0)::bigint AS voice, COALESCE(msgs.count, 0)::bigint AS messages
+      SELECT m.month, COALESCE(voice.total, 0)::bigint AS voice, COALESCE(msgs.count, 0)::bigint AS messages,
+        COALESCE(xp.total, 0)::float8 AS xp
       FROM generate_series(1, 12) AS m(month)
       LEFT JOIN voice ON voice.month = m.month
       LEFT JOIN msgs ON msgs.month = m.month
+      LEFT JOIN xp ON xp.month = m.month
       ORDER BY m.month
     `,
     // Every UTC hour, each session cut into the hours it covers (the heatmap's cells, summed over the weekdays)
@@ -639,11 +667,20 @@ export const getMemberWrapped = async (
           ${windowFilter('issued_on', window)}
         GROUP BY member_id`
     ),
-    db.$queryRaw<{ before: number; gained: number }[]>`
+    // XP before the year (for the starting level), in it, per source group, and the weekly top 3 finishes
+    db.$queryRaw<({ before: number; gained: number; weekly: number } & Record<WrappedXpGroup, number>)[]>`
       SELECT COALESCE(SUM(amount) FILTER (WHERE created_at < ${from}), 0)::float8 AS before,
-        COALESCE(SUM(amount) FILTER (WHERE created_at >= ${from}), 0)::float8 AS gained
+        COALESCE(SUM(amount) FILTER (WHERE created_at >= ${from}), 0)::float8 AS gained,
+        COUNT(*) FILTER (WHERE created_at >= ${from} AND source = 'WEEKLY')::int AS weekly,
+        ${Prisma.join(
+          // Group names are the constant keys above, so raw is safe
+          XP_GROUPS.map(
+            ([group, sources]) =>
+              Prisma.sql`COALESCE(SUM(amount) FILTER (WHERE created_at >= ${from} AND source IN (${Prisma.join(sources)})), 0)::float8 AS ${Prisma.raw(group)}`
+          )
+        )}
       FROM xp_events
-      WHERE guild_id = ${guildId} AND member_id = ${memberId} AND created_at < ${to}
+      WHERE ${xpMine} AND created_at < ${to}
     `,
     // Wins against members (the games against Astolfo are kept apart, like the win rates) and right trivia answers
     db.$queryRaw<{ rps: bigint; ttt: bigint; trivia: bigint }[]>`
@@ -655,15 +692,40 @@ export const getMemberWrapped = async (
       WHERE gp.user_id = ${memberId} AND gr.guild_id = ${guildId} AND gp.result = ${SCORING.WIN}
         AND gr.created_at >= ${from} AND gr.created_at < ${to}
     `,
+    // XP rank among the members who earned XP that year
+    rankIn(
+      db,
+      memberId,
+      Prisma.sql`
+        SELECT member_id, SUM(amount) AS total
+        FROM xp_events
+        WHERE guild_id = ${guildId} ${windowFilter('created_at', window)}
+        GROUP BY member_id
+        HAVING SUM(amount) > 0`
+    ),
+    db.$queryRaw<{ day: Date; total: number }[]>`
+      SELECT created_at::date AS day, SUM(amount)::float8 AS total
+      FROM xp_events
+      WHERE ${xpMine} ${windowFilter('created_at', window)}
+      GROUP BY 1
+      HAVING SUM(amount) > 0
+      ORDER BY total DESC, day
+      LIMIT 1
+    `,
   ]);
 
   const voiceMs = Number(voice?.total ?? 0);
   const xpBefore = Number(xp?.before ?? 0);
   const xpGained = Number(xp?.gained ?? 0);
   const rules = currentRules();
-  const place = rank?.rank != null ? Number(rank.rank) : undefined;
-  const members = Number(rank?.members ?? 0);
-  const months = monthRows.map((row) => ({ month: row.month, voiceMs: Number(row.voice), messages: Number(row.messages) }));
+  const levelFrom = levelFor(xpBefore, rules);
+  const levelTo = levelFor(xpBefore + xpGained, rules);
+  const months = monthRows.map((row) => ({
+    month: row.month,
+    voiceMs: Number(row.voice),
+    messages: Number(row.messages),
+    xp: Number(row.xp),
+  }));
   const peakMonth = months.reduce<WrappedMonth | null>((peak, m) => (m.voiceMs > (peak?.voiceMs ?? 0) ? m : peak), null);
   const hours = hourRows.map((row) => row.minutes);
   const peakHour = hours.indexOf(Math.max(...hours));
@@ -682,10 +744,21 @@ export const getMemberWrapped = async (
     longestStreak: streak?.longest ?? 0,
     milestones: crossedMilestones(Number(lifetime?.before ?? 0), Number(lifetime?.after ?? 0)),
     messages: months.reduce((sum, m) => sum + m.messages, 0),
-    // "Top 4%": the share of voice members ranked at or above them, rounded up so #1 is never "top 0%"
-    voiceRank:
-      place && members && voiceMs > 0 ? { rank: place, members, topPercent: Math.max(1, Math.ceil((100 * place) / members)) } : null,
-    xp: { gained: xpGained, levelFrom: levelFor(xpBefore, rules), levelTo: levelFor(xpBefore + xpGained, rules) },
+    voiceRank: ranked(rank, voiceMs > 0),
+    xp: {
+      gained: xpGained,
+      levelFrom,
+      levelTo,
+      // Levels are never stored, so each level between the two totals is one level-up
+      levelUps: levelTo - levelFrom,
+      rank: ranked(xpRank, xpGained > 0),
+      sources: XP_GROUPS.map(([group]) => {
+        const amount = Number(xp?.[group] ?? 0);
+        return { group, xp: amount, share: xpGained > 0 ? amount / xpGained : 0 };
+      }),
+      bestDay: bestDay ? { date: bestDay.day.toISOString().slice(0, 10), xp: Number(bestDay.total) } : null,
+      weeklyTop3: Number(xp?.weekly ?? 0),
+    },
     games: { rockPaperScissors: Number(games?.rps ?? 0), ticTacToe: Number(games?.ttt ?? 0), trivia: Number(games?.trivia ?? 0) },
   };
 };

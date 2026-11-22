@@ -1,11 +1,25 @@
 import type { ActivityCalendar, DiscordChannel, DiscordMember } from './voice-stats.dto';
 
-/** A month of the year: voice time and messages */
+/** A month of the year: voice time, messages and XP earned */
 export interface WrappedMonth {
   /** 1 = January */
   month: number;
   voiceMs: number;
   messages: number;
+  xp: number;
+}
+
+/**
+ * XP sources as Wrapped groups them: voice (VOICE), messages (MESSAGE), games (GAME, TRIVIA),
+ * streaks (STREAK), bonuses (STARTER, RECONNECT, WELCOME, MILESTONE, WEEKLY)
+ */
+export type WrappedXpGroup = 'voice' | 'messages' | 'games' | 'streaks' | 'bonuses';
+
+/** A rank on the server, and the share of ranked members at or above it */
+export interface WrappedRank {
+  rank: number;
+  members: number;
+  topPercent: number;
 }
 
 /** When in the day someone is in voice, from their busiest UTC hour */
@@ -42,15 +56,30 @@ export interface WrappedStats {
   milestones: number[];
   messages: number;
   /** Voice time rank among the server's members who were in voice that year; null when they weren't */
-  voiceRank: { rank: number; members: number; topPercent: number } | null;
-  /** XP earned in the year, and the level before and after it */
-  xp: { gained: number; levelFrom: number; levelTo: number };
+  voiceRank: WrappedRank | null;
+  /** XP earned in the year (`xp_events.created_at` in the UTC year) */
+  xp: {
+    gained: number;
+    /** Level before the year and at its end */
+    levelFrom: number;
+    levelTo: number;
+    levelUps: number;
+    /** By XP earned that year, among members who earned any; null when they earned none */
+    rank: WrappedRank | null;
+    /** Every group, in drawing order; `share` 0–1 of `gained` */
+    sources: { group: WrappedXpGroup; xp: number; share: number }[];
+    /** UTC day with the most XP */
+    bestDay: { date: string; xp: number } | null;
+    /** Weekly top 3 finishes (WEEKLY rows) */
+    weeklyTop3: number;
+  };
   /** Games won against members, and trivia questions answered right */
   games: { rockPaperScissors: number; ticTacToe: number; trivia: number };
 }
 
 /** WrappedStats with the names the dashboard shows */
 export interface VoiceStatsWrapped extends Omit<WrappedStats, 'topChannels' | 'buddies'> {
+  serverName: string;
   member: DiscordMember;
   topChannels: { channel: DiscordChannel; voiceMs: number }[];
   buddies: { member: DiscordMember; togetherMs: number }[];

@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getDuo, getMemberSummary, getMemberWrapped, personaFor, yearWindow } from './queries';
+import { getDuo, getMemberSummary, getMemberWrapped, personaFor, WRAPPED_XP_GROUPS, yearWindow } from './queries';
 import { DEFAULT_RULES, levelFor } from '../xp/rules';
 
 // No test database in this repo: the SQL was checked once against the dev database
@@ -75,14 +75,15 @@ describe('getMemberWrapped', () => {
   const now = new Date('2026-11-22T12:00:00Z');
   type Part =
     | 'totals' | 'channels' | 'buddies' | 'months' | 'hours' | 'calendar'
-    | 'streak' | 'lifetime' | 'rank' | 'xp' | 'games';
+    | 'streak' | 'lifetime' | 'rank' | 'xp' | 'games' | 'xpRank' | 'bestDay';
 
   /** Which query this is, by what it reads, so the order of the Promise.all doesn't matter */
   const partOf = (sql: string): Part =>
-    /FROM xp_events/.test(sql) ? 'xp'
+    /generate_series\(1, 12\)/.test(sql) ? 'months'
+    : /WITH totals/.test(sql) ? (/FROM xp_events/.test(sql) ? 'xpRank' : 'rank')
+    : /created_at::date/.test(sql) ? 'bestDay'
+    : /FROM xp_events/.test(sql) ? 'xp'
     : /FROM game_player/.test(sql) ? 'games'
-    : /WITH totals/.test(sql) ? 'rank'
-    : /generate_series\(1, 12\)/.test(sql) ? 'months'
     : /generate_series\(0, 23\)/.test(sql) ? 'hours'
     : /INTERVAL '1 day'/.test(sql) ? 'calendar'
     : /WITH days/.test(sql) ? 'streak'
@@ -99,7 +100,7 @@ describe('getMemberWrapped', () => {
   };
 
   const MONTH_HOURS = [18, 22, 15, 20, 26, 31, 35, 28, 24, 30, 49, 14];
-  const months = MONTH_HOURS.map((hours, i) => ({ month: i + 1, voice: BigInt(hours * H), messages: 1070n }));
+  const months = MONTH_HOURS.map((hours, i) => ({ month: i + 1, voice: BigInt(hours * H), messages: 1070n, xp: 1000 + i }));
   // Busiest at 21:00
   const hours = Array.from({ length: 24 }, (_, hour) => ({ hour, minutes: hour === 21 ? 900 : hour >= 18 ? 400 : 10 }));
 
@@ -120,8 +121,10 @@ describe('getMemberWrapped', () => {
       // 40h before the year, 352h at its end: passes 50, 100 and 250
       lifetime: [{ before: BigInt(40 * H), after: BigInt(352 * H) }],
       rank: [{ members: 57n, rank: 2n }],
-      xp: [{ before: 500, gained: 14_200 }],
+      xp: [{ before: 500, gained: 14_200, weekly: 6, voice: 8_520, messages: 2_840, games: 1_420, streaks: 1_420, bonuses: 0 }],
       games: [{ rps: 3n, ttt: 1n, trivia: 12n }],
+      xpRank: [{ members: 41n, rank: 3n }],
+      bestDay: [{ day: new Date('2026-11-07T00:00:00Z'), total: 1240 }],
     });
     const wrapped = await getMemberWrapped(db, 'g', 'me', 2026, now);
     expect(wrapped).toEqual({
@@ -131,8 +134,8 @@ describe('getMemberWrapped', () => {
       longestSessionMs: 9 * H,
       topChannels: [{ channelId: 'vc1', voiceMs: 190 * H }, { channelId: 'vc2', voiceMs: 84 * H }],
       buddies: [{ memberId: 'b', togetherMs: 81 * H }, { memberId: 'c', togetherMs: 40 * H }],
-      months: MONTH_HOURS.map((h, i) => ({ month: i + 1, voiceMs: h * H, messages: 1070 })),
-      peakMonth: { month: 11, voiceMs: 49 * H, messages: 1070 },
+      months: MONTH_HOURS.map((h, i) => ({ month: i + 1, voiceMs: h * H, messages: 1070, xp: 1000 + i })),
+      peakMonth: { month: 11, voiceMs: 49 * H, messages: 1070, xp: 1010 },
       hours: hours.map((h) => h.minutes),
       persona: { label: 'Evening regular', peakHour: 21 },
       days: { start: '2026-01-01', end: '2026-11-22', days: [{ date: '2026-03-04', minutes: 90, messages: 2 }] },
@@ -140,9 +143,37 @@ describe('getMemberWrapped', () => {
       milestones: [50, 100, 250],
       messages: 12 * 1070,
       voiceRank: { rank: 2, members: 57, topPercent: 4 },
-      xp: { gained: 14_200, levelFrom: levelFor(500, DEFAULT_RULES), levelTo: levelFor(14_700, DEFAULT_RULES) },
+      xp: {
+        gained: 14_200,
+        levelFrom: levelFor(500, DEFAULT_RULES),
+        levelTo: levelFor(14_700, DEFAULT_RULES),
+        levelUps: levelFor(14_700, DEFAULT_RULES) - levelFor(500, DEFAULT_RULES),
+        rank: { rank: 3, members: 41, topPercent: 8 },
+        sources: [
+          { group: 'voice', xp: 8_520, share: 0.6 },
+          { group: 'messages', xp: 2_840, share: 0.2 },
+          { group: 'games', xp: 1_420, share: 0.1 },
+          { group: 'streaks', xp: 1_420, share: 0.1 },
+          { group: 'bonuses', xp: 0, share: 0 },
+        ],
+        bestDay: { date: '2026-11-07', xp: 1240 },
+        weeklyTop3: 6,
+      },
       games: { rockPaperScissors: 3, ticTacToe: 1, trivia: 12 },
     });
+  });
+
+  test('XP groups every source once, and its queries read the year', async () => {
+    const all = Object.values(WRAPPED_XP_GROUPS).flat().sort();
+    expect(all).toEqual(['GAME', 'MESSAGE', 'MILESTONE', 'RECONNECT', 'STARTER', 'STREAK', 'TRIVIA', 'VOICE', 'WEEKLY', 'WELCOME']);
+    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
+    await getMemberWrapped(db, 'g', 'me', 2025, now);
+    const from = new Date('2025-01-01T00:00:00Z').getTime();
+    const xp = queryRaw.mock.calls
+      .map(([strings, ...values]) => Prisma.sql(strings, ...values))
+      .filter((q) => /FROM xp_events/.test(q.sql));
+    expect(xp.map((q) => partOf(q.sql)).sort()).toEqual(['bestDay', 'months', 'xp', 'xpRank']);
+    for (const q of xp) expect(q.values.some((v) => v instanceof Date && v.getTime() === from)).toBe(true);
   });
 
   test('a quiet year: no rank, peak, persona, buddies or streak', async () => {
@@ -163,7 +194,7 @@ describe('getMemberWrapped', () => {
       milestones: [],
       messages: 3,
       voiceRank: null,
-      xp: { gained: 0, levelFrom: 0, levelTo: 0 },
+      xp: { gained: 0, levelFrom: 0, levelTo: 0, levelUps: 0, rank: null, bestDay: null, weeklyTop3: 0 },
       games: { rockPaperScissors: 0, ticTacToe: 0, trivia: 0 },
     });
   });

@@ -7,6 +7,7 @@ jest.mock('../../../utils/discord-directory', () => ({
   discordDirectory: () => ({
     members: async () => new Map([['b', { id: 'b', username: 'brad', displayName: 'Bradamante', avatar: null }]]),
     channel: (_guildId: string, id: string) => ({ id, name: 'round-table', type: 'GuildVoice' }),
+    guild: () => ({ name: 'Paladins', icon: null }),
   }),
 }));
 
@@ -38,6 +39,7 @@ test('the current year by default, with names for the channel and the duo', asyn
   expect((getMemberWrapped as jest.Mock).mock.calls[0].slice(1, 4)).toEqual(['g', 'me', new Date().getUTCFullYear()]);
   expect(res.send).toHaveBeenCalledWith(
     expect.objectContaining({
+      serverName: 'Paladins',
       member: { id: 'me', username: 'Unknown User', displayName: null, avatar: null },
       topChannels: [{ channel: { id: 'vc1', name: 'round-table', type: 'GuildVoice' }, voiceMs: 5 }],
       buddies: [{ member: expect.objectContaining({ id: 'b', displayName: 'Bradamante' }), togetherMs: 1 }],

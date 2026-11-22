@@ -27,23 +27,50 @@ export const bar = (x: number, y: number, w: number, h: number, fill: number, co
 
 /** Bold Inter averages a bit over half an em a character in names */
 const CHAR_EM = 0.55;
+/** One line shrinks down to this, then the value wraps onto two lines */
+const ONE_LINE_MIN = 20;
 const MIN_SIZE = 14;
 
-/** The font size (up to `max`, down to 14) that fits `value` in `width`, and the value cut to fit at 14 */
-const fit = (value: string, width: number, max: number) => {
-  const chars = [...value].length;
-  const size = Math.min(max, Math.floor(width / (chars * CHAR_EM)));
-  return size >= MIN_SIZE ? { size, value } : { size: MIN_SIZE, value: truncate(value, Math.floor(width / (MIN_SIZE * CHAR_EM))) };
+/** `value` in two lines of at most `max` characters, broken at the last space that allows it (or mid-word); undefined when it doesn't fit */
+const twoLines = (value: string, max: number): [string, string] | undefined => {
+  const chars = [...value];
+  if (chars.length > 2 * max) return undefined;
+  const space = chars.slice(0, max + 1).lastIndexOf(' ');
+  const cut = space > 0 && chars.length - space - 1 <= max ? space : max;
+  const rest = chars.slice(cut).join('').trim();
+  return [...rest].length <= max ? [chars.slice(0, cut).join('').trim(), rest] : undefined;
 };
 
-/** A label, a big value (smaller when it's long, e.g. a name) and an optional line under it (all escaped here) */
+/**
+ * Fits a tile's value in `width`: one line from `max` down to 20 px, then two
+ * lines from 20 px down to 14, then two lines at 14 with the end cut.
+ */
+export const fitValue = (value: string, width: number, max: number): { size: number; lines: string[] } => {
+  const perLine = (size: number) => Math.floor(width / (size * CHAR_EM));
+  const one = Math.min(max, Math.floor(width / ([...value].length * CHAR_EM)));
+  if (one >= ONE_LINE_MIN) return { size: one, lines: [value] };
+  for (let size = ONE_LINE_MIN; size >= MIN_SIZE; size--) {
+    const lines = twoLines(value, perLine(size));
+    if (lines) return { size, lines };
+  }
+  const n = perLine(MIN_SIZE);
+  const chars = [...value];
+  return { size: MIN_SIZE, lines: [chars.slice(0, n).join('').trim(), truncate(chars.slice(n).join('').trim(), n)] };
+};
+
+/** A label, a big value (smaller or on two lines when it's long, e.g. a name) and an optional line under it (all escaped here) */
 export const tile = (x: number, y: number, label: string, value: string, sub: string | undefined, t: CardTheme, w = TILE_W) => {
-  const big = fit(value, w - 48, 30);
+  const big = fitValue(value, w - 48, 30);
+  const two = big.lines.length === 2;
+  // Two lines move the label up a little to make room
+  const lines = two
+    ? big.lines.map((line, i) => text(x + 24, y + 52 + i * (big.size + 3), big.size, t.text, escapeXml(line), 'font-weight="700"')).join('')
+    : text(x + 24, y + 68, big.size, t.text, escapeXml(big.lines[0]), 'font-weight="700"');
   return (
     panel(x, y, w, TILE_H, t) +
-    text(x + 24, y + 32, 14, t.muted, escapeXml(label)) +
-    text(x + 24, y + 68, big.size, t.text, escapeXml(big.value), 'font-weight="700"') +
-    (sub ? text(x + 24, y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '')
+    text(x + 24, two ? y + 27 : y + 32, 14, t.muted, escapeXml(label)) +
+    lines +
+    (sub ? text(x + 24, two ? y + 96 : y + 90, 14, sub.startsWith('↑') ? t.accent : t.muted, escapeXml(truncate(sub, Math.floor(w / 9)))) : '')
   );
 };
 

@@ -106,8 +106,8 @@ const main = async () => {
       { channelId: '3', voiceMs: 31 * 3_600_000 },
     ],
     buddies: [81, 64, 40, 22, 9].map((hours, i) => ({ memberId: `${i + 1}`, togetherMs: hours * 3_600_000 })),
-    months: monthHours.map((hours, i) => ({ month: i + 1, voiceMs: hours * 3_600_000, messages: 600 + ((i * 397) % 900) })),
-    peakMonth: { month: 11, voiceMs: 49 * 3_600_000, messages: 1_100 },
+    months: monthHours.map((hours, i) => ({ month: i + 1, voiceMs: hours * 3_600_000, messages: 600 + ((i * 397) % 900), xp: hours * 45 })),
+    peakMonth: { month: 11, voiceMs: 49 * 3_600_000, messages: 1_100, xp: 2_205 },
     hours: Array.from({ length: 24 }, (_, h) => (h >= 18 ? 900 + h * 60 : h < 2 ? 700 - h * 300 : h >= 12 ? 200 + h * 10 : 20)),
     persona: { label: 'Evening regular', peakHour: 21 },
     days: {
@@ -123,7 +123,22 @@ const main = async () => {
     milestones: [100, 250],
     messages: 12_840,
     voiceRank: { rank: 2, members: 57, topPercent: 4 },
-    xp: { gained: 14_200, levelFrom: 4, levelTo: 19 },
+    xp: {
+      gained: 14_040,
+      levelFrom: 4,
+      levelTo: 19,
+      levelUps: 15,
+      rank: { rank: 3, members: 41, topPercent: 8 },
+      sources: [
+        { group: 'voice', xp: 8_700, share: 8_700 / 14_040 },
+        { group: 'messages', xp: 2_100, share: 2_100 / 14_040 },
+        { group: 'games', xp: 1_640, share: 1_640 / 14_040 },
+        { group: 'streaks', xp: 900, share: 900 / 14_040 },
+        { group: 'bonuses', xp: 700, share: 700 / 14_040 },
+      ],
+      bestDay: { date: '2026-11-07', xp: 1_240 },
+      weeklyTop3: 6,
+    },
     games: { rockPaperScissors: 31, ticTacToe: 7, trivia: 112 },
   };
 

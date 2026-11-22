@@ -17,9 +17,11 @@ export const getWrapped: RequestHandler<{ serverId: string; userId: string }, Vo
     }
 
     const wrapped = await getMemberWrapped(req.db, serverId, userId, year, now);
-    const members = await discordDirectory().members(serverId, [userId, ...wrapped.buddies.map((b) => b.memberId)]);
+    const directory = discordDirectory();
+    const members = await directory.members(serverId, [userId, ...wrapped.buddies.map((b) => b.memberId)]);
     res.send({
       ...wrapped,
+      serverName: directory.guild(serverId)?.name ?? 'Unknown server',
       member: memberOrUnknown(members, userId),
       topChannels: wrapped.topChannels.map((c) => ({ channel: getChannelData(serverId, c.channelId), voiceMs: c.voiceMs })),
       buddies: wrapped.buddies.map((b) => ({ member: memberOrUnknown(members, b.memberId), togetherMs: b.togetherMs })),
