@@ -225,7 +225,12 @@
 
 <!-- Level and where the XP came from (all time) -->
 @if (stats(); as s) {
-  <feature-voice-stats-xp-card [level]="s.level" [sources]="s.xpSources" />
+  <feature-voice-stats-xp-card
+    [level]="s.level"
+    [sources]="s.xpSources"
+    [history]="xpHistoryResource"
+    [(historyOpen)]="xpHistoryOpen"
+  />
 }
 
 <!-- Past year, day by day -->

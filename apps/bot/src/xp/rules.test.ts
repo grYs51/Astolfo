@@ -1,6 +1,29 @@
-import { DEFAULT_RULES, currentRules, levelFor, loadRules, parseXpRules, setRules, xpForLevel } from './rules';
+import { DEFAULT_RULES, currentRules, levelFor, levelLines, loadRules, parseXpRules, setRules, xpForLevel } from './rules';
 
 const withRules = (patch: object) => JSON.parse(JSON.stringify({ ...DEFAULT_RULES, ...patch }));
+
+describe('levelLines', () => {
+  const at = (level: number) => xpForLevel(level, DEFAULT_RULES);
+  const levels = (from: number, to: number) => levelLines(from, to, DEFAULT_RULES).map((l) => l.level);
+
+  test('every level crossed, up to 20', () => {
+    // A month from level 8 to 11
+    expect(levels(at(8) + 10, at(11) + 10)).toEqual([9, 10, 11]);
+    expect(levelLines(at(8), at(9), DEFAULT_RULES)).toEqual([{ level: 9, xp: at(9) }]);
+    expect(levels(0, at(20))).toHaveLength(20);
+  });
+
+  test('more than 20: only multiples of 10', () => {
+    // 'all' for a level-34 member
+    expect(levels(0, at(34) + 1)).toEqual([10, 20, 30]);
+    expect(levels(at(5), at(26))).toEqual([10, 20]);
+  });
+
+  test('none when no level was crossed', () => {
+    expect(levels(at(7) + 1, at(8) - 1)).toEqual([]);
+    expect(levels(0, 0)).toEqual([]);
+  });
+});
 
 describe('levels', () => {
   test.each([

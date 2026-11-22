@@ -15,3 +15,4 @@ export * from './getVoiceHabits';
 export * from './getStatsCard';
 export * from './getXpLeaderboard';
 export * from './getWrapped';
+export * from './getXpHistory';

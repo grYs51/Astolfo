@@ -1,7 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { HttpResourceRef } from '@angular/common/http';
 import { DecimalPipe } from '@angular/common';
-import { XpLevel, XpSourceTotal } from '@nx-stolfo/data-access-voice-stats';
+import { XpHistory, XpLevel, XpSourceTotal } from '@nx-stolfo/data-access-voice-stats';
 import { XpTileKey, xpTiles } from './xp-card';
+import { XpHistoryChartComponent } from './xp-history-chart.component';
 
 /** Icon paths (24×24, stroked) per tile */
 const ICONS: Record<XpTileKey, string[]> = {
@@ -18,7 +20,7 @@ const ICONS: Record<XpTileKey, string[]> = {
 /** Level, total XP and what earned it, one tile per kind of XP (all time) */
 @Component({
   selector: 'feature-voice-stats-xp-card',
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, XpHistoryChartComponent],
   template: `
     @let l = level();
     <section class="rounded-xl border border-white/5 bg-base-300 p-lg" aria-labelledby="xp-card-title">
@@ -68,6 +70,36 @@ const ICONS: Record<XpTileKey, string[]> = {
           </div>
         }
       </dl>
+
+      @if (history(); as h) {
+        <div class="mt-md border-t border-white/5 pt-sm">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between rounded-lg py-xs text-left text-sm font-semibold text-gray-200 hover:text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+            [attr.aria-expanded]="historyOpen()"
+            aria-controls="xp-history"
+            (click)="historyOpen.set(!historyOpen())"
+          >
+            XP history
+            <svg class="h-4 w-4 text-gray-400 transition-transform" [class.rotate-180]="historyOpen()" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+          @if (historyOpen()) {
+            <div id="xp-history" class="mt-sm">
+              @if (l.xp === 0) {
+                <p class="text-sm text-gray-400">No XP yet: join a voice channel or say hi.</p>
+              } @else if (h.error()) {
+                <p class="text-sm text-error">Couldn't load the XP history.</p>
+              } @else if (h.hasValue()) {
+                <feature-voice-stats-xp-history-chart [history]="h.value()" />
+              } @else {
+                <p class="text-sm text-gray-500">Loading…</p>
+              }
+            </div>
+          }
+        </div>
+      }
     </section>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -76,6 +108,9 @@ const ICONS: Record<XpTileKey, string[]> = {
 export class XpCardComponent {
   level = input.required<XpLevel>();
   sources = input.required<XpSourceTotal[]>();
+  /** The collapsible XP history; the owner fetches it once `historyOpen` turns true */
+  history = input<HttpResourceRef<XpHistory | undefined>>();
+  historyOpen = model(false);
 
   protected readonly icons = ICONS;
   protected tiles = computed(() => xpTiles(this.sources()));

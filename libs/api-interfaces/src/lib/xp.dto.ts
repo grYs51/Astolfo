@@ -137,3 +137,17 @@ export interface VoiceSessionXp {
 export interface XpLeaderboard {
   leaderboard: { member: DiscordMember; xp: number; level: number }[];
 }
+
+/**
+ * GET …/:serverId/users/:userId/xp-history: a member's running XP total over the page period,
+ * in the viewer's time zone (daily for week/month, weekly for year/all)
+ */
+export interface XpHistory {
+  granularity: 'day' | 'week';
+  /** The total before the first point (0 for 'all') */
+  startXp: number;
+  /** Every day or week from the period start to today, oldest first; `date` is the local date (a week's Monday) */
+  points: { date: string; gained: number; total: number }[];
+  /** Level thresholds crossed in the period: every one, or only multiples of 10 past 20 levels */
+  levels: { level: number; xp: number }[];
+}

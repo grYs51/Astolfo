@@ -5,7 +5,9 @@ import {
   DestroyRef,
   inject,
   input,
+  linkedSignal,
   PLATFORM_ID,
+  signal,
 } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
 import { UrlTree } from '@angular/router';
@@ -17,6 +19,7 @@ import {
   UserGames,
   UserPresence,
   VoiceStatsUser,
+  VoiceStatsApi,
   VoiceStatsUserHeatmap,
   XpLeaderboard,
 } from '@nx-stolfo/data-access-voice-stats';
@@ -78,7 +81,7 @@ const memberName = (member: DiscordMember) => member.displayName || member.usern
  * "when they're on" heatmap, companions and channels. Used for the viewer
  * ("You" tab, `name` empty) and for other members' profile pages. The owning
  * page passes in the resources so it can reuse them (e.g. for a header)
- * without fetching twice.
+ * without fetching twice. Needs VoiceStatsApi from the page.
  */
 @Component({
   selector: 'pages-member-activity',
@@ -121,6 +124,7 @@ export class MemberActivityComponent {
   /** Last 12 months, whatever the period */
   calendarResource = input.required<HttpResourceRef<ActivityCalendar | undefined>>();
   period = input.required<DashboardPeriod>();
+  guildId = input.required<string>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);
   /** The server's level leaderboard (all-time XP), highest first (for the rank race) */
@@ -130,6 +134,19 @@ export class MemberActivityComponent {
   memberLink = input<((memberId: string) => unknown[] | UrlTree) | undefined>(undefined);
 
   private readonly durationPipe = new HumanizeDurationPipe();
+
+  /** The XP history section starts closed on every visit */
+  protected xpHistoryOpen = signal(false);
+  /** Undefined until first opened; then follows the page period while open, and keeps the last one while closed */
+  private xpHistoryPeriod = linkedSignal<{ open: boolean; period: DashboardPeriod }, DashboardPeriod | undefined>({
+    source: () => ({ open: this.xpHistoryOpen(), period: this.period() }),
+    computation: (source, previous) => (source.open ? source.period : previous?.value),
+  });
+  protected xpHistoryResource = inject(VoiceStatsApi).fetchUserXpHistory(
+    () => this.guildId(),
+    () => this.stats()?.userId,
+    () => this.xpHistoryPeriod()
+  );
 
   constructor() {
     if (!isPlatformBrowser(inject(PLATFORM_ID))) return;

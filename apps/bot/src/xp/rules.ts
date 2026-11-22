@@ -67,6 +67,19 @@ export const levelProgress = (xp: number, rules: XpRules): XpLevel => {
   return { xp, level, levelXp: xpForLevel(level, rules), nextLevelXp: xpForLevel(level + 1, rules) };
 };
 
+/** Most level lines the XP history draws one by one; past that, only multiples of 10 */
+const MAX_LEVEL_LINES = 20;
+
+/** The level thresholds a total crossed going from `fromXp` to `toXp`, for the XP history's dashed lines */
+export const levelLines = (fromXp: number, toXp: number, rules: XpRules) => {
+  const first = levelFor(fromXp, rules) + 1;
+  const last = levelFor(toXp, rules);
+  const levels = Array.from({ length: Math.max(0, last - first + 1) }, (_, i) => first + i);
+  return levels
+    .filter((level) => levels.length <= MAX_LEVEL_LINES || level % 10 === 0)
+    .map((level) => ({ level, xp: xpForLevel(level, rules) }));
+};
+
 // ── Validation ──────────────────────────────────────────────────────────────
 
 type Kind = 'amount' | 'multiplier' | 'count';
