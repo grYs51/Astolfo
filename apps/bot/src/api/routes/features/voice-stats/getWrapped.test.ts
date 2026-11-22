@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getWrapped } from './getWrapped';
 import { getMemberWrapped } from '../../../../stats/queries';
+import { latestWrappedYear } from '../../../../stats/wrapped-year';
 
 jest.mock('../../../../stats/queries', () => ({ getMemberWrapped: jest.fn() }));
 jest.mock('../../../utils/discord-directory', () => ({
@@ -24,13 +25,13 @@ const get = async (year?: string, extra: Record<string, string> = {}) => {
 
 beforeEach(() => jest.clearAllMocks());
 
-test.each(['abc', '2019', String(new Date().getUTCFullYear() + 1), '2025.5'])('400 for year=%s', async (year) => {
+test.each(['abc', '2019', String(latestWrappedYear() + 1), '2025.5'])('400 for year=%s', async (year) => {
   const res = await get(year);
   expect(res.status).toHaveBeenCalledWith(400);
   expect(getMemberWrapped).not.toHaveBeenCalled();
 });
 
-test('the current year by default, with names for the channel and the duo', async () => {
+test('the latest open year by default, with names for the channel and the duo', async () => {
   (getMemberWrapped as jest.Mock).mockResolvedValue({
     year: 2026,
     topChannels: [{ channelId: 'vc1', voiceMs: 5 }],
@@ -40,7 +41,7 @@ test('the current year by default, with names for the channel and the duo', asyn
   expect((getMemberWrapped as jest.Mock).mock.calls[0].slice(1)).toEqual([
     'g',
     'me',
-    new Date().getUTCFullYear(),
+    latestWrappedYear(),
     { now: expect.any(Date), tz: 'UTC', botIds: ['music-bot'] },
   ]);
   expect(res.send).toHaveBeenCalledWith(

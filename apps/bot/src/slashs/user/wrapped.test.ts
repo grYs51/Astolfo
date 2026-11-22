@@ -1,6 +1,7 @@
 import WrappedSlash from './wrapped';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { getMemberWrapped } from '../../stats/queries';
+import { latestWrappedYear } from '../../stats/wrapped-year';
 
 jest.mock('../../utils/interaction-utils', () => ({ InterActionUtils: { send: jest.fn() } }));
 jest.mock('../../stats/queries', () => ({ getMemberWrapped: jest.fn() }));
@@ -42,7 +43,7 @@ const quiet = {
 
 beforeEach(() => jest.clearAllMocks());
 
-test('a future year is refused without a query', async () => {
+test('a year that has not opened yet is refused without a query', async () => {
   await run(interactionFor(new Date().getUTCFullYear() + 1));
   const [, text, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
   expect(text).toMatch(/hasn't happened yet/);
@@ -60,11 +61,25 @@ test('a year with nothing in it says so, only to you', async () => {
   expect(hidden).toBe(true);
 });
 
-test('posts the year as a PNG card, the current year by default', async () => {
-  (getMemberWrapped as jest.Mock).mockResolvedValue({ ...quiet, year: new Date().getUTCFullYear(), voiceMs: 3_600_000, sessions: 2 });
+test('before 1 December this year is not open yet', async () => {
+  jest.useFakeTimers({ now: new Date('2026-11-22T12:00:00Z'), doNotFake: ['nextTick', 'setImmediate', 'queueMicrotask'] });
+  try {
+    await run(interactionFor(2026));
+  } finally {
+    jest.useRealTimers();
+  }
+  const [, text, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
+  expect(text).toBe('2026 Wrapped opens on 1 December.');
+  expect(hidden).toBe(true);
+  expect(getMemberWrapped).not.toHaveBeenCalled();
+});
+
+test('posts the year as a PNG card, the latest open year by default', async () => {
+  const latest = latestWrappedYear();
+  (getMemberWrapped as jest.Mock).mockResolvedValue({ ...quiet, year: latest, voiceMs: 3_600_000, sessions: 2 });
   await run(interactionFor(null));
-  expect((getMemberWrapped as jest.Mock).mock.calls[0][3]).toBe(new Date().getUTCFullYear());
+  expect((getMemberWrapped as jest.Mock).mock.calls[0][3]).toBe(latest);
   const [, message, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
-  expect(message.files[0].name).toBe(`wrapped-${new Date().getUTCFullYear()}.png`);
+  expect(message.files[0].name).toBe(`wrapped-${latest}.png`);
   expect(hidden).toBeUndefined();
 });

@@ -3,6 +3,7 @@ import DiscordClient from '../../client/client';
 import { InterActionUtils } from '../../utils/interaction-utils';
 import { BaseSlash, SlashDeferTypes } from '../../utils/structures/base-slash';
 import { getMemberWrapped } from '../../stats/queries';
+import { latestWrappedYear } from '../../stats/wrapped-year';
 import { dashboardButton, dashboardUrl } from '../../stats/messages';
 import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
@@ -23,7 +24,7 @@ export default class WrappedSlash extends BaseSlash {
       .setContexts(InteractionContextType.Guild)
       .addUserOption((option) => option.setName('member').setDescription('Whose year (default: yours)').setRequired(false))
       .addIntegerOption((option) =>
-        option.setName('year').setDescription('Which year (default: this year)').setRequired(false).setMinValue(2020)
+        option.setName('year').setDescription('Which year (default: the latest; this year opens on 1 December)').setRequired(false).setMinValue(2020)
       );
   }
 
@@ -40,9 +41,11 @@ export default class WrappedSlash extends BaseSlash {
       return;
     }
     const now = new Date();
-    const year = interaction.options.getInteger('year') ?? now.getUTCFullYear();
-    if (year > now.getUTCFullYear()) {
-      await InterActionUtils.send(interaction, `${year} hasn't happened yet.`, true);
+    const latest = latestWrappedYear(now);
+    const year = interaction.options.getInteger('year') ?? latest;
+    if (year > latest) {
+      const why = year === now.getUTCFullYear() ? `${year} Wrapped opens on 1 December.` : `${year} hasn't happened yet.`;
+      await InterActionUtils.send(interaction, why, true);
       return;
     }
 

@@ -2,20 +2,22 @@ import { RequestHandler } from 'express';
 import asyncHandler from 'express-async-handler';
 import { VoiceStatsWrapped } from '@nx-stolfo/api-interfaces';
 import { getMemberWrapped } from '../../../../stats/queries';
+import { latestWrappedYear } from '../../../../stats/wrapped-year';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { getChannelData, getTimeZone, memberOrUnknown } from '../helpers';
 
 /**
- * A member's year on the server (`?year=`, this year by default), the same numbers as /wrapped,
+ * A member's year on the server (`?year=`, the latest open one by default), the same numbers as /wrapped,
  * but the year, months, days and hours in the viewer's `?tz=` (the card is UTC)
  */
 export const getWrapped: RequestHandler<{ serverId: string; userId: string }, VoiceStatsWrapped | { error: string }> =
   asyncHandler(async (req, res) => {
     const { serverId, userId } = req.params;
     const now = new Date();
-    const year = req.query.year === undefined ? now.getUTCFullYear() : Number(req.query.year);
-    if (!Number.isInteger(year) || year < 2020 || year > now.getUTCFullYear()) {
-      res.status(400).send({ error: '`year` must be a year from 2020 to this one' });
+    const latest = latestWrappedYear(now);
+    const year = req.query.year === undefined ? latest : Number(req.query.year);
+    if (!Number.isInteger(year) || year < 2020 || year > latest) {
+      res.status(400).send({ error: `\`year\` must be a year from 2020 to ${latest} (a year's Wrapped opens on 1 December)` });
       return;
     }
 

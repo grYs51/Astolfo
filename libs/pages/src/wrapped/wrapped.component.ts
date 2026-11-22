@@ -7,7 +7,8 @@ import { ActivityCalendarComponent, BarChartComponent } from '@nx-stolfo/ui-voic
 
 const HOUR = 60 * 60 * 1000;
 const FIRST_YEAR = 2020;
-const thisYear = () => new Date().getUTCFullYear();
+/** A year's Wrapped opens on 1 December (UTC); same rule as `latestWrappedYear` in the bot */
+const latestYear = (now = new Date()) => now.getUTCFullYear() - (now.getUTCMonth() === 11 ? 0 : 1);
 const MONTHS = Array.from({ length: 12 }, (_, i) =>
   new Date(Date.UTC(2000, i, 1)).toLocaleString('en-GB', { month: 'long', timeZone: 'UTC' })
 );
@@ -52,8 +53,11 @@ const rankText = (r: WrappedRank, of: string) =>
           @if (activeYear() > firstYear) {
             <a class="btn btn-ghost btn-sm" [routerLink]="[]" [queryParams]="{ year: activeYear() - 1 }">← {{ activeYear() - 1 }}</a>
           }
-          @if (activeYear() < currentYear) {
+          @if (activeYear() < latestYear) {
             <a class="btn btn-ghost btn-sm" [routerLink]="[]" [queryParams]="{ year: activeYear() + 1 }">{{ activeYear() + 1 }} →</a>
+          }
+          @else if (upcomingYear) {
+            <span class="self-center px-sm text-gray-500">{{ upcomingYear }} opens 1 December</span>
           }
         </span>
       </nav>
@@ -236,14 +240,16 @@ export class WrappedComponent {
   id = input.required<string>();
   /** Member id (route param) */
   memberId = input.required<string>();
-  /** `?year=2025`; this year when absent or out of range */
+  /** `?year=2025`; the latest open year when absent, out of range or not open yet */
   year = input<string | undefined>();
 
   private api = inject(VoiceStatsApi);
   private currentUser = inject(USER);
 
   readonly firstYear = FIRST_YEAR;
-  readonly currentYear = thisYear();
+  readonly latestYear = latestYear();
+  /** This year, while its Wrapped hasn't opened (until 1 December) */
+  readonly upcomingYear = this.latestYear < new Date().getUTCFullYear() ? this.latestYear + 1 : null;
   readonly monthInitials = MONTHS.map((m) => m[0]);
   readonly hourLabels = HOUR_LABELS;
   readonly monthMetricOptions: SegmentedControlOption<MonthMetric>[] = [
@@ -269,7 +275,7 @@ export class WrappedComponent {
 
   activeYear = computed(() => {
     const year = Number(this.year());
-    return Number.isInteger(year) && year >= FIRST_YEAR && year <= this.currentYear ? year : this.currentYear;
+    return Number.isInteger(year) && year >= FIRST_YEAR && year <= this.latestYear ? year : this.latestYear;
   });
 
   wrappedResource = this.api.fetchWrapped(
