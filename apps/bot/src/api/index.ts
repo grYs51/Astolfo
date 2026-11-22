@@ -35,8 +35,13 @@ function createExpress() {
   const isProduction = process.env.NODE_ENV === 'production';
 
   if (isProduction) {
-    // Required for secure cookies behind an HTTPS-terminating proxy
-    app.set('trust proxy', 1);
+    // Required for secure cookies behind an HTTPS-terminating proxy. TRUST_PROXY
+    // names the proxy's IP so a client reaching the port directly can't fake
+    // X-Forwarded-For (rate limit) or X-Forwarded-Proto; a hop count (default 1)
+    // trusts whoever connects. Express reads a string as an IP list, so digits
+    // must become a number.
+    const trust = process.env.TRUST_PROXY || '1';
+    app.set('trust proxy', /^\d+$/.test(trust) ? Number(trust) : trust);
   }
 
   // JSON-only API: nothing here should be framed, sniffed or render scripts
