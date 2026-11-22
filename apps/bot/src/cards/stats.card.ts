@@ -5,7 +5,7 @@ import type { MemberSummary } from '../stats/queries';
 import type { StatsPeriod } from '../stats/windows';
 import { avatarSvg } from './avatars';
 import { escapeXml, truncate } from './render';
-import { bar, gridCell, header, heading, level, PAD, panel, svgCard, text, TILE_H, TILE_W, W } from './svg';
+import { bar, calendar, gridCell, header, heading, level, PAD, panel, svgCard, text, TILE_H, TILE_W, W } from './svg';
 import { CardTheme } from './themes';
 
 /** The parts of the card a viewer can turn on, in the order they're drawn */
@@ -345,43 +345,6 @@ const habits = (h: VoiceHabits, online: StatsCardData['online'], y: number, t: C
     );
   });
   return [parts, 28 + 108];
-};
-
-const toUtc = (date: string) => new Date(`${date}T00:00:00Z`);
-
-/** The past year (or the calendar's range), a square per day in weeks of Monday to Sunday, coloured by voice minutes */
-export const calendar = (c: ActivityCalendar, y: number, t: CardTheme, title = 'Past year'): [string[], number] => {
-  const first = toUtc(c.start).getTime();
-  const days = Math.round((toUtc(c.end).getTime() - first) / (24 * H)) + 1;
-  const offset = (toUtc(c.start).getUTCDay() + 6) % 7;
-  const columns = Math.ceil((days + offset) / 7);
-  // Fractional, so the 53–54 weeks fill the panel
-  const step = (INNER_W + 3) / columns;
-  const size = +(step - 3).toFixed(2);
-  const byDate = new Map(c.days.map((day) => [day.date, day]));
-  const max = Math.max(0, ...c.days.map((day) => day.minutes));
-  const gridY = y + 28 + 24 + 18;
-  const parts = [
-    heading(y + 14, `${title} · ${plural(c.days.length, 'active day')}`, t),
-    panel(PAD, y + 28, W - 2 * PAD, Math.round(24 + 18 + 7 * step + 21), t),
-  ];
-  let lastLabel = -3;
-  for (let i = 0; i < days; i++) {
-    const date = new Date(first + i * 24 * H);
-    const iso = date.toISOString().substring(0, 10);
-    const col = Math.floor((i + offset) / 7);
-    const row = (i + offset) % 7;
-    const x = +(PAD + 24 + col * step).toFixed(2);
-    const day = byDate.get(iso);
-    // Days with only messages still show as active
-    const lvl = day ? Math.max(level(day.minutes, max), day.messages > 0 ? 1 : 0) : 0;
-    parts.push(gridCell(x, +(gridY + row * step).toFixed(2), size, lvl, t));
-    if (date.getUTCDate() === 1 && col - lastLabel >= 3) {
-      parts.push(text(x, gridY - 8, 11, t.muted, date.toLocaleDateString('en-GB', { month: 'short', timeZone: 'UTC' })));
-      lastLabel = col;
-    }
-  }
-  return [parts, Math.round(28 + 24 + 18 + 7 * step + 21)];
 };
 
 /** Voice time per weekday and hour in the period, in the viewer's time zone */

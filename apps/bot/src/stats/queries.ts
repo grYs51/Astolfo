@@ -6,6 +6,8 @@ import { crossedMilestones, firstMilestoneMs } from './milestones';
 import { HABIT_SUMS, HabitRow, toHabits } from './habits-sql';
 import { GAME_TYPES, SCORING } from '../utils/handlers/games-handler';
 import { currentRules, levelFor } from '../xp/rules';
+import { notBots } from '../xp/grant';
+import { localTime } from '../api/routes/features/helpers';
 import type { WrappedMonth, WrappedPersona, WrappedStats, WrappedXpGroup, XpSource } from '@nx-stolfo/api-interfaces';
 import { endsAfter, NOW_UTC, ONLINE, presenceWindowStart } from '../api/routes/features/voice-stats/presence-sql';
 import { voiceHeatmapCells } from '../api/routes/features/voice-stats/heatmap-sql';
@@ -79,8 +81,11 @@ const topVoiceChannels = async (db: QueryDb, guildId: string, memberId: string, 
 const favouriteChannel = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow) =>
   (await topVoiceChannels(db, guildId, memberId, window, 1))[0]?.channelId;
 
-/** Who a member shared a channel with most (their sessions started in the window), most time together first */
-const getCompanions = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow, limit: number) => {
+/**
+ * Who a member shared a channel with most (their sessions started in the window), most time together first.
+ * `botIds` leaves bots out: their voice is recorded, and a 24/7 music bot would top everyone's list.
+ */
+const getCompanions = async (db: QueryDb, guildId: string, memberId: string, window: TimeWindow, limit: number, botIds: string[]) => {
   const rows = await db.$queryRaw<{ member_id: string; together: bigint }[]>`
     SELECT other.member_id, SUM(${overlapMs('me', 'other')})::bigint AS together
     FROM voice_stats me
@@ -91,6 +96,7 @@ const getCompanions = async (db: QueryDb, guildId: string, memberId: string, win
      AND other.member_id <> me.member_id
      AND other.issued_on < COALESCE(me.ended_on, NOW())
      AND COALESCE(other.ended_on, NOW()) > me.issued_on
+     ${notBots('other.member_id', botIds)}
     WHERE me.guild_id = ${guildId} AND me.member_id = ${memberId} AND me.type = ${VOICE_TYPE.VOICE}
       ${windowFilter('me.issued_on', window)}
     GROUP BY other.member_id
@@ -280,6 +286,8 @@ export const getMemberSummary = async (
   guildId: string,
   memberId: string,
   period: StatsPeriod,
+  /** Left out of the companions (`discordDirectory().botIds`) */
+  botIds: string[] = [],
   now = new Date()
 ): Promise<MemberSummary> => {
   const { current, previous } = periodWindows(period, now);
@@ -300,7 +308,7 @@ export const getMemberSummary = async (
             ${windowFilter('created_at', current)}
           GROUP BY user_id`
       ),
-      getCompanions(db, guildId, memberId, current, 3),
+      getCompanions(db, guildId, memberId, current, 3, botIds),
       getMemberStreak(db, guildId, memberId, now),
       lifetimeVoiceMs(db, guildId, memberId, now),
     ]);
@@ -559,13 +567,35 @@ export const getServerDigest = async (
 
 // ── Server Wrapped ──────────────────────────────────────────────────────────
 
-/** A UTC calendar year as a window; the current year ends now */
-export const yearWindow = (year: number, now = new Date()): Required<TimeWindow> => {
-  const end = new Date(Date.UTC(year + 1, 0, 1));
-  return { from: new Date(Date.UTC(year, 0, 1)), to: end < now ? end : now };
+/** How far `tz`'s wall clock is ahead of UTC at instant `at`, in ms */
+const zoneOffsetMs = (at: number, tz: string) => {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+  }).formatToParts(at);
+  const p = Object.fromEntries(parts.map((part) => [part.type, Number(part.value)]));
+  return Date.UTC(p['year'], p['month'] - 1, p['day'], p['hour'], p['minute'], p['second']) - at;
 };
 
-/** Night owl, early bird…, from the busiest UTC hour */
+/** Midnight on 1 January in `tz`, as an instant (New Year's Day is never a DST change) */
+const newYear = (year: number, tz: string) => {
+  const utc = Date.UTC(year, 0, 1);
+  return new Date(utc - zoneOffsetMs(utc, tz));
+};
+
+/** A calendar year in `tz` (the card: UTC) as a window; the current year ends now */
+export const yearWindow = (year: number, now = new Date(), tz = 'UTC'): Required<TimeWindow> => {
+  const end = newYear(year + 1, tz);
+  return { from: newYear(year, tz), to: end < now ? end : now };
+};
+
+/** Night owl, early bird…, from the busiest hour (in the viewer's time zone on the page, UTC on the card) */
 export const personaFor = (hour: number): WrappedPersona =>
   hour >= 5 && hour < 11 ? 'Early bird' : hour >= 11 && hour < 17 ? 'Afternoon regular' : hour >= 17 && hour < 22 ? 'Evening regular' : 'Night owl';
 
@@ -586,15 +616,26 @@ const ranked = (row: { members: bigint; rank: bigint | null } | undefined, count
   return place && members && counts ? { rank: place, members, topPercent: Math.max(1, Math.ceil((100 * place) / members)) } : null;
 };
 
+export interface WrappedOptions {
+  now?: Date;
+  /**
+   * The year, months, days, hours and best day in this time zone (the page sends the viewer's;
+   * the card stays UTC). Streaks still count UTC days.
+   */
+  tz?: string;
+  /** Left out of the buddies and the voice rank (`discordDirectory().botIds`) */
+  botIds?: string[];
+}
+
 /** One member's year on a server, for /wrapped and the dashboard's Wrapped page */
 export const getMemberWrapped = async (
   db: QueryDb,
   guildId: string,
   memberId: string,
   year: number,
-  now = new Date()
+  { now = new Date(), tz = 'UTC', botIds = [] }: WrappedOptions = {}
 ): Promise<WrappedStats> => {
-  const window = yearWindow(year, now);
+  const window = yearWindow(year, now, tz);
   const { from, to } = window;
   const mine = Prisma.sql`guild_id = ${guildId} AND member_id = ${memberId} AND type = ${VOICE_TYPE.VOICE}`;
 
@@ -610,23 +651,23 @@ export const getMemberWrapped = async (
       WHERE ${mine} ${windowFilter('issued_on', window)}
     `,
     topVoiceChannels(db, guildId, memberId, window, 3),
-    getCompanions(db, guildId, memberId, window, 5),
-    // Every month, empty ones as zero; voice by the month a session started
+    getCompanions(db, guildId, memberId, window, 5, botIds),
+    // Every month (in tz), empty ones as zero; voice by the month a session started
     db.$queryRaw<{ month: number; voice: bigint; messages: bigint; xp: number }[]>`
       WITH voice AS (
-        SELECT EXTRACT(MONTH FROM issued_on)::int AS month, SUM(${durationMs()})::bigint AS total
+        SELECT EXTRACT(MONTH FROM ${localTime('issued_on', tz)})::int AS month, SUM(${durationMs()})::bigint AS total
         FROM voice_stats
         WHERE ${mine} ${windowFilter('issued_on', window)}
         GROUP BY 1
       ),
       msgs AS (
-        SELECT EXTRACT(MONTH FROM created_at)::int AS month, COUNT(*)::bigint AS count
+        SELECT EXTRACT(MONTH FROM ${localTime('created_at', tz)})::int AS month, COUNT(*)::bigint AS count
         FROM message_stats
         WHERE guild_id = ${guildId} AND user_id = ${memberId} ${windowFilter('created_at', window)}
         GROUP BY 1
       ),
       xp AS (
-        SELECT EXTRACT(MONTH FROM created_at)::int AS month, SUM(amount)::float8 AS total
+        SELECT EXTRACT(MONTH FROM ${localTime('created_at', tz)})::int AS month, SUM(amount)::float8 AS total
         FROM xp_events
         WHERE ${xpMine} ${windowFilter('created_at', window)}
         GROUP BY 1
@@ -639,16 +680,16 @@ export const getMemberWrapped = async (
       LEFT JOIN xp ON xp.month = m.month
       ORDER BY m.month
     `,
-    // Every UTC hour, each session cut into the hours it covers (the heatmap's cells, summed over the weekdays)
+    // Every hour of the day in tz, each session cut into the hours it covers (the heatmap's cells, summed over the weekdays)
     db.$queryRaw<{ hour: number; minutes: number }[]>`
       SELECT h.hour, COALESCE(SUM(c.total_minutes), 0)::int AS minutes
       FROM generate_series(0, 23) AS h(hour)
-      LEFT JOIN (${voiceHeatmapCells(guildId, 'UTC', from, Prisma.sql`AND member_id = ${memberId} AND issued_on < ${to}`)}) c
+      LEFT JOIN (${voiceHeatmapCells(guildId, tz, from, Prisma.sql`AND member_id = ${memberId} AND issued_on < ${to}`)}) c
         ON c.hour = h.hour
       GROUP BY h.hour
       ORDER BY h.hour
     `,
-    activityCalendar(db, guildId, memberId, 'UTC', window),
+    activityCalendar(db, guildId, memberId, tz, window),
     getStreaks(db, guildId, { memberIds: [memberId], from }, to),
     // Lifetime voice at the start and the end of the year, for the milestones passed in it
     db.$queryRaw<{ before: bigint; after: bigint }[]>`
@@ -665,6 +706,7 @@ export const getMemberWrapped = async (
         FROM voice_stats
         WHERE guild_id = ${guildId} AND type = ${VOICE_TYPE.VOICE}
           ${windowFilter('issued_on', window)}
+          ${notBots('member_id', botIds)}
         GROUP BY member_id`
     ),
     // XP before the year (for the starting level), in it, per source group, and the weekly top 3 finishes
@@ -704,7 +746,7 @@ export const getMemberWrapped = async (
         HAVING SUM(amount) > 0`
     ),
     db.$queryRaw<{ day: Date; total: number }[]>`
-      SELECT created_at::date AS day, SUM(amount)::float8 AS total
+      SELECT (${localTime('created_at', tz)})::date AS day, SUM(amount)::float8 AS total
       FROM xp_events
       WHERE ${xpMine} ${windowFilter('created_at', window)}
       GROUP BY 1

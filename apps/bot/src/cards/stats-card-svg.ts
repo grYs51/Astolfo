@@ -32,7 +32,7 @@ export const statsCardSvg = async (opts: {
   // Statuses have no guild: only read them for someone who is in this server
   const withOnline = sections.includes('habits') && (await directory.isMember(guildId, memberId));
   const [summary, habits, online, neighbours, calendar, heatmap, xp] = await Promise.all([
-    getMemberSummary(db, guildId, memberId, period),
+    getMemberSummary(db, guildId, memberId, period, directory.botIds(guildId)),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
     sections.includes('totals') ? getXpNeighbours(db, guildId, memberId) : [],

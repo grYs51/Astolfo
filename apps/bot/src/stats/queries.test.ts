@@ -81,7 +81,7 @@ describe('getMemberWrapped', () => {
   const partOf = (sql: string): Part =>
     /generate_series\(1, 12\)/.test(sql) ? 'months'
     : /WITH totals/.test(sql) ? (/FROM xp_events/.test(sql) ? 'xpRank' : 'rank')
-    : /created_at::date/.test(sql) ? 'bestDay'
+    : /AS day, SUM\(amount\)/.test(sql) ? 'bestDay'
     : /FROM xp_events/.test(sql) ? 'xp'
     : /FROM game_player/.test(sql) ? 'games'
     : /generate_series\(0, 23\)/.test(sql) ? 'hours'
@@ -109,6 +109,34 @@ describe('getMemberWrapped', () => {
     expect(yearWindow(2026, now)).toEqual({ from: new Date('2026-01-01T00:00:00Z'), to: now });
   });
 
+  test('yearWindow in a time zone starts at its local New Year', () => {
+    expect(yearWindow(2025, now, 'America/New_York')).toEqual({
+      from: new Date('2025-01-01T05:00:00Z'),
+      to: new Date('2026-01-01T05:00:00Z'),
+    });
+    expect(yearWindow(2025, now, 'Asia/Kolkata').from).toEqual(new Date('2024-12-31T18:30:00Z'));
+  });
+
+  test('buddies and the voice rank leave the bots out', async () => {
+    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
+    await getMemberWrapped(db, 'g', 'me', 2025, { now, botIds: ['music-bot'] });
+    const byPart = (part: Part) =>
+      queryRaw.mock.calls.map(([strings, ...values]) => Prisma.sql(strings, ...values)).find((q) => partOf(q.sql) === part);
+    for (const part of ['buddies', 'rank'] as Part[]) {
+      expect(byPart(part)?.sql).toMatch(/NOT IN/);
+      expect(byPart(part)?.values).toContain('music-bot');
+    }
+  });
+
+  test('months, hours, days and the best day are cut in the time zone', async () => {
+    const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
+    await getMemberWrapped(db, 'g', 'me', 2025, { now, tz: 'America/New_York' });
+    for (const part of ['months', 'hours', 'calendar', 'bestDay'] as Part[]) {
+      const q = queryRaw.mock.calls.map(([strings, ...values]) => Prisma.sql(strings, ...values)).find((c) => partOf(c.sql) === part);
+      expect(q?.values).toContain('America/New_York');
+    }
+  });
+
   test('maps the year', async () => {
     const { db } = dbFor({
       totals: [{ total: BigInt(312 * H), sessions: 406n, longest: BigInt(9 * H) }],
@@ -126,7 +154,7 @@ describe('getMemberWrapped', () => {
       xpRank: [{ members: 41n, rank: 3n }],
       bestDay: [{ day: new Date('2026-11-07T00:00:00Z'), total: 1240 }],
     });
-    const wrapped = await getMemberWrapped(db, 'g', 'me', 2026, now);
+    const wrapped = await getMemberWrapped(db, 'g', 'me', 2026, { now });
     expect(wrapped).toEqual({
       year: 2026,
       voiceMs: 312 * H,
@@ -167,7 +195,7 @@ describe('getMemberWrapped', () => {
     const all = Object.values(WRAPPED_XP_GROUPS).flat().sort();
     expect(all).toEqual(['GAME', 'MESSAGE', 'MILESTONE', 'RECONNECT', 'STARTER', 'STREAK', 'TRIVIA', 'VOICE', 'WEEKLY', 'WELCOME']);
     const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
-    await getMemberWrapped(db, 'g', 'me', 2025, now);
+    await getMemberWrapped(db, 'g', 'me', 2025, { now });
     const from = new Date('2025-01-01T00:00:00Z').getTime();
     const xp = queryRaw.mock.calls
       .map(([strings, ...values]) => Prisma.sql(strings, ...values))
@@ -183,7 +211,7 @@ describe('getMemberWrapped', () => {
       hours: hours.map((h) => ({ ...h, minutes: 0 })),
       xp: [{ before: 0, gained: 0 }],
     });
-    expect(await getMemberWrapped(db, 'g', 'me', 2025, now)).toMatchObject({
+    expect(await getMemberWrapped(db, 'g', 'me', 2025, { now })).toMatchObject({
       voiceMs: 0,
       topChannels: [],
       buddies: [],
@@ -201,7 +229,7 @@ describe('getMemberWrapped', () => {
 
   test('every voice query reads VOICE rows that started in the year, open sessions live', async () => {
     const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
-    await getMemberWrapped(db, 'g', 'me', 2025, now);
+    await getMemberWrapped(db, 'g', 'me', 2025, { now });
     const from = new Date('2025-01-01T00:00:00Z').getTime();
     const to = new Date('2026-01-01T00:00:00Z').getTime();
     const voice = queryRaw.mock.calls
@@ -222,7 +250,7 @@ describe('getMemberWrapped', () => {
 
   test('games count wins in the server in the year, without the games against Astolfo', async () => {
     const { db, queryRaw } = dbFor({ totals: [{ total: 0n, sessions: 0n, longest: 0n }] });
-    await getMemberWrapped(db, 'g', 'me', 2025, now);
+    await getMemberWrapped(db, 'g', 'me', 2025, { now });
     const games = queryRaw.mock.calls
       .map(([strings, ...values]) => Prisma.sql(strings, ...values))
       .find((q) => partOf(q.sql) === 'games');

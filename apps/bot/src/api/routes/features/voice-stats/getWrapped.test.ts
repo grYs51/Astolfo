@@ -8,13 +8,14 @@ jest.mock('../../../utils/discord-directory', () => ({
     members: async () => new Map([['b', { id: 'b', username: 'brad', displayName: 'Bradamante', avatar: null }]]),
     channel: (_guildId: string, id: string) => ({ id, name: 'round-table', type: 'GuildVoice' }),
     guild: () => ({ name: 'Paladins', icon: null }),
+    botIds: () => ['music-bot'],
   }),
 }));
 
-const get = async (year?: string) => {
+const get = async (year?: string, extra: Record<string, string> = {}) => {
   const res = { status: jest.fn().mockReturnThis(), send: jest.fn() };
   await getWrapped(
-    { params: { serverId: 'g', userId: 'me' }, query: year === undefined ? {} : { year }, db: {} } as unknown as Request<{ serverId: string; userId: string }>,
+    { params: { serverId: 'g', userId: 'me' }, query: { ...(year === undefined ? {} : { year }), ...extra }, db: {} } as unknown as Request<{ serverId: string; userId: string }>,
     res as unknown as Response,
     jest.fn()
   );
@@ -36,7 +37,12 @@ test('the current year by default, with names for the channel and the duo', asyn
     buddies: [{ memberId: 'b', togetherMs: 1 }],
   });
   const res = await get();
-  expect((getMemberWrapped as jest.Mock).mock.calls[0].slice(1, 4)).toEqual(['g', 'me', new Date().getUTCFullYear()]);
+  expect((getMemberWrapped as jest.Mock).mock.calls[0].slice(1)).toEqual([
+    'g',
+    'me',
+    new Date().getUTCFullYear(),
+    { now: expect.any(Date), tz: 'UTC', botIds: ['music-bot'] },
+  ]);
   expect(res.send).toHaveBeenCalledWith(
     expect.objectContaining({
       serverName: 'Paladins',
@@ -45,4 +51,11 @@ test('the current year by default, with names for the channel and the duo', asyn
       buddies: [{ member: expect.objectContaining({ id: 'b', displayName: 'Bradamante' }), togetherMs: 1 }],
     })
   );
+});
+
+test("the viewer's time zone, and UTC for an unknown one", async () => {
+  (getMemberWrapped as jest.Mock).mockResolvedValue({ year: 2026, topChannels: [], buddies: [] });
+  await get(undefined, { tz: 'America/New_York' });
+  await get(undefined, { tz: 'Not/AZone' });
+  expect((getMemberWrapped as jest.Mock).mock.calls.map((call) => call[4].tz)).toEqual(['America/New_York', 'UTC']);
 });

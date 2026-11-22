@@ -124,11 +124,11 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /** A member's year on the server ("Server Wrapped"), the same numbers as /wrapped */
+  /** A member's year on the server ("Server Wrapped"), like /wrapped but in the viewer's time zone */
   fetchWrapped(guildId: () => string, userId: () => string, year: () => number) {
     return this.get<VoiceStatsWrapped>(
       () => `/features/voice-stats/${guildId()}/users/${userId()}/wrapped`,
-      () => ({ year: String(year()) })
+      () => ({ year: String(year()), tz: viewerTimeZone() })
     );
   }
 

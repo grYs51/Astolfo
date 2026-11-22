@@ -198,7 +198,7 @@ const rankText = (r: WrappedRank, of: string) =>
               </div>
             </section>
             <section class="flex flex-col">
-              <h2 class="mb-xs text-sm text-gray-400">Time of day (UTC)</h2>
+              <h2 class="mb-xs text-sm text-gray-400">Time of day ({{ tz }})</h2>
               <div class="flex-1 rounded-2xl bg-base-300 px-lg py-md">
                 <p class="font-bold text-gray-100">
                   {{ w.persona ? w.persona.label + ' · busiest at ' + w.persona.peakHour + ':00' : 'No voice this year' }}
@@ -220,7 +220,7 @@ const rankText = (r: WrappedRank, of: string) =>
 
           <footer class="space-y-xs text-sm text-gray-400">
             <p>{{ w.serverName }} · {{ w.year }}</p>
-            <p class="text-xs text-gray-500">UTC year; open sessions count live. Post it in Discord with <code>/wrapped</code>.</p>
+            <p class="text-xs text-gray-500">The year and its days and hours in {{ tz }}; open sessions count live. Post it in Discord with <code>/wrapped</code>.</p>
           </footer>
         }
       } @else if (wrappedResource.error()) {
@@ -264,6 +264,8 @@ export class WrappedComponent {
 
   readonly n = n;
   readonly hours = hours;
+  /** The viewer's time zone: the API cuts the year, months, days and hours in it (fetchWrapped sends it) */
+  readonly tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
   activeYear = computed(() => {
     const year = Number(this.year());
@@ -342,7 +344,7 @@ export class WrappedComponent {
   levelLine = (w: VoiceStatsWrapped) =>
     w.xp.levelUps > 0
       ? `Level ${w.xp.levelFrom} → ${w.xp.levelTo} · ${w.xp.levelUps} ${w.xp.levelUps === 1 ? 'level-up' : 'level-ups'}`
-      : w.xp.levelTo
+      : w.xp.gained > 0 || w.xp.levelTo > 0 // level 0 below the first level, though XP was earned
         ? `Level ${w.xp.levelTo}`
         : 'No XP yet';
   xpExtras = (w: VoiceStatsWrapped) =>
@@ -383,7 +385,7 @@ export class WrappedComponent {
     const m = this.wrapped()?.months[i];
     return m ? `<strong>${MONTHS[i]}</strong><br/>${hours(m.voiceMs)} in voice<br/>${n(m.messages)} messages<br/>${n(m.xp)} XP` : '';
   };
-  hourTooltip = (h: number) => `<strong>${h}:00–${h + 1}:00 UTC</strong><br/>${hours((this.wrapped()?.hours[h] ?? 0) * 60_000)} in voice`;
+  hourTooltip = (h: number) => `<strong>${h}:00–${h + 1}:00 ${this.tz}</strong><br/>${hours((this.wrapped()?.hours[h] ?? 0) * 60_000)} in voice`;
 
   memberName = (member: { displayName: string | null; username: string }) => member.displayName || member.username;
   share = (part: number, whole: number) => (whole > 0 ? Math.round((100 * part) / whole) : 0);

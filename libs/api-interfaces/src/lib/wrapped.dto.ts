@@ -22,12 +22,12 @@ export interface WrappedRank {
   topPercent: number;
 }
 
-/** When in the day someone is in voice, from their busiest UTC hour */
+/** When in the day someone is in voice, from their busiest hour (in the time zone of the request) */
 export type WrappedPersona = 'Night owl' | 'Early bird' | 'Afternoon regular' | 'Evening regular';
 
 /**
  * One member's year on one server ("Server Wrapped"), for /wrapped and
- * `…/users/:userId/wrapped?year=`. The year is the UTC calendar year; a
+ * `…/users/:userId/wrapped?year=&tz=`. The year is the calendar year in `tz` (UTC on the card); a
  * session counts for the year it started, open sessions count live.
  */
 export interface WrappedStats {
@@ -44,11 +44,11 @@ export interface WrappedStats {
   months: WrappedMonth[];
   /** Month with the most voice time */
   peakMonth: WrappedMonth | null;
-  /** Voice minutes per UTC hour (24), each session cut into the hours it covers */
+  /** Voice minutes per hour of the day in `tz` (24), each session cut into the hours it covers */
   hours: number[];
   /** null without voice time */
   persona: { label: WrappedPersona; peakHour: number } | null;
-  /** Daily voice minutes and messages in UTC days, for the year's activity calendar */
+  /** Daily voice minutes and messages in `tz` days, for the year's activity calendar */
   days: ActivityCalendar;
   /** Longest run of voice days (10+ min in voice, UTC days) inside the year */
   longestStreak: number;
@@ -57,7 +57,7 @@ export interface WrappedStats {
   messages: number;
   /** Voice time rank among the server's members who were in voice that year; null when they weren't */
   voiceRank: WrappedRank | null;
-  /** XP earned in the year (`xp_events.created_at` in the UTC year) */
+  /** XP earned in the year (`xp_events.created_at` in the year) */
   xp: {
     gained: number;
     /** Level before the year and at its end */
@@ -68,7 +68,7 @@ export interface WrappedStats {
     rank: WrappedRank | null;
     /** Every group, in drawing order; `share` 0–1 of `gained` */
     sources: { group: WrappedXpGroup; xp: number; share: number }[];
-    /** UTC day with the most XP */
+    /** Day (in `tz`) with the most XP */
     bestDay: { date: string; xp: number } | null;
     /** Weekly top 3 finishes (WEEKLY rows) */
     weeklyTop3: number;

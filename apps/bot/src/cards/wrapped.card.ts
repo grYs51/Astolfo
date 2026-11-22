@@ -3,8 +3,7 @@ import { plural } from '../stats/messages';
 import { avatarSvg } from './avatars';
 import type { CardMember } from './members';
 import { escapeXml, truncate } from './render';
-import { calendar } from './stats.card';
-import { bar, header, heading, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
+import { bar, calendar, header, heading, PAD, panel, svgCard, text, tile, TILE_H, TILE_W, W } from './svg';
 import { CardTheme } from './themes';
 
 export interface WrappedCardData {
@@ -59,8 +58,13 @@ const shortDate = (date: string) =>
 
 /** The year's XP: total, levels, rank, a stacked bar by source with its legend, best day and weekly top 3 */
 const xpBlock = (xp: WrappedStats['xp'], y: number, t: CardTheme): [string[], number] => {
+  // levelFor is 0 below the first level, so "No XP yet" only when nothing was earned at all
   const levels =
-    xp.levelUps > 0 ? `Level ${xp.levelFrom} → ${xp.levelTo} · ${plural(xp.levelUps, 'level-up')}` : xp.levelTo ? `Level ${xp.levelTo}` : 'No XP yet';
+    xp.levelUps > 0
+      ? `Level ${xp.levelFrom} → ${xp.levelTo} · ${plural(xp.levelUps, 'level-up')}`
+      : xp.gained > 0 || xp.levelTo > 0
+        ? `Level ${xp.levelTo}`
+        : 'No XP yet';
   const parts = [
     text(INNER_X, y + 36, 16, t.muted, 'XP earned'),
     text(INNER_X, y + 86, 44, t.accent, escapeXml(`${n(xp.gained)} XP`), 'font-weight="700"'),

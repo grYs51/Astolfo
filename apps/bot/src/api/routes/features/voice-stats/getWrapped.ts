@@ -3,9 +3,12 @@ import asyncHandler from 'express-async-handler';
 import { VoiceStatsWrapped } from '@nx-stolfo/api-interfaces';
 import { getMemberWrapped } from '../../../../stats/queries';
 import { discordDirectory } from '../../../utils/discord-directory';
-import { getChannelData, memberOrUnknown } from '../helpers';
+import { getChannelData, getTimeZone, memberOrUnknown } from '../helpers';
 
-/** A member's year on the server (`?year=`, the current UTC year by default), the same numbers as /wrapped */
+/**
+ * A member's year on the server (`?year=`, this year by default), the same numbers as /wrapped,
+ * but the year, months, days and hours in the viewer's `?tz=` (the card is UTC)
+ */
 export const getWrapped: RequestHandler<{ serverId: string; userId: string }, VoiceStatsWrapped | { error: string }> =
   asyncHandler(async (req, res) => {
     const { serverId, userId } = req.params;
@@ -16,8 +19,12 @@ export const getWrapped: RequestHandler<{ serverId: string; userId: string }, Vo
       return;
     }
 
-    const wrapped = await getMemberWrapped(req.db, serverId, userId, year, now);
     const directory = discordDirectory();
+    const wrapped = await getMemberWrapped(req.db, serverId, userId, year, {
+      now,
+      tz: getTimeZone(req.query.tz),
+      botIds: directory.botIds(serverId),
+    });
     const members = await directory.members(serverId, [userId, ...wrapped.buddies.map((b) => b.memberId)]);
     res.send({
       ...wrapped,

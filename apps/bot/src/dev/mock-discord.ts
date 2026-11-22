@@ -20,6 +20,8 @@ export type MockMember = {
   id: string;
   username: string;
   displayName: string;
+  /** A bot account (left out of buddies and voice ranks) */
+  bot?: boolean;
 };
 
 export type MockGuild = {

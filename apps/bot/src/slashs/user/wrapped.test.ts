@@ -4,6 +4,7 @@ import { getMemberWrapped } from '../../stats/queries';
 
 jest.mock('../../utils/interaction-utils', () => ({ InterActionUtils: { send: jest.fn() } }));
 jest.mock('../../stats/queries', () => ({ getMemberWrapped: jest.fn() }));
+jest.mock('../../api/utils/discord-directory', () => ({ discordDirectory: () => ({ botIds: () => ['music-bot'] }) }));
 
 const me = { id: 'me', displayName: 'Me', user: { bot: false }, displayAvatarURL: () => undefined };
 
@@ -52,7 +53,8 @@ test('a future year is refused without a query', async () => {
 test('a year with nothing in it says so, only to you', async () => {
   (getMemberWrapped as jest.Mock).mockResolvedValue(quiet);
   await run(interactionFor(2025));
-  expect(getMemberWrapped).toHaveBeenCalledWith({}, 'guild', 'me', 2025, expect.any(Date));
+  // UTC (no tz) and without the server's bots
+  expect(getMemberWrapped).toHaveBeenCalledWith({}, 'guild', 'me', 2025, { now: expect.any(Date), botIds: ['music-bot'] });
   const [, text, hidden] = (InterActionUtils.send as jest.Mock).mock.calls[0];
   expect(text).toMatch(/Nothing to wrap/);
   expect(hidden).toBe(true);

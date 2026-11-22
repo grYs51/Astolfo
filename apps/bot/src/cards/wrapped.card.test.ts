@@ -129,6 +129,21 @@ describe('wrappedCard', () => {
     expect(svg).toContain('Best day 7 Nov · 1,240 XP · 6× in the weekly top 3');
   });
 
+  it('says level 0, not "No XP yet", for XP below the first level', () => {
+    const svg = wrappedCard(
+      data({ wrapped: wrapped({ xp: xp({ gained: 40, levelFrom: 0, levelTo: 0, levelUps: 0 }) }) }),
+      THEMES.dark
+    );
+    expect(svg).toContain('>40 XP<');
+    expect(svg).toContain('>Level 0<');
+    expect(svg).not.toContain('No XP yet');
+    const none = wrappedCard(
+      data({ wrapped: wrapped({ xp: xp({ gained: 0, levelFrom: 0, levelTo: 0, levelUps: 0, rank: null, bestDay: null, weeklyTop3: 0 }) }) }),
+      THEMES.dark
+    );
+    expect(none).toContain('No XP yet');
+  });
+
   it('shows the place, not "Top x%", below the top half', () => {
     const svg = wrappedCard(
       data({ wrapped: wrapped({ voiceRank: { rank: 7, members: 10, topPercent: 70 }, xp: xp({ rank: { rank: 9, members: 12, topPercent: 75 } }) }) }),

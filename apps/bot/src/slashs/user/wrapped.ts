@@ -8,6 +8,7 @@ import { cardMembers } from '../../cards/members';
 import { cardFile } from '../../cards/render';
 import { DEFAULT_THEME, THEMES } from '../../cards/themes';
 import { wrappedCard } from '../../cards/wrapped.card';
+import { discordDirectory } from '../../api/utils/discord-directory';
 
 /** /wrapped [member] [year] — a member's year on the server as a card (UTC year, the current one by default) */
 export default class WrappedSlash extends BaseSlash {
@@ -46,7 +47,11 @@ export default class WrappedSlash extends BaseSlash {
     }
 
     const guild = interaction.guild;
-    const wrapped = await getMemberWrapped(client.dataSource, guild.id, member.id, year, now);
+    // The card stays in UTC; bots in the gateway cache are left out of the buddies and the rank
+    const wrapped = await getMemberWrapped(client.dataSource, guild.id, member.id, year, {
+      now,
+      botIds: discordDirectory().botIds(guild.id),
+    });
     if (wrapped.voiceMs === 0 && wrapped.messages === 0) {
       await InterActionUtils.send(interaction, `Nothing to wrap: ${member.displayName} wasn't in voice or chat here in ${year}.`, true);
       return;
