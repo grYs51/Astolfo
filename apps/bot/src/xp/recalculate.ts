@@ -4,6 +4,7 @@ import { Logger } from '../utils/logger';
 import { grantXp, guildTotals } from './grant';
 import { currentRules, levelFor } from './rules';
 import { postLevelUp } from './announce';
+import { syncGuildLevelRoles } from './level-roles';
 import { VOICE_TYPE } from '../utils/handlers/vc/voice-utils';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -54,6 +55,8 @@ export const recalculateXp = async (client: DiscordClient, guildId: string) => {
       },
       { timeout: 10 * 60 * 1000 }
     );
+    // Levels may have gone up or down. In the background: a big server takes a while under the rate limit.
+    void syncGuildLevelRoles(client, guildId);
     return { ...granted, ms: Date.now() - start };
   } finally {
     busy.delete(guildId);
@@ -109,7 +112,10 @@ const sweepGuild = async (client: DiscordClient, guildId: string) => {
   if (granted.rows || !last) {
     Logger.info(`XP sweep for guild ${guildId}: ${granted.rows} rows, ${granted.xp} XP in ${Date.now() - start} ms`);
   }
-  if (!before?.size || !granted.rows) return;
+  if (!granted.rows) return;
+  // Every member, not just the ones who levelled up: this also covers the backfill. Not awaited: it holds no lock.
+  void syncGuildLevelRoles(client, guildId);
+  if (!before?.size) return;
   for (const [memberId, total] of await guildTotals(client.dataSource, guildId)) {
     const level = levelFor(total, rules);
     if (level <= levelFor(before.get(memberId) ?? 0, rules)) continue;

@@ -1,7 +1,7 @@
 import { client } from '../../client/instance';
 import DiscordClient from '../../client/client';
 import { guild_configs } from '@prisma/client';
-import { SettingChange } from '@nx-stolfo/api-interfaces';
+import { LevelRole, SettingChange } from '@nx-stolfo/api-interfaces';
 import { getDb } from '../../db';
 import { Logger } from '../logger';
 
@@ -47,7 +47,9 @@ export const saveGuildConfig = async (
   discord: DiscordClient,
   guildId: string,
   data: Partial<Omit<guild_configs, 'guild_id'>>,
-  audit?: { userId: string; changes: SettingChange[] }
+  audit?: { userId: string; changes: SettingChange[] },
+  /** Replaces the stored level roles in the same transaction; only saved with audited changes */
+  levelRoles?: LevelRole[]
 ) => {
   const db = discord.dataSource;
   const upsert = db.guildConfigurations.upsert({
@@ -55,6 +57,14 @@ export const saveGuildConfig = async (
     update: data,
     create: { guild_id: guildId, ...data },
   });
+  const replaceLevelRoles = levelRoles
+    ? [
+        db.levelRoles.deleteMany({ where: { guild_id: guildId } }),
+        db.levelRoles.createMany({
+          data: levelRoles.map((r) => ({ guild_id: guildId, role_id: r.roleId, level: r.level })),
+        }),
+      ]
+    : [];
   const updated = audit?.changes.length
     ? (
         await db.$transaction([
@@ -62,6 +72,7 @@ export const saveGuildConfig = async (
           db.settingsChanges.create({
             data: { guild_id: guildId, user_id: audit.userId, changes: audit.changes },
           }),
+          ...replaceLevelRoles,
         ])
       )[0]
     : await upsert;

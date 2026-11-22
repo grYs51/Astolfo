@@ -1,9 +1,11 @@
 import { isRecalculating, isXpBusy, recalculateXp, sweepXp } from './recalculate';
 import { grantXp, guildTotals } from './grant';
 import { postLevelUp } from './announce';
+import { syncGuildLevelRoles } from './level-roles';
 
 jest.mock('./grant', () => ({ grantXp: jest.fn(async () => ({ rows: 3, xp: 12 })), guildTotals: jest.fn() }));
 jest.mock('./announce', () => ({ postLevelUp: jest.fn(async () => undefined) }));
+jest.mock('./level-roles', () => ({ syncGuildLevelRoles: jest.fn(async () => undefined) }));
 jest.mock('../api/utils/discord-directory', () => ({
   discordDirectory: () => ({ channel: () => undefined, guilds: () => [{ id: 's' }] }),
 }));
@@ -31,6 +33,8 @@ test('a second call during a run is refused, and the lock is released after', as
   expect(tx.$executeRaw).toHaveBeenCalled();
   expect((grantXp as jest.Mock).mock.calls[0][1]).toMatchObject({ guildId: 'g' });
   expect(isRecalculating('g')).toBe(false);
+  // Levels may have moved both ways, so every member's level roles follow
+  expect(syncGuildLevelRoles).toHaveBeenCalledWith(client, 'g');
 });
 
 describe('sweepXp', () => {
@@ -53,6 +57,8 @@ describe('sweepXp', () => {
     await sweepXp(client);
     expect(postLevelUp).toHaveBeenCalledTimes(1);
     expect(postLevelUp).toHaveBeenCalledWith(client, 's', 'a', 5);
+    // Both sweeps granted XP, the backfill included, so both sync the level roles
+    expect(syncGuildLevelRoles).toHaveBeenCalledWith(client, 's');
   });
 
   test('holds the guild, so a recalculation is refused until it ends', async () => {

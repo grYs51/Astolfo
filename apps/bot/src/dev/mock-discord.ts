@@ -22,6 +22,15 @@ export type MockMember = {
   displayName: string;
 };
 
+/** A server role; managers may hand out any of them (viewerCanAssign) */
+export type MockRole = {
+  id: string;
+  name: string;
+  color: string | null;
+  position: number;
+  botCanAssign: boolean;
+};
+
 export type MockGuild = {
   id: string;
   name: string;
@@ -32,6 +41,8 @@ export type MockGuild = {
   members: MockMember[];
   /** Members with Manage Server (the settings page) */
   managers: string[];
+  /** Highest first, like the directory returns them */
+  roles: MockRole[];
 };
 
 /** The user every mock login signs in as (an AuthUser, as /auth/status returns it). */
@@ -100,6 +111,13 @@ export const MOCK_GUILDS: MockGuild[] = [
       members.sage,
     ],
     managers: [MOCK_USER.id],
+    roles: [
+      // Above the bot's role, so the settings page shows the warning
+      { id: '300000000000000901', name: 'Moderator', color: '#e74c3c', position: 4, botCanAssign: false },
+      { id: '300000000000000902', name: 'Veteran', color: '#9b59b6', position: 3, botCanAssign: true },
+      { id: '300000000000000903', name: 'Regular', color: '#3498db', position: 2, botCanAssign: true },
+      { id: '300000000000000904', name: 'Newcomer', color: null, position: 1, botCanAssign: true },
+    ],
   },
   {
     id: '300000000000000002',
@@ -116,6 +134,7 @@ export const MOCK_GUILDS: MockGuild[] = [
     members: [me, members.rex, members.finn, members.zoe, members.milo, members.sage],
     // Not a manager here, so demo mode shows the page without settings too
     managers: [],
+    roles: [{ id: '300000000000000911', name: 'Night Owl', color: '#f1c40f', position: 1, botCanAssign: true }],
   },
 ];
 

@@ -6,10 +6,12 @@ import {
   linkedSignal,
   output,
 } from '@angular/core';
-import { GuildSettings } from '@nx-stolfo/data-access-guild-settings';
+import { GuildSettings, LevelRole } from '@nx-stolfo/data-access-guild-settings';
 
 /** guild_configs messages are VarChar(200); the API enforces the same limit */
 const MAX_MESSAGE = 200;
+/** The API refuses more */
+const MAX_LEVEL_ROLES = 25;
 
 const value = (event: Event) => (event.target as HTMLInputElement).value;
 
@@ -178,6 +180,72 @@ const value = (event: Event) => (event.target as HTMLInputElement).value;
             }
           </select>
         </div>
+        <div class="space-y-sm">
+          <div>
+            <h3 class="text-sm font-medium text-gray-300">Level roles</h3>
+            <p class="mt-xs text-xs text-gray-500">
+              Members get every role up to their level and lose the ones above it. A role taken off
+              this list stays on the members who have it.
+            </p>
+          </div>
+          @for (r of s.levelRoles; track $index) {
+            @let role = roleById().get(r.roleId);
+            <div class="flex flex-wrap items-center gap-sm">
+              <label [for]="'gs-lr-level-' + $index" class="text-sm text-gray-400">Level</label>
+              <input
+                type="number"
+                min="1"
+                max="1000"
+                class="input input-bordered w-24 bg-base-200"
+                [id]="'gs-lr-level-' + $index"
+                [value]="r.level"
+                (input)="setLevelRole($index, { level: +value($event) })"
+              />
+              <span
+                aria-hidden="true"
+                class="inline-block h-3 w-3 shrink-0 rounded-full bg-gray-500"
+                [style.background-color]="role?.color"
+              ></span>
+              <select
+                class="select select-bordered min-w-0 flex-1 bg-base-200"
+                [attr.aria-label]="'Role for level ' + r.level"
+                (change)="setLevelRole($index, { roleId: value($event) })"
+              >
+                @for (o of roleOptions(r.roleId); track o.id) {
+                  <option [value]="o.id" [selected]="o.id === r.roleId">&#64;{{ o.name }}</option>
+                }
+              </select>
+              <button
+                type="button"
+                class="btn btn-ghost btn-sm"
+                [attr.aria-label]="'Remove the level ' + r.level + ' role'"
+                (click)="removeLevelRole($index)"
+              >
+                Remove
+              </button>
+              @if (!role?.botCanAssign) {
+                <p class="w-full text-xs text-warning">
+                  I can’t give this role. I need Manage Roles, and my role must be above it in the
+                  server’s role list.
+                </p>
+              }
+            </div>
+          }
+          <button
+            type="button"
+            class="btn btn-sm"
+            [disabled]="!nextRole() || s.levelRoles.length >= maxLevelRoles"
+            (click)="addLevelRole()"
+          >
+            Add a level role
+          </button>
+          @if (!canAssignAny()) {
+            <p class="text-xs text-gray-500">
+              You can only add roles you could give out yourself: you need Manage Roles and a role
+              above them.
+            </p>
+          }
+        </div>
       </section>
 
       <div class="flex flex-wrap items-center gap-md">
@@ -227,11 +295,44 @@ export class GuildSettingsFormComponent {
     return !id || this.draft().channels.some((c) => c.id === id && c.postable);
   });
 
+  protected readonly maxLevelRoles = MAX_LEVEL_ROLES;
+  protected roleById = computed(() => new Map(this.settings().roles.map((r) => [r.id, r])));
+  protected canAssignAny = computed(() => this.settings().roles.some((r) => r.viewerCanAssign));
+  /** Roles the viewer may add that no other row uses, plus the row's own */
+  protected roleOptions(current: string) {
+    const used = new Set(this.draft().levelRoles.map((r) => r.roleId));
+    return this.settings().roles.filter((r) => r.id === current || (r.viewerCanAssign && !used.has(r.id)));
+  }
+  protected nextRole = computed(() => this.roleOptions('')[0]);
+
   /** Any edit replaces the draft object, so identity says whether it changed */
   protected dirty = computed(() => this.draft() !== this.settings());
 
   protected set<K extends keyof GuildSettings>(key: K, v: GuildSettings[K]) {
     this.draft.update((d) => ({ ...d, [key]: v }));
+  }
+
+  protected setLevelRole(index: number, patch: Partial<LevelRole>) {
+    this.draft.update((d) => ({
+      ...d,
+      levelRoles: d.levelRoles.map((r, i) => (i === index ? { ...r, ...patch } : r)),
+    }));
+  }
+
+  protected addLevelRole() {
+    const role = this.nextRole();
+    if (!role) return;
+    this.draft.update((d) => ({
+      ...d,
+      levelRoles: [
+        ...d.levelRoles,
+        { level: Math.min(1000, Math.max(0, ...d.levelRoles.map((r) => r.level)) + 5), roleId: role.id },
+      ],
+    }));
+  }
+
+  protected removeLevelRole(index: number) {
+    this.draft.update((d) => ({ ...d, levelRoles: d.levelRoles.filter((_, i) => i !== index) }));
   }
 
   protected setToggle(key: string, enabled: boolean) {

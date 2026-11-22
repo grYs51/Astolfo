@@ -15,6 +15,25 @@ export interface SettingsChannel {
   postable: boolean;
 }
 
+/** A level role reward: members at `level` or above hold the role */
+export interface LevelRole {
+  level: number;
+  roleId: string;
+}
+
+/** A server role the level role pickers offer */
+export interface SettingsRole {
+  id: string;
+  name: string;
+  /** `#rrggbb`; null when the role has no colour */
+  color: string | null;
+  position: number;
+  /** The bot can hand it out: it has Manage Roles and its highest role is above this one */
+  botCanAssign: boolean;
+  /** The viewer could hand it out themselves, so they may add it as a reward */
+  viewerCanAssign: boolean;
+}
+
 /**
  * GET/PUT /features/servers/:serverId/settings (Manage Server only). PUT takes
  * the whole object and returns it saved; it ignores `channels` and labels.
@@ -31,13 +50,17 @@ export interface GuildSettings {
   digestChannelId: string | null;
   /** Level-up posts; null = off */
   levelUpChannelId: string | null;
+  /** Level role rewards, lowest level first; empty = off */
+  levelRoles: LevelRole[];
   /** Channels the bot can post in and the viewer can see, plus the stored ones */
   channels: SettingsChannel[];
+  /** The server's roles, highest first (ignored by PUT) */
+  roles: SettingsRole[];
 }
 
 /**
- * One changed setting: `field` is a GuildSettings key (`prefix`, `welcomeChannelId`, …) or
- * `toggle:<key>`. A type, not an interface, so Prisma accepts it as JSON.
+ * One changed setting: `field` is a GuildSettings key (`prefix`, `welcomeChannelId`, …),
+ * `toggle:<key>` or `levelRole:<roleId>` (from/to: the level as a string, null = not a reward). A type, not an interface, so Prisma accepts it as JSON.
  */
 export type SettingChange = {
   field: string;

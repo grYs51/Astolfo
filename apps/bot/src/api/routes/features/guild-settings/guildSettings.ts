@@ -4,10 +4,13 @@ import { guild_configs } from '@prisma/client';
 import {
   GuildSettings,
   GuildSettingsHistory,
+  LevelRole,
   ServerAccess,
   SettingChange,
+  SettingsRole,
 } from '@nx-stolfo/api-interfaces';
 import { client } from '../../../../client/instance';
+import { levelRolesOf, syncGuildLevelRoles } from '../../../../xp/level-roles';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { memberOrUnknown } from '../helpers';
 import {
@@ -25,7 +28,7 @@ import {
 } from '../../../../utils/handlers/settings-handler';
 
 type Config = Omit<guild_configs, 'guild_id' | 'digest_last_sent_at'>;
-type SettingsBody = Omit<GuildSettings, 'channels' | 'toggles'> & {
+type SettingsBody = Omit<GuildSettings, 'channels' | 'roles' | 'toggles' | 'levelRoles'> & {
   toggles: { key: string; enabled: boolean }[];
 };
 
@@ -131,6 +134,56 @@ export const diffSettings = (before: Config, after: Config): SettingChange[] => 
   }),
 ];
 
+const MAX_LEVEL = 1000;
+const MAX_LEVEL_ROLES = 25;
+
+/**
+ * Validates the level roles of a PUT body. A reward that isn't stored as it is (new role or new level)
+ * needs a role the viewer could hand out themselves, or Manage Server would be a back door to Manage Roles.
+ * A page from before level roles doesn't send them: the stored ones stay.
+ */
+export const parseLevelRoles = (
+  body: unknown,
+  stored: LevelRole[],
+  roles: SettingsRole[]
+): { error: string } | { data: LevelRole[] } => {
+  const levelRoles = (body as { levelRoles?: unknown } | undefined)?.levelRoles;
+  if (levelRoles === undefined) return { data: stored };
+  if (!Array.isArray(levelRoles) || levelRoles.length > MAX_LEVEL_ROLES) {
+    return { error: `A server can have up to ${MAX_LEVEL_ROLES} level roles.` };
+  }
+  const data: LevelRole[] = [];
+  for (const entry of levelRoles as (Partial<LevelRole> | null)[]) {
+    const level = entry?.level;
+    const roleId = entry?.roleId;
+    if (typeof level !== 'number' || !Number.isInteger(level) || level < 1 || level > MAX_LEVEL || !isString(roleId)) {
+      return { error: `Each level role needs a level from 1 to ${MAX_LEVEL} and a role.` };
+    }
+    if (data.some((r) => r.roleId === roleId)) {
+      return { error: 'A role can be the reward for one level only.' };
+    }
+    const kept = stored.some((r) => r.roleId === roleId && r.level === level);
+    if (!kept && !roles.some((r) => r.id === roleId && r.viewerCanAssign)) {
+      return { error: 'You can only reward roles you could give out yourself (Manage Roles and a higher role).' };
+    }
+    data.push({ level, roleId });
+  }
+  return { data: data.sort((a, b) => a.level - b.level) };
+};
+
+/** One audit change per role whose reward level was added, moved or removed */
+export const diffLevelRoles = (before: LevelRole[], after: LevelRole[]): SettingChange[] => {
+  const levelIn = (list: LevelRole[], roleId: string) => {
+    const level = list.find((r) => r.roleId === roleId)?.level;
+    return level === undefined ? null : String(level);
+  };
+  return [...new Set([...before, ...after].map((r) => r.roleId))].flatMap((roleId) => {
+    const from = levelIn(before, roleId);
+    const to = levelIn(after, roleId);
+    return from === to ? [] : [{ field: `levelRole:${roleId}`, from, to }];
+  });
+};
+
 /** The cached config, or what a guild without a row behaves like */
 const loadConfig = (guildId: string): Config =>
   client.guildConfigs.get(guildId) ?? {
@@ -146,7 +199,8 @@ const loadConfig = (guildId: string): Config =>
 const toSettings = async (
   guildId: string,
   viewerId: string,
-  config: Config
+  config: Config,
+  levelRoles: LevelRole[]
 ): Promise<GuildSettings> => {
   const channels = (await discordDirectory().postableChannels(guildId, viewerId)).map(
     ({ id, name }) => ({ id, name, postable: true })
@@ -156,6 +210,12 @@ const toSettings = async (
   for (const id of new Set([config.welcome_channel_id, config.digest_channel_id, config.level_up_channel_id])) {
     if (id && !channels.some((c) => c.id === id)) {
       channels.push({ id, name: 'current channel (unavailable)', postable: false });
+    }
+  }
+  const roles = await discordDirectory().roles(guildId, viewerId);
+  for (const { roleId: id } of levelRoles) {
+    if (!roles.some((r) => r.id === id)) {
+      roles.push({ id, name: 'deleted role', color: null, position: -1, botCanAssign: false, viewerCanAssign: false });
     }
   }
   return {
@@ -170,7 +230,9 @@ const toSettings = async (
     })),
     digestChannelId: config.digest_channel_id,
     levelUpChannelId: config.level_up_channel_id,
+    levelRoles,
     channels,
+    roles,
   };
 };
 
@@ -178,7 +240,7 @@ const toSettings = async (
 export const getGuildSettings: RequestHandler<{ serverId: string }, GuildSettings> =
   asyncHandler(async (req, res) => {
     const { serverId } = req.params;
-    res.send(await toSettings(serverId, req.user.id, loadConfig(serverId)));
+    res.send(await toSettings(serverId, req.user.id, loadConfig(serverId), await levelRolesOf(req.db, serverId)));
   });
 
 /** PUT /features/servers/:serverId/settings — the whole settings object */
@@ -188,24 +250,35 @@ export const setGuildSettings: RequestHandler<
 > = asyncHandler(async (req, res) => {
   const { serverId } = req.params;
   const current = loadConfig(serverId);
-  const postable = (await discordDirectory().postableChannels(serverId, req.user.id)).map(
-    (c) => c.id
-  );
+  const [channels, roles, storedLevelRoles] = await Promise.all([
+    discordDirectory().postableChannels(serverId, req.user.id),
+    discordDirectory().roles(serverId, req.user.id),
+    levelRolesOf(req.db, serverId),
+  ]);
 
-  const parsed = parseSettings(req.body, current, postable);
+  const parsed = parseSettings(req.body, current, channels.map((c) => c.id));
   if ('error' in parsed) {
     res.status(400).send(parsed);
     return;
   }
+  const levelRoles = parseLevelRoles(req.body, storedLevelRoles, roles);
+  if ('error' in levelRoles) {
+    res.status(400).send(levelRoles);
+    return;
+  }
 
+  const levelRoleChanges = diffLevelRoles(storedLevelRoles, levelRoles.data);
   const { digest_channel_id, ...rest } = parsed.data;
   const saved = await saveGuildConfig(
     client,
     serverId,
     { ...rest, ...digestChannelUpdate(current, digest_channel_id) },
-    { userId: req.user.id, changes: diffSettings(current, parsed.data) }
+    { userId: req.user.id, changes: [...diffSettings(current, parsed.data), ...levelRoleChanges] },
+    levelRoleChanges.length ? levelRoles.data : undefined
   );
-  res.send(await toSettings(serverId, req.user.id, saved));
+  // In the background: the backfill goes member by member under Discord's rate limit
+  if (levelRoleChanges.length) void syncGuildLevelRoles(client, serverId);
+  res.send(await toSettings(serverId, req.user.id, saved, levelRoles.data));
 });
 
 /** GET /features/servers/:serverId/settings/history — the newest 50 page saves */

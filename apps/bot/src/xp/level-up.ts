@@ -5,6 +5,7 @@ import { grantXp, totalXp } from './grant';
 import { currentRules, levelFor } from './rules';
 import { isRecalculating, xpLookups } from './recalculate';
 import { postLevelUp } from './announce';
+import { syncMemberLevelRoles } from './level-roles';
 import { runSerialized } from '../utils/handlers/vc/voice-utils';
 
 /** What a closed voice session can earn; messages and games are granted by their own events */
@@ -42,16 +43,18 @@ const award = async (client: DiscordClient, guildId: string, memberId: string, s
       now,
       ...xpLookups(client, guildId),
     });
-    if (!added || !client.guildConfigs.get(guildId)?.level_up_channel_id) return;
+    if (!added) return;
 
     const total = await totalXp(client.dataSource, guildId, memberId);
     const level = levelFor(total, rules);
+    if (level <= levelFor(total - added, rules)) return;
     // Not awaited: the card fetches an avatar and renders, and callers hold the member's voice queue or a trivia result.
     // postLevelUp marks the level posted before its first await, so it still posts once.
-    if (level > levelFor(total - added, rules))
+    if (client.guildConfigs.get(guildId)?.level_up_channel_id)
       void postLevelUp(client, guildId, memberId, level).catch((error) =>
         Logger.error(`Level-up post failed for ${memberId} in guild ${guildId}`, error)
       );
+    void syncMemberLevelRoles(client, guildId, memberId, level);
   } catch (error) {
     Logger.error(`XP grant failed for ${memberId} in guild ${guildId}`, error);
   }

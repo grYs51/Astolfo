@@ -1,6 +1,43 @@
-import { diffSettings, parseSettings } from './guildSettings';
+import { Request, Response } from 'express';
+import {
+  diffLevelRoles,
+  diffSettings,
+  parseLevelRoles,
+  parseSettings,
+  setGuildSettings,
+} from './guildSettings';
+import { saveGuildConfig } from '../../../../utils/functions/set-config';
+import { syncGuildLevelRoles } from '../../../../xp/level-roles';
 
-jest.mock('../../../../client/instance', () => ({ client: {} }));
+jest.mock('../../../../client/instance', () => ({ client: { guildConfigs: new Map() } }));
+const mockRoles = [
+  { id: 'mod', name: 'Moderator', color: null, position: 3, botCanAssign: true, viewerCanAssign: false },
+  { id: 'veteran', name: 'Veteran', color: '#9b59b6', position: 2, botCanAssign: false, viewerCanAssign: true },
+  { id: 'regular', name: 'Regular', color: null, position: 1, botCanAssign: true, viewerCanAssign: true },
+];
+jest.mock('../../../utils/discord-directory', () => ({
+  discordDirectory: () => ({
+    postableChannels: async () => [{ id: 'general', name: 'general', type: 'GuildText' }],
+    roles: async () => mockRoles.map((r) => ({ ...r })),
+  }),
+}));
+jest.mock('../../../../xp/level-roles', () => ({
+  levelRolesOf: jest.fn(async () => [{ level: 5, roleId: 'regular' }]),
+  syncGuildLevelRoles: jest.fn(async () => undefined),
+}));
+jest.mock('../../../../utils/functions/set-config', () => ({
+  ...jest.requireActual('../../../../utils/functions/set-config'),
+  saveGuildConfig: jest.fn(async (_client: unknown, _id: string, data: object) => ({
+    prefix: ',',
+    welcome_channel_id: null,
+    welcome_message: '',
+    goodbye_message: '',
+    toggles: 0,
+    digest_channel_id: null,
+    level_up_channel_id: null,
+    ...data,
+  })),
+}));
 
 const current = {
   prefix: 'astolfo!', // longer than the page allows, set with ,setprefix
@@ -129,5 +166,133 @@ describe('diffSettings', () => {
 
   test('nothing changed, nothing to log', () => {
     expect(diffSettings(current, { ...current })).toEqual([]);
+  });
+});
+
+describe('parseLevelRoles', () => {
+  const stored = [{ level: 10, roleId: 'mod' }];
+  const parseRoles = (levelRoles: unknown) => parseLevelRoles({ levelRoles }, stored, mockRoles);
+
+  test('sorts by level and keeps a stored reward the viewer could not add', () => {
+    expect(
+      parseRoles([
+        { level: 20, roleId: 'veteran' },
+        { level: 10, roleId: 'mod' },
+        { level: 5, roleId: 'regular' },
+      ])
+    ).toEqual({
+      data: [
+        { level: 5, roleId: 'regular' },
+        { level: 10, roleId: 'mod' },
+        { level: 20, roleId: 'veteran' },
+      ],
+    });
+  });
+
+  // Manage Server must not be a way round Manage Roles
+  test('a new or moved reward needs a role the viewer could give out', () => {
+    expect(parseRoles([{ level: 1, roleId: 'mod' }])).toEqual({ error: expect.stringContaining('give out yourself') });
+    expect(parseRoles([{ level: 3, roleId: 'unknown' }])).toHaveProperty('error');
+  });
+
+  test('a role the bot cannot hand out can still be saved (the page warns)', () => {
+    expect(parseRoles([{ level: 20, roleId: 'veteran' }])).toHaveProperty('data');
+  });
+
+  test.each([
+    [[{ level: 0, roleId: 'regular' }]],
+    [[{ level: 1.5, roleId: 'regular' }]],
+    [[{ level: '5', roleId: 'regular' }]],
+    [[{ level: 1001, roleId: 'regular' }]],
+    [[{ level: 5 }]],
+    [[null]],
+    [[{ level: 5, roleId: 'regular' }, { level: 6, roleId: 'regular' }]],
+    [Array.from({ length: 26 }, () => ({ level: 5, roleId: 'regular' }))],
+    ['regular'],
+  ])('refuses %p', (levelRoles) => {
+    expect(parseRoles(levelRoles)).toHaveProperty('error');
+  });
+
+  test('a page from before level roles keeps the stored ones', () => {
+    expect(parseLevelRoles({}, stored, [])).toEqual({ data: stored });
+  });
+});
+
+describe('diffLevelRoles', () => {
+  test('one change per added, moved or removed role', () => {
+    const before = [
+      { level: 5, roleId: 'regular' },
+      { level: 20, roleId: 'veteran' },
+      { level: 30, roleId: 'old' },
+    ];
+    const after = [
+      { level: 5, roleId: 'regular' },
+      { level: 25, roleId: 'veteran' },
+      { level: 50, roleId: 'legend' },
+    ];
+    expect(diffLevelRoles(before, after)).toEqual([
+      { field: 'levelRole:veteran', from: '20', to: '25' },
+      { field: 'levelRole:old', from: '30', to: null },
+      { field: 'levelRole:legend', from: null, to: '50' },
+    ]);
+  });
+});
+
+describe('setGuildSettings level roles', () => {
+  const save = saveGuildConfig as jest.Mock;
+  const sync = syncGuildLevelRoles as jest.Mock;
+
+  const put = async (levelRoles?: unknown) => {
+    const res = { send: jest.fn(), status: jest.fn().mockReturnThis() };
+    const req = {
+      params: { serverId: 'g' },
+      user: { id: 'viewer' },
+      db: {},
+      body: { ...body({ prefix: ',', welcomeChannelId: null }), levelRoles },
+    };
+    await (setGuildSettings as unknown as (req: Request, res: Response, next: jest.Mock) => Promise<void>)(
+      req as unknown as Request,
+      res as unknown as Response,
+      jest.fn()
+    );
+    return res;
+  };
+
+  beforeEach(() => jest.clearAllMocks());
+
+  test('saves a new reward with its audit entry and starts the backfill', async () => {
+    const levelRoles = [
+      { level: 5, roleId: 'regular' },
+      { level: 20, roleId: 'veteran' },
+    ];
+    const res = await put(levelRoles);
+    expect(save).toHaveBeenCalledWith(
+      expect.anything(),
+      'g',
+      expect.anything(),
+      { userId: 'viewer', changes: expect.arrayContaining([{ field: 'levelRole:veteran', from: null, to: '20' }]) },
+      levelRoles
+    );
+    expect(sync).toHaveBeenCalledWith(expect.anything(), 'g');
+    expect(res.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        levelRoles,
+        roles: expect.arrayContaining([expect.objectContaining({ id: 'veteran', botCanAssign: false })]),
+      })
+    );
+  });
+
+  test('unchanged rewards are not rewritten and start no backfill', async () => {
+    await put([{ level: 5, roleId: 'regular' }]);
+    expect(save).toHaveBeenCalled();
+    expect(save.mock.calls[0][4]).toBeUndefined();
+    expect(sync).not.toHaveBeenCalled();
+  });
+
+  test('a role the viewer could not give out is refused and nothing is saved', async () => {
+    const res = await put([{ level: 1, roleId: 'mod' }]);
+    expect(res.status).toHaveBeenCalledWith(400);
+    expect(save).not.toHaveBeenCalled();
+    expect(sync).not.toHaveBeenCalled();
   });
 });

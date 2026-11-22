@@ -5,8 +5,10 @@ import {
   NewsChannel,
   PermissionFlagsBits,
   RESTJSONErrorCodes,
+  Role,
   TextChannel,
 } from 'discord.js';
+import type { SettingsRole } from '@nx-stolfo/api-interfaces';
 import { client } from '../../client/instance';
 import { Logger } from '../../utils/logger';
 import { ServiceUnavailable } from './http-errors';
@@ -59,6 +61,8 @@ export interface DiscordDirectory {
   memberIds(guildId: string): Promise<string[]>;
   /** Text and announcement channels both the bot and the viewer can post in */
   postableChannels(guildId: string, viewerId: string): Promise<ChannelInfo[]>;
+  /** Roles that can be handed out (not @everyone, bot or integration roles), highest first */
+  roles(guildId: string, viewerId: string): Promise<SettingsRole[]>;
 }
 
 // Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
@@ -182,6 +186,29 @@ const live: DiscordDirectory = {
       .sort((a, b) => a.rawPosition - b.rawPosition)
       .map((c) => ({ id: c.id, name: c.name, type: ChannelType[c.type] }));
   },
+
+  async roles(guildId, viewerId) {
+    const guild = client.guilds.cache.get(guildId);
+    const viewer = await findMember(guildId, viewerId);
+    if (!guild || !viewer) return [];
+    // Role.editable reads the bot's member from the cache
+    if (!guild.members.me) await guild.members.fetchMe();
+    // Discord's own rule: Manage Roles and a highest role above it, or the owner
+    const viewerCanAssign = (role: Role) =>
+      guild.ownerId === viewer.id ||
+      (viewer.permissions.has(PermissionFlagsBits.ManageRoles) && viewer.roles.highest.comparePositionTo(role) > 0);
+    return [...guild.roles.cache.values()]
+      .filter((r) => r.id !== guild.id && !r.managed)
+      .sort((a, b) => b.comparePositionTo(a))
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.colors.primaryColor ? r.hexColor : null,
+        position: r.position,
+        botCanAssign: r.editable,
+        viewerCanAssign: viewerCanAssign(r),
+      }));
+  },
 };
 
 const mock: DiscordDirectory = {
@@ -235,6 +262,11 @@ const mock: DiscordDirectory = {
 
   async postableChannels(guildId) {
     return findMockGuild(guildId)?.textChannels ?? [];
+  },
+
+  async roles(guildId, viewerId) {
+    const guild = findMockGuild(guildId);
+    return (guild?.roles ?? []).map((r) => ({ ...r, viewerCanAssign: !!guild?.managers.includes(viewerId) }));
   },
 };
 

@@ -78,7 +78,9 @@ The dashboard is pull; these push, which is what keeps a bot visible in a server
 
 A scheduled job (node-schedule is already in place) that posts a summary embed to a configured channel: top 3 voice users, total server hours, biggest gainer, current streak leaders. One new guild-config toggle (`SETTING_FLAGS` bitfield is built for exactly this) + one embed builder. This single feature markets the dashboard inside every server, every week.
 
-### 3.2 Voice-activity role rewards 🟡
+### 3.2 Voice-activity role rewards 🟡 — ✅ done (2026-11-22)
+> Shipped as level roles rather than hour thresholds: on the server settings page, admins map levels to roles (table `level_roles`, changes in the audit log). Roles stack: a member holds every reward at or below their level and none above. The bot syncs a member on level-up, and every member after a mapping change, an XP recalculation or a sweep that granted XP (`apps/bot/src/xp/level-roles.ts`). Roles at or above the bot's highest role, or without Manage Roles, are skipped with a warning in the log and on the page. Only roles the editor could give out themselves can be added. Not done: naming the role in the level-up post and `/xp`, and re-syncing a member who rejoins before their next level-up or sweep.
+
 Auto-assign roles at configurable hour thresholds ("Regular" at 50h, "No-Lifer" at 500h). Config lives in the dashboard (see §4.1), the bot enforces on a schedule. This is one of the most-requested features in activity-bot ecosystems, and it drives users to check their progress on your dashboard.
 
 ### 3.3 Personal stats slash command 🟢 — ✅ done (2026-10-10)
@@ -117,7 +119,7 @@ Pick two members (or two channels, or two time periods) and see stats side by si
 
 If you want to go full engagement loop: XP from voice minutes + messages, levels, seasonal leaderboards that reset monthly with end-of-season awards, badges for achievements (streaks, milestones, "night owl", "channel hopper"). This is a big system (new tables, balancing, anti-idle-farming rules like ignoring muted-alone-in-channel time — which you can already detect from your voice types!) but it's the proven retention model of MEE6/Arcane-style bots, and your data quality is better than theirs.
 
-> Partly done (2026-11-10): XP from voice (crowd, deafened, stay and camera multipliers), messages, streaks, rock-paper-scissors and tic-tac-toe wins and trivia, plus starter, reconnect, welcome, milestone and weekly top-3 bonuses; levels, `/xp`, an XP leaderboard, level-up posts, an XP chart on each recent session, and the rules tunable on `/admin`. Still open: seasons and monthly resets, badges and achievements, level roles (3.2).
+> Partly done (2026-11-10): XP from voice (crowd, deafened, stay and camera multipliers), messages, streaks, rock-paper-scissors and tic-tac-toe wins and trivia, plus starter, reconnect, welcome, milestone and weekly top-3 bonuses; levels, `/xp`, an XP leaderboard, level-up posts, an XP chart on each recent session, and the rules tunable on `/admin`. Level roles (3.2) followed on 2026-11-22. Still open: seasons and monthly resets, badges and achievements.
 
 Anti-farm note: you're uniquely positioned here — most XP bots can't tell AFK-in-channel from real activity. You track mute/deafen/alone states, so your XP can require *actual participation*. That's a genuine differentiator worth marketing.
 

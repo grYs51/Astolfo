@@ -23,6 +23,7 @@ export interface Db {
   settingsChanges: PrismaClient['guild_settings_changes'];
   xpEvents: PrismaClient['xp_events'];
   xpRules: PrismaClient['xp_rules'];
+  levelRoles: PrismaClient['level_roles'];
 }
 
 export let currentClient: PrismaClient;
@@ -80,6 +81,7 @@ export function getDb(): Db {
     settingsChanges: currentClient.guild_settings_changes,
     xpEvents: currentClient.xp_events,
     xpRules: currentClient.xp_rules,
+    levelRoles: currentClient.level_roles,
   };
 }
 
