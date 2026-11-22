@@ -2,11 +2,13 @@ import { awardAndAnnounce } from './level-up';
 import { grantXp, totalXp } from './grant';
 import { isRecalculating } from './recalculate';
 import { postLevelUp } from './announce';
+import { syncMemberLevelRoles } from './level-roles';
 import { Logger } from '../utils/logger';
 
 jest.mock('./grant', () => ({ grantXp: jest.fn(), totalXp: jest.fn() }));
 jest.mock('./recalculate', () => ({ isRecalculating: jest.fn(() => false), xpLookups: () => ({ isBot: () => false }) }));
 jest.mock('./announce', () => ({ postLevelUp: jest.fn(async () => undefined) }));
+jest.mock('./level-roles', () => ({ syncMemberLevelRoles: jest.fn(async () => undefined) }));
 jest.mock('../utils/logger', () => ({ Logger: { warn: jest.fn(), error: jest.fn(), info: jest.fn() } }));
 
 const grant = grantXp as jest.Mock;
@@ -50,12 +52,21 @@ test('a checkpoint graded down (the session closed earlier than it) posts nothin
   expect(post).not.toHaveBeenCalled();
 });
 
-test('nothing posts without a channel, but the XP is granted', async () => {
+test('nothing posts without a channel, but the XP is granted and the level roles follow', async () => {
   grant.mockResolvedValue({ rows: 1, xp: 2 });
   total.mockResolvedValue(1001);
-  await awardAndAnnounce(clientWith(null), 'g', 'm', ['MESSAGE']);
+  const client = clientWith(null);
+  await awardAndAnnounce(client, 'g', 'm', ['MESSAGE']);
   expect(grant).toHaveBeenCalled();
   expect(post).not.toHaveBeenCalled();
+  expect(syncMemberLevelRoles).toHaveBeenCalledWith(client, 'g', 'm', 5);
+});
+
+test('XP that stays inside a level leaves the roles alone', async () => {
+  grant.mockResolvedValue({ rows: 1, xp: 2 });
+  total.mockResolvedValue(1003);
+  await awardAndAnnounce(clientWith('levels'), 'g', 'm', ['MESSAGE']);
+  expect(syncMemberLevelRoles).not.toHaveBeenCalled();
 });
 
 test('nothing is granted or posted while the guild is recalculating', async () => {

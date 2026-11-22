@@ -5,8 +5,10 @@ import {
   NewsChannel,
   PermissionFlagsBits,
   RESTJSONErrorCodes,
+  Role,
   TextChannel,
 } from 'discord.js';
+import type { SettingsRole } from '@nx-stolfo/api-interfaces';
 import { client } from '../../client/instance';
 import { Logger } from '../../utils/logger';
 import { ServiceUnavailable } from './http-errors';
@@ -59,6 +61,13 @@ export interface DiscordDirectory {
   memberIds(guildId: string): Promise<string[]>;
   /** Text and announcement channels both the bot and the viewer can post in */
   postableChannels(guildId: string, viewerId: string): Promise<ChannelInfo[]>;
+  /** Roles that can be handed out (not @everyone, bot or integration roles), highest first */
+  roles(guildId: string, viewerId: string): Promise<SettingsRole[]>;
+  /** The viewer is the owner or has Manage Roles; the bot has Manage Roles */
+  canCreateRoles(guildId: string, viewerId: string): Promise<{ viewer: boolean; bot: boolean }>;
+  /** A role without permissions at the bottom of the list (below the bot's), so the bot can hand it out; its id */
+  createRole(guildId: string, role: { name: string; color: string | null }, reason: string): Promise<string>;
+  deleteRole(guildId: string, roleId: string, reason: string): Promise<void>;
 }
 
 // Only "Unknown Member" means not a member. A 429, 5xx or timeout must not
@@ -182,6 +191,52 @@ const live: DiscordDirectory = {
       .sort((a, b) => a.rawPosition - b.rawPosition)
       .map((c) => ({ id: c.id, name: c.name, type: ChannelType[c.type] }));
   },
+
+  async roles(guildId, viewerId) {
+    const guild = client.guilds.cache.get(guildId);
+    const viewer = await findMember(guildId, viewerId);
+    if (!guild || !viewer) return [];
+    // Role.editable reads the bot's member from the cache
+    if (!guild.members.me) await guild.members.fetchMe();
+    // Discord's own rule: Manage Roles and a highest role above it, or the owner
+    const viewerCanAssign = (role: Role) =>
+      guild.ownerId === viewer.id ||
+      (viewer.permissions.has(PermissionFlagsBits.ManageRoles) && viewer.roles.highest.comparePositionTo(role) > 0);
+    return [...guild.roles.cache.values()]
+      .filter((r) => r.id !== guild.id && !r.managed)
+      .sort((a, b) => b.comparePositionTo(a))
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.colors.primaryColor ? r.hexColor : null,
+        position: r.position,
+        botCanAssign: r.editable,
+        viewerCanAssign: viewerCanAssign(r),
+      }));
+  },
+
+  async canCreateRoles(guildId, viewerId) {
+    const guild = client.guilds.cache.get(guildId);
+    const viewer = await findMember(guildId, viewerId);
+    if (!guild || !viewer) return { viewer: false, bot: false };
+    const me = guild.members.me ?? (await guild.members.fetchMe());
+    return {
+      viewer: guild.ownerId === viewer.id || viewer.permissions.has(PermissionFlagsBits.ManageRoles),
+      bot: me.permissions.has(PermissionFlagsBits.ManageRoles),
+    };
+  },
+
+  async createRole(guildId, { name, color }, reason) {
+    const guild = client.guilds.cache.get(guildId);
+    if (!guild) throw new ServiceUnavailable('The bot is not in that server');
+    // No permissions: a reward is a name and a colour, never access
+    const role = await guild.roles.create({ name, colors: { primaryColor: color ? parseInt(color.slice(1), 16) : 0 }, permissions: [], reason });
+    return role.id;
+  },
+
+  async deleteRole(guildId, roleId, reason) {
+    await client.guilds.cache.get(guildId)?.roles.delete(roleId, reason);
+  },
 };
 
 const mock: DiscordDirectory = {
@@ -235,6 +290,29 @@ const mock: DiscordDirectory = {
 
   async postableChannels(guildId) {
     return findMockGuild(guildId)?.textChannels ?? [];
+  },
+
+  async roles(guildId, viewerId) {
+    const guild = findMockGuild(guildId);
+    return (guild?.roles ?? []).map((r) => ({ ...r, viewerCanAssign: !!guild?.managers.includes(viewerId) }));
+  },
+
+  async canCreateRoles(guildId, viewerId) {
+    const guild = findMockGuild(guildId);
+    return { viewer: !!guild?.managers.includes(viewerId), bot: !!guild };
+  },
+
+  async createRole(guildId, { name, color }) {
+    const guild = findMockGuild(guildId);
+    if (!guild) throw new ServiceUnavailable('No such mock server');
+    const id = `9${Date.now()}${guild.roles.length}`;
+    guild.roles.push({ id, name, color, position: 0, botCanAssign: true });
+    return id;
+  },
+
+  async deleteRole(guildId, roleId) {
+    const guild = findMockGuild(guildId);
+    if (guild) guild.roles = guild.roles.filter((r) => r.id !== roleId);
   },
 };
 

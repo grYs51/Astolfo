@@ -82,12 +82,18 @@ export class GuildSettingsHistoryComponent {
     () => new Map(this.settings().toggles.map((t) => [`toggle:${t.key}`, t.label]))
   );
 
+  private roleNames = computed(() => new Map(this.settings().roles.map((r) => [`levelRole:${r.id}`, r.name])));
+
   protected label(field: string) {
-    return LABELS[field] ?? this.toggleLabels().get(field) ?? field;
+    if (field.startsWith('createdRole:')) return 'Created role';
+    const role = field.startsWith('levelRole:') && (this.roleNames().get(field) ?? 'a role');
+    return LABELS[field] ?? this.toggleLabels().get(field) ?? (role ? `Level role @${role}` : field);
   }
 
   protected show(change: SettingChange, value: SettingChange['from']) {
     if (typeof value === 'boolean') return value ? 'on' : 'off';
+    if (change.field.startsWith('levelRole:')) return value === null ? 'none' : `level ${value}`;
+    if (change.field.startsWith('createdRole:')) return value === null ? 'none' : `@${value}`;
     if (change.field.endsWith('ChannelId')) {
       if (value === null) return 'none';
       // Only channels the viewer can see get a name

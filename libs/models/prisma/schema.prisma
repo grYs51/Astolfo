@@ -172,6 +172,15 @@ model guild_settings_changes {
   @@index([guild_id, at])
 }
 
+/// Level role rewards: a member holds every role whose level is at or below theirs
+model level_roles {
+  guild_id String @db.VarChar
+  role_id  String @db.VarChar
+  level    Int
+
+  @@id([guild_id, role_id])
+}
+
 /// Dashboard page views: the route pattern (never the URL), per user and UTC day
 model page_views {
   day     DateTime @db.Date

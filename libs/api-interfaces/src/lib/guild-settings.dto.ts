@@ -15,6 +15,28 @@ export interface SettingsChannel {
   postable: boolean;
 }
 
+/** A level role reward: members at `level` or above hold the role */
+export interface LevelRole {
+  level: number;
+  /** '' while `newRole` is set */
+  roleId: string;
+  /** PUT only: create this role on save and reward it (needs `canCreateRoles`) */
+  newRole?: { name: string; color: string | null };
+}
+
+/** A server role the level role pickers offer */
+export interface SettingsRole {
+  id: string;
+  name: string;
+  /** `#rrggbb`; null when the role has no colour */
+  color: string | null;
+  position: number;
+  /** The bot can hand it out: it has Manage Roles and its highest role is above this one */
+  botCanAssign: boolean;
+  /** The viewer could hand it out themselves, so they may add it as a reward */
+  viewerCanAssign: boolean;
+}
+
 /**
  * GET/PUT /features/servers/:serverId/settings (Manage Server only). PUT takes
  * the whole object and returns it saved; it ignores `channels` and labels.
@@ -31,13 +53,20 @@ export interface GuildSettings {
   digestChannelId: string | null;
   /** Level-up posts; null = off */
   levelUpChannelId: string | null;
+  /** Level role rewards, lowest level first; only handed out while the LEVEL_ROLES toggle is on (kept while off) */
+  levelRoles: LevelRole[];
   /** Channels the bot can post in and the viewer can see, plus the stored ones */
   channels: SettingsChannel[];
+  /** The server's roles, highest first (ignored by PUT) */
+  roles: SettingsRole[];
+  /** Who may create a reward role on save: the viewer (owner or Manage Roles) and the bot (Manage Roles) */
+  canCreateRoles: { viewer: boolean; bot: boolean };
 }
 
 /**
- * One changed setting: `field` is a GuildSettings key (`prefix`, `welcomeChannelId`, …) or
- * `toggle:<key>`. A type, not an interface, so Prisma accepts it as JSON.
+ * One changed setting: `field` is a GuildSettings key (`prefix`, `welcomeChannelId`, …),
+ * `toggle:<key>`, `levelRole:<roleId>` (from/to: the level as a string, null = not a reward) or
+ * `createdRole:<roleId>` (to: the new role's name). A type, not an interface, so Prisma accepts it as JSON.
  */
 export type SettingChange = {
   field: string;
