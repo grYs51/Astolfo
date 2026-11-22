@@ -384,6 +384,12 @@ const main = async () => {
             activeMembers: 14,
             topVoice: [0, 1, 2].map((i) => ({ memberId: `${i}`, ms: 90_000_000 - i * 20_000_000 })),
             topMessages: [3, 4, 5].map((i) => ({ memberId: `${i}`, count: 900 - i * 100 })),
+            topXp: [
+              // The longest name next to the longest value
+              { memberId: '1', xp: 12_480, levelsGained: 13 },
+              { memberId: '3', xp: 9_215, levelsGained: 1 },
+              { memberId: '0', xp: 1_240, levelsGained: 0 },
+            ],
             bestDuo: { a: '0', b: '1', togetherMs: 52_000_000 },
             busiestDay: { day: new Date('2026-11-06T00:00:00Z'), ms: 96_000_000 },
             topStreaks: [6, 0, 7].map((i, rank) => ({ memberId: `${i}`, days: 21 - rank * 6 })),

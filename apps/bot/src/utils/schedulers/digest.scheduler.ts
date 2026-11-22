@@ -62,6 +62,7 @@ export const buildLatestDigest = async (
   const members = await cardMembers(guild, [
     ...digest.topVoice.map((m) => m.memberId),
     ...digest.topMessages.map((m) => m.memberId),
+    ...digest.topXp.map((m) => m.memberId),
     ...digest.topStreaks.map((m) => m.memberId),
     ...digest.milestones.map((m) => m.memberId),
     ...(digest.bestDuo ? [digest.bestDuo.a, digest.bestDuo.b] : []),

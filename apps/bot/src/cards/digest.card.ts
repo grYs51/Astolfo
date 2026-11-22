@@ -19,6 +19,8 @@ export interface DigestCardData {
 interface ListRow {
   memberId: string;
   value: string;
+  /** A muted second line under the value */
+  sub?: string;
 }
 
 /** A titled list of members; ranked lists show 1, 2, 3 in front */
@@ -34,6 +36,13 @@ const LABEL_H = 28;
 const THIRD_W = (W - 2 * PAD - 2 * GAP) / 3;
 
 const dayMonth = (date: Date) => date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', timeZone: 'UTC' });
+
+/** `+1,240 XP` over `+2 lv` (stacked: on one line it overlaps a 16-character name); no level line when none was gained */
+const xpRow = (m: ServerDigest['topXp'][number]): ListRow => ({
+  memberId: m.memberId,
+  value: `+${Math.round(m.xp).toLocaleString('en-GB')} XP`,
+  sub: m.levelsGained > 0 ? `+${m.levelsGained} lv` : undefined,
+});
 
 /** A titled panel of ranked members; its height is listHeight(rows) */
 const listHeight = (rows: ListRow[]) => (rows.length ? LABEL_H + rows.length * ROW_H + 16 : 0);
@@ -52,13 +61,14 @@ const list = (key: string, x: number, y: number, { title, rows, ranked }: Sectio
         ranked ? text(x + 26, rowY + ROW_H / 2, 16, i < 3 ? t.accent : t.muted, `${i + 1}`, 'dy="0.35em" text-anchor="middle" font-weight="700"') : '',
         avatarSvg({ id: `${key}${i}`, x: nameX - 44, y: rowY + 6, size: 32, name: m.name, image: m.avatar, theme: t }),
         text(nameX, rowY + ROW_H / 2, 16, t.text, escapeXml(truncate(m.name, ranked ? 16 : 19)), 'dy="0.35em" font-weight="700"'),
-        text(x + TILE_W - 20, rowY + ROW_H / 2, 15, t.text, escapeXml(r.value), 'dy="0.35em" text-anchor="end"'),
+        text(x + TILE_W - 20, rowY + ROW_H / 2 - (r.sub ? 8 : 0), 15, t.text, escapeXml(r.value), 'dy="0.35em" text-anchor="end"'),
+        r.sub ? text(x + TILE_W - 20, rowY + ROW_H / 2 + 10, 13, t.muted, escapeXml(r.sub), 'dy="0.35em" text-anchor="end"') : '',
       ].join('');
     }),
   ].join('');
 };
 
-/** The weekly digest: totals, leaders, duo, streaks, milestones and the busiest day */
+/** The weekly digest: totals, leaders, XP, duo, streaks, milestones and the busiest day */
 export const digestCard = (d: DigestCardData, t: CardTheme) => {
   const g = d.digest;
   const weekEnd = new Date(d.weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
@@ -90,9 +100,14 @@ export const digestCard = (d: DigestCardData, t: CardTheme) => {
       right: { title: 'Most messages', ranked: true, rows: g.topMessages.map((m) => ({ memberId: m.memberId, value: m.count.toLocaleString('en-GB') })) },
     },
     {
-      key: 'streaks',
-      left: { title: 'Longest voice streaks', ranked: true, rows: g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })) },
-      right: { title: 'Milestones reached', ranked: false, rows: g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })) },
+      key: 'xp',
+      left: { title: 'Top XP earners', ranked: true, rows: g.topXp.map(xpRow) },
+      right: { title: 'Longest voice streaks', ranked: true, rows: g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })) },
+    },
+    {
+      key: 'milestones',
+      left: { title: 'Milestones reached', ranked: false, rows: g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })) },
+      right: { title: '', ranked: false, rows: [] },
     },
   ];
   for (const pair of pairs) {

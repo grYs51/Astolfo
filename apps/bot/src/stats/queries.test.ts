@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { getDuo, getMemberSummary, getMemberWrapped, personaFor, WRAPPED_XP_GROUPS, yearWindow } from './queries';
+import { getDuo, getMemberSummary, getMemberWrapped, getServerDigest, personaFor, WRAPPED_XP_GROUPS, yearWindow } from './queries';
 import { DEFAULT_RULES, levelFor } from '../xp/rules';
 
 // No test database in this repo: the SQL was checked once against the dev database
@@ -57,6 +57,35 @@ describe('getMemberSummary', () => {
       .find((q) => /FROM message_stats/.test(q.sql) && /WITH totals/.test(q.sql));
     expect(messageRank?.sql).toMatch(/COUNT\(\*\) AS total/);
     expect(messageRank?.sql).toMatch(/created_at >= /);
+  });
+});
+
+describe('getServerDigest top XP', () => {
+  const week = { from: new Date('2026-11-09T00:00:00Z'), to: new Date('2026-11-16T00:00:00Z') };
+  const previous = { from: new Date('2026-11-02T00:00:00Z'), to: week.from };
+  // The XP query's rows come back already ranked by the SQL
+  const xpRows = [
+    { member_id: 'a', before: 200, gained: 800 }, // level 1 → 5 (1,000 XP)
+    { member_id: 'b', before: 0, gained: 300 }, // level 0 → 2
+    { member_id: 'c', before: 260, gained: 100 }, // stays level 2
+  ];
+  const queryRaw = jest.fn((strings: TemplateStringsArray, ...values: unknown[]) =>
+    Promise.resolve(
+      /FROM xp_events/.test(Prisma.sql(strings, ...values).sql) ? xpRows : [{ total: 0n, sessions: 0n, count: 0n, members: 0n }]
+    )
+  );
+
+  test('top 3 by XP dated in the week, with the levels each went up', async () => {
+    const digest = await getServerDigest({ $queryRaw: queryRaw } as never, 'g', week, previous);
+    expect(digest.topXp).toEqual([
+      { memberId: 'a', xp: 800, levelsGained: 4 },
+      { memberId: 'b', xp: 300, levelsGained: 2 },
+      { memberId: 'c', xp: 100, levelsGained: 0 },
+    ]);
+
+    const xp = queryRaw.mock.calls.map(([strings, ...values]) => Prisma.sql(strings, ...values)).find((q) => /FROM xp_events/.test(q.sql));
+    expect(xp?.sql).toMatch(/ORDER BY gained DESC, member_id\s+LIMIT 3/);
+    expect(xp?.values).toEqual(expect.arrayContaining(['g', week.from, week.to]));
   });
 });
 
