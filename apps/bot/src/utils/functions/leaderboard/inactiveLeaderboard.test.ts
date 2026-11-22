@@ -1,6 +1,6 @@
 import { voice_stats } from '@prisma/client';
 import { getInactiveLeaderboard } from './inactiveLeaderboard';
-import { getLonerLeaderboard } from './lonerLeaderboard';
+import { getLonerLeaderboard, getLonerVoiceStats } from './lonerLeaderboard';
 import { ClosedVoiceStat, getOpenVoiceStats, unionDuration } from './intervals';
 import { SimpleGuildMember } from './leaderboard';
 import { VOICE_TYPE } from '../../handlers/vc';
@@ -133,5 +133,31 @@ describe('getOpenVoiceStats', () => {
     const [open] = getOpenVoiceStats(client, '1', [VOICE_TYPE.VOICE], fromTime);
 
     expect(open.issued_on).toEqual(fromTime);
+  });
+});
+
+describe('getLonerVoiceStats', () => {
+  test('a companion who joined before the cutoff still counts as company', async () => {
+    // B 23:30-01:40 keeps A company from 00:10; A is alone 01:40-01:45 only
+    const fromTime = new Date('2024-12-25T00:00:00');
+    const rows = [
+      stat('2', VOICE_TYPE.VOICE, '2024-12-24T23:30:00', '2024-12-25T01:40:00'),
+      stat('1', VOICE_TYPE.VOICE, '2024-12-25T00:10:00', '2024-12-25T01:45:00'),
+    ];
+    const findMany = jest.fn(async ({ where }) =>
+      rows.filter((row) => row.ended_on > where.ended_on.gt)
+    );
+    const client = {
+      dataSource: { voiceStats: { findMany } },
+      voiceUsers: new Map(),
+    } as unknown as DiscordClient;
+
+    const stats = await getLonerVoiceStats(client, '1', fromTime);
+    const leaderboard = getLonerLeaderboard([memberOne, memberTwo], stats);
+
+    expect(leaderboard).toEqual([
+      { id: '2', name: 'user 2', count: 10 * 60 * 1000 },
+      { id: '1', name: 'user 1', count: 5 * 60 * 1000 },
+    ]);
   });
 });
