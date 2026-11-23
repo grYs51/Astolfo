@@ -7,7 +7,6 @@ import {
   input,
   linkedSignal,
   PLATFORM_ID,
-  signal,
 } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
 import { UrlTree } from '@angular/router';
@@ -135,8 +134,8 @@ export class MemberActivityComponent {
 
   private readonly durationPipe = new HumanizeDurationPipe();
 
-  /** The XP history section starts closed on every visit */
-  protected xpHistoryOpen = signal(false);
+  /** The XP history section starts closed on every visit, and again on each member (the page is reused across profiles) */
+  protected xpHistoryOpen = linkedSignal({ source: () => this.stats()?.userId, computation: () => false });
   /** Undefined until first opened; then follows the page period while open, and keeps the last one while closed */
   private xpHistoryPeriod = linkedSignal<{ open: boolean; period: DashboardPeriod }, DashboardPeriod | undefined>({
     source: () => ({ open: this.xpHistoryOpen(), period: this.period() }),
