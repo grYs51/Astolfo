@@ -68,6 +68,6 @@ export const getXpHistory: RequestHandler<{ serverId: string; userId: string }, 
       granularity,
     });
     const endXp = points[points.length - 1]?.total ?? startXp;
-    res.send({ granularity, startXp, points, levels: levelLines(startXp, endXp, currentRules()) });
+    res.send({ granularity, startXp, endXp, points, levels: levelLines(startXp, endXp, currentRules()) });
   }
 );

@@ -23,9 +23,8 @@ export class XpHistoryChartComponent {
   protected option = computed(() => historyChartOption(this.history()));
   // The chart is a picture; this says what it shows
   protected label = computed(() => {
-    const { startXp, points, levels } = this.history();
-    const end = points[points.length - 1]?.total ?? startXp;
+    const { startXp, endXp, levels } = this.history();
     const reached = levels.length ? `, reaching ${levels.map((l) => `level ${l.level}`).join(', ')}` : '';
-    return `XP over the period, from ${startXp.toLocaleString('en-GB')} to ${end.toLocaleString('en-GB')}${reached}`;
+    return `XP over the period, from ${startXp.toLocaleString('en-GB')} to ${endXp.toLocaleString('en-GB')}${reached}`;
   });
 }

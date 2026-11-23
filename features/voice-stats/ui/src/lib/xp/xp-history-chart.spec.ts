@@ -4,6 +4,7 @@ import { historyChartOption, levelLineData, pointLabel } from './xp-history-char
 const history = (patch: Partial<XpHistory> = {}): XpHistory => ({
   granularity: 'day',
   startXp: 2400,
+  endXp: 3740,
   points: [
     { date: '2026-11-11', gained: 0, total: 2400 },
     { date: '2026-11-12', gained: 1340, total: 3740 },
@@ -30,12 +31,14 @@ describe('xp history chart', () => {
     // 0 to 1,200 XP: a label needs 100 XP of room
     const lines = levelLineData(history({
       startXp: 0,
+      endXp: 1200,
       points: [{ date: '2026-11-12', gained: 1200, total: 1200 }],
       levels: [{ level: 1, xp: 100 }, { level: 2, xp: 250 }, { level: 3, xp: 450 }, { level: 4, xp: 700 }, { level: 5, xp: 1000 }],
     }));
     expect(lines.map((l) => [l.name, l.label.show])).toEqual([['Lv 1', true], ['Lv 2', true], ['Lv 3', true], ['Lv 4', true], ['Lv 5', true]]);
     const crowded = levelLineData(history({
       startXp: 0,
+      endXp: 2400,
       points: [{ date: '2026-11-12', gained: 2400, total: 2400 }],
       levels: [{ level: 1, xp: 100 }, { level: 2, xp: 250 }, { level: 3, xp: 450 }, { level: 4, xp: 700 }],
     }));
@@ -44,7 +47,7 @@ describe('xp history chart', () => {
   });
 
   it('a flat line still gets a range', () => {
-    const option = historyChartOption(history({ points: [{ date: '2026-11-12', gained: 0, total: 2400 }], levels: [] }));
+    const option = historyChartOption(history({ endXp: 2400, points: [{ date: '2026-11-12', gained: 0, total: 2400 }], levels: [] }));
     expect(option.yAxis.max({ max: 2400 })).toBe(2401);
   });
 });

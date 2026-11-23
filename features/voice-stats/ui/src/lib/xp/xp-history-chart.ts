@@ -18,8 +18,7 @@ const LABEL_GAP = 1 / 12;
 
 /** The level lines, top down, each labelled only when it's far enough below the last label shown */
 export const levelLineData = (history: XpHistory) => {
-  const end = history.points[history.points.length - 1]?.total ?? history.startXp;
-  const gap = (end - history.startXp) * LABEL_GAP;
+  const gap = (history.endXp - history.startXp) * LABEL_GAP;
   return history.levels
     .reduceRight<{ lines: { name: string; yAxis: number; label: { show: boolean } }[]; lastShown: number }>(
       ({ lines, lastShown }, l) => {
