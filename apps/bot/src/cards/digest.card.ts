@@ -40,7 +40,7 @@ const dayMonth = (date: Date) => date.toLocaleDateString('en-GB', { day: 'numeri
 /** `+1,240 XP` over `+2 lv` (stacked: on one line it overlaps a 16-character name); no level line when none was gained */
 const xpRow = (m: ServerDigest['topXp'][number]): ListRow => ({
   memberId: m.memberId,
-  value: `+${Math.round(m.xp).toLocaleString('en-GB')} XP`,
+  value: `+${m.xp.toLocaleString('en-GB')} XP`,
   sub: m.levelsGained > 0 ? `+${m.levelsGained} lv` : undefined,
 });
 
@@ -93,31 +93,18 @@ export const digestCard = (d: DigestCardData, t: CardTheme) => {
   y += TILE_H + 24;
 
   const right = PAD + TILE_W + GAP;
-  const pairs: { key: string; left: Section; right: Section }[] = [
-    {
-      key: 'leaders',
-      left: { title: 'Most time in voice', ranked: true, rows: g.topVoice.map((m) => ({ memberId: m.memberId, value: formatDuration(m.ms) })) },
-      right: { title: 'Most messages', ranked: true, rows: g.topMessages.map((m) => ({ memberId: m.memberId, value: m.count.toLocaleString('en-GB') })) },
-    },
-    {
-      key: 'xp',
-      left: { title: 'Top XP earners', ranked: true, rows: g.topXp.map(xpRow) },
-      right: { title: 'Longest voice streaks', ranked: true, rows: g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })) },
-    },
-    {
-      key: 'milestones',
-      left: { title: 'Milestones reached', ranked: false, rows: g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })) },
-      right: { title: '', ranked: false, rows: [] },
-    },
-  ];
-  for (const pair of pairs) {
-    const h = Math.max(listHeight(pair.left.rows), listHeight(pair.right.rows));
-    if (!h) continue;
-    parts.push(
-      list(`${pair.key}L`, PAD, y, pair.left, d, t),
-      list(`${pair.key}R`, pair.left.rows.length ? right : PAD, y, pair.right, d, t)
-    );
-    y += h + GAP;
+  // Non-empty sections, two per row, so an empty one leaves no gap
+  const sections: Section[] = [
+    { title: 'Most time in voice', ranked: true, rows: g.topVoice.map((m) => ({ memberId: m.memberId, value: formatDuration(m.ms) })) },
+    { title: 'Most messages', ranked: true, rows: g.topMessages.map((m) => ({ memberId: m.memberId, value: m.count.toLocaleString('en-GB') })) },
+    { title: 'Top XP earners', ranked: true, rows: g.topXp.map(xpRow) },
+    { title: 'Longest voice streaks', ranked: true, rows: g.topStreaks.map((m) => ({ memberId: m.memberId, value: plural(m.days, 'day') })) },
+    { title: 'Milestones reached', ranked: false, rows: g.milestones.map((m) => ({ memberId: m.memberId, value: `passed ${m.hours}h` })) },
+  ].filter((s) => s.rows.length);
+  for (let i = 0; i < sections.length; i += 2) {
+    const [left, second] = sections.slice(i, i + 2);
+    parts.push(list(`s${i}`, PAD, y, left, d, t), second ? list(`s${i + 1}`, right, y, second, d, t) : '');
+    y += Math.max(listHeight(left.rows), second ? listHeight(second.rows) : 0) + GAP;
   }
 
   if (g.bestDuo) {

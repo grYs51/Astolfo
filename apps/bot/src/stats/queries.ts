@@ -502,7 +502,8 @@ export const getServerDigest = async (
         ORDER BY count DESC
         LIMIT 3
       `,
-      // XP dated in the window, and each earner's total before it for the levels gained
+      // XP dated in the window, and each earner's total before it for the levels gained.
+      // Voice XP is dated when the session ends, so a Sunday-night call counts in the next week (unlike Most time in voice)
       db.$queryRaw<{ member_id: string; before: number; gained: number }[]>`
         SELECT member_id,
           COALESCE(SUM(amount) FILTER (WHERE created_at < ${window.from}), 0)::float8 AS before,
