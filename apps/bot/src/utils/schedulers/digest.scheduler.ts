@@ -151,15 +151,16 @@ export function startDigestScheduler(client: DiscordClient) {
   if (started) return;
   started = true;
 
+  // The XP sweep shares the tick and runs first: the first run after a start is also the backfill,
+  // and the digest's Top XP reads the ledger, so XP missed during downtime must be in before it posts
   const run = () =>
-    runDueDigests(client)
+    sweepXp(client)
+      .catch((error) => Logger.error('XP sweep failed', error))
+      .then(() => runDueDigests(client))
       .then((posted) => {
         if (posted.length) Logger.info(`Weekly digest posted to ${posted.length} server(s)`);
       })
-      .catch((error) => Logger.error('Weekly digest run failed', error))
-      // The XP sweep shares the tick: the first run after a start is also the backfill
-      .then(() => sweepXp(client))
-      .catch((error) => Logger.error('XP sweep failed', error));
+      .catch((error) => Logger.error('Weekly digest run failed', error));
 
   // Hourly at :05, plus once now to catch up after downtime
   schedule.scheduleJob('5 * * * *', run);

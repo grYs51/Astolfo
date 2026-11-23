@@ -63,6 +63,12 @@ describe('digestCard', () => {
     }
   });
 
+  it('moves the next section up into an empty slot, so rows stay paired', () => {
+    const height = (overrides: Partial<ServerDigest>) => digestCard(data({ digest: digest(overrides) }), THEMES.dark).match(/height="(\d+)"/)?.[1];
+    // Without XP, milestones sits next to streaks instead of on a row of its own
+    expect(height({ topXp: [] })).toBe(height({ topXp: [], milestones: [] }));
+  });
+
   it('renders to a PNG', async () => {
     const png = await renderPng(digestCard(data(), THEMES.stolfo));
     expect(png.length).toBeGreaterThan(1000);
