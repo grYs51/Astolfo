@@ -23,6 +23,7 @@ jest.mock('../api/utils/discord-directory', () => ({
     isMember: async (_guildId: string, id: string) => id !== 'stranger',
     guild: () => ({ name: 'Paladins', icon: null }),
     botIds: () => ['music-bot'],
+    memberIds: async () => ['me', 'kai'],
   }),
 }));
 
@@ -50,7 +51,7 @@ test('draws the summary with names from the Discord directory', async () => {
   const svg = await statsCardSvg({ db: {} as never, guildId: 'g', memberId: 'me', viewerId: 'viewer', period: 'all', theme: THEMES.dark });
 
   expect(getMemberSummary).toHaveBeenCalledWith({}, 'g', 'me', 'all', ['music-bot']);
-  expect(getXpNeighbours).toHaveBeenCalledWith({}, 'g', 'me');
+  expect(getXpNeighbours).toHaveBeenCalledWith({}, 'g', 'me', ['me', 'kai']);
   for (const text of ['Astolfo', 'Paladins', 'roland-user', 'Unknown member', 'Hangs out most with', 'Level ranking · #2 of 2', 'kai-user']) {
     expect(svg).toContain(text);
   }

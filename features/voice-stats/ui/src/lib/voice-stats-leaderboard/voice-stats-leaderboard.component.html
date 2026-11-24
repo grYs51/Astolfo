@@ -48,9 +48,9 @@
         @if (row.isNew) {
           <span class="rounded bg-primary-500/15 px-1 text-[10px] uppercase text-primary-300">new</span>
         } @else if (row.rankChange > 0) {
-          <span class="text-success" [attr.aria-label]="'up ' + row.rankChange">▲{{ row.rankChange }}</span>
+          <span class="text-success"><span aria-hidden="true">▲{{ row.rankChange }}</span><span class="sr-only">up {{ row.rankChange }}</span></span>
         } @else if (row.rankChange < 0) {
-          <span class="text-error" [attr.aria-label]="'down ' + -row.rankChange">▼{{ -row.rankChange }}</span>
+          <span class="text-error"><span aria-hidden="true">▼{{ -row.rankChange }}</span><span class="sr-only">down {{ -row.rankChange }}</span></span>
         }
       </span>
     }

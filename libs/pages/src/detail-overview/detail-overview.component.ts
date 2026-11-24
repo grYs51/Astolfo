@@ -335,6 +335,8 @@ export class DetailOverviewComponent {
     const pinned = me && !leaderboard.some((entry) => entry.member.id === me.member.id) ? [me] : [];
     return [...leaderboard, ...pinned].map(row);
   });
+  /** The page's own rows; past them the viewer is pinned, even on a short last page */
+  xpLimit = computed(() => (this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value().leaderboard.length : 25));
 
   // ── "Server" fun facts (replaces the activity-type donut) ────────────────
   funFacts = computed(() => {

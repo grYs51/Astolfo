@@ -35,7 +35,10 @@ export const statsCardSvg = async (opts: {
     getMemberSummary(db, guildId, memberId, period, directory.botIds(guildId)),
     sections.includes('habits') ? getMemberHabits(db, guildId, memberId, period) : undefined,
     withOnline ? getMemberOnline(db, memberId, period) : undefined,
-    sections.includes('totals') ? getXpNeighbours(db, guildId, memberId) : [],
+    // Current members only, like the dashboard's level leaderboard
+    sections.includes('totals')
+      ? directory.memberIds(guildId).then((ids) => getXpNeighbours(db, guildId, memberId, ids))
+      : [],
     sections.includes('calendar') ? activityCalendar(db, guildId, memberId, tz) : undefined,
     sections.includes('heatmap')
       ? db.$queryRaw<{ hour: number; day_of_week: number; total_minutes: number }[]>(

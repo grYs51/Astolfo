@@ -278,7 +278,7 @@
       <feature-voice-stats-leaderboard
         title="Levels"
         [rows]="xpRows()"
-        [limit]="25"
+        [limit]="xpLimit()"
         [loading]="xpLeaderboardResource.isLoading()"
         [highlightId]="currentUser()?.id"
         [interactive]="true"
