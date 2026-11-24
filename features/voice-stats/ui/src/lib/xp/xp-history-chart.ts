@@ -54,7 +54,7 @@ export const historyChartOption = (history: XpHistory, names: [string, string] =
   const { lo } = xpRange(history);
   return {
     grid: { left: 8, right: 48, top: history.compare ? 36 : 16, bottom: 8, containLabel: true },
-    legend: { show: !!history.compare, top: 0, left: 0, textStyle: { color: '#d1d5db' }, inactiveColor: '#4b5563' },
+    legend: { show: !!history.compare, selectedMode: false, top: 0, left: 0, textStyle: { color: '#d1d5db' }, inactiveColor: '#4b5563' },
     tooltip: {
       trigger: 'axis',
       backgroundColor: '#1f2937',

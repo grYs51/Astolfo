@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, model } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, Injector, input, linkedSignal, model, viewChild } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
 import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
 import { DiscordMember, XpHistory, XpLevel, XpRival, XpRivals, XpSourceTotal } from '@nx-stolfo/data-access-voice-stats';
@@ -98,10 +98,11 @@ const ICONS: Record<XpTileKey, string[]> = {
                         <ng-container *ngTemplateOutlet="avatar; context: { $implicit: rival.member }" />
                         <span class="px-xs">Compared with <strong class="font-semibold text-gray-100">{{ memberName(rival.member) }}</strong></span>
                         <button
+                          #compareClear
                           type="button"
                           class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-base-100 hover:text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
                           [attr.aria-label]="'Stop comparing with ' + memberName(rival.member)"
-                          (click)="compare.set(undefined)"
+                          (click)="clearCompare()"
                         >
                           <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
                             <path d="M18 6 6 18M6 6l12 12" />
@@ -110,6 +111,7 @@ const ICONS: Record<XpTileKey, string[]> = {
                       </span>
                     } @else {
                       <button
+                        #compareToggle
                         type="button"
                         class="inline-flex items-center gap-xs rounded-lg border border-white/10 bg-base-200 px-sm py-xs text-sm text-gray-300 hover:text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
                         [attr.aria-expanded]="pickerOpen()"
@@ -134,7 +136,7 @@ const ICONS: Record<XpTileKey, string[]> = {
                                 type="button"
                                 class="flex w-full items-center gap-sm rounded-md px-sm py-xs text-left text-sm hover:bg-base-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
                                 (click)="pick(r)"
-                                (keydown.escape)="pickerOpen.set(false)"
+                                (keydown.escape)="closePicker()"
                               >
                                 <ng-container *ngTemplateOutlet="avatar; context: { $implicit: r.member }" />
                                 <span class="min-w-0 flex-1 truncate text-gray-100">{{ memberName(r.member) }}</span>
@@ -200,9 +202,28 @@ export class XpCardComponent {
   protected readonly signed = signedXp;
   protected memberName = (member: DiscordMember) => member.displayName || member.username;
 
+  private injector = inject(Injector);
+  private compareToggle = viewChild<ElementRef<HTMLButtonElement>>('compareToggle');
+  private compareClear = viewChild<ElementRef<HTMLButtonElement>>('compareClear');
+  /** Each picker action removes the focused element, so focus what replaces it or the browser drops focus to the top of the page */
+  private focusAfterRender(button: () => ElementRef<HTMLButtonElement> | undefined) {
+    afterNextRender(() => button()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   protected pick(rival: XpRival) {
     this.compare.set(rival);
     this.pickerOpen.set(false);
+    this.focusAfterRender(this.compareClear);
+  }
+
+  protected clearCompare() {
+    this.compare.set(undefined);
+    this.focusAfterRender(this.compareToggle);
+  }
+
+  protected closePicker() {
+    this.pickerOpen.set(false);
+    this.focusAfterRender(this.compareToggle);
   }
 
   protected readonly icons = ICONS;
