@@ -37,6 +37,7 @@ describe('xp history chart', () => {
     const option = historyChartOption(h, ['You', 'Mika']);
     expect(option.yAxis.min).toBe(1800);
     expect(option.legend.show).toBe(true);
+    expect(option.legend.selectedMode).toBe(false);
     expect(option.series.map((s) => [s.name, s.data])).toEqual([['You', [2400, 3740]], ['Mika', [1800, 4100]]]);
     expect(xpRange(h)).toEqual({ lo: 1800, hi: 4100 });
   });
