@@ -42,12 +42,17 @@
     (itemClick)="userClick.emit(row.member.id)"
     icon="🎤"
   >
-    @if (row.isNew) {
-      <span class="shrink-0 rounded bg-primary-500/15 px-1 text-[10px] font-semibold uppercase text-primary-300">new</span>
-    } @else if (row.rankChange > 0) {
-      <span class="shrink-0 text-xs font-semibold text-success" [attr.aria-label]="'up ' + row.rankChange">▲{{ row.rankChange }}</span>
-    } @else if (row.rankChange < 0) {
-      <span class="shrink-0 text-xs font-semibold text-error" [attr.aria-label]="'down ' + -row.rankChange">▼{{ -row.rankChange }}</span>
+    <!-- Fixed width, empty when unchanged, so every row's rank lines up -->
+    @if (row.rankChange !== undefined || row.isNew) {
+      <span class="-mr-xs w-9 shrink-0 text-right text-xs font-semibold tabular-nums">
+        @if (row.isNew) {
+          <span class="rounded bg-primary-500/15 px-1 text-[10px] uppercase text-primary-300">new</span>
+        } @else if (row.rankChange > 0) {
+          <span class="text-success" [attr.aria-label]="'up ' + row.rankChange">▲{{ row.rankChange }}</span>
+        } @else if (row.rankChange < 0) {
+          <span class="text-error" [attr.aria-label]="'down ' + -row.rankChange">▼{{ -row.rankChange }}</span>
+        }
+      </span>
     }
   </lib-leaderboard-item>
 </ng-template>

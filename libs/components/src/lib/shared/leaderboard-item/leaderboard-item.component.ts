@@ -14,6 +14,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       (click)="interactive() && itemClick.emit()"
       (keyup.enter)="interactive() && itemClick.emit()"
     >
+      <!-- Optional slot in front of the rank (rank change) -->
+      <ng-content />
+
       <!-- Rank badge -->
       <div [class]="getRankClass()">
         {{ rank() }}
@@ -38,11 +41,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 
       <!-- Content -->
       <div class="min-w-0 flex-1">
-        <div class="flex min-w-0 items-center gap-xs">
-          <h3 class="truncate text-sm font-semibold text-gray-100">{{ title() }}</h3>
-          <!-- Optional badge next to the name (rank change) -->
-          <ng-content />
-        </div>
+        <h3 class="truncate text-sm font-semibold text-gray-100">{{ title() }}</h3>
         @if (subtitle()) {
           <p class="text-xs text-gray-500">{{ subtitle() }}</p>
         }
