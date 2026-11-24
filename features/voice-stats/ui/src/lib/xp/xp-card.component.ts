@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal, model } from '@angular/core';
 import { HttpResourceRef } from '@angular/common/http';
-import { DecimalPipe } from '@angular/common';
-import { XpHistory, XpLevel, XpSourceTotal } from '@nx-stolfo/data-access-voice-stats';
-import { XpTileKey, xpTiles } from './xp-card';
+import { DecimalPipe, NgTemplateOutlet } from '@angular/common';
+import { DiscordMember, XpHistory, XpLevel, XpRival, XpRivals, XpSourceTotal } from '@nx-stolfo/data-access-voice-stats';
+import { signedXp, XpTileKey, xpTiles } from './xp-card';
 import { XpHistoryChartComponent } from './xp-history-chart.component';
 
 /** Icon paths (24×24, stroked) per tile */
@@ -20,7 +20,7 @@ const ICONS: Record<XpTileKey, string[]> = {
 /** Level, total XP and what earned it, one tile per kind of XP (all time) */
 @Component({
   selector: 'feature-voice-stats-xp-card',
-  imports: [DecimalPipe, XpHistoryChartComponent],
+  imports: [DecimalPipe, NgTemplateOutlet, XpHistoryChartComponent],
   template: `
     @let l = level();
     <section class="rounded-xl border border-white/5 bg-base-300 p-lg" aria-labelledby="xp-card-title">
@@ -89,18 +89,88 @@ const ICONS: Record<XpTileKey, string[]> = {
             <div id="xp-history" class="mt-sm">
               @if (l.xp === 0) {
                 <p class="text-sm text-gray-400">No XP yet: join a voice channel or say hi.</p>
-              } @else if (h.error()) {
-                <p class="text-sm text-error">Couldn't load the XP history.</p>
-              } @else if (h.hasValue()) {
-                <feature-voice-stats-xp-history-chart [history]="h.value()" />
               } @else {
-                <p class="text-sm text-gray-500">Loading…</p>
+                @if (rivalList().length) {
+                  @let rival = compare();
+                  <div class="relative mb-sm">
+                    @if (rival) {
+                      <span class="inline-flex items-center gap-xs rounded-full border border-white/10 bg-base-200 p-0.5 text-sm text-gray-300">
+                        <ng-container *ngTemplateOutlet="avatar; context: { $implicit: rival.member }" />
+                        <span class="px-xs">Compared with <strong class="font-semibold text-gray-100">{{ memberName(rival.member) }}</strong></span>
+                        <button
+                          type="button"
+                          class="flex h-6 w-6 items-center justify-center rounded-full text-gray-400 hover:bg-base-100 hover:text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+                          [attr.aria-label]="'Stop comparing with ' + memberName(rival.member)"
+                          (click)="compare.set(undefined)"
+                        >
+                          <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                            <path d="M18 6 6 18M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </span>
+                    } @else {
+                      <button
+                        type="button"
+                        class="inline-flex items-center gap-xs rounded-lg border border-white/10 bg-base-200 px-sm py-xs text-sm text-gray-300 hover:text-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+                        [attr.aria-expanded]="pickerOpen()"
+                        aria-controls="xp-rivals"
+                        (click)="pickerOpen.set(!pickerOpen())"
+                        (keydown.escape)="pickerOpen.set(false)"
+                      >
+                        Compare with…
+                        <svg class="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                          <path d="m6 9 6 6 6-6" />
+                        </svg>
+                      </button>
+                      @if (pickerOpen()) {
+                        <ul
+                          id="xp-rivals"
+                          class="absolute z-10 mt-xs max-h-72 w-80 max-w-full overflow-y-auto rounded-lg border border-white/10 bg-base-200 p-xs shadow-lg"
+                          aria-label="Members closest in XP"
+                        >
+                          @for (r of rivalList(); track r.member.id) {
+                            <li>
+                              <button
+                                type="button"
+                                class="flex w-full items-center gap-sm rounded-md px-sm py-xs text-left text-sm hover:bg-base-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary-400"
+                                (click)="pick(r)"
+                                (keydown.escape)="pickerOpen.set(false)"
+                              >
+                                <ng-container *ngTemplateOutlet="avatar; context: { $implicit: r.member }" />
+                                <span class="min-w-0 flex-1 truncate text-gray-100">{{ memberName(r.member) }}</span>
+                                <span class="text-xs tabular-nums text-gray-500">Lv {{ r.level }}</span>
+                                <span class="w-20 text-right text-xs tabular-nums text-gray-300">{{ signed(r.difference) }}</span>
+                              </button>
+                            </li>
+                          }
+                        </ul>
+                      }
+                    }
+                  </div>
+                }
+                @if (h.error()) {
+                  <p class="text-sm text-error">Couldn't load the XP history.</p>
+                } @else if (h.hasValue()) {
+                  <feature-voice-stats-xp-history-chart [history]="h.value()" [names]="names()" />
+                } @else {
+                  <p class="text-sm text-gray-500">Loading…</p>
+                }
               }
             </div>
           }
         </div>
       }
     </section>
+
+    <ng-template #avatar let-member>
+      @if (member.avatar) {
+        <img [src]="member.avatar" alt="" class="h-6 w-6 shrink-0 rounded-full ring-1 ring-white/10" />
+      } @else {
+        <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-base-100 text-xs font-semibold text-gray-300" aria-hidden="true">
+          {{ memberName(member).charAt(0).toUpperCase() }}
+        </span>
+      }
+    </ng-template>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -111,6 +181,29 @@ export class XpCardComponent {
   /** The collapsible XP history; the owner fetches it once `historyOpen` turns true */
   history = input<HttpResourceRef<XpHistory | undefined>>();
   historyOpen = model(false);
+  /** The member's name in the history's legend and hover ("You" on the You tab) */
+  name = input('You');
+  /** Members to compare the history with, closest in XP first; the picker is hidden without any */
+  rivals = input<HttpResourceRef<XpRivals | undefined>>();
+  /** The member drawn on top of the history; the owner refetches the history with them */
+  compare = model<XpRival | undefined>();
+
+  protected pickerOpen = linkedSignal({ source: this.historyOpen, computation: () => false });
+  protected rivalList = computed(() => {
+    const rivals = this.rivals();
+    return rivals?.hasValue() ? rivals.value().rivals : [];
+  });
+  protected names = computed<[string, string]>(() => {
+    const rival = this.compare();
+    return [this.name(), rival ? this.memberName(rival.member) : ''];
+  });
+  protected readonly signed = signedXp;
+  protected memberName = (member: DiscordMember) => member.displayName || member.username;
+
+  protected pick(rival: XpRival) {
+    this.compare.set(rival);
+    this.pickerOpen.set(false);
+  }
 
   protected readonly icons = ICONS;
   protected tiles = computed(() => xpTiles(this.sources()));

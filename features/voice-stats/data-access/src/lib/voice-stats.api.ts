@@ -24,6 +24,7 @@ import {
   VoiceHabitsLeaderboard,
   XpLeaderboard,
   XpHistory,
+  XpRivals,
   StatsCardSection,
   StatsCardTheme,
   VoiceStatsWrapped,
@@ -267,15 +268,28 @@ export class VoiceStatsApi extends ApiBase {
   fetchUserXpHistory(
     guildId: () => string,
     userId: () => string | undefined,
-    period: () => DashboardPeriod | undefined
+    period: () => DashboardPeriod | undefined,
+    /** Another member whose line is drawn on top */
+    compare: () => string | undefined
   ) {
     return this.get<XpHistory>(
       () => {
         const user = userId();
         return user && period() ? `/features/voice-stats/${guildId()}/users/${user}/xp-history` : undefined;
       },
-      () => ({ period: period() ?? 'all', tz: viewerTimeZone() })
+      () => {
+        const other = compare();
+        return { period: period() ?? 'all', tz: viewerTimeZone(), ...(other ? { compare: other } : {}) };
+      }
     );
+  }
+
+  /** The members closest to a member in all-time XP, for the XP history's compare picker; nothing while `userId` is undefined */
+  fetchUserXpRivals(guildId: () => string, userId: () => string | undefined) {
+    return this.get<XpRivals>(() => {
+      const user = userId();
+      return user ? `/features/voice-stats/${guildId()}/users/${user}/xp-rivals` : undefined;
+    });
   }
 
   /** One member's rock-paper-scissors record (and head-to-head with the viewer) */

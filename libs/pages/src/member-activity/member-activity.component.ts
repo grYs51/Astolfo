@@ -21,6 +21,7 @@ import {
   VoiceStatsApi,
   VoiceStatsUserHeatmap,
   XpLeaderboard,
+  XpRival,
 } from '@nx-stolfo/data-access-voice-stats';
 import {
   ActivityCalendarComponent,
@@ -141,10 +142,26 @@ export class MemberActivityComponent {
     source: () => ({ open: this.xpHistoryOpen(), period: this.period() }),
     computation: (source, previous) => (source.open ? source.period : previous?.value),
   });
-  protected xpHistoryResource = inject(VoiceStatsApi).fetchUserXpHistory(
+  /** The member compared in the XP history: kept on a period change, cleared on another member */
+  protected xpCompare = linkedSignal<string | undefined, XpRival | undefined>({
+    source: () => this.stats()?.userId,
+    computation: () => undefined,
+  });
+  /** The compare picker's list, fetched once the XP history is first opened for this member */
+  private xpRivalsFor = linkedSignal<{ open: boolean; userId: string | undefined }, string | undefined>({
+    source: () => ({ open: this.xpHistoryOpen(), userId: this.stats()?.userId }),
+    computation: (source, previous) => (source.open ? source.userId : previous?.value),
+  });
+  private readonly api = inject(VoiceStatsApi);
+  protected xpHistoryResource = this.api.fetchUserXpHistory(
     () => this.guildId(),
     () => this.stats()?.userId,
-    () => this.xpHistoryPeriod()
+    () => this.xpHistoryPeriod(),
+    () => this.xpCompare()?.member.id
+  );
+  protected xpRivalsResource = this.api.fetchUserXpRivals(
+    () => this.guildId(),
+    () => this.xpRivalsFor()
   );
 
   constructor() {
