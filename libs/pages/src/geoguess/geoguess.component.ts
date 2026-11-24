@@ -87,7 +87,7 @@ const POLL_MS = 2000;
               [pins]="g.pins ?? []"
               [radiusKm]="g.radiusKm"
               [me]="meId()"
-              (picked)="pending.set($event)"
+              (picked)="place($event)"
             />
 
             @if (g.phase === 'guessing') {
@@ -270,6 +270,13 @@ export class GeoguessComponent {
 
   private setSplit(percent: number) {
     this.split.set(Math.round(Math.min(80, Math.max(20, percent))));
+  }
+
+  /** The server keeps the latest unsent pin, so it still counts if the timer runs out before Guess */
+  place(pin: LatLon) {
+    this.pending.set(pin);
+    // Best effort: a lost draft only means the pin is lost at the timeout, as before
+    this.api.guess(this.serverId(), this.gameId(), { ...pin, draft: true }).subscribe({ error: () => undefined });
   }
 
   send() {

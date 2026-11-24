@@ -34,6 +34,8 @@ export interface MapRound {
   shownAt: number;
   endsAt: number;
   guesses: Map<string, MapGuess>;
+  /** Pins placed but not sent: each becomes its player's guess when the round closes without one */
+  drafts: Map<string, LatLon>;
   /** Set when the round closes */
   ranked?: RankedGuess[];
   xp?: Map<string, number>;
@@ -81,17 +83,21 @@ export const endMapGame = (game: MapGame) => {
 };
 
 /** Starts the next round and resolves when guessing closes: at `endsAt`, or once everyone who opened the game guessed */
-export const playRound = (game: MapGame, round: Omit<MapRound, 'shownAt' | 'endsAt' | 'guesses'>, answerMs: number, now = Date.now()) => {
+export const playRound = (game: MapGame, round: Omit<MapRound, 'shownAt' | 'endsAt' | 'guesses' | 'drafts'>, answerMs: number, now = Date.now()) => {
   game.round += 1;
   game.phase = 'guessing';
-  game.current = { ...round, shownAt: now, endsAt: now + answerMs, guesses: new Map() };
+  game.current = { ...round, shownAt: now, endsAt: now + answerMs, guesses: new Map(), drafts: new Map() };
   return new Promise<void>((resolve) => {
     const timer = setTimeout(done, answerMs);
     function done() {
       clearTimeout(timer);
       game.wake = undefined;
       // A late click after this is refused, even before the round is ranked
-      if (game.current) game.current.endsAt = Math.min(game.current.endsAt, Date.now());
+      const current = game.current;
+      if (current) {
+        current.endsAt = Math.min(current.endsAt, Date.now());
+        for (const [id, pin] of current.drafts) if (!current.guesses.has(id)) current.guesses.set(id, { ...pin, ms: current.endsAt - current.shownAt });
+      }
       resolve();
     }
     game.wake = done;
@@ -115,14 +121,18 @@ export const validLatLon = (lat: unknown, lon: unknown): boolean =>
 
 export type GuessResult = 'ok' | 'closed' | 'already' | 'invalid';
 
-/** One guess per member per round, while the round is open */
-export const guess = (game: MapGame, userId: string, lat: unknown, lon: unknown, now = Date.now()): GuessResult => {
+/** One guess per member per round, while the round is open. A draft only replaces the player's unsent pin */
+export const guess = (game: MapGame, userId: string, lat: unknown, lon: unknown, now = Date.now(), draft = false): GuessResult => {
   const round = game.current;
   if (!round || game.phase !== 'guessing' || now >= round.endsAt) return 'closed';
   if (!validLatLon(lat, lon)) return 'invalid';
   if (round.guesses.has(userId)) return 'already';
-  round.guesses.set(userId, { lat: lat as number, lon: lon as number, ms: now - round.shownAt });
   game.viewers.add(userId);
+  if (draft) {
+    round.drafts.set(userId, { lat: lat as number, lon: lon as number });
+    return 'ok';
+  }
+  round.guesses.set(userId, { lat: lat as number, lon: lon as number, ms: now - round.shownAt });
   // Not in round 1: the first player to open the link would end it before the others have it open
   if (game.round > 1 && [...game.viewers].every((id) => round.guesses.has(id))) game.wake?.();
   return 'ok';

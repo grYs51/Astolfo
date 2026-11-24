@@ -72,7 +72,7 @@ export const postGeoguessGuess: RequestHandler<Params> = asyncHandler(async (req
     res.status(404).json({ error: 'This game is over or never existed' });
     return;
   }
-  const result = guess(game, req.user?.id ?? '', req.body?.lat, req.body?.lon);
+  const result = guess(game, req.user?.id ?? '', req.body?.lat, req.body?.lon, Date.now(), req.body?.draft === true);
   if (result === 'ok') {
     res.status(204).end();
     return;
