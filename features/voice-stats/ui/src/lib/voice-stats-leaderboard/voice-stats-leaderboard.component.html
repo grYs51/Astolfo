@@ -26,6 +26,7 @@
       <ng-container *ngTemplateOutlet="item; context: { $implicit: row }"></ng-container>
     }
   }
+  <ng-content select="[leaderboard-footer]" />
 </div>
 
 <ng-template #item let-row>
@@ -34,10 +35,19 @@
     [title]="(row.member.displayName || row.member.username) + (isHighlighted(row) ? ' (you)' : '')"
     [value]="row.value"
     [subtitle]="row.subtitle"
+    [secondaryValue]="row.secondaryValue"
     [avatarUrl]="row.member.avatar || undefined"
     [containerClass]="isHighlighted(row) ? highlightClass : ''"
     [interactive]="interactive()"
     (itemClick)="userClick.emit(row.member.id)"
     icon="🎤"
-  />
+  >
+    @if (row.isNew) {
+      <span class="shrink-0 rounded bg-primary-500/15 px-1 text-[10px] font-semibold uppercase text-primary-300">new</span>
+    } @else if (row.rankChange > 0) {
+      <span class="shrink-0 text-xs font-semibold text-success" [attr.aria-label]="'up ' + row.rankChange">▲{{ row.rankChange }}</span>
+    } @else if (row.rankChange < 0) {
+      <span class="shrink-0 text-xs font-semibold text-error" [attr.aria-label]="'down ' + -row.rankChange">▼{{ -row.rankChange }}</span>
+    }
+  </lib-leaderboard-item>
 </ng-template>

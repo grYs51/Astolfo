@@ -73,7 +73,7 @@ export class MemberProfileComponent {
     () => this.memberId()
   );
   // For the member's level rank
-  private xpLeaderboardResource = this.api.fetchXpLeaderboard(() => this.id());
+  private xpRankingResource = this.api.fetchXpRanking(() => this.id(), () => this.memberId());
   private messagesResource = this.api.fetchServerMessages(
     () => this.id(),
     () => this.activePeriod()
@@ -103,9 +103,7 @@ export class MemberProfileComponent {
     const index = ids.indexOf(this.memberId());
     return index >= 0 ? index + 1 : undefined;
   };
-  xpLeaderboard = computed(() =>
-    this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
-  );
+  xpRanking = computed(() => (this.xpRankingResource.hasValue() ? this.xpRankingResource.value() : undefined));
   messageRank = computed(() =>
     this.messagesResource.hasValue()
       ? this.rankIn((this.messagesResource.value()?.topMembers ?? []).map((e) => e.member.id))

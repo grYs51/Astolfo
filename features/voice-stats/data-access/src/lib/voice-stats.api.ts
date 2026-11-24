@@ -258,9 +258,20 @@ export class VoiceStatsApi extends ApiBase {
     );
   }
 
-  /** Members ranked by level (all-time XP) */
-  fetchXpLeaderboard(guildId: () => string) {
-    return this.get<XpLeaderboard>(() => `/features/voice-stats/${guildId()}/xp-leaderboard`);
+  /** Current members ranked by level (all-time XP), 25 a page */
+  fetchXpLeaderboard(guildId: () => string, page: () => number) {
+    return this.get<XpLeaderboard>(
+      () => `/features/voice-stats/${guildId()}/xp-leaderboard`,
+      () => ({ page: String(page()) })
+    );
+  }
+
+  /** A member and up to two on each side of them on the level leaderboard */
+  fetchXpRanking(guildId: () => string, memberId: () => string | undefined) {
+    return this.get<XpLeaderboard>(
+      () => (memberId() ? `/features/voice-stats/${guildId()}/xp-leaderboard` : undefined),
+      () => ({ around: memberId() ?? '' })
+    );
   }
 
   /** One member's running XP total over the period; `period` returning undefined skips the request (section closed) */
