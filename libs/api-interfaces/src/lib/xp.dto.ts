@@ -140,7 +140,7 @@ export interface XpLeaderboard {
 
 /**
  * GET …/:serverId/users/:userId/xp-history: a member's running XP total over the page period,
- * in the viewer's time zone (daily for week/month, weekly for year/all)
+ * in the viewer's time zone (daily for week/month, weekly for year/all); `?compare=<memberId>` adds another member's line
  */
 export interface XpHistory {
   granularity: 'day' | 'week';
@@ -150,6 +150,22 @@ export interface XpHistory {
   endXp: number;
   /** Every day or week from the period start to today, oldest first; `date` is the local date (a week's Monday) */
   points: { date: string; gained: number; total: number }[];
-  /** Level thresholds crossed in the period: every one, or only multiples of 10 past 20 levels */
+  /** The `compare` member's line over the same days or weeks */
+  compare?: Pick<XpHistory, 'startXp' | 'endXp' | 'points'>;
+  /** Level thresholds crossed in the period (by either line): every one, or only multiples of 10 past 20 levels */
   levels: { level: number; xp: number }[];
+}
+
+/** A member to compare an XP history with */
+export interface XpRival {
+  member: DiscordMember;
+  xp: number;
+  level: number;
+  /** Their all-time XP minus the profile member's: positive when they're ahead */
+  difference: number;
+}
+
+/** GET …/:serverId/users/:userId/xp-rivals: up to 20 current members closest in all-time XP, closest first */
+export interface XpRivals {
+  rivals: XpRival[];
 }

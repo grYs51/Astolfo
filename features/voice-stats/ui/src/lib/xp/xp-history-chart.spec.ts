@@ -1,5 +1,5 @@
 import type { XpHistory } from '@nx-stolfo/data-access-voice-stats';
-import { historyChartOption, levelLineData, pointLabel } from './xp-history-chart';
+import { historyChartOption, levelLineData, pointLabel, xpRange } from './xp-history-chart';
 
 const history = (patch: Partial<XpHistory> = {}): XpHistory => ({
   granularity: 'day',
@@ -16,14 +16,38 @@ const history = (patch: Partial<XpHistory> = {}): XpHistory => ({
 describe('xp history chart', () => {
   it('hover reads the day, or the week, and what was gained in it', () => {
     const h = history();
-    expect(pointLabel(h, h.points[1])).toBe('Thu 12 Nov · +1,340 XP');
-    expect(pointLabel({ ...h, granularity: 'week' }, { date: '2026-11-09', gained: 340, total: 0 })).toBe('Week of 9 Nov · +340 XP');
+    const names: [string, string] = ['You', 'Mika'];
+    expect(pointLabel(h, 1, names)).toBe('Thu 12 Nov · +1,340 XP');
+    const week = history({ granularity: 'week', points: [{ date: '2026-11-09', gained: 340, total: 0 }] });
+    expect(pointLabel(week, 0, names)).toBe('Week of 9 Nov · +340 XP');
+  });
+
+  it('compared: hover names both members, the axis and level labels cover both lines', () => {
+    const h = history({
+      compare: {
+        startXp: 1800,
+        endXp: 4100,
+        points: [
+          { date: '2026-11-11', gained: 0, total: 1800 },
+          { date: '2026-11-12', gained: 2300, total: 4100 },
+        ],
+      },
+    });
+    expect(pointLabel(h, 1, ['You', 'Mika'])).toBe('Thu 12 Nov · You +1,340 XP · Mika +2,300 XP');
+    const option = historyChartOption(h, ['You', 'Mika']);
+    expect(option.yAxis.min).toBe(1800);
+    expect(option.legend.show).toBe(true);
+    expect(option.series.map((s) => [s.name, s.data])).toEqual([['You', [2400, 3740]], ['Mika', [1800, 4100]]]);
+    expect(xpRange(h)).toEqual({ lo: 1800, hi: 4100 });
   });
 
   it('the line starts at the real total, with a dashed line per level', () => {
     const option = historyChartOption(history());
     expect(option.yAxis.min).toBe(2400);
     expect(option.series[0].data).toEqual([2400, 3740]);
+    // No comparison: the second line is empty and the legend hidden
+    expect(option.series[1].data).toEqual([]);
+    expect(option.legend.show).toBe(false);
     expect(option.series[0].markLine.data).toEqual([{ name: 'Lv 9', yAxis: 2700, label: { show: true } }]);
   });
 

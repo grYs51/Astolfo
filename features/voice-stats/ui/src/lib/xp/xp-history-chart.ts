@@ -9,16 +9,34 @@ const dayLabel = (date: string, weekday = true) => {
   return weekday ? `${format({ weekday: 'short' })} ${day}` : day;
 };
 
-/** "Tue 12 Nov · +340 XP", or "Week of 11 Nov · +340 XP" */
-export const pointLabel = (history: XpHistory, point: XpHistory['points'][number]) =>
-  `${history.granularity === 'week' ? `Week of ${dayLabel(point.date, false)}` : dayLabel(point.date)} · +${point.gained.toLocaleString('en-GB')} XP`;
+const gainedLabel = (gained: number) => `+${gained.toLocaleString('en-GB')} XP`;
+
+/**
+ * "Tue 12 Nov · +340 XP", or "Week of 11 Nov · +340 XP"; with a comparison, both members:
+ * "Tue 12 Nov · You +340 XP · Mika +120 XP"
+ */
+export const pointLabel = (history: XpHistory, index: number, names: [string, string]) => {
+  const point = history.points[index];
+  const other = history.compare?.points[index];
+  const date = history.granularity === 'week' ? `Week of ${dayLabel(point.date, false)}` : dayLabel(point.date);
+  return other
+    ? `${date} · ${names[0]} ${gainedLabel(point.gained)} · ${names[1]} ${gainedLabel(other.gained)}`
+    : `${date} · ${gainedLabel(point.gained)}`;
+};
+
+/** The XP range both lines cover: the lower start to the higher end */
+export const xpRange = (history: XpHistory) => ({
+  lo: Math.min(history.startXp, history.compare?.startXp ?? Infinity),
+  hi: Math.max(history.endXp, history.compare?.endXp ?? -Infinity),
+});
 
 /** Labels closer than this share of the axis to the one above are left off, so low levels don't pile up */
 const LABEL_GAP = 1 / 12;
 
 /** The level lines, top down, each labelled only when it's far enough below the last label shown */
 export const levelLineData = (history: XpHistory) => {
-  const gap = (history.endXp - history.startXp) * LABEL_GAP;
+  const { lo, hi } = xpRange(history);
+  const gap = (hi - lo) * LABEL_GAP;
   return history.levels
     .reduceRight<{ lines: { name: string; yAxis: number; label: { show: boolean } }[]; lastShown: number }>(
       ({ lines, lastShown }, l) => {
@@ -31,45 +49,60 @@ export const levelLineData = (history: XpHistory) => {
 
 const AXIS = { axisLabel: { color: '#9ca3af' }, axisLine: { lineStyle: { color: '#374151' } } };
 
-/** The ECharts option for the running XP total, with a dashed line per level crossed */
-export const historyChartOption = (history: XpHistory) => ({
-  grid: { left: 8, right: 48, top: 16, bottom: 8, containLabel: true },
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: '#1f2937',
-    borderColor: '#374151',
-    textStyle: { color: '#f3f4f6' },
-    formatter: (params: { dataIndex: number }[]) => pointLabel(history, history.points[params[0]?.dataIndex ?? 0]),
-  },
-  xAxis: {
-    type: 'category',
-    boundaryGap: false,
-    data: history.points.map((p) => dayLabel(p.date, false)),
-    ...AXIS,
-  },
-  // From the real total at the start, and no higher than the data: level lines never stretch it
-  yAxis: {
-    type: 'value',
-    min: history.startXp,
-    // A flat line (nothing earned) still needs a range to draw in
-    max: (value: { max: number }) => Math.max(value.max, history.startXp + 1),
-    ...AXIS,
-    splitLine: { show: false },
-  },
-  series: [
-    {
-      type: 'line',
-      symbol: 'none',
-      lineStyle: { color: '#a855f7', width: 2 },
-      areaStyle: { color: 'rgba(168, 85, 247, 0.12)' },
-      data: history.points.map((p) => p.total),
-      markLine: {
-        silent: true,
-        symbol: 'none',
-        lineStyle: { color: '#6b7280', type: 'dashed' },
-        label: { color: '#9ca3af', formatter: '{b}', position: 'end' },
-        data: levelLineData(history),
-      },
+/** The ECharts option for the running XP total, with a dashed line per level crossed, and the compared member's line on top */
+export const historyChartOption = (history: XpHistory, names: [string, string] = ['You', 'Them']) => {
+  const { lo } = xpRange(history);
+  return {
+    grid: { left: 8, right: 48, top: history.compare ? 36 : 16, bottom: 8, containLabel: true },
+    legend: { show: !!history.compare, top: 0, left: 0, textStyle: { color: '#d1d5db' }, inactiveColor: '#4b5563' },
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#1f2937',
+      borderColor: '#374151',
+      textStyle: { color: '#f3f4f6' },
+      formatter: (params: { dataIndex: number }[]) => pointLabel(history, params[0]?.dataIndex ?? 0, names),
     },
-  ],
-});
+    xAxis: {
+      type: 'category',
+      boundaryGap: false,
+      data: history.points.map((p) => dayLabel(p.date, false)),
+      ...AXIS,
+    },
+    // From the lowest real total at the start, and no higher than the data: level lines never stretch it
+    yAxis: {
+      type: 'value',
+      min: lo,
+      // A flat line (nothing earned) still needs a range to draw in
+      max: (value: { max: number }) => Math.max(value.max, lo + 1),
+      ...AXIS,
+      splitLine: { show: false },
+    },
+    series: [
+      {
+        name: names[0],
+        type: 'line',
+        symbol: 'none',
+        itemStyle: { color: '#a855f7' },
+        lineStyle: { color: '#a855f7', width: 2 },
+        areaStyle: { color: 'rgba(168, 85, 247, 0.12)' },
+        data: history.points.map((p) => p.total),
+        markLine: {
+          silent: true,
+          symbol: 'none',
+          lineStyle: { color: '#6b7280', type: 'dashed' },
+          label: { color: '#9ca3af', formatter: '{b}', position: 'end' },
+          data: levelLineData(history),
+        },
+      },
+      // Empty, and out of the hidden legend, without a comparison
+      {
+        name: names[1],
+        type: 'line',
+        symbol: 'none',
+        itemStyle: { color: '#f59e0b' },
+        lineStyle: { color: '#f59e0b', width: 2 },
+        data: history.compare?.points.map((p) => p.total) ?? [],
+      },
+    ],
+  };
+};

@@ -27,3 +27,7 @@ export const xpTiles = (sources: XpSourceTotal[]) =>
       xp: rows.reduce((sum, s) => sum + s.xp, 0),
     };
   });
+
+/** A rival's XP against the member's: "+340 XP" ahead, "−1,200 XP" behind */
+export const signedXp = (difference: number) =>
+  `${difference > 0 ? '+' : difference < 0 ? '−' : '±'}${Math.abs(difference).toLocaleString('en-GB')} XP`;
