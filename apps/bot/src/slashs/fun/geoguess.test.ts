@@ -188,26 +188,29 @@ describe('/geoguess', () => {
       expect(guess(game, 'b', PARIS[0], PARIS[1])).toBe('ok');
       expect(guess(game, 'a', BRUSSELS[0] + 0.1, BRUSSELS[1])).toBe('ok');
       expect(guess(game, 'c', TOKYO[0], TOKYO[1])).toBe('ok');
+      // Placed but never sent: counted at the timeout, and saved as unsent
+      expect(guess(game, 'd', TOKYO[0], TOKYO[1], Date.now(), true)).toBe('ok');
       await jest.advanceTimersByTimeAsync(90_000);
       await run.done;
 
       const { data } = (run.create.mock.calls[0] as unknown as [{ data: { metadata: Record<string, unknown>; players: { create: unknown[] } } }])[0];
-      expect(data.metadata).toMatchObject({ category: 'GeoGuess', difficulty: 'hard', correctOrder: ['a', 'b'], mode: 'map', radiusKm: 500, imageId: '42', km: { a: 11, b: 265, c: expect.any(Number) } });
+      expect(data.metadata).toMatchObject({ category: 'GeoGuess', difficulty: 'hard', correctOrder: ['a', 'b'], unsent: ['d'], mode: 'map', radiusKm: 500, imageId: '42', km: { a: 11, b: 265, c: expect.any(Number) } });
       expect(data.players.create).toEqual([
         { user_id: 'a', result: 1, move: '50.9500,4.3500' },
         { user_id: 'b', result: 1, move: '48.8500,2.3500' },
         { user_id: 'c', result: 0, move: '35.6800,139.6500' },
+        { user_id: 'd', result: 0, move: '35.6800,139.6500' },
       ]);
       expect((awardAndAnnounce as jest.Mock).mock.calls.map((c) => c[2])).toEqual(['a', 'b']);
       const result = lastReply();
       const lines = (result.content as string).split('\n');
       expect(lines[0]).toMatch(/^It was \*\*Belgium\*\*\. \[Map\]/);
       expect(lines[1]).toBe('1st <@a> 11 km +30 XP · 2nd <@b> 265 km +4 XP');
-      expect(lines[2]).toMatch(/^Further than 500 km: <@c> \d+ km$/);
+      expect(lines[2]).toMatch(/^Further than 500 km: <@c> \d+ km · <@d> \d+ km$/);
       expect(result.files).toEqual([{ name: 'trivia-result.png' }]);
       // The page keeps showing the result until the game is forgotten
       expect(game.phase).toBe('over');
-      expect(game.current?.ranked?.map((g) => g.userId)).toEqual(['a', 'b', 'c']);
+      expect(game.current?.ranked?.map((g) => g.userId)).toEqual(['a', 'b', 'c', 'd']);
     });
 
     test('a photo without a location is skipped for one that has one', async () => {

@@ -3,7 +3,7 @@ import asyncHandler from 'express-async-handler';
 import { DiscordMember, GeoguessGameResponse } from '@nx-stolfo/api-interfaces';
 import { discordDirectory } from '../../../utils/discord-directory';
 import { memberOrUnknown } from '../helpers';
-import { getMapGame, guess, MapGame, RADIUS_KM } from '../../../../geo/map-games';
+import { getMapGame, guess, MapGame } from '../../../../geo/map-games';
 
 type Params = { serverId: string; gameId: string };
 
@@ -22,7 +22,7 @@ export const gameView = (game: MapGame, userId: string, token: string, members: 
     imageId: round.imageId,
     mapillaryToken: token,
     difficulty: round.difficulty,
-    radiusKm: RADIUS_KM[round.difficulty],
+    radiusKm: game.radiusKm[round.difficulty],
     guessCount: round.guesses.size,
     myGuess: mine ? { lat: mine.lat, lon: mine.lon } : null,
     ...(closed &&

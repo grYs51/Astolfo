@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { geoguessXp } from '@nx-stolfo/api-interfaces';
 import { grantXp } from './grant';
 import { DEFAULT_RULES, setRules } from './rules';
 import { recalculateXp } from './recalculate';
@@ -125,6 +126,22 @@ describeDb('grantXp on seeded rows', () => {
     await trivia(5, 0, 'medium', ['xp-g1'], ['xp-g3'], ['xp-g2'], 'GeoGuess');
     await trivia(6, 0, 'hard', ['xp-near']);
     await trivia(6, 1, 'hard', [], [], ['xp-near'], 'GeoGuess');
+    // GeoGuess on the map: pins inside the radius are the places, closest first
+    const map = (day: number, difficulty: string, radiusKm: number, km: Record<string, number>, unsent: string[] = []) => {
+      const inside = Object.keys(km).filter((id) => km[id] <= radiusKm);
+      return db.game_result.create({
+        data: {
+          guild_id: G,
+          game_type_id: GAME_TYPES.TRIVIA,
+          created_at: at(day, 20),
+          metadata: { category: 'GeoGuess', mode: 'map', difficulty, radiusKm, km, correctOrder: inside, unsent },
+          players: { create: Object.keys(km).map((user_id) => ({ user_id, result: inside.includes(user_id) ? SCORING.WIN : SCORING.LOSS })) },
+        },
+      });
+    };
+    await map(7, 'hard', 500, { 'xp-m1': 80, 'xp-m2': 200, 'xp-m3': 350, 'xp-m4': 600 }, ['xp-m3']);
+    // An older game played with a smaller radius than the full-points distance now
+    await map(8, 'medium', 150, { 'xp-m5': 100 });
   });
 
   afterAll(async () => {
@@ -177,6 +194,23 @@ describeDb('grantXp on seeded rows', () => {
       ['xp-g1', 23, 'GeoGuess: 1st (medium ×1.5)', true],
       ['xp-g2', 2, 'GeoGuess: near miss', true],
     ]);
+  });
+
+  test('GeoGuess on the map: scaled by distance, a closest-pin bonus, unsent pins cut, the same XP as geoguessXp', async () => {
+    const map = (await rows('TRIVIA')).filter((r) => r.member_id.startsWith('xp-m'));
+    expect(map.map((r) => [r.member_id, r.amount, r.note])).toEqual([
+      ['xp-m1', 48, 'GeoGuess: 80 km, closest of 4 (hard ×2)'],
+      ['xp-m2', 23, 'GeoGuess: 200 km (hard ×2)'],
+      ['xp-m3', 6, 'GeoGuess: 350 km (hard ×2), unsent pin'],
+      ['xp-m5', 23, 'GeoGuess: 100 km (medium ×1.5)'],
+    ]);
+    const shared = { radiusKm: 500, players: 4, difficulty: 'hard' as const };
+    expect([
+      geoguessXp(DEFAULT_RULES, { ...shared, km: 80, closest: true, unsent: false }).xp,
+      geoguessXp(DEFAULT_RULES, { ...shared, km: 200, closest: false, unsent: false }).xp,
+      geoguessXp(DEFAULT_RULES, { ...shared, km: 350, closest: false, unsent: true }).xp,
+      geoguessXp(DEFAULT_RULES, { radiusKm: 150, players: 1, difficulty: 'medium', km: 100, closest: true, unsent: false }).xp,
+    ]).toEqual(map.map((r) => r.amount));
   });
 
   test('a near miss counts towards the daily cap', async () => {

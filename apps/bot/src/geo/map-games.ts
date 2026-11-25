@@ -3,8 +3,6 @@ import type { TriviaDifficulty } from '../trivia/opentdb';
 
 /** Walking around and placing a pin take longer than clicking a button */
 export const MAP_ANSWER_MS = 90_000;
-/** A pin this close counts as a right answer; the difficulty still sets the trivia ×factor */
-export const RADIUS_KM: Record<TriviaDifficulty, number> = { easy: 2000, medium: 1000, hard: 500 };
 /** How long a finished game stays readable, so the page can show the scoreboard */
 export const KEEP_MS = 10 * 60_000;
 
@@ -18,6 +16,8 @@ export interface LatLon {
 export interface MapGuess extends LatLon {
   /** From the photo showing to the guess */
   ms: number;
+  /** A pin placed but not sent, counted when the timer ran out */
+  unsent?: true;
 }
 
 export interface RankedGuess extends MapGuess {
@@ -45,6 +45,8 @@ export interface MapGame {
   id: string;
   guildId: string;
   rounds: number;
+  /** A pin this close counts as a right answer: the rules' radius per difficulty when the game started */
+  radiusKm: Record<TriviaDifficulty, number>;
   /** 1-based; 0 until the first round starts */
   round: number;
   phase: 'guessing' | 'result' | 'over';
@@ -63,8 +65,8 @@ export interface MapGame {
  */
 const games = new Map<string, MapGame>();
 
-export const createMapGame = (guildId: string, rounds: number): MapGame => {
-  const game: MapGame = { id: randomUUID(), guildId, rounds, round: 0, phase: 'guessing', viewers: new Set(), totals: new Map() };
+export const createMapGame = (guildId: string, rounds: number, radiusKm: Record<TriviaDifficulty, number>): MapGame => {
+  const game: MapGame = { id: randomUUID(), guildId, rounds, radiusKm, round: 0, phase: 'guessing', viewers: new Set(), totals: new Map() };
   games.set(game.id, game);
   return game;
 };
@@ -96,7 +98,7 @@ export const playRound = (game: MapGame, round: Omit<MapRound, 'shownAt' | 'ends
       const current = game.current;
       if (current) {
         current.endsAt = Math.min(current.endsAt, Date.now());
-        for (const [id, pin] of current.drafts) if (!current.guesses.has(id)) current.guesses.set(id, { ...pin, ms: current.endsAt - current.shownAt });
+        for (const [id, pin] of current.drafts) if (!current.guesses.has(id)) current.guesses.set(id, { ...pin, ms: current.endsAt - current.shownAt, unsent: true });
       }
       resolve();
     }
