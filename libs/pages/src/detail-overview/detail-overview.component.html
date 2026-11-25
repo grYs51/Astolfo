@@ -60,7 +60,7 @@
         [calendarResource]="userCalendarResource"
         [period]="activePeriod()"
         [guildId]="id()"
-        [xpLeaderboard]="xpLeaderboard()"
+        [xpRanking]="xpRanking()"
         [messageRank]="myMessageRank()"
         [memberLink]="memberLink"
       />
@@ -273,6 +273,31 @@
           </div>
         </div>
       }
+
+      <!-- Levels: all time, whatever the period; arrows over the last 7 days -->
+      <feature-voice-stats-leaderboard
+        title="Levels"
+        [rows]="xpRows()"
+        [limit]="xpLimit()"
+        [loading]="xpLeaderboardResource.isLoading()"
+        [highlightId]="currentUser()?.id"
+        [interactive]="true"
+        (userClick)="openMember($event)"
+        [emptyText]="xpLeaderboardResource.error() ? 'Failed to load levels' : 'Nobody has earned XP yet'"
+      >
+        <p leaderboard-actions class="text-xs text-gray-500">All time · changes vs 7 days ago</p>
+        @if (xpPages() > 1) {
+          <nav leaderboard-footer aria-label="Level pages" class="mt-md flex items-center justify-between gap-sm">
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="xpPage() <= 1" (click)="xpPage.set(xpPage() - 1)">
+              ← Prev
+            </button>
+            <span class="text-sm tabular-nums text-gray-400">Page {{ xpPage() }} of {{ xpPages() }}</span>
+            <button type="button" class="btn btn-ghost btn-sm" [disabled]="xpPage() >= xpPages()" (click)="xpPage.set(xpPage() + 1)">
+              Next →
+            </button>
+          </nav>
+        }
+      </feature-voice-stats-leaderboard>
     </section>
   }
 </div>

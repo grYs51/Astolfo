@@ -14,6 +14,9 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
       (click)="interactive() && itemClick.emit()"
       (keyup.enter)="interactive() && itemClick.emit()"
     >
+      <!-- Optional slot in front of the rank (rank change) -->
+      <ng-content />
+
       <!-- Rank badge -->
       <div [class]="getRankClass()">
         {{ rank() }}

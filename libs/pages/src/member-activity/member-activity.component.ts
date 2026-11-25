@@ -127,8 +127,8 @@ export class MemberActivityComponent {
   guildId = input.required<string>();
   /** Another member's display name; empty for the viewer themselves */
   name = input<string | undefined>(undefined);
-  /** The server's level leaderboard (all-time XP), highest first (for the rank race) */
-  xpLeaderboard = input<XpLeaderboard['leaderboard']>([]);
+  /** The member and up to two on each side of them on the level leaderboard (for the rank race) */
+  xpRanking = input<XpLeaderboard | undefined>(undefined);
   messageRank = input<number | undefined>(undefined);
   /** Router commands for a member's profile (companions become links) */
   memberLink = input<((memberId: string) => unknown[] | UrlTree) | undefined>(undefined);
@@ -216,10 +216,11 @@ export class MemberActivityComponent {
 
   /** The members just above and below on the level leaderboard */
   protected race = computed(() => {
-    const board = this.xpLeaderboard();
+    const ranking = this.xpRanking();
+    const board = ranking?.leaderboard ?? [];
     const id = this.stats()?.userId;
     const index = board.findIndex((entry) => entry.member.id === id);
-    if (index < 0) return undefined;
+    if (!ranking || index < 0) return undefined;
     const start = Math.max(0, Math.min(index - 1, board.length - 3));
     const rows = board.slice(start, start + 3);
     const max = Math.max(rows[0].xp, 1);
@@ -227,11 +228,11 @@ export class MemberActivityComponent {
     const ahead = board[index - 1];
     const behind = board[index + 1];
     return {
-      rank: index + 1,
-      count: board.length,
-      rows: rows.map((entry, i) => ({
+      rank: you.rank,
+      count: ranking.total,
+      rows: rows.map((entry) => ({
         id: entry.member.id,
-        rank: start + i + 1,
+        rank: entry.rank,
         name: entry.member.id === id && this.self() ? 'You' : memberName(entry.member),
         avatar: entry.member.avatar,
         level: entry.level,

@@ -5,6 +5,7 @@ import {
   DOCUMENT,
   inject,
   input,
+  linkedSignal,
   signal,
 } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -24,6 +25,7 @@ import {
   VoiceActivityType,
   VoiceHabitMetric,
   VoiceStatsApi,
+  XpLeaderboardEntry,
 } from '@nx-stolfo/data-access-voice-stats';
 import { GuildSettingsApi } from '@nx-stolfo/data-access-guild-settings';
 import { USER } from '@nx-stolfo/auth';
@@ -202,10 +204,8 @@ export class DetailOverviewComponent {
       ? this.leaderboardResource.value()?.leaderboard ?? []
       : []
   );
-  private xpLeaderboardResource = this.voiceStatsApi.fetchXpLeaderboard(() => this.id());
-  xpLeaderboard = computed(() =>
-    this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value()?.leaderboard ?? [] : []
-  );
+  private xpRankingResource = this.voiceStatsApi.fetchXpRanking(() => this.id(), () => this.userId());
+  xpRanking = computed(() => (this.xpRankingResource.hasValue() ? this.xpRankingResource.value() : undefined));
 
   /** Profile page of a member, same period; your own row/name leads to the You tab */
   memberLink = (memberId: string) =>
@@ -305,6 +305,38 @@ export class DetailOverviewComponent {
         }))
       : []
   );
+
+  // ── Level leaderboard: all time whatever the period, moves over the last 7 days ──
+  /** Back to the first page on another server */
+  xpPage = linkedSignal(() => (this.id(), 1));
+  xpLeaderboardResource = this.voiceStatsApi.fetchXpLeaderboard(
+    () => this.id(),
+    () => this.xpPage()
+  );
+  /** Kept while the next page loads, so the pager doesn't jump */
+  xpPages = linkedSignal<number | undefined, number>({
+    source: () => (this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value().pages : undefined),
+    computation: (pages, previous) => pages ?? previous?.value ?? 1,
+  });
+
+  xpRows = computed<LeaderboardRow[]>(() => {
+    if (!this.xpLeaderboardResource.hasValue()) return [];
+    const { leaderboard, me } = this.xpLeaderboardResource.value();
+    const row = (entry: XpLeaderboardEntry): LeaderboardRow => ({
+      member: entry.member,
+      rank: entry.rank,
+      rankChange: entry.rankChange,
+      isNew: entry.isNew,
+      value: `Level ${entry.level}`,
+      subtitle: `${entry.xp.toLocaleString('en-GB')} XP`,
+      secondaryValue: entry.weekXp > 0 ? `+${entry.weekXp.toLocaleString('en-GB')} this week` : undefined,
+    });
+    // The viewer goes last when they're on another page, and gets pinned under it
+    const pinned = me && !leaderboard.some((entry) => entry.member.id === me.member.id) ? [me] : [];
+    return [...leaderboard, ...pinned].map(row);
+  });
+  /** The page's own rows; past them the viewer is pinned, even on a short last page */
+  xpLimit = computed(() => (this.xpLeaderboardResource.hasValue() ? this.xpLeaderboardResource.value().leaderboard.length : 25));
 
   // ── "Server" fun facts (replaces the activity-type donut) ────────────────
   funFacts = computed(() => {

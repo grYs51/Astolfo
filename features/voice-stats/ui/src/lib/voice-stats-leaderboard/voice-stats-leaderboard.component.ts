@@ -14,6 +14,14 @@ export interface LeaderboardRow {
   member: DiscordMember;
   value: string;
   subtitle: string;
+  /** Under the value */
+  secondaryValue?: string;
+  /** The API's rank, for a paged list; the position otherwise */
+  rank?: number;
+  /** Places moved, positive is up: drawn as ▲/▼ next to the name */
+  rankChange?: number;
+  /** Drawn as a "new" badge instead of an arrow */
+  isNew?: boolean;
 }
 
 type RankedRow = LeaderboardRow & { rank: number };
@@ -45,16 +53,16 @@ export class VoiceStatsLeaderboardComponent {
   userClick = output<string>();
 
   private ranked = computed<RankedRow[]>(() =>
-    this.rows().map((row, index) => ({ ...row, rank: index + 1 }))
+    this.rows().map((row, index) => ({ ...row, rank: row.rank ?? index + 1 }))
   );
 
   protected top = computed(() => this.ranked().slice(0, this.limit()));
 
-  /** The viewer's row when they're not in the visible top */
+  /** The viewer's row when they're not in the visible rows */
   protected pinned = computed(() => {
     const id = this.highlightId();
     const row = id ? this.ranked().find((r) => r.member.id === id) : undefined;
-    return row && row.rank > this.limit() ? row : undefined;
+    return row && !this.top().includes(row) ? row : undefined;
   });
 
   protected isHighlighted = (row: RankedRow) => row.member.id === this.highlightId();

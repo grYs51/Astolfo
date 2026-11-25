@@ -219,19 +219,21 @@ export interface XpNeighbour {
 
 /**
  * The member and whoever is just above and below them by level, i.e. all-time
- * XP on the server (three rows, or fewer on a short leaderboard), like the
- * dashboard's level ranking. Empty when the member has no XP.
+ * XP on the server among `memberIds` (the current members; three rows, or fewer
+ * on a short leaderboard), like the dashboard's level ranking. Empty when the
+ * member has no XP or isn't in `memberIds`.
  */
 export const getXpNeighbours = async (
   db: QueryDb,
   guildId: string,
-  memberId: string
+  memberId: string,
+  memberIds: string[]
 ): Promise<XpNeighbour[]> => {
   const rows = await db.$queryRaw<{ member_id: string; total: number; rank: number; members: number }[]>`
     WITH totals AS (
       SELECT member_id, SUM(amount) AS total
       FROM xp_events
-      WHERE guild_id = ${guildId}
+      WHERE guild_id = ${guildId} AND member_id = ANY(${memberIds})
       GROUP BY member_id
       HAVING SUM(amount) > 0
     ),

@@ -133,9 +133,33 @@ export interface VoiceSessionXp {
   people: Record<string, DiscordMember>;
 }
 
-/** GET …/:serverId/xp-leaderboard: highest level first, by all-time XP (up to 100, so the viewer's rank is known) */
+/** A current member on the level leaderboard; the changes cover the last 7 days */
+export interface XpLeaderboardEntry {
+  member: DiscordMember;
+  rank: number;
+  /** All time */
+  xp: number;
+  level: number;
+  /** XP earned in the last 7 days */
+  weekXp: number;
+  /** Places moved since 7 days ago, positive is up (0 when new) */
+  rankChange: number;
+  /** Had no XP 7 days ago */
+  isNew: boolean;
+}
+
+/**
+ * GET …/:serverId/xp-leaderboard: current members by all-time XP, 25 a page (`?page=`);
+ * `?around=<memberId>` returns that member and up to two on each side instead
+ */
 export interface XpLeaderboard {
-  leaderboard: { member: DiscordMember; xp: number; level: number }[];
+  leaderboard: XpLeaderboardEntry[];
+  /** The viewer's row, null when they have no XP */
+  me: XpLeaderboardEntry | null;
+  page: number;
+  pages: number;
+  /** Members ranked */
+  total: number;
 }
 
 /**
