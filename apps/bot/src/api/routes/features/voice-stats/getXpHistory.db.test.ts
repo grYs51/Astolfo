@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { xpHistoryPoints } from './getXpHistory';
+import { xpHistory, xpHistoryPoints } from './getXpHistory';
 
 // Runs against a real Postgres only when XP_TEST_DATABASE_URL points at one with the migrations applied (see grant.db.test.ts)
 const url = process.env.XP_TEST_DATABASE_URL;
@@ -82,6 +82,40 @@ describeDb('xpHistoryPoints', () => {
       { date: '2026-01-15', gained: 0, total: 590 },
       { date: '2026-01-16', gained: 0, total: 590 },
     ]);
+  });
+
+  test('compared with another member: the same weeks from the earlier first XP, and the levels over both lines', async () => {
+    // someone-else's first XP is in the second week, M's in the first: their line starts at 0 in M's first week
+    expect(
+      await xpHistory(db, { serverId: G, userId: 'someone-else', compare: M, since: undefined, now: at(10, 12), tz: 'UTC', granularity: 'week' })
+    ).toEqual({
+      granularity: 'week',
+      startXp: 0,
+      endXp: 999,
+      points: [
+        { date: '2026-01-05', gained: 0, total: 0 },
+        { date: '2026-01-12', gained: 999, total: 999 },
+      ],
+      compare: {
+        startXp: 0,
+        endXp: 590,
+        points: [
+          { date: '2026-01-05', gained: 500, total: 500 },
+          { date: '2026-01-12', gained: 90, total: 590 },
+        ],
+      },
+      // Levels 1–4 sit at 100, 250, 450 and 700 XP
+      levels: [{ level: 1, xp: 100 }, { level: 2, xp: 250 }, { level: 3, xp: 450 }, { level: 4, xp: 700 }],
+    });
+  });
+
+  test("the level lines run from the lower line's start to the higher line's end", async () => {
+    // M alone goes 500 → 590 in the period and crosses nothing; someone-else goes 0 → 999
+    const opts = { serverId: G, userId: M, since: at(7, 12), now: at(10, 12), tz: 'UTC', granularity: 'day' as const };
+    expect((await xpHistory(db, opts)).levels).toEqual([]);
+    const both = await xpHistory(db, { ...opts, compare: 'someone-else' });
+    expect(both.levels.map((l) => l.level)).toEqual([1, 2, 3, 4]);
+    expect(both.compare?.points.map((p) => p.date)).toEqual(both.points.map((p) => p.date));
   });
 
   test('no XP at all: nothing for all time, zeros for a period', async () => {

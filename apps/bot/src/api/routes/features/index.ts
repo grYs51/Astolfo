@@ -30,6 +30,7 @@ import {
   getStatsCard,
   getXpLeaderboard,
   getXpHistory,
+  getXpRivals,
   getWrapped,
 } from './voice-stats';
 
@@ -123,6 +124,12 @@ export default (router: Router) => {
     isAuthenticated,
     isServerMember,
     getXpHistory,
+  );
+  router.get(
+    '/features/voice-stats/:serverId/users/:userId/xp-rivals',
+    isAuthenticated,
+    isServerMember,
+    getXpRivals,
   );
   router.get(
     '/features/voice-stats/:serverId/users/:userId/heatmap',
