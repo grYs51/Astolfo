@@ -78,6 +78,41 @@ describe('a map game', () => {
     expect(game.current?.endsAt).toBe(90_000);
   });
 
+  test('an unsent pin becomes the guess at the timeout, at its latest spot, timed at the full round', async () => {
+    const over = playRound(game, round, 90_000);
+    expect(guess(game, 'a', 10, 10, 1000, true)).toBe('ok');
+    expect(guess(game, 'a', PARIS.lat, PARIS.lon, 2000, true)).toBe('ok');
+    expect(guess(game, 'b', 10, 10, 3000, true)).toBe('ok');
+    expect(guess(game, 'b', TOKYO.lat, TOKYO.lon, 4000)).toBe('ok');
+    // A draft is not a guess: it doesn't count, and a sent guess can't be moved by one
+    expect(game.current?.guesses.size).toBe(1);
+    expect(guess(game, 'b', 10, 10, 5000, true)).toBe('already');
+    jest.advanceTimersByTime(90_000);
+    await over;
+    expect(game.current?.guesses).toEqual(
+      new Map([
+        ['b', { ...TOKYO, ms: 4000 }],
+        ['a', { ...PARIS, ms: 90_000 }],
+      ])
+    );
+    expect(guess(game, 'c', 10, 10, undefined, true)).toBe('closed');
+  });
+
+  test('a draft does not end round 2 early', async () => {
+    void playRound(game, round, 90_000);
+    jest.advanceTimersByTime(90_000);
+    game.viewers.add('a').add('b');
+    let ended = false;
+    void playRound(game, round, 90_000).then(() => (ended = true));
+    guess(game, 'a', 50, 4);
+    guess(game, 'b', 50, 4, undefined, true);
+    await Promise.resolve();
+    expect(ended).toBe(false);
+    guess(game, 'b', 50, 4);
+    await Promise.resolve();
+    expect(ended).toBe(true);
+  });
+
   test('closing a round adds it to the totals', () => {
     void playRound(game, round, 90_000);
     guess(game, 'a', PARIS.lat, PARIS.lon);

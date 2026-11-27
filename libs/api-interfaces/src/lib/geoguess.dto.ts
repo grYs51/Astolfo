@@ -47,4 +47,6 @@ export interface GeoguessGameResponse {
 export interface GeoguessGuessRequest {
   lat: number;
   lon: number;
+  /** A pin placed but not sent: counts as the guess if the round closes without one */
+  draft?: boolean;
 }
