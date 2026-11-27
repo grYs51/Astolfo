@@ -142,6 +142,8 @@ describeDb('grantXp on seeded rows', () => {
     await map(7, 'hard', 500, { 'xp-m1': 80, 'xp-m2': 200, 'xp-m3': 350, 'xp-m4': 600 }, ['xp-m3']);
     // An older game played with a smaller radius than the full-points distance now
     await map(8, 'medium', 150, { 'xp-m5': 100 });
+    // A divisor that never ends (700 - 400): 10/300 × 15 is 0.5, which Postgres would cut to 0.4999…
+    await map(9, 'easy', 700, { 'xp-m6': 690 });
   });
 
   afterAll(async () => {
@@ -203,6 +205,7 @@ describeDb('grantXp on seeded rows', () => {
       ['xp-m2', 23, 'GeoGuess: 200 km (hard ×2)'],
       ['xp-m3', 6, 'GeoGuess: 350 km (hard ×2), unsent pin'],
       ['xp-m5', 23, 'GeoGuess: 100 km (medium ×1.5)'],
+      ['xp-m6', 1, 'GeoGuess: 690 km (easy ×1)'],
     ]);
     const shared = { radiusKm: 500, players: 4, difficulty: 'hard' as const };
     expect([
@@ -210,6 +213,7 @@ describeDb('grantXp on seeded rows', () => {
       geoguessXp(DEFAULT_RULES, { ...shared, km: 200, closest: false, unsent: false }).xp,
       geoguessXp(DEFAULT_RULES, { ...shared, km: 350, closest: false, unsent: true }).xp,
       geoguessXp(DEFAULT_RULES, { radiusKm: 150, players: 1, difficulty: 'medium', km: 100, closest: true, unsent: false }).xp,
+      geoguessXp(DEFAULT_RULES, { radiusKm: 700, players: 1, difficulty: 'easy', km: 690, closest: true, unsent: false }).xp,
     ]).toEqual(map.map((r) => r.amount));
   });
 

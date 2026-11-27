@@ -29,17 +29,13 @@ export interface GeoguessXpInput {
 
 export interface GeoguessXp {
   inside: boolean;
-  /** The full-points distance used: the rule, capped to the game's radius */
-  fullKm: number;
-  /** 1 within `fullKm`, falling in a straight line to 0 at the radius */
+  /** 1 within the full-points distance (capped to the game's radius), falling in a straight line to 0 at the radius */
   closeness: number;
   pin: number;
   bonus: number;
   /** The difficulty multiplier */
   factor: number;
   unsentFactor: number;
-  /** `(pin × closeness + bonus) × factor × unsentFactor` before rounding */
-  raw: number;
   /** Rounded, before the daily cap */
   full: number;
   /** After the daily cap */
@@ -64,5 +60,5 @@ export const geoguessXp = (rules: XpRules, input: GeoguessXpInput): GeoguessXp =
   // Postgres rounds exact numerics half up; trimming float noise first keeps 22.5 from landing on 22.4999…
   const full = Math.round(Number(raw.toFixed(6)));
   const xp = Math.min(full, Math.max(0, rules.thresholds.triviaDailyCap - (input.earnedToday ?? 0)));
-  return { inside, fullKm, closeness, pin: g.pin, bonus, factor, unsentFactor, raw, full, xp };
+  return { inside, closeness, pin: g.pin, bonus, factor, unsentFactor, full, xp };
 };

@@ -57,15 +57,15 @@ import { GEOGUESS_GROUP, GeoguessSim, getRule, levelsPreview, MILESTONE_PATH, pa
                   </div>
                   <div>
                     <label for="sim-km" class="block text-xs text-gray-400">Distance (km)</label>
-                    <input id="sim-km" type="number" min="0" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().km" (input)="setSim('km', $any($event.target).valueAsNumber)" />
+                    <input id="sim-km" type="number" min="0" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().km" (input)="setSim('km', $any($event.target).valueAsNumber || 0)" />
                   </div>
                   <div>
                     <label for="sim-players" class="block text-xs text-gray-400">Players in the round</label>
-                    <input id="sim-players" type="number" min="1" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().players" (input)="setSim('players', $any($event.target).valueAsNumber)" />
+                    <input id="sim-players" type="number" min="1" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().players" (input)="setSim('players', $any($event.target).valueAsNumber || 0)" />
                   </div>
                   <div>
                     <label for="sim-earned" class="block text-xs text-gray-400">Trivia XP already earned today</label>
-                    <input id="sim-earned" type="number" min="0" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().earnedToday" (input)="setSim('earnedToday', $any($event.target).valueAsNumber)" />
+                    <input id="sim-earned" type="number" min="0" class="input input-bordered input-sm w-full tabular-nums" [value]="sim().earnedToday" (input)="setSim('earnedToday', $any($event.target).valueAsNumber || 0)" />
                   </div>
                   <div>
                     <label for="sim-sent" class="block text-xs text-gray-400">Pin</label>

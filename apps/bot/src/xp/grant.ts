@@ -536,11 +536,12 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       scored AS (
         SELECT *,
           CASE WHEN result = ${SCORING.TIE} THEN ${triviaNear}::int
-            WHEN map THEN ROUND((
+            -- Rounded to 6 digits first like geoguessXp: Postgres cuts a never-ending division (0.4999…95), which would round down
+            WHEN map THEN ROUND(ROUND((
               ${geo.pin}::int * CASE WHEN km >= radius_km THEN 0 WHEN km <= full_km THEN 1 ELSE (radius_km - km) / (radius_km - full_km) END
               + CASE WHEN place = 1 AND players >= 2
                   THEN ${geo.closest}::int + ${geo.perPlayer}::int * GREATEST(0, LEAST(players, ${geo.crowdCap}::int) - 2) ELSE 0 END
-            ) * factor * CASE WHEN unsent THEN unsent_factor ELSE 1 END)::int
+            ) * factor * CASE WHEN unsent THEN unsent_factor ELSE 1 END, 6))::int
             ELSE ROUND(CASE WHEN place <= 4 THEN (${places}::int[])[place] ELSE ${triviaCorrect} END * factor)::int
           END AS full_amount
         FROM answers
