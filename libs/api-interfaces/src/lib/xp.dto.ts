@@ -67,6 +67,31 @@ export interface XpRules {
     medium: number;
     hard: number;
   };
+  /**
+   * GeoGuess on the map: `(pin × closeness + closest bonus) × difficulty × unsent`, see `geoguessXp`.
+   * Button trivia and button GeoGuess use `amounts.trivia` instead.
+   */
+  geoguess: {
+    /** XP for a pin within the full-points distance */
+    pin: number;
+    /** A pin this far or further earns nothing; a new radius applies to new games only */
+    radiusEasy: number;
+    radiusMedium: number;
+    radiusHard: number;
+    /** Full points within this distance, falling to 0 at the radius */
+    fullKmEasy: number;
+    fullKmMedium: number;
+    fullKmHard: number;
+    /** The closest pin's bonus with 2 players… */
+    closest: number;
+    /** …plus this per player past two, up to `crowdCap` players */
+    perPlayer: number;
+    crowdCap: number;
+    /** Factor for a pin placed but not sent, counted when the timer ran out */
+    unsentEasy: number;
+    unsentMedium: number;
+    unsentHard: number;
+  };
 }
 
 /** GET /admin/xp-rules */

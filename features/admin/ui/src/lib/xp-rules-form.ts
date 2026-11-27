@@ -1,4 +1,5 @@
 import type { XpRules } from '@nx-stolfo/data-access-admin';
+import { GeoguessDifficulty, geoguessRadius, geoguessXp } from '@nx-stolfo/api-interfaces';
 
 export interface XpRuleField {
   /** Dotted path into XpRules, as the API's 400 names it */
@@ -9,6 +10,9 @@ export interface XpRuleField {
 }
 
 const f = (path: string, label: string, step = 1): XpRuleField => ({ path, label, step });
+
+/** The group the simulator sits under */
+export const GEOGUESS_GROUP = 'GeoGuess map';
 
 /** The form, grouped like the plan: what each number does, in the order shown */
 export const XP_RULE_GROUPS: { title: string; hint: string; fields: XpRuleField[] }[] = [
@@ -69,6 +73,25 @@ export const XP_RULE_GROUPS: { title: string; hint: string; fields: XpRuleField[
     ],
   },
   {
+    title: GEOGUESS_GROUP,
+    hint: 'A pin inside the radius earns pin XP × closeness (1 within full points, falling to 0 at the radius), plus the closest-pin bonus with 2+ players, × the trivia difficulty multiplier, × the unsent factor for a pin placed but not sent. A new radius applies to new games only. The trivia daily cap applies.',
+    fields: [
+      f('geoguess.pin', 'Pin XP (full points)'),
+      f('geoguess.closest', 'Closest pin bonus'),
+      f('geoguess.radiusEasy', 'Easy: 0 points at (km)'),
+      f('geoguess.fullKmEasy', 'Easy: full points within (km)'),
+      f('geoguess.radiusMedium', 'Medium: 0 points at (km)'),
+      f('geoguess.fullKmMedium', 'Medium: full points within (km)'),
+      f('geoguess.radiusHard', 'Hard: 0 points at (km)'),
+      f('geoguess.fullKmHard', 'Hard: full points within (km)'),
+      f('geoguess.perPlayer', 'Bonus added per player past two'),
+      f('geoguess.crowdCap', 'Crowd cap (players counted)'),
+      f('geoguess.unsentEasy', 'Unsent pin × easy', 0.01),
+      f('geoguess.unsentMedium', 'Unsent pin × medium', 0.01),
+      f('geoguess.unsentHard', 'Unsent pin × hard', 0.01),
+    ],
+  },
+  {
     title: 'Thresholds',
     hint: 'When the bonuses count.',
     fields: [
@@ -79,6 +102,32 @@ export const XP_RULE_GROUPS: { title: string; hint: string; fields: XpRuleField[
     ],
   },
 ];
+
+/** One round for the GeoGuess XP simulator */
+export interface GeoguessSim {
+  difficulty: GeoguessDifficulty;
+  km: number;
+  players: number;
+  closest: boolean;
+  unsent: boolean;
+  earnedToday: number;
+}
+
+const num = (v: number) => String(+v.toFixed(2));
+
+/** A new map game's round under the rules being typed, with the working shown */
+export const simulateGeoguess = (rules: XpRules, sim: GeoguessSim) => {
+  const radiusKm = geoguessRadius(rules, sim.difficulty);
+  const r = geoguessXp(rules, { ...sim, km: Math.round(sim.km), radiusKm });
+  if (!r.inside) return { xp: 0, text: `Outside the ${radiusKm} km radius: 0 XP` };
+  const bonus = r.bonus ? ` + ${r.bonus} bonus` : '';
+  const unsent = sim.unsent ? ` → × ${num(r.unsentFactor)} unsent` : '';
+  const capped = r.xp < r.full ? `, cut to ${r.xp} by the daily cap` : '';
+  return {
+    xp: r.xp,
+    text: `${r.pin} pin × ${num(r.closeness)} closeness${bonus} = ${num(r.pin * r.closeness + r.bonus)} → × ${num(r.factor)} ${sim.difficulty}${unsent} = ${r.full} XP${capped}`,
+  };
+};
 
 /** The milestone hours are a list, typed as text */
 export const MILESTONE_PATH = 'thresholds.milestoneHours';

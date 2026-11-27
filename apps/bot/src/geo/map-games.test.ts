@@ -4,6 +4,7 @@ const BRUSSELS = { lat: 50.8503, lon: 4.3517 };
 const PARIS = { lat: 48.8566, lon: 2.3522 };
 const TOKYO = { lat: 35.6762, lon: 139.6503 };
 
+const RADII = { easy: 2000, medium: 1000, hard: 500 };
 const round = { imageId: 'img', difficulty: 'medium' as const, answer: { country: 'Belgium', ...BRUSSELS } };
 
 describe('haversineKm', () => {
@@ -34,7 +35,7 @@ describe('a map game', () => {
   let game: MapGame;
   beforeEach(() => {
     jest.useFakeTimers({ now: 0 });
-    game = createMapGame('guild', 2);
+    game = createMapGame('guild', 2, RADII);
   });
   afterEach(() => jest.useRealTimers());
 
@@ -92,7 +93,7 @@ describe('a map game', () => {
     expect(game.current?.guesses).toEqual(
       new Map([
         ['b', { ...TOKYO, ms: 4000 }],
-        ['a', { ...PARIS, ms: 90_000 }],
+        ['a', { ...PARIS, ms: 90_000, unsent: true }],
       ])
     );
     expect(guess(game, 'c', 10, 10, undefined, true)).toBe('closed');

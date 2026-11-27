@@ -1,3 +1,4 @@
+import { geoguessXp } from '@nx-stolfo/api-interfaces';
 import { DEFAULT_RULES, currentRules, levelFor, levelLines, loadRules, parseXpRules, setRules, xpForLevel } from './rules';
 
 const withRules = (patch: object) => JSON.parse(JSON.stringify({ ...DEFAULT_RULES, ...patch }));
@@ -113,5 +114,47 @@ describe('trivia rules', () => {
     await loadRules({ xpRules: { findUnique: async () => ({ rules: older }) } } as never);
     expect(currentRules()).toEqual({ ...DEFAULT_RULES, amounts: { ...DEFAULT_RULES.amounts, message: 7 } });
     setRules(null);
+  });
+});
+
+describe('GeoGuess map rules', () => {
+  const geo = (patch: Partial<typeof DEFAULT_RULES.geoguess>) => withRules({ geoguess: { ...DEFAULT_RULES.geoguess, ...patch } });
+
+  test('a full-points distance at or above its radius is turned down, on that field', () => {
+    expect(parseXpRules(geo({ fullKmHard: 500 }))).toEqual({ field: 'geoguess.fullKmHard', error: expect.stringMatching(/under the hard radius \(500 km\)/) });
+    expect(parseXpRules(geo({ radiusMedium: 150 }))).toMatchObject({ field: 'geoguess.fullKmMedium' });
+    expect(parseXpRules(geo({ fullKmEasy: 1999 }))).toMatchObject({ rules: { geoguess: { fullKmEasy: 1999 } } });
+  });
+
+  test('rules saved before map XP existed get the GeoGuess defaults', async () => {
+    const { geoguess: _geo, ...older } = JSON.parse(JSON.stringify(DEFAULT_RULES));
+    await loadRules({ xpRules: { findUnique: async () => ({ rules: older }) } } as never);
+    expect(currentRules()).toEqual(DEFAULT_RULES);
+    setRules(null);
+  });
+});
+
+describe('geoguessXp', () => {
+  const xp = (km: number, more: Partial<Parameters<typeof geoguessXp>[1]> = {}) =>
+    geoguessXp(DEFAULT_RULES, { difficulty: 'hard', km, radiusKm: 500, players: 1, closest: true, unsent: false, ...more }).xp;
+
+  test('full points within the full-points distance, half halfway to the edge, 0 at or past it', () => {
+    expect([xp(0), xp(100), xp(300), xp(499), xp(500), xp(800)]).toEqual([30, 30, 15, 0, 0, 0]);
+  });
+
+  test('the closest pin earns a bonus only with 2+ players, growing up to the crowd cap', () => {
+    expect([1, 2, 3, 4, 5, 6, 9].map((players) => xp(80, { players }) - 30)).toEqual([0, 6, 12, 18, 24, 30, 30]);
+    expect(xp(80, { players: 4, closest: false })).toBe(30);
+  });
+
+  test('an unsent pin on hard earns half; easy is untouched', () => {
+    expect(xp(80, { players: 4, unsent: true })).toBe(xp(80, { players: 4 }) / 2);
+    expect(xp(80, { difficulty: 'easy', radiusKm: 2000, unsent: true })).toBe(15);
+  });
+
+  test("an old game's smaller radius caps the full-points distance; the daily cap cuts what's left", () => {
+    expect(xp(50, { radiusKm: 50 })).toBe(0);
+    expect(xp(40, { radiusKm: 50 })).toBe(30);
+    expect(xp(80, { earnedToday: 490 })).toBe(10);
   });
 });

@@ -4,6 +4,7 @@ import { gameView } from './geoguess';
 jest.mock('../../../../client/instance', () => ({ client: {} }));
 
 const BRUSSELS = { lat: 50.85, lon: 4.35 };
+const RADII = { easy: 2000, medium: 1000, hard: 500 };
 const round = { imageId: 'img', difficulty: 'hard' as const, answer: { country: 'Belgium', ...BRUSSELS } };
 const members = new Map([['a', { id: 'a', username: 'alice', displayName: 'Alice', avatar: null }]]);
 
@@ -12,7 +13,7 @@ describe('gameView', () => {
   afterEach(() => jest.useRealTimers());
 
   test('while guessing: only the own pin, never the answer or other pins', () => {
-    const game = createMapGame('guild', 3);
+    const game = createMapGame('guild', 3, RADII);
     void playRound(game, round, 90_000);
     guess(game, 'a', 48.85, 2.35);
     guess(game, 'b', 35.6, 139.6);
@@ -25,7 +26,7 @@ describe('gameView', () => {
   });
 
   test('after the round: the answer, every pin with its place and XP, and the totals', () => {
-    const game = createMapGame('guild', 1);
+    const game = createMapGame('guild', 1, RADII);
     void playRound(game, round, 90_000);
     guess(game, 'b', 35.6, 139.6);
     guess(game, 'a', 48.85, 2.35);
@@ -44,6 +45,6 @@ describe('gameView', () => {
   });
 
   test('no round yet: nothing to show', () => {
-    expect(gameView(createMapGame('guild', 1), 'a', 't', members)).toBeUndefined();
+    expect(gameView(createMapGame('guild', 1, RADII), 'a', 't', members)).toBeUndefined();
   });
 });

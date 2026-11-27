@@ -495,11 +495,14 @@ const grantGames = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptio
  * Correct trivia answers: the first four by place, then a flat amount, times the question's difficulty.
  * A GeoGuess near miss (saved as a tie) earns its own flat amount, not times the difficulty: hard puts two
  * neighbours among the answers, so with the factor a random click there would pay off three times in four.
+ * A map GeoGuess pin inside the radius earns `geoguessXp` (api-interfaces) instead, which this SQL mirrors:
+ * scaled by distance against the game's saved radius, a closest-pin bonus, times the difficulty and the unsent factor.
  * A member's trivia XP stops at the daily cap (UTC day): the grant that crosses it is cut to what's left.
  */
 const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOptions) => {
   const { trivia: places, triviaCorrect, triviaNear } = rules.amounts;
   const { easy, medium, hard } = rules.trivia;
+  const geo = rules.geoguess;
   // The cap only needs the answers of the same UTC day as `since`; without `since` (a backfill) read them all
   const dayStart = since && new Date(Math.floor(since.getTime() / DAY) * DAY);
   return counted(
@@ -512,7 +515,17 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
            WHERE o.id = gp.user_id)::int AS place,
           CASE gr.metadata->>'difficulty' WHEN 'hard' THEN ${hard}::numeric WHEN 'medium' THEN ${medium}::numeric
             ELSE ${easy}::numeric END AS factor,
-          COALESCE(gr.metadata->>'difficulty', 'easy') AS difficulty
+          COALESCE(gr.metadata->>'difficulty', 'easy') AS difficulty,
+          gr.metadata->>'mode' = 'map' AS map,
+          (gr.metadata->'km'->>gp.user_id)::numeric AS km,
+          (gr.metadata->>'radiusKm')::numeric AS radius_km,
+          (SELECT COUNT(*) FROM game_player p WHERE p.game_result_id = gr.id)::int AS players,
+          COALESCE(gr.metadata->'unsent', '[]'::jsonb) @> jsonb_build_array(gp.user_id) AS unsent,
+          -- Capped to the game's own radius: an old game may have been played with a smaller one
+          LEAST((gr.metadata->>'radiusKm')::numeric, CASE gr.metadata->>'difficulty' WHEN 'hard' THEN ${geo.fullKmHard}::numeric
+            WHEN 'medium' THEN ${geo.fullKmMedium}::numeric ELSE ${geo.fullKmEasy}::numeric END) AS full_km,
+          CASE gr.metadata->>'difficulty' WHEN 'hard' THEN ${geo.unsentHard}::numeric WHEN 'medium' THEN ${geo.unsentMedium}::numeric
+            ELSE ${geo.unsentEasy}::numeric END AS unsent_factor
         FROM game_player gp
         JOIN game_result gr ON gr.id = gp.game_result_id
         WHERE gr.guild_id = ${guildId} AND gr.game_type_id = ${GAME_TYPES.TRIVIA}
@@ -523,6 +536,12 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       scored AS (
         SELECT *,
           CASE WHEN result = ${SCORING.TIE} THEN ${triviaNear}::int
+            -- Rounded to 6 digits first like geoguessXp: Postgres cuts a never-ending division (0.4999…95), which would round down
+            WHEN map THEN ROUND(ROUND((
+              ${geo.pin}::int * CASE WHEN km >= radius_km THEN 0 WHEN km <= full_km THEN 1 ELSE (radius_km - km) / (radius_km - full_km) END
+              + CASE WHEN place = 1 AND players >= 2
+                  THEN ${geo.closest}::int + ${geo.perPlayer}::int * GREATEST(0, LEAST(players, ${geo.crowdCap}::int) - 2) ELSE 0 END
+            ) * factor * CASE WHEN unsent THEN unsent_factor ELSE 1 END, 6))::int
             ELSE ROUND(CASE WHEN place <= 4 THEN (${places}::int[])[place] ELSE ${triviaCorrect} END * factor)::int
           END AS full_amount
         FROM answers
@@ -537,7 +556,10 @@ const grantTrivia = (db: GrantDb, { guildId, memberId, since, rules }: GrantOpti
       )
       INSERT INTO xp_events (id, guild_id, member_id, source, amount, note, key, created_at)
       SELECT gen_random_uuid()::text, ${guildId}, user_id, 'TRIVIA', amount,
-        label || ': ' || CASE WHEN result = ${SCORING.TIE} THEN 'near miss' ELSE place
+        label || ': ' || CASE WHEN result = ${SCORING.TIE} THEN 'near miss'
+          WHEN map THEN km::int || ' km' || CASE WHEN place = 1 AND players >= 2 THEN ', closest of ' || players ELSE '' END
+            || ' (' || difficulty || ' ×' || trim_scale(factor) || ')' || CASE WHEN unsent THEN ', unsent pin' ELSE '' END
+          ELSE place
           || CASE WHEN place % 100 IN (11, 12, 13) THEN 'th' WHEN place % 10 = 1 THEN 'st'
           WHEN place % 10 = 2 THEN 'nd' WHEN place % 10 = 3 THEN 'rd' ELSE 'th' END
           || ' (' || difficulty || ' ×' || trim_scale(factor) || ')' END
@@ -634,7 +656,7 @@ export const grantXp = async (db: GrantDb, opts: GrantOptions): Promise<Granted>
   if (wants('MESSAGE') && amounts.message > 0) results.push(await grantMessages(db, opts));
   if (wants('STREAK') && amounts.streakDay > 0) results.push(await grantStreaks(db, opts, botIds));
   if (wants('GAME') && amounts.gameWin > 0) results.push(await grantGames(db, opts));
-  if (wants('TRIVIA') && (amounts.trivia.some((a) => a > 0) || amounts.triviaCorrect > 0 || amounts.triviaNear > 0)) {
+  if (wants('TRIVIA') && (amounts.trivia.some((a) => a > 0) || amounts.triviaCorrect > 0 || amounts.triviaNear > 0 || rules.geoguess.pin > 0 || rules.geoguess.closest > 0)) {
     results.push(await grantTrivia(db, opts));
   }
   if (wants('MILESTONE') && amounts.milestone > 0 && thresholds.milestoneHours.length) {

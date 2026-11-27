@@ -1,6 +1,7 @@
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, InteractionContextType, InteractionEditReplyOptions, SlashCommandBuilder } from 'discord.js';
+import { geoguessRadius } from '@nx-stolfo/api-interfaces';
 import { DOWN_MESSAGE, nextGeoQuestion } from '../../geo/mapillary';
-import { closeRound, createMapGame, endMapGame, MAP_ANSWER_MS, MapGame, playRound, RADIUS_KM, RankedGuess, rankGuesses } from '../../geo/map-games';
+import { closeRound, createMapGame, endMapGame, MAP_ANSWER_MS, MapGame, playRound, RankedGuess, rankGuesses } from '../../geo/map-games';
 import { TriviaDifficulty, TriviaFetch, TriviaQuestion } from '../../trivia/opentdb';
 import Client from '../../client/client';
 import { InterActionUtils } from '../../utils/interaction-utils';
@@ -88,7 +89,9 @@ export default class GeoGuess extends Trivia {
 
   override async slash(client: Client, interaction: ChatInputCommandInteraction<CacheType>): Promise<void> {
     if (interaction.options.getString('mode') !== 'map') return super.slash(client, interaction);
-    const game = createMapGame(interaction.guildId ?? '', interaction.options.getInteger('rounds') ?? 1);
+    const rules = currentRules();
+    const radiusKm = { easy: geoguessRadius(rules, 'easy'), medium: geoguessRadius(rules, 'medium'), hard: geoguessRadius(rules, 'hard') };
+    const game = createMapGame(interaction.guildId ?? '', interaction.options.getInteger('rounds') ?? 1, radiusKm);
     mapGames.set(interaction, game);
     try {
       await super.slash(client, interaction);
@@ -122,7 +125,7 @@ export default class GeoGuess extends Trivia {
     const q = { ...fetched.question, question: MAP_QUESTION, answers: [] };
     const geo = q.geo as NonNullable<TriviaQuestion['geo']> & { lat: number; lon: number };
     const factor = currentRules().trivia[q.difficulty];
-    const radiusKm = RADIUS_KM[q.difficulty];
+    const radiusKm = game.radiusKm[q.difficulty];
     const secs = MAP_ANSWER_MS / 1000;
     const intro = `🗺️ GeoGuess on the map! ${roundLabel}${capitalise(q.difficulty)}: within ${radiusKm} km counts, ×${factor} XP, ${secs} seconds.`;
     const questionCard = await card(() => triviaQuestionCard({ ...q, factor, seconds: secs }, THEMES[DEFAULT_THEME]), 'trivia.png');
@@ -161,8 +164,10 @@ export default class GeoGuess extends Trivia {
         category: q.category,
         difficulty: q.difficulty,
         correct: q.correct,
-        // The pins within the radius, closest first: trivia's places, so the XP grant needs no change
+        // The pins within the radius, closest first: trivia's places; the first is the closest-pin bonus
         correctOrder: inside.map((g) => g.userId),
+        // Pins placed but not sent, counted at the timeout: their XP is cut by the rules' unsent factor
+        unsent: ranked.filter((g) => g.unsent).map((g) => g.userId),
         answerMs: Object.fromEntries(ranked.map((g) => [g.userId, g.ms])),
         imageId: geo.imageId,
         country: geo.country,

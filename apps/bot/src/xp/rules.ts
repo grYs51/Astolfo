@@ -42,6 +42,21 @@ export const DEFAULT_RULES: XpRules = {
     triviaDailyCap: 500,
   },
   trivia: { easy: 1, medium: 1.5, hard: 2 },
+  geoguess: {
+    pin: 15,
+    radiusEasy: 2000,
+    radiusMedium: 1000,
+    radiusHard: 500,
+    fullKmEasy: 400,
+    fullKmMedium: 200,
+    fullKmHard: 100,
+    closest: 3,
+    perPlayer: 3,
+    crowdCap: 6,
+    unsentEasy: 1,
+    unsentMedium: 0.75,
+    unsentHard: 0.5,
+  },
 };
 
 /** XP needed to reach `level` from 0: the sum of `levelStep·L + levelBase` for L below it */
@@ -126,6 +141,21 @@ const SHAPE: Record<string, Kind | Record<string, Kind>> = {
     triviaDailyCap: 'count',
   },
   trivia: { easy: 'multiplier', medium: 'multiplier', hard: 'multiplier' },
+  geoguess: {
+    pin: 'amount',
+    radiusEasy: 'count',
+    radiusMedium: 'count',
+    radiusHard: 'count',
+    fullKmEasy: 'count',
+    fullKmMedium: 'count',
+    fullKmHard: 'count',
+    closest: 'amount',
+    perPlayer: 'amount',
+    crowdCap: 'count',
+    unsentEasy: 'multiplier',
+    unsentMedium: 'multiplier',
+    unsentHard: 'multiplier',
+  },
 };
 
 const isObject = (value: unknown): value is Record<string, unknown> =>
@@ -186,6 +216,13 @@ export const parseXpRules = (body: unknown): { rules: XpRules } | { error: strin
     }
   }
   (out['thresholds'] as Record<string, unknown>)['milestoneHours'] = [...hours];
+
+  const geo = out['geoguess'] as XpRules['geoguess'];
+  for (const d of ['Easy', 'Medium', 'Hard'] as const) {
+    if (geo[`fullKm${d}`] >= geo[`radius${d}`]) {
+      return { field: `geoguess.fullKm${d}`, error: `geoguess.fullKm${d} must be under the ${d.toLowerCase()} radius (${geo[`radius${d}`]} km)` };
+    }
+  }
 
   return { rules: out as unknown as XpRules };
 };

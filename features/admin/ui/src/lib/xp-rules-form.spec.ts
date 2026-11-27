@@ -1,5 +1,5 @@
 import type { XpRules } from '@nx-stolfo/data-access-admin';
-import { getRule, levelsPreview, parseHours, saveBody, setRule, XP_RULE_GROUPS } from './xp-rules-form';
+import { getRule, levelsPreview, parseHours, saveBody, setRule, simulateGeoguess, XP_RULE_GROUPS } from './xp-rules-form';
 
 const DEFAULTS: XpRules = {
   levelStep: 50,
@@ -8,6 +8,21 @@ const DEFAULTS: XpRules = {
   amounts: { voiceMinute: 1, starter: 15, message: 2, streakDay: 10, gameWin: 5, gameStreakStep: 2, gameStreakCap: 10, reconnect: 25, welcome: 20, milestone: 100, weekly: [50, 30, 20], trivia: [15, 10, 7, 5], triviaCorrect: 3, triviaNear: 2 },
   thresholds: { togetherMin: 10, reconnectDays: 30, welcomeAfterDays: 30, startersPerDay: 3, milestoneHours: [10, 50, 100, 250, 500, 1000], triviaDailyCap: 500 },
   trivia: { easy: 1, medium: 1.5, hard: 2 },
+  geoguess: {
+    pin: 15,
+    radiusEasy: 2000,
+    radiusMedium: 1000,
+    radiusHard: 500,
+    fullKmEasy: 400,
+    fullKmMedium: 200,
+    fullKmHard: 100,
+    closest: 3,
+    perPlayer: 3,
+    crowdCap: 6,
+    unsentEasy: 1,
+    unsentMedium: 0.75,
+    unsentHard: 0.5,
+  },
 };
 
 describe('the XP rules form', () => {
@@ -34,6 +49,16 @@ describe('the XP rules form', () => {
     expect(saveBody(changed, DEFAULTS)).toEqual(changed);
     // "Reset to defaults" fills the form with the defaults
     expect(saveBody(structuredClone(DEFAULTS), DEFAULTS)).toBeNull();
+  });
+
+  it('the GeoGuess simulator shows the working, the cap and the edge, with the rules being typed', () => {
+    const sim = { difficulty: 'hard' as const, km: 200, players: 4, closest: true, unsent: true, earnedToday: 0 };
+    expect(simulateGeoguess(DEFAULTS, sim)).toEqual({ xp: 20, text: '15 pin × 0.75 closeness + 9 bonus = 20.25 → × 2 hard → × 0.5 unsent = 20 XP' });
+    expect(simulateGeoguess(DEFAULTS, { ...sim, earnedToday: 490 })).toMatchObject({ xp: 10, text: expect.stringMatching(/= 20 XP, cut to 10 by the daily cap$/) });
+    expect(simulateGeoguess(DEFAULTS, { ...sim, km: 600 })).toEqual({ xp: 0, text: 'Outside the 500 km radius: 0 XP' });
+    // A radius typed but not saved yet already counts
+    expect(simulateGeoguess(setRule(DEFAULTS, 'geoguess.radiusHard', 700), { ...sim, km: 600 }).xp).toBeGreaterThan(0);
+    expect(simulateGeoguess(DEFAULTS, { ...sim, players: 1, unsent: false, km: 80 })).toEqual({ xp: 30, text: '15 pin × 1 closeness = 15 → × 2 hard = 30 XP' });
   });
 
   it('reads the milestone hours as a list', () => {
